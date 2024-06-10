@@ -1,0 +1,39 @@
+{
+	"compilerOptions" : {
+		"allowJs" : true ,
+		"allowSyntheticDefaultImports" : true ,
+		"allowUnusedLabels" : true ,
+		"baseUrl" : "." ,
+		"declaration" : false ,
+		"declarationMap" : false ,
+		"esModuleInterop" : true ,
+		"experimentalDecorators" : true ,
+		"jsx" : "preserve" ,
+		"resolveJsonModule" : true ,
+		"strictFunctionTypes" : false ,
+		"strict" : false ,
+		"strictBindCallApply" : false ,
+		"strictNullChecks" : false ,
+		"allowUnreachableCode" : true ,
+		"module" : "ESNext" ,
+		"moduleResolution" : "node" ,
+		"noEmit" : true ,
+		"noImplicitAny" : false ,
+		"noImplicitReturns" : false ,
+		"noImplicitUseStrict" : false ,
+		"noUnusedLocals" : false ,
+		"noUnusedParameters" : false ,
+		"preserveConstEnums" : true ,
+		"checkJs" : true ,
+		"target" : "ESNext" ,
+		"allowSyntheticDefaultImports" : true ,
+		"paths" : {			
+		}
+		
+	} ,
+	"ts-node" : {
+		"esm" : true,
+		"experimentalSpecifierResolution" : "node"
+	} ,
+	"exclude" : [ "node_modules" , "dist" , ".git" , ".idea" , ".svn" ]
+}
