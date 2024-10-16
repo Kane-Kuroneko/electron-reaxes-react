@@ -21,6 +21,20 @@ const startRendererServer = async( conf: Configuration ) => {
 		return Promise.reject( e );
 	}
 };
+
+
+const buildPreload = async (conf: Configuration) => {
+	return webpack_promise( conf ).
+	then( ( { stats } ) => {
+		console.log( chalk.green( `Electron-Preload打包成功` ) );
+	} ).
+	catch( ( reason ) => {
+		console.log( reason );
+		console.log( chalk.red( `electron-preload打包失败,请在inspect模式下查看详情` ) );
+		throw reason;
+	} );
+}
+
 /**
  * build main
  */
@@ -39,6 +53,7 @@ const buildMain = async( conf: Configuration ) => {
 
 
 startRendererServer( webpack_conf_for_electron_renderer ).
+then( () => buildPreload( webpack_conf_for_electron_preload ) ).
 then( () => buildMain( webpack_conf_for_electron_main ) ).
 then( () => {
 	console.log(chalk.green('启动成功!'));
@@ -47,7 +62,7 @@ then( () => {
 	console.log('打包失败!',purdy(e));
 });
 import purdy from 'purdy';
-import { webpack_conf_for_electron_main , webpack_conf_for_electron_renderer } from "./mixedRepoWebpackConf";
+import { webpack_conf_for_electron_main , webpack_conf_for_electron_renderer ,webpack_conf_for_electron_preload } from "./mixedRepoWebpackConf";
 
 import { port , project , mock , env , node_env , method , analyze , experimental } from "../engine/toolkit";
 import { getPort , getIPV4address , webpack_promise } from "../engine/utils";

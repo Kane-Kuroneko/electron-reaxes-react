@@ -5,7 +5,7 @@ export const electronMainConf: WebpackConfiguration = {
 	mode : 'production',
 	externalsPresets : {
 		// electron : true ,
-		electronMain : true ,
+		// electronMain : true ,
 		// electronPreload : true,
 	} ,
 	output : {

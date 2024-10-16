@@ -27,13 +27,18 @@
 		"checkJs" : true ,
 		"target" : "ESNext" ,
 		"allowSyntheticDefaultImports" : true ,
-		"paths" : {			
+		"paths" : {
+			"#root/*" : ["./*"],
+			"#root-projects/*" : ["./projects/*"],
+			"#generic/*" : ["./generic-services/*"],
+			"" : ["./*"],
+			"" : ["./*"],
+			"" : ["./*"],
+			"" : ["./*"],
+			"" : ["./*"],
 		}
 		
 	} ,
-	"ts-node" : {
-		"esm" : true,
-		"experimentalSpecifierResolution" : "node"
-	} ,
+	
 	"exclude" : [ "node_modules" , "dist" , ".git" , ".idea" , ".svn" ]
 }

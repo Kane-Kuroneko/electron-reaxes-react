@@ -24,6 +24,7 @@ export const webpackBaseConf:WebpackConfiguration = {
 			'#root': absolutelyPath_RepositoryRoot,
 			'#root-projects': absolutelyPath_Projects,
 			'#project': absolutelyPath_subproject,
+			'#generic' : path.join( absolutelyPath_RepositoryRoot , 'generic-services' ),
 			
 		},
 		extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
@@ -179,8 +180,23 @@ export const webpackBaseConf:WebpackConfiguration = {
 			__EXPERIMENTAL__ : JSON.stringify(experimental === 'experimental'),
 			__DEV_PORT__ : JSON.stringify(port),
 			__Absolutely_Repository_Path__ : `'${absolutelyPath_RepositoryRoot}'`,
+			__Absolutely_Project_Path__ : `'${absolutelyPath_subproject}'`,
+			__Absolutely_ProjectDist_Path__ : `'${absolutelyPath_subprojectDist}'`,
 		}),
 		new ProvidePlugin({
+			_: ['lodash'],
+			React: ['react'],
+			useState: ['react', 'useState'],
+			useEffect: ['react', 'useEffect'],
+			useRef: ['react', 'useRef'],
+			useLayoutEffect: ['react', 'useLayoutEffect'],
+			useMemo: ['react', 'useMemo'],
+			useCallback: ['react', 'useCallback'],
+			reaxper: ['reaxes', 'Reaxper'],
+			Reaxlass: ['reaxes', 'Reaxlass'],
+			Reaxes: ['reaxes', 'Reaxes'],
+			orzMobx: ['reaxes', 'orzMobx'],
+			
 			orzPromise: ['@@utils', 'orzPromise'],
 			utils: ['@@utils'],
 			antd: ['antd'],
@@ -193,6 +209,7 @@ export const webpackBaseConf:WebpackConfiguration = {
 			request: ['@@requester', 'request'],
 			I18n: ['@@reaxels/i18n', 'I18n'],
 			i18n: ['@@reaxels/i18n', 'i18n'],
+			
 		}),
 	],
 };

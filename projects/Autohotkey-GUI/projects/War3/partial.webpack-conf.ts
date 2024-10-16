@@ -6,14 +6,9 @@ export const main = (
 ): WebpackConfiguration => {
 	
 	return {
-		entry: {
-			main: path.join(subProjectRootPath, "src/main.ts"),
-			preload: path.join(subProjectRootPath, "src/preload.ts"),
-		},
+		entry: path.join(subProjectRootPath, "src/main.ts"),
 		output: {
 			path: path.join(subProjectRootPath, "dist"),
-			// iife : false,
-			
 		},
 		plugins : [
 			new CopyPlugin({
@@ -46,6 +41,11 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Webp
 	};
 };
 
+export const preload = ( repoRootPath: string , subProjectRootPath: string ): WebpackConfiguration => {
+	return {
+		entry: path.resolve(subProjectRootPath, "src/preload.ts"),
+	};
+};
 
 
 import path,{} from 'path';

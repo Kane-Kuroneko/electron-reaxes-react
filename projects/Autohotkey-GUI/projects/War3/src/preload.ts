@@ -42,5 +42,3 @@ contextBridge.exposeInMainWorld( 'ipcAPI' , {
 	ipcRenderer : () => ipcRenderer.send( 'test' , { a : 'aaaaa' } ),
 	
 } );
-
-import purdy from 'purdy';

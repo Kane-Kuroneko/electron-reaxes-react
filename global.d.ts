@@ -1,4 +1,3 @@
-
 declare global {
 	// export const requester : typeof import('#src/requester').requester;
 	
@@ -9,7 +8,16 @@ declare global {
 	export const obsReaction : typeof import('reaxes')['Reaxes']['obsReaction'];
 	export const collectDeps : typeof import('reaxes')['Reaxes']['collectDeps'];
 	export const reaxper : typeof import('reaxes-react')['reaxper'];
-	export const crayon : typeof import('reaxes-utils')['crayon'];
+	
+	export const utils : typeof import('#generic/utils')['crayon'];
+	export const orzPromise : typeof import('#generic/utils').orzPromise;
+	export const crayon : typeof import('#generic/utils').crayon;
+	export const logProxy : typeof import('#generic/utils').logProxy;
+	export const makePair : typeof import('#generic/utils').makePair;
+	export const assert : typeof import('#generic/utils').assert;
+	export const decodeQueryString : typeof import('#generic/utils').decodeQueryString;
+	export const encodeQueryString : typeof import('#generic/utils').encodeQueryString;
+	export const stringify : typeof import('#generic/utils').stringify;
 	
 	export const useEffect : typeof import('react').useEffect;
 	export const useRef : typeof import('react').useRef;

@@ -38,7 +38,7 @@ class App extends Reaxlass {
 			<div>
 				<button onClick = { () => add() }>add</button>
 				<span onClick={() => {
-					ipcAPI.ipcRenderer();
+					// ipcAPI.ipcRenderer();
 				}}>current:{ count }</span>
 				<button onClick = { () => minus() }>minus</button>
 			</div>

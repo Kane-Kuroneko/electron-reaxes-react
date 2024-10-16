@@ -34,6 +34,9 @@ declare const __EXPERIMENTAL__: boolean;
 declare const __METHOD__: "server"|"build";
 declare const __NODE_ENV__ : "development"|"production";
 declare const __ENV__ : ORZ.env;
+declare const __Absolutely_Repository_Path__ : string;
+
+
 /*DOM*/
 declare interface EventTarget {
 	value?: string;
@@ -65,12 +68,18 @@ declare const RepoRoot: string;
 
 declare type WebpackConfiguration = import("webpack").Configuration;
 
+declare module "child_process" {
+	
+	export const platform : "win32"|"linux"|"darwin";
 
-
-declare module '*.less' {
-	const resource: {[key: string]: string};
-	export = resource;
 }
+
+
+declare module "*.less" {
+	const content: { [className: string]: string };
+	export default content;
+}
+
 declare module '*.css' {
 	const resource: {[key: string]: string};
 	export = resource;
@@ -85,3 +94,20 @@ declare module '*.atlas'{
 	const str:string;
 	export = str
 }
+
+
+
+declare module '*.png';
+declare module '*.jpg';
+declare module '*.jpeg';
+declare module '*.svg';
+declare module '*.bmp';
+// declare const orzPromise : typeof import('#utils').orzPromise;
+// declare const crayon : typeof import('#generic/utils').crayon;
+// declare const logProxy : typeof import('#utils').logProxy;
+// declare const makePair : typeof import('#utils').makePair;
+// declare const assert : typeof import('#utils').assert;
+// declare const decodeQueryString : typeof import('#utils').decodeQueryString;
+// declare const encodeQueryString : typeof import('#utils').encodeQueryString;
+// declare const stringify : typeof import('#utils').stringify;
+// declare const utils : typeof import('#utils');
