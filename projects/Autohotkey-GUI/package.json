@@ -1,0 +1,10 @@
+{
+	"name" : "autohotkey-gui" ,
+	"version" : "1.0.0" ,
+	"main" : "index.js" ,
+	"projects" : [ "war3" ] ,
+	"keywords" : [ ] ,
+	"author" : "" ,
+	"license" : "ISC" ,
+	"description" : ""
+}

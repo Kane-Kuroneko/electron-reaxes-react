@@ -1,0 +1,9 @@
+{
+	"name" : "war3-ahk-gui" ,
+	"version" : "1.0.0" ,
+	"main" : "main.js" ,
+	"keywords" : [ ] ,
+	"author" : "" ,
+	"license" : "ISC" ,
+	"description" : ""
+}

@@ -1,9 +1,8 @@
-export * from "./repo-root-path";
 export * from "./js-test-module-exts";
 export * from "./webpack-plugins";
 
 /*封装webpack回调为promise*/
-export const webpack_promise = (config) => {
+export const webpack_promise = (config:WebpackConfiguration) : Promise<{compiler:Compiler,error:Error,stats:Stats}> => {
 	return new Promise((resolve, reject) => {
 		const compiler = webpack(config, (error, stats) => {
 			if (error == null) {
@@ -64,5 +63,5 @@ export const reflect = <M extends Array<{
 import { fileURLToPath, pathToFileURL } from "url";
 import path from "path";
 import os from "os";
-import webpack from "webpack";
+import webpack , {Compiler,Stats} from "webpack";
 import portfinder from "portfinder";

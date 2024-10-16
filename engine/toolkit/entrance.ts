@@ -1,24 +1,16 @@
 /**
  * 此文件是所有打包行为的入口,为后续流程提供依赖
  */
-import { getPort, reflect } from "../utils";
-import { fileURLToPath } from "url";
-import path from "path";
-import { merge } from "webpack-merge";
-import {readdirSync} from 'fs';
-export const args = process.argv.slice(2);
-
-/*排除构建的包,不作为独立的package*/
-export const excludedPackages = [];
+const args = process.argv.slice(2);
 
 export let {
 	inputPort = 3333,
-	repo = null,
+	project = null as string,
 	mock = null,
 	analyze = false,
 	method = "server",
 	env = "unset",
-	node_env = "development",
+	node_env = "development" as "development"|"production",
 	experimental = "non-exp",
 } = reflect(args, [
 	{
@@ -32,8 +24,8 @@ export let {
 		key: "inputPort" as const,
 	},
 	{
-		regExp: /\bGamepad-Task-Manager|Linker|Proxy-Rules-Modifier\b/,
-		key: "repo" as const,
+		regExp: /\bGamepad-Task-Manager|Linker|Proxy-Rules-Modifier|Autohotkey-GUI\b/,
+		key: "project" as const,
 	},
 	{
 		regExp: /\bmock\b/,
@@ -77,21 +69,26 @@ if ( !node_env ) {
 	
 }
 
-console.log(inputPort,222222);
+console.log('entreance: ');
+purdy({
+	inputPort,
+	project,
+	mock,
+	analyze,
+	method,
+	env,
+	node_env,
+	experimental,
+},{indent:2})
+
+
 export const port = await getPort(inputPort);
-import {absProjectRootDir,absProjectRootFileURL} from './path';
-/*只有在列表中声明的包才可以被运行*/
-export const packageList = readdirSync(path.join(absProjectRootDir,"projects")).filter((_package) => {
-	return !excludedPackages.includes(_package);
-});
-/*子repo的绝对路径,返回如:F:/electron-reaxes-react/projects/Linker/ */
-export const absRepoRoot = path.join(absProjectRootDir, `projects/${repo}`);
-if(!repo){
-	throw "npm run build <<repo>> is nessessary";
-}
-/*非业务模块不可被打包,因为webpack.base.config.mjs里配置了对通用模块的alias,*/
-if (packageList.every((repoName) => repoName !== repo)) {
-  throw new Error(`this repo "${repo}" is not a valid business package`);
-}
 
 
+
+
+import { getPort , reflect } from "../utils";
+import { absolutelyFileProtocolPath_RepositoryRoot , absolutelyPath_RepositoryRoot } from './paths';
+import { readdirSync } from 'fs';
+import path from "path";
+import purdy from 'purdy';

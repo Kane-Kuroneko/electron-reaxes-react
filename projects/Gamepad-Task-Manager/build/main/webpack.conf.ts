@@ -1,11 +1,18 @@
+const {
+	absolutelyPath_subprojectDist , 
+	name_subproject ,
+	absolutelyPath_subproject  
+} = getProjectPaths.default;
+
 const MainWebpackConf: WebpackConf = {
-	entry: path.join(absRepoRoot, "src/main.ts"),
-	chunkFilename : (pathData,assetInfo) => {
-		
+	entry: {
+		main : path.join(absolutelyPath_subproject, "src/main.ts"),
+		preload : path.join( absolutelyPath_subproject , 'src/preload.ts' ),
 	},
 };
 
 import path from 'path';
-import { absRepoRoot } from "../../../../engine/toolkit";
+import {project, absolutelyPath_RepositoryRoot , getProjectPaths } from "../../../../engine/toolkit";
+
 
 type WebpackConf = import("webpack").Configuration;

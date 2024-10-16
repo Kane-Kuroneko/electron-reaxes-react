@@ -15,6 +15,11 @@ declare global {
 	export const useRef : typeof import('react').useRef;
 	export const useMemo : typeof import('react').useMemo;
 	export const useState : typeof import('react').useState;
+	
+	
+	export const electron : {
+		ipcRenderer : typeof import('electron').ipcRenderer
+	}
 }
 
 export {}

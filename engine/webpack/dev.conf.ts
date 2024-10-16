@@ -1,51 +1,49 @@
-const proxy_configuration = async () => {
-	try {
-		return (await import(path.join(absProjectRootDir, `packages/${repo}//proxy.configuration.json`), { assert: { type: "json" } })).default;
-	} catch (e) {
-		return [];
-	}
-};
-
-export const webpackServerConfig = {
+const {
+	ProvidePlugin ,
+	DefinePlugin,
+} = webpack;
+let first_main = true;
+let first_renderer = true;
+export const electronDevConf_Main:WebpackConfiguration = {
 	stats: "errors-only",
-	devServer: {
-		static: {
-			// directory : path.resolve(rootPath , 'dist')
-		},
-		compress: false,
-		port,
-		server: {
-			type: "https",
-			options: {
-				cert: path.join(absEngineRootDir, "cert/127.0.0.1+5.pem"),
-				key: path.join(absEngineRootDir, "cert/127.0.0.1+5-key.pem"),
-			},
-		},
-		host: "0.0.0.0",
-		hot: true,
-		open: false,
-		allowedHosts: "all",
-		bonjour: true,
-		historyApiFallback: true,
-	},
 	devtool: "source-map",
 	optimization: {
 		minimize: false,
 	},
+	watch : true,
 	plugins: [
 		// new LogWhenSucceed('development'),
 		new LoggerWebpackPlugn({
 			initialize() {
-				console.log(`webpack is starting...\n`);
+				// console.log(`webpack is starting...\n`);
 			},
 			done() {
-				console.log(`compiled successfully\n`);
+				if(!first_main){
+					console.log(`electron-main重新打包完成,${dayjs().format('HH:mm:ss')}\n`);
+				}
+				first_main = false;
 			},
 		}),
 	],
 };
 
-import { port, repo, absProjectRootDir, absEngineRootDir } from "../toolkit";
-
+export const electronDevConf_Renderer:WebpackConfiguration = {
+	plugins : [
+		new LoggerWebpackPlugn({
+			initialize() {
+				// console.log(`webpack is starting...\n`);
+			},
+			done() {
+				if(!first_renderer){
+					console.log(`electron-renderer重新打包完成,${dayjs().format('HH:mm:ss')}\n`);
+				}
+				first_renderer = false;
+			},
+		}),
+	]
+}
+import dayjs from 'dayjs';
+import { port, project, absolutelyPath_RepositoryRoot, absolutelyPath_Engine,mock,env,node_env,method, experimental} from "../toolkit";
+import webpack from 'webpack';
 import path from "path";
 import { LoggerWebpackPlugn, LogWhenSucceed } from "../toolkit";

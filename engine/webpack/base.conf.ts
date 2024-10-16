@@ -6,31 +6,25 @@ const cssLoaderOptions = {
 	},
 };
 const { ProvidePlugin , DefinePlugin} = webpack;
-
+const { absolutelyPath_subproject , absolutelyPath_subprojectDist } = getProjectPaths.default;
 /**
  * suggest dev环境建议使用全量source-map , 否则可能会导致错误栈无法定位到正确的模块
  */
 /*webpack基础配置*/
-export const webpackBaseConfig:WebpackConf = {
+export const webpackBaseConf:WebpackConfiguration = {
 	mode: node_env as any,
 	output: {
-		filename: node_env === 'development' ? '[name].bundle.js' : '[name].bundle.[contenthash:6].js',
-		path : path.join(absProjectRootDir ,'packages' , repo , 'dist'),
+		filename: node_env === 'development' ? '[name].js' : '[name].bundle.[contenthash:6].js',
+		path : absolutelyPath_subprojectDist,
 		// publicPath : path.resolve(rootPath , 'dist') ,
 	},
 	resolve: {
-		aliasFields: ['browser'],
+		// aliasFields: ['browser'],
 		alias: {
-			'#root': absProjectRootDir,
-			'#packages': path.join(absProjectRootDir,'packages'),
-			'reaxes': path.join(absProjectRootDir, 'packages/reaxes'),
-			'reaxes-toolkit': path.join(absProjectRootDir, 'packages/reaxes-toolkit'),
-			'reaxes-utils': path.join(absProjectRootDir, 'packages/reaxes-utils'),
-			'reaxels': path.join(absProjectRootDir, 'packages/reaxels'),
-			'reaxes-react': path.join(absProjectRootDir, 'packages/reaxes-react'),
-			'reaxes-vue2': path.join(absProjectRootDir, 'packages/reaxes-vue2'),
-			'reaxes-vue3': path.join(absProjectRootDir, 'packages/reaxes-vue3'),
-			'reaxes-angular': path.join(absProjectRootDir, 'packages/reaxes-angular'),
+			'#root': absolutelyPath_RepositoryRoot,
+			'#root-projects': absolutelyPath_Projects,
+			'#project': absolutelyPath_subproject,
+			
 		},
 		extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
 	},
@@ -45,20 +39,12 @@ export const webpackBaseConfig:WebpackConf = {
 			},
 			/*for react/ts/tsx etc. generation js files */
 			{
-				test: (filename) => {
-					/*排除.vue文件和.vue.xx*/
-					if(/\.vue\b/i.test(filename)){
-						return;
-					}
-					return /\.(jsx?|tsx?)$/i.test(filename);
-				},
+				test: /\.(jsx?|tsx?)$/i,
 				use: {
 					loader: 'babel-loader',
 					options : babelConf,
 				},
-				exclude: [
-					/node_modules/,
-				],
+				exclude: /node_modules/,
 			},
 			{
 				test: /\.module\.less$/,
@@ -184,27 +170,45 @@ export const webpackBaseConfig:WebpackConf = {
 	},
 	stats: 'errors-only',
 	plugins: [
-		new ProvidePlugin({
-			_: ['lodash'],
-			React: ['react'],
-			useState: ['react', 'useState'],
-			useEffect: ['react', 'useEffect'],
-			useRef: ['react', 'useRef'],
-			useLayoutEffect: ['react', 'useLayoutEffect'],
-			useMemo: ['react', 'useMemo'],
-			useCallback: ['react', 'useCallback'],
-		}),
 		new DefinePlugin({
-			RepoRoot : `'${absProjectRootDir}'`,
+			__IS_MOCK__ : mock ? 'true' : 'false' ,
+			__ENV__ : JSON.stringify(env) ,
+			// __ENV_CONFIG__ : JSON.stringify(__ENV_CONFIG__) ,
+			__NODE_ENV__ : JSON.stringify(node_env),
+			__METHOD__ : JSON.stringify(method),
+			__EXPERIMENTAL__ : JSON.stringify(experimental === 'experimental'),
+			__DEV_PORT__ : JSON.stringify(port),
+			__Absolutely_Repository_Path__ : `'${absolutelyPath_RepositoryRoot}'`,
+		}),
+		new ProvidePlugin({
+			orzPromise: ['@@utils', 'orzPromise'],
+			utils: ['@@utils'],
+			antd: ['antd'],
+			toolkits: ['@@toolkits'],
+			crayon: ['@@utils', 'crayon'],
+			logProxy: ['@@utils', 'logProxy'],
+			decodeQueryString: ['@@utils', 'decodeQueryString'],
+			encodeQueryString: ['@@utils', 'encodeQueryString'],
+			stringify: ['@@utils', 'stringify'],
+			request: ['@@requester', 'request'],
+			I18n: ['@@reaxels/i18n', 'I18n'],
+			i18n: ['@@reaxels/i18n', 'i18n'],
 		}),
 	],
 };
-
-import { WebpackConf } from "./webpackConf";
+import {
+	absolutelyPath_RepositoryRoot ,
+	absolutelyPath_Projects,
+	getProjectPaths ,
+	env ,
+	experimental ,
+	method ,
+	mock ,
+	node_env ,
+	port ,
+} from '../toolkit';
 import babelConf from '../babel/conf';
 import _ from 'lodash';
 import path from 'path';
 import webpack from 'webpack';
 import TerserPlugin from 'terser-webpack-plugin';
-import './pre-exec.mjs';
-import {node_env , repo ,absRepoRoot , absProjectRootDir  } from '../toolkit';
