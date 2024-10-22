@@ -51,7 +51,6 @@ const buildMain = async( conf: Configuration ) => {
 };
 
 
-
 startRendererServer( webpack_conf_for_electron_renderer ).
 then( () => buildPreload( webpack_conf_for_electron_preload ) ).
 then( () => buildMain( webpack_conf_for_electron_main ) ).

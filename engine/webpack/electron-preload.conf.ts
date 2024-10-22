@@ -12,36 +12,10 @@ export const electronPreloadConf: WebpackConfiguration = {
 			type : 'umd' ,
 		} ,
 	},
-	resolve : {
-		fallback : {
-			fs: false,
-			tls: false,
-			net: false,
-			path: false,
-			zlib: false,
-			http: false,
-			https: false,
-			stream: false,
-			crypto: false,
-		}
-	},
-	// externals : {
-	// 	electron : 'require("electron")',
-	// 	fs : 'require("node:fs")'
-	// },
-	externals : {
-		// electron : 'require("electron")',
-		// fs : 'require("fs")',
-		// path : 'require("path")',
-		// child_process : 'require("child_process")',
-		
-	},
 	plugins : [
-		// new NodePolyfillPlugin() ,
-		// new IgnorePlugin( {
-		// 	resourceRegExp : /^electron$/ ,
-		// } ),
+		
 	],
+	externals : [],
 	watch : true,
 	
 	node : {

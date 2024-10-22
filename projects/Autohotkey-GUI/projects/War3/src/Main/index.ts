@@ -1,1 +1,1 @@
-export * from './create-window';
+export * from './initialize-main-window';

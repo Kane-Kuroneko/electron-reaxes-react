@@ -34,7 +34,6 @@ declare const __EXPERIMENTAL__: boolean;
 declare const __METHOD__: "server"|"build";
 declare const __NODE_ENV__ : "development"|"production";
 declare const __ENV__ : ORZ.env;
-declare const __Absolutely_Repository_Path__ : string;
 
 
 /*DOM*/
@@ -68,12 +67,6 @@ declare const RepoRoot: string;
 
 declare type WebpackConfiguration = import("webpack").Configuration;
 
-declare module "child_process" {
-	
-	export const platform : "win32"|"linux"|"darwin";
-
-}
-
 
 declare module "*.less" {
 	const content: { [className: string]: string };
@@ -94,7 +87,7 @@ declare module '*.atlas'{
 	const str:string;
 	export = str
 }
-
+declare module '*.gif';
 
 
 declare module '*.png';

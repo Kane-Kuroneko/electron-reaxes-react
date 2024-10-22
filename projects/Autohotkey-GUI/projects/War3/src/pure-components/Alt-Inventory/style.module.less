@@ -1,0 +1,49 @@
+.altkey-diagram {
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: center;
+	margin-top : 24px;
+	
+	:global {
+		.keys-area {
+			display: flex;
+			flex-flow: row nowrap;
+			box-sizing: border-box;
+			padding: 0 70px;
+			display: flex;
+			justify-content: space-evenly;
+			align-items: center;
+			width: 100%;
+			
+			.LAlt-key {
+				height: 35px;
+				margin: 0;
+			}
+			
+			.add-icon {
+				font-size: 40px;
+				color: #828282;
+			}
+			
+			table,td,th {
+				padding: 6px;
+				border: 1px solid #dcdcdc;
+				/* 设置边框 */
+				border-radius: 2px;
+			}
+			table {
+				border: 2px solid transparent;
+				margin-left: -8px;
+				
+			}
+			
+		}
+		
+		
+	}
+	
+	& > span {
+		font-size: 18px;
+		margin: 10px 0 0 0;
+	}
+}

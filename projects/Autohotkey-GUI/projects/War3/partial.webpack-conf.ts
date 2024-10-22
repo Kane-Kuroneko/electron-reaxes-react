@@ -29,7 +29,15 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Webp
 		output: {
 			path: path.join(subProjectRootPath, "dist/renderer"),
 		},
+		watchOptions : {
+			
+		},
 		plugins: [
+			new WatchFilePlugin({
+				files : [
+					path.join(subProjectRootPath,'src/ahk-scripts/**')
+				]
+			}),
 			new HtmlWebpackPlugin({
 				template: path.join(subProjectRootPath, "../../engine/index.template.html"),
 				filename: 'index.html',
@@ -37,18 +45,29 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Webp
 				hash: true,
 				// inject: false,
 			}),
+			new CopyPlugin({
+				
+				patterns : [
+					{
+						from : path.join( subProjectRootPath , 'src/ahk-scripts' ) ,
+						to : path.join( subProjectRootPath , 'dist/ahk-scripts' ) ,
+					} ,
+				],
+				
+			})
 		],
 	};
 };
 
 export const preload = ( repoRootPath: string , subProjectRootPath: string ): WebpackConfiguration => {
 	return {
-		entry: path.resolve(subProjectRootPath, "src/preload.ts"),
+		entry: path.join(subProjectRootPath, "src/preload.ts"),
 	};
 };
 
 
 import path,{} from 'path';
+import WatchFilePlugin from 'webpack-watch-files-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import webpack from 'webpack';
 import CopyPlugin from 'copy-webpack-plugin';

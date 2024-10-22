@@ -51,7 +51,9 @@ export const getProjectPaths = (subProject:string = project, defaultSubFolder = 
 		absolutelyPath_subprojectDist,
 	}
 }
+
 getProjectPaths.default = getProjectPaths();
+// console.log(111111111,getProjectPaths.default.absolutelyPath_subprojectDist);
 
 import { pathToFileURL } from "url";
 import { project } from '../toolkit/entrance';

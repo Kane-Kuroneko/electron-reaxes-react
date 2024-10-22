@@ -1,4 +1,4 @@
-import { contextBridge , ipcRenderer ,} from "electron";
+import { contextBridge , ipcRenderer ,IpcRenderer,} from "electron";
 
 contextBridge.exposeInMainWorld( 'versions' , {
 	get node() {
@@ -38,7 +38,11 @@ contextBridge.exposeInMainWorld( '_Danger_Native_IpcRenderer_' , function (){
 	return json;
 }() );
 
-contextBridge.exposeInMainWorld( 'ipcAPI' , {
-	ipcRenderer : () => ipcRenderer.send( 'test' , { a : 'aaaaa' } ),
-	
+contextBridge.exposeInMainWorld( 'IPC' , {
+	send(...args:Parameters<IpcRenderer['send']>){
+		return ipcRenderer.send(...args);
+	},
+	on( ...args: Parameters<IpcRenderer['on']> ) {
+		return ipcRenderer.on( ...args );
+	},
 } );

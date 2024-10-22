@@ -5,9 +5,17 @@
 		"start": "tsx scripts/start.ts Autohotkey-GUI/War3 4444 ",
 		"electron": "concurrently \"cd projects/Autohotkey-GUI/projects/War3/dist\" \"electron .\""
 	},
+	"electronmon": {
+		"patterns": [
+			"!**/**",
+			"src/main/**",
+			".erb/dll/**"
+		],
+		"logLevel": "quiet"
+	},
 	"type": "module",
 	"license": "MIT",
-	"main" : "projects/Autohotkey-GUI/projects/War3/dist/main.js" ,
+	"main": "projects/Autohotkey-GUI/projects/War3/dist/main.js",
 	"dependencies": {
 		"antd": "^5.21.3",
 		"electron-is": "^3.0.0",
@@ -19,7 +27,8 @@
 		"react-router-dom": "^6.23.1",
 		"reaxes": "^0.0.11",
 		"reaxes-react": "^0.0.7",
-		"reaxes-toolkit": "^0.0.12"
+		"reaxes-toolkit": "^0.0.12",
+		"reaxes-utils": "^1.0.10"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.24.6",
@@ -57,6 +66,7 @@
 		"tsx": "^4.19.1",
 		"typescript": "^5.4.5",
 		"webpack": "^5.95.0",
-		"webpack-cli": "^5.1.4"
+		"webpack-cli": "^5.1.4",
+		"webpack-watch-files-plugin": "^1.2.1"
 	}
 }
