@@ -1,4 +1,11 @@
 /**
+ * 1.混合配置
+ * 2.打包renderer , preload , main 
+ * 3.启动devserver
+ * 4.此时可以从工程目录下启动electron .
+ */
+
+/**
  * build-renderer
  */
 const startRendererServer = async( conf: Configuration ) => {
@@ -61,7 +68,7 @@ then( () => {
 	console.log('打包失败!',purdy(e));
 });
 import purdy from 'purdy';
-import { webpack_conf_for_electron_main , webpack_conf_for_electron_renderer ,webpack_conf_for_electron_preload } from "./mixedRepoWebpackConf";
+import { webpack_conf_for_electron_main , webpack_conf_for_electron_renderer ,webpack_conf_for_electron_preload } from "./utils/mixedRepoWebpackConf";
 
 import { port , project , mock , env , node_env , method , analyze , experimental } from "../engine/toolkit";
 import { getPort , getIPV4address , webpack_promise } from "../engine/utils";

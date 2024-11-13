@@ -9,17 +9,18 @@ const root = createRoot( document.getElementById( "react-app-root" ) );
 @reaxper
 class App extends Reaxlass {
 	render() {
+		
 		return <div className = "war3-ahk-reaxes">
 			<I18NDropdown></I18NDropdown>
 			<AltInventory></AltInventory>
-			<Divider />
+			<Divider style = { { borderColor : '#dcdcdc' } } />
 			<ForbidMouseWheels />
-			<Divider />
+			<Divider style = { { borderColor : '#dcdcdc' } } />
 			<ReplaceF6 />
 			<Divider />
 			<RbuttonDragging></RbuttonDragging>
-			<Divider />
-			<MainSwitch/>
+			<Divider style = { { borderColor : '#dcdcdc' } } />
+			<MainSwitch />
 		</div>;
 	}
 }
@@ -28,9 +29,9 @@ root.render( <App /> );
 
 
 // 在渲染进程的JavaScript代码中
-window.addEventListener('keydown', (event) => {
+window.addEventListener( 'keydown' , ( event ) => {
 	// 这里你可以添加你的逻辑，例如触发某个功能
-	if (event.key === 'F12') {
+	if( event.key === 'F12' ) {
 		IPC.send( 'json' , {
 			type : 'shortcut' ,
 			data : {
@@ -39,16 +40,21 @@ window.addEventListener('keydown', (event) => {
 			} ,
 		} );
 	}
-});
+} );
 
+IPC.on( 'console' , ( e , data ) => {
+	console.log( data );
+} );
 
+import { I18NDropdown } from './I18N-Dropdown';
 import { ForbidMouseWheels } from './Forbid-MouseWheels';
 import { ReplaceF6 } from './Replace-F6';
 import { RbuttonDragging } from './Rbutton-Dragging';
 import { MainSwitch } from './Main-Switch';
-import { AltInventory , HotKey , FunctionSwitcher , I18NDropdown , IconPopoverDesc } from '../pure-components';
+import { AltInventory , HotKey , FunctionSwitcher , IconPopoverDesc } from '../pure-components';
 import { Divider } from 'antd';
 import './styles/global.module.less';
+import './styles/index.less';
 import { createRoot } from "react-dom/client";
 import { Reaxlass , reaxper } from 'reaxes-react';
-import { reaxel , Reaxes , orzMobx  } from 'reaxes';
+import { reaxel , Reaxes , orzMobx } from 'reaxes';

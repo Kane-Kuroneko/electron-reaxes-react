@@ -16,7 +16,7 @@
 		"strictNullChecks" : false ,
 		"allowUnreachableCode" : true ,
 		"module" : "ESNext" ,
-		"moduleResolution" : "node" ,
+		"moduleResolution" : "Bundler" ,
 		"noEmit" : true ,
 		"noImplicitAny" : false ,
 		"noImplicitReturns" : false ,
@@ -27,6 +27,8 @@
 		"checkJs" : true ,
 		"target" : "ESNext" ,
 		"allowSyntheticDefaultImports" : true ,
+		"allowImportingTsExtensions" : true ,
+		"allowArbitraryExtensions" : true,
 		"paths" : {
 			"#root/*" : ["./*"],
 			"#root-projects/*" : ["./projects/*"],
@@ -35,10 +37,8 @@
 			"" : ["./*"],
 			"" : ["./*"],
 			"" : ["./*"],
-			"" : ["./*"],
+			"" : ["./*"]
 		}
-		
 	} ,
-	
-	"exclude" : [ "node_modules" , "dist" , ".git" , ".idea" , ".svn" ]
+	"exclude" : ["node_modules/**","node_modules/@types/node","dist" , ".git" , ".idea" , ".svn" ]
 }

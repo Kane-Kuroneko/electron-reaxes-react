@@ -1,3 +1,5 @@
+const { ProvidePlugin } = webpack;
+
 export const main = (
 	//项目根目录,即`electron-reaxes-react`
 	repoRootPath:string,
@@ -10,13 +12,25 @@ export const main = (
 		output: {
 			path: path.join(subProjectRootPath, "dist"),
 		},
+		resolve :{
+			alias : {
+				'#reaxels' : path.join(subProjectRootPath,'src/reaxels'),
+			}
+		},
 		plugins : [
-			new CopyPlugin({
-				patterns: [
-					{ from: path.join(subProjectRootPath,'package.json'), to: path.join(subProjectRootPath,'dist/') },
-				],
-			})
-		]
+			new CopyPlugin( {
+				patterns : [
+					{ 
+						from : path.join( subProjectRootPath , 'package.json' ) , 
+						to : path.join( subProjectRootPath , 'dist/statics' ) 
+					} ,
+					{
+						from : path.join( subProjectRootPath , 'src/ahk-scripts' ) ,
+						to : path.join( subProjectRootPath , 'dist/statics/ahk-scripts' ) ,
+					} ,
+				] ,
+			} ),
+		],
 	};
 	
 };
@@ -32,6 +46,11 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Webp
 		watchOptions : {
 			
 		},
+		resolve :{
+			alias : {
+				'#reaxels' : path.join(subProjectRootPath,'src/reaxels'),
+			}
+		},
 		plugins: [
 			new WatchFilePlugin({
 				files : [
@@ -45,15 +64,10 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Webp
 				hash: true,
 				// inject: false,
 			}),
-			new CopyPlugin({
+			new ProvidePlugin({
 				
-				patterns : [
-					{
-						from : path.join( subProjectRootPath , 'src/ahk-scripts' ) ,
-						to : path.join( subProjectRootPath , 'dist/ahk-scripts' ) ,
-					} ,
-				],
-				
+				'I18n': ['#reaxels/exports','I18n'],
+				'i18n': ['#reaxels/exports','i18n'],
 			})
 		],
 	};

@@ -2,7 +2,7 @@ type css = {
 	[key in keyof CSSStyleDeclaration] : CSSStyleDeclaration[key] ;
 	
 };
-type crayon = ( ( css: Partial<CSSStyleDeclaration> ) => ( ...logs:any[] ) => void ) & {
+type Crayon = ( ( css: Partial<CSSStyleDeclaration> ) => ( ...logs:any[] ) => void ) & {
 	[key in "warn" | "info" | "log" | "error"| "debug"| "trace"]: (( ...any ) => any) & {
 	[key in string]: (...any) => any ;
 } } & {
@@ -45,7 +45,7 @@ const batchTransformCSSHumpToLowercase = (object:{[key in keyof CSSStyleDeclarat
 const argumentsAgent = (secondary , ...args) => args.reduce((accu, arg , index ) => (accu[0] += typeof arg === "string" ? arg : (accu.push(arg),"%o"),accu) ,['%c',secondary]);
 
 
-export const crayon : crayon = new Proxy((cssProperties:Partial<CSSStyleDeclaration> = {}) => {
+export const crayon : Crayon = new Proxy((cssProperties:Partial<CSSStyleDeclaration> = {}) => {
 	/*using as crayon({CSSProperties})('wanna log msg')*/
 	return (...logs) => {
 		let cssString = Object.keys(cssProperties).reduce((accumulator,key:string) => {
@@ -125,7 +125,7 @@ export const crayon : crayon = new Proxy((cssProperties:Partial<CSSStyleDeclarat
 		}
 		return createColorProxy("trace");
 	},
-}) as crayon;
+}) as Crayon;
 
 /*示例 & 测试*/
 if(0){

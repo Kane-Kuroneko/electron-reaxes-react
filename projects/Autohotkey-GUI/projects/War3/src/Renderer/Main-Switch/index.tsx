@@ -6,8 +6,12 @@ export const MainSwitch = reaxper( () => {
 			value = { GUI_Store.switch_main }
 			className = "main-switch"
 			// className = "stop-change"
-			checkedChildren = { <span style = { { marginLeft : '6px' } }>改键生效中 <LoadingOutlined /></span> }
-			unCheckedChildren = "开启改键"
+			checkedChildren = { <span style = { { marginLeft : '6px' } }>
+				<I18n>Activing</I18n>   
+				&nbsp;
+				<LoadingOutlined />
+			</span> }
+			unCheckedChildren = {i18n("Enable")}
 			onChange = { toggleMainSwitch }
 		/>
 	</div>;

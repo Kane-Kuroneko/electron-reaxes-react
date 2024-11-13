@@ -1,3 +1,6 @@
+const { runInExcutable,absAppRunningPath,absAppStaticsPath } = reaxel_ENV();
+const { logger } = reaxel_Logger();
+
 export const reaxel_AhkSpawner = reaxel( () => {
 	
 	const {
@@ -9,7 +12,7 @@ export const reaxel_AhkSpawner = reaxel( () => {
 	} );
 	
 	ipcMain.on( 'json' , ( event , data ) => {
-		purdy( data );
+		purdy( data,null );
 		if(data.type === 'ahk'){
 			sendMessageToAhk(JSON.stringify(data.data))
 		}
@@ -45,10 +48,14 @@ export const reaxel_AhkSpawner = reaxel( () => {
 	const killAhk = () => {
 		const {ahk} = ahkSpawner_Store
 		if(ahk){
-			ahkSpawner_Store.ahk.stdin.end(() => {
+			mainWindowLoaded.then( win => {
+				win.webContents.send( 'console' , ahk.pid );
+			} );
+			ahk.stdin.end(() => {
 				ahk.kill();
 			});
-			
+			process.kill( ahk.pid );
+			ahk.kill();
 		}
 	}
 	
@@ -82,13 +89,34 @@ export const reaxel_AhkSpawner = reaxel( () => {
 	};
 } );
 
+setTimeout( () => {
+	mainWindowLoaded.then( win => {
+		win.webContents.send( 'console' , path.join(absAppStaticsPath,'ahk-scripts/war3.ahk'));
+		
+		
+		
+		const isDev = process.defaultApp || /node_modules[\\/]electron[\\/]/.test(process.execPath);
+		if (isDev) {
+			console.log("Running in development");
+		} else {
+			console.log("Running in production");
+		}
+		
+		
+		win.webContents.send( 'console' , isDev ? 'development' : 'production');
+	} );
+	
+} );
 
-
+const staticsPath = path.join(app.getAppPath(),'../statics')
 
 function spawnWar3AHK( { ahkSpawner_SetState , ahkSpawner_Store }){
-	const ahkexe = `AutoHotkey64.exe`;
-	const absoluteScriptPath = path.join( __dirname , './ahk-scripts/war3.ahk' );
-	const ahk = cp.spawn( ahkexe , [absoluteScriptPath] );
+	
+	logger.log('ahk-path:',path.join(absAppStaticsPath, runInExcutable ? `ahk-scripts/AutoHotkey64.exe` : `statics/ahk-scripts/AutoHotkey64.exe`));
+	
+	const ahkexe = path.join(absAppStaticsPath ,`ahk-scripts/AutoHotkey64.exe`);
+	const ahkScriptPath = path.join(absAppStaticsPath ,"ahk-scripts/war3.ahk");
+	const ahk = cp.spawn( ahkexe , [ahkScriptPath] );
 	
 	ahkSpawner_SetState( {ahk} );
 	
@@ -105,12 +133,16 @@ function spawnWar3AHK( { ahkSpawner_SetState , ahkSpawner_Store }){
 	} );
 	ahk.on('error', (err) => {
 		console.error('Failed to start subprocess.', err);
+		mainWindowLoaded.then( win => {
+			win.webContents.send( 'console' , `'Failed to start subprocess.', ${err}`);
+		} );
 	});
 	ahk.on( 'close' , ( e ) => {
-		mainWindowLoaded.then( ( mainWindow ) => {
-			mainWindow.webContents.send( 'json' , {
+		mainWindowLoaded.then( win => {
+			win.webContents.send( 'json' , {
 				type : "child_process-closed" ,
 			} );
+			win.webContents.send( 'console' , `'child_process-closed.', ${e}`);
 		} );
 		ahkSpawner_SetState( { ahk : null } );
 		console.log( 'closed......................' );
@@ -124,8 +156,12 @@ type MessageTypes =
 	
 	"stop";
 
+
+
+import { reaxel_ENV } from '#reaxels/env';
+import { reaxel_Logger } from '#reaxels/debuggers';
 import { mainWindowLoaded } from '../../Main/initialize-main-window';
-import { ipcRenderer , ipcMain } from 'electron';
+import { ipcRenderer , ipcMain ,app} from 'electron';
 import path,{} from 'path';
 import process from 'node:process';
 import cp,{} from 'node:child_process';

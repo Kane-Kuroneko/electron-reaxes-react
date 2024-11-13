@@ -11,6 +11,9 @@ export const devServerConf: Configuration = {
 			// key: "./public/127.0.0.1+5-key.pem",
 		},
 	},
+	devMiddleware : {
+		writeToDisk : true,
+	},
 	liveReload:true,
 	host: "0.0.0.0",
 	allowedHosts: "all",

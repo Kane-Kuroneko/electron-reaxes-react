@@ -1,6 +1,6 @@
 // Modules to control application life and create native browser window
 
-
+logger.initialize();
 
 console.log(__NODE_ENV__);
 
@@ -10,7 +10,9 @@ app.whenReady().then(() => {
 	
 	useBeautifulDevtool(mainWindow);
 	
-	const {} = reaxel_AhkSpawner()
+	const {} = reaxel_AhkSpawner();
+	
+	// mainWindow.setIcon('https://img.piclabo.xyz/2023/10/25/d67adcffb89dd.jpg')
 	
 	ipcMain.on( 'json' , ( e , data ) => {
 		if(data.type === 'shortcut'){
@@ -18,9 +20,7 @@ app.whenReady().then(() => {
 			if( data.data.type === 'keydown' && data.data.key === 'F12' ) {
 				mainWindow.webContents.toggleDevTools();
 			}
-			
 		}
-		
 	} );
 })
 
@@ -47,6 +47,7 @@ app.whenReady().then( () => {
 // 在当前文件中你可以引入所有的主进程代码
 // 也可以拆分成几个文件，然后用 require 导入。
 
+import logger from 'electron-log/main';
 import { app , BrowserWindow , globalShortcut , ipcMain , ipcRenderer , screen } from 'electron';
 import path from 'path';
 import Config from '../config';

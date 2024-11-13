@@ -1,9 +1,10 @@
 export const AltInventory = reaxper(() => {
 	
-	
 	return <div className={less['altkeyDiagram']}>
 		<div className = "keys-area">
-			<HotKey className = "LAlt-key">左Alt</HotKey>
+			<HotKey className = "LAlt-key">
+				<I18n>Left Alt</I18n>
+			</HotKey>
 			<div className = "add-icon">+</div>
 			<table>
 				<tbody>
@@ -26,10 +27,12 @@ export const AltInventory = reaxper(() => {
 			
 			</table>
 		</div>
-		<span>对应物品栏，右Alt未改动</span>
+		<span>
+			<I18n>Mapping to inventory , Right Alt not modified</I18n>
+		</span>
 	</div>
 } )
 
-console.log(less);
+import { reaxel_I18n } from '../../reaxels/i18n';
 import { HotKey } from '../HotKey';
 import * as less from './style.module.less';

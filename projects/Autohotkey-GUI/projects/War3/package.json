@@ -1,12 +1,14 @@
 {
-	"name" : "war3-ahk-gui" ,
-	"version" : "1.0.0" ,
-	"main" : "./main.js" ,
-	"scripts" : {
-		"start" : "electron ."
-	} ,
-	"keywords" : [ ] ,
-	"author" : "" ,
-	"license" : "ISC" ,
-	"description" : ""
+	"name": "war3-ahk-gui",
+	"version": "1.0.0",
+	"main": "dist/main.js",
+	"scripts": {},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {},
+	"dependencies": {
+		
+	},
+	"description": ""
 }

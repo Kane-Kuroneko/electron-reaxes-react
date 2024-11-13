@@ -40,7 +40,7 @@ export const webpackBaseConf:WebpackConfiguration = {
 			},
 			/*for react/ts/tsx etc. generation js files */
 			{
-				test: /\.(jsx?|tsx?)$/i,
+				test: /\.(t|j)sx?$/i,
 				use: {
 					loader: 'babel-loader',
 					options : babelConf,

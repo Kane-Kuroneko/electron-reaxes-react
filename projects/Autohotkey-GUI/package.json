@@ -5,6 +5,7 @@
 	"projects" : [ "war3" ] ,
 	"keywords" : [ ] ,
 	"author" : "" ,
+	"packages" : ["projects/*"],
 	"license" : "ISC" ,
 	"description" : ""
 }

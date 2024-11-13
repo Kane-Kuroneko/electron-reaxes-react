@@ -3,7 +3,6 @@ const { ExternalsPlugin } = webpack;
 export const electronRendererConf : WebpackConfiguration = {
 	
 	// target : "electron-renderer",
-	
 	externalsPresets : {
 		// electron : true ,
 	} ,

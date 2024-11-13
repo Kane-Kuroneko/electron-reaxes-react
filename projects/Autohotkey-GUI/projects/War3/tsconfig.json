@@ -27,12 +27,15 @@
 		"checkJs" : true ,
 		"target" : "ESNext" ,
 		"allowSyntheticDefaultImports" : true ,
+		"typeRoots" : [ "node_modules/@types" , "./types" ] ,
 		"paths" : {
 			"#root/*" : ["../../../../*"],
 			"#root-projects/*" : ["../../../../projects/*"],
 			"#generic/*" : ["../../../../generic-services/*"],
-			"#project/*" : ["./*"]
+			"#project/*" : ["./*"],
+			"#reaxels/*" : ["./src/reaxels/*"]
 		}
 	},
-	"include" : [ "../../../../*", "**/*.ts" , "**/*.tsx" ]
+	"include" : [ "../../../../*" , "**/*.ts" , "**/*.tsx" , "../../../../node_modules/@types/node/buffer.d.ts" ] ,
+	"exclude" : [ "node_modules/@types/node" ]
 }

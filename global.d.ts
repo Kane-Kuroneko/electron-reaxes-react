@@ -8,25 +8,28 @@ declare global {
 	export const obsReaction : typeof import('reaxes')['Reaxes']['obsReaction'];
 	export const collectDeps : typeof import('reaxes')['Reaxes']['collectDeps'];
 	export const reaxper : typeof import('reaxes-react')['reaxper'];
+	export const reaxper : typeof import('reaxes')['Reaxes'];
 	
-	export const utils : typeof import('#generic/utils')['crayon'];
-	export const orzPromise : typeof import('#generic/utils').orzPromise;
-	export const crayon : typeof import('#generic/utils').crayon;
-	export const logProxy : typeof import('#generic/utils').logProxy;
-	export const makePair : typeof import('#generic/utils').makePair;
-	export const assert : typeof import('#generic/utils').assert;
-	export const decodeQueryString : typeof import('#generic/utils').decodeQueryString;
-	export const encodeQueryString : typeof import('#generic/utils').encodeQueryString;
-	export const stringify : typeof import('#generic/utils').stringify;
+	export const utils : typeof import('#generic/utils');
+	export const orzPromise : typeof import('#generic/utils')['orzPromise'];
+	export const crayon : typeof import('#generic/utils')['crayon'];
+	export const logProxy : typeof import('#generic/utils')['logProxy'];
+	export const makePair : typeof import('#generic/utils')['makePair'];
+	export const assert : typeof import('#generic/utils')['assert'];
+	export const decodeQueryString : typeof import('#generic/utils')['decodeQueryString'];
+	export const encodeQueryString : typeof import('#generic/utils')['encodeQueryString'];
+	export const stringify : typeof import('#generic/utils')['stringify'];
 	
-	export const useEffect : typeof import('react').useEffect;
-	export const useRef : typeof import('react').useRef;
-	export const useMemo : typeof import('react').useMemo;
-	export const useState : typeof import('react').useState;
+	export const useEffect : typeof import('react')['useEffect'];
+	export const useRef : typeof import('react')['useRef'];
+	export const useMemo : typeof import('react')['useMemo'];
+	export const useState : typeof import('react')['useState'];
 	
+	
+	const __DEV__ : boolean;
 	
 	export const electron : {
-		ipcRenderer : typeof import('electron').ipcRenderer
+		ipcRenderer : typeof import('electron')['ipcRenderer']
 	}
 }
 

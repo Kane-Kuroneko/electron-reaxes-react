@@ -10,25 +10,34 @@ export const electronDevConf_Main:WebpackConfiguration = {
 	optimization: {
 		minimize: false,
 	},
+	mode : "development",
 	watch : true,
-	plugins: [
+	plugins : [
+		new DefinePlugin({
+			__DEV__ : JSON.stringify( true ),
+		}),
 		// new LogWhenSucceed('development'),
-		new LoggerWebpackPlugn({
+		new LoggerWebpackPlugn( {
 			initialize() {
 				// console.log(`webpack is starting...\n`);
-			},
+			} ,
 			done() {
-				if(!first_main){
-					console.log(`electron-main重新打包完成,${dayjs().format('HH:mm:ss')}\n`);
+				if( !first_main ) {
+					console.log( `electron-main重新打包完成,${ dayjs().
+					format( 'HH:mm:ss' ) }\n` );
 				}
 				first_main = false;
-			},
-		}),
+			} ,
+		} ) ,
 	],
+	
 };
 
 export const electronDevConf_Renderer:WebpackConfiguration = {
 	plugins : [
+		new DefinePlugin({
+			__DEV__ : JSON.stringify( true ),
+		}),
 		new LoggerWebpackPlugn({
 			initialize() {
 				// console.log(`webpack is starting...\n`);

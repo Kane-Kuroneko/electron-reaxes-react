@@ -6,6 +6,7 @@ export const IconPopoverDesc = reaxper( ( props: props ) => {
 		content = { props.children }
 		overlayClassName = { less['popoverConent'] }
 		placement = { props.placement }
+		overlayStyle={{maxWidth : props.maxWidth || null}}
 	>
 		<InfoCircleTwoTone className = { less['description-icon'] } />
 	</Popover>;
@@ -14,7 +15,8 @@ export const IconPopoverDesc = reaxper( ( props: props ) => {
 
 type props = React.PropsWithChildren<{
 	content? : React.ReactNode,
-	placement? : TooltipProps['placement']
+	placement? : TooltipProps['placement'],
+	maxWidth? : number|string;
 }>;
 
 import { Popover , TooltipProps } from 'antd';

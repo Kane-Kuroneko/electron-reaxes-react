@@ -6,7 +6,7 @@ export const ReplaceF6 = reaxper( () => {
 		value = { GUI_Store.switch_replaceF6 }
 		onChange = { toggleReplaceF6 }
 	>
-		替换F6快速保存为以时间戳命名的存档
+		<I18n>Replace F6 quick save with timestamped save</I18n>
 		<IconPopoverDesc placement = "bottom">
 			<img
 				src = { gif }
