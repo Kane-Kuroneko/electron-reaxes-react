@@ -8,7 +8,7 @@ export const electronProdConf_Main:WebpackConfiguration = {
 	stats: "verbose",
 	devtool: "cheap-source-map",
 	mode : "production",
-	watch : true,
+	watch : false,
 	plugins : [
 		new DefinePlugin({
 			__DEV__ : JSON.stringify( false ),
@@ -34,7 +34,7 @@ export const electronProdConf_Renderer:WebpackConfiguration = {
 	stats: "verbose",
 	devtool: "cheap-source-map",
 	mode : "production",
-	watch:true,
+	watch:false,
 	plugins : [
 		new DefinePlugin({
 			__DEV__ : JSON.stringify( false ),

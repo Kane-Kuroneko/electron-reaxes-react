@@ -1,6 +1,6 @@
 /**
  * 1.混合配置
- * 2.打包renderer , preload , main 
+ * 2.打包renderer , preload , main
  * 3.启动devserver
  * 4.此时可以从工程目录下启动electron .
  */
@@ -63,15 +63,15 @@ then( () => buildPreload( webpack_conf_for_electron_preload ) ).
 then( () => buildMain( webpack_conf_for_electron_main ) ).
 then( () => {
 	console.log(chalk.green('启动成功!'));
-
+	
 } ).catch(e => {
-	console.log('打包失败!',purdy(e));
+	console.log('打包失败!',purdy(e,{}));
 });
 import purdy from 'purdy';
-import { webpack_conf_for_electron_main , webpack_conf_for_electron_renderer ,webpack_conf_for_electron_preload } from "./utils/mixedRepoWebpackConf";
+import { webpack_conf_for_electron_main , webpack_conf_for_electron_renderer ,webpack_conf_for_electron_preload } from "../utils/mixedRepoWebpackConf";
 
-import { port , project , mock , env , node_env , method , analyze , experimental } from "../engine/toolkit";
-import { getPort , getIPV4address , webpack_promise } from "../engine/utils";
+import { port , project , mock , env , node_env , method , analyze , experimental } from "../../engine/toolkit";
+import { getPort , getIPV4address , webpack_promise } from "../../engine/utils";
 import { merge } from "webpack-merge";
 import WebpackDevServer from "webpack-dev-server";
 import chalk from "chalk";

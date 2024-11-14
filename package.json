@@ -4,17 +4,17 @@
 	"scripts": {
 		"start": "tsx scripts/start.ts <project> <port>",
 		"electron": "tsx scripts/electron.ts <project>",
-		"pack": "tsx scripts/build",
-		"build": "tsx scripts/build",
-		"start:ahk-war3": "tsx scripts/start.ts Autohotkey-GUI/War3 4444 ",
-		"electron:ahk-war3": "tsx scripts/electron.ts Autohotkey-GUI/War3",
-		"build:ahk-war3": "cd projects/Autohotkey-GUI/projects/War3 & electron-builder build -w"
+		"pack": "tsx scripts/webpack.build",
+		"build": "tsx scripts/webpack.build",
+		"webpack-start": "tsx scripts/webpack.start/index.ts Autohotkey-GUI/War3 4444 ",
+		"electron-start:ahk-war3": "tsx scripts/electron.start/index.ts Autohotkey-GUI/War3",
+		"webpack-build": "tsx ./scripts/webpack.build/index.ts Autohotkey-GUI/War3 production",
+		"electron-build:ahk-war3": "cd projects/Autohotkey-GUI/projects/War3 & electron-builder build -w",
+		"test" : "tsx ./scripts/test-cluster.ts"
 	},
 	"electronmon": {
 		"patterns": [
-			"!**/**",
-			"src/main/**",
-			".erb/dll/**"
+			"!**/**"
 		],
 		"logLevel": "quiet"
 	},
@@ -59,6 +59,7 @@
 		"@types/webpack-dev-server": "^4.7.2",
 		"babel-loader": "^9.2.1",
 		"chalk": "^5.3.0",
+		"cluster": "^0.7.7",
 		"concurrently": "^9.0.1",
 		"copy-webpack-plugin": "^12.0.2",
 		"css-loader": "^7.1.2",
@@ -75,6 +76,7 @@
 		"prettier": "^3.3.3",
 		"purdy": "^3.6.0",
 		"style-loader": "^4.0.0",
+		"ts-node": "^10.9.2",
 		"tslib": "^2.6.3",
 		"tsx": "^4.19.1",
 		"typescript": "^5.6.3",

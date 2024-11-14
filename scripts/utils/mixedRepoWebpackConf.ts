@@ -51,6 +51,7 @@ preload_configs = [
 	webpackBaseConf,
 	electronPreloadConf,
 	partialWebpackConf_Preload,
+	node_env === 'production' ? {watch:false} : {}
 ];
 export const webpack_conf_for_electron_main = merge(main_configs);
 export const webpack_conf_for_electron_renderer = merge(renderer_configs);

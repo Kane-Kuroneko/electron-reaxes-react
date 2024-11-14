@@ -1,3 +1,12 @@
+<style>
+* {
+	font-family : 'Consolas',微软雅黑;
+	background-color: #fafafa;
+}
+h1 {
+	background-color: red;
+}
+</style>
 # 项目构建
 
 * **webpage端口号优先级:**
@@ -5,7 +14,9 @@
 2. `projects/<project-name>`目录下的`partial.webpack-conf.ts`对象的`devServer.port`
 3. `engine`内部备用的端口号
 
-* **:**
+* 打包和构建:
+  * webpack-start : 打包并在development启动devServer
+  * webpack-build : 打包production产物,为electron-builder提供成果
 
 * **目录结构:**
   * 构建工具链位于根目录下的engine,启动开发环境和打包都是从根目录运行命令,例如:

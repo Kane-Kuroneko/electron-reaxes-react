@@ -14,7 +14,7 @@ const { absolutelyPath_subproject , absolutelyPath_subprojectDist } = getProject
 export const webpackBaseConf:WebpackConfiguration = {
 	mode: node_env as any,
 	output: {
-		filename: node_env === 'development' ? '[name].js' : '[name].bundle.[contenthash:6].js',
+		filename: '[name].js',
 		path : absolutelyPath_subprojectDist,
 		// publicPath : path.resolve(rootPath , 'dist') ,
 	},

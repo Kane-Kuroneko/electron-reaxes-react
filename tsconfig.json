@@ -40,5 +40,5 @@
 			"" : ["./*"]
 		}
 	} ,
-	"exclude" : ["node_modules/**","node_modules/@types/node","dist" , ".git" , ".idea" , ".svn" ]
+	"exclude" : ["dist" , ".git" , ".idea" , ".svn" ]
 }
