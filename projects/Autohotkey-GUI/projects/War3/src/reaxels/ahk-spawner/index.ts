@@ -1,4 +1,4 @@
-const { runInExcutable,absAppRunningPath,absAppStaticsPath } = reaxel_ENV();
+const { runInExcutable,absAppRunningPath,absAppStaticsPath } = reaxel_ElectronENV();
 const { logger } = reaxel_Logger();
 
 export const reaxel_AhkSpawner = reaxel( () => {
@@ -73,7 +73,8 @@ export const reaxel_AhkSpawner = reaxel( () => {
 				} );
 				mainWindowLoaded.then( ( mainWindow ) => {
 					mainWindow.webContents.send( 'json' , {
-						type : 'child_process-spawned' ,
+						type : 'ahk-cp-status' ,
+						data : true
 					} );
 				} );
 			}else {
@@ -140,7 +141,8 @@ function spawnWar3AHK( { ahkSpawner_SetState , ahkSpawner_Store }){
 	ahk.on( 'close' , ( e ) => {
 		mainWindowLoaded.then( win => {
 			win.webContents.send( 'json' , {
-				type : "child_process-closed" ,
+				type : "ahk-cp-status" ,
+				data : false,
 			} );
 			win.webContents.send( 'console' , `'child_process-closed.', ${e}`);
 		} );
@@ -158,7 +160,7 @@ type MessageTypes =
 
 
 
-import { reaxel_ENV } from '#reaxels/env';
+import { reaxel_ElectronENV } from '#reaxels/env';
 import { reaxel_Logger } from '#reaxels/debuggers';
 import { mainWindowLoaded } from '../../Main/initialize-main-window';
 import { ipcRenderer , ipcMain ,app} from 'electron';

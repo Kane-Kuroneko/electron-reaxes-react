@@ -17,12 +17,14 @@ class I18nContent {
 		<span>，也可以使用</span>
 		<HotKey small>Page Up</HotKey>&#47;
 		<HotKey small>Page Down</HotKey>
+		<br/>
+		开启后所有滚动区域都不能直接用滚轮滚动,需按住<HotKey small>Ctrl/Shift/Alt</HotKey>之一 + <HotKey small>滚轮</HotKey>
 	</IconPopoverDesc>;
 	
 	static 'en-US' = <IconPopoverDesc maxWidth={'700px'}>
 		<span style={{lineHeight : '38px'}}>Modified to </span>
 		<HotKey small>Shift</HotKey> + <HotKey small>Mouse Wheel</HotKey>
-		<span> , </span>
+		<span> or </span>
 		<HotKey small>Page Up</HotKey>
 		<span> &#47; </span>
 		<HotKey small>Page Down</HotKey>

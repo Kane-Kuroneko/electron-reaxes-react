@@ -75,6 +75,9 @@ export const Refaxel_I18n = function (
 		
 	};
 	
+	
+	setLanguage( sourceLanguage );
+	
 	const i18n = function(){
 		let prevLang = sourceLanguage;
 		return (langText:string) => {

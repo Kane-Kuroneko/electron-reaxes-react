@@ -16,7 +16,7 @@ export const RbuttonDragging = reaxper( () => {
 			onChange = { toggleRbtnDragging }
 		>
 			<I18n>
-				Enable mouse right-click drag
+				Enable Right Mouse Button Dragging
 			</I18n>
 		</FunctionSwitcher>
 		<div className = { less['RbuttonModifier'] }>

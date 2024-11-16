@@ -10,6 +10,7 @@ WarcraftIIIProcess := "ahk_exe Warcraft III.exe"
 G_MainSwitch := 1
 G_DisableWheels := 1
 G_RButtonDragging := 1
+G_MButtonToAttack := 1
 ;;是否使用时间戳的快速保存替代原本f6
 G_CoverQuickSave := 1
 ;从按下右键到移动鼠标的延迟ms
@@ -54,6 +55,7 @@ pollingReadStdin(){
 	global G_DisableWheels
 	global G_RButtonDragging
 	global G_CoverQuickSave
+	global G_MButtonToAttack
 	global G_RButtonDelay
 	
 	txt := StdinToString()
@@ -70,6 +72,8 @@ pollingReadStdin(){
 					G_CoverQuickSave := value['value']
 				case "switch_RbtnDragging" :
 					G_RButtonDragging := value['value']
+				case "switch_MbtnToAttack" :
+					G_MButtonToAttack := value['value']
 				case "input_detectionDelay" :
 					G_RButtonDelay := value['value']
 			}
@@ -178,6 +182,10 @@ RButtonPressingTime := false
 	}
 }
 
+#HotIf WinActive(WarcraftIIIProcess) && G_MainSwitch && G_MButtonToAttack
+*MButton:: {
+	Send("{A}{LButton}")
+}
 
 	
 class XGUI extends Gui {

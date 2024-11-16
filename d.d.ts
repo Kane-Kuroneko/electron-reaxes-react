@@ -1,6 +1,6 @@
 /*global provider*/
 // declare const _ : typeof import('lodash');
-declare const React : typeof import('react');
+// declare const React : typeof import('react');
 declare const useLayoutEffect : typeof React.useLayoutEffect;
 declare const useCallback : typeof React.useCallback;
 declare namespace ORZ {
@@ -87,7 +87,7 @@ declare module '*.atlas'{
 declare module '*.gif' {
 	const gif:string;
 	export default gif;
-};
+}
 
 
 declare module '*.png';

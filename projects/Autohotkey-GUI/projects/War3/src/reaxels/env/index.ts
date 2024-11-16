@@ -1,11 +1,11 @@
 /**
- * 判断runtime
+ * 判断运行在electron的哪个runtime下面
  */
-export let reaxel_ENV : () => Reaxel_ENV;
+export let reaxel_ElectronENV : () => Reaxel_ENV;
 
 if(main()){
 	const {app} = await import('electron');
-	reaxel_ENV = reaxel( () => {
+	reaxel_ElectronENV = reaxel( () => {
 		/**
 		 * 可以将renderer和main的api整合在一起,但是初始化必须是空值,当在main或者renderer第一次使用时
 		 * 再初始化,从而避免掉在main中调用到webview api或者相反.
@@ -16,7 +16,6 @@ if(main()){
 			 */
 			//是否运行在打包后的环境
 			runInExcutable : !dev(),
-			
 			
 			/**
 			 * main(nodejs) apis below

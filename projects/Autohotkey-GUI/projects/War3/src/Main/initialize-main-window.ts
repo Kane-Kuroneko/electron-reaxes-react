@@ -1,4 +1,4 @@
-const { runInExcutable, absAppRunningPath,absAppStaticsPath} = reaxel_ENV();
+const { runInExcutable, absAppRunningPath,absAppStaticsPath} = reaxel_ElectronENV();
 export const initializeMainWindow = (
 	options:BrowserWindowConstructorOptions = {}
 ) => {
@@ -33,7 +33,8 @@ export const initializeMainWindow = (
 		if( ahkSpawner_Store.ahk ) {
 			mainWindowLoaded.then( ( mainWindow ) => {
 				mainWindow.webContents.send( 'json' , {
-					type : 'child_process-spawned' ,
+					type : 'ahk-cp-status' ,
+					data : true,
 				} );
 			} );
 		}
@@ -51,7 +52,7 @@ export const mainWindowLoaded = orzPromise<BrowserWindow>();
 
 import { dev } from 'electron-is';
 import logger from 'electron-log/main';
-import { reaxel_ENV } from '#reaxels/env';
+import { reaxel_ElectronENV } from '#reaxels/env';
 import { reaxel_AhkSpawner } from '../reaxels/ahk-spawner';
 import { runtimeRootPath } from '../utils';
 import { BrowserWindow , BrowserWindowConstructorOptions , app , ipcMain } from 'electron';

@@ -17,10 +17,10 @@ export const i18nEnhancer_Storage = (options:Options) => (reaxel_I18n : ReturnTy
 	} , () => [I18n_Store.language] );
 	
 	if(finalOptions.changeOnLoaded){
-		const langInStorage:Languages = get( storage_key );
-		if(langInStorage && langInStorage !== 'null'){
+		const langInStorage = get( storage_key );
+		if(langInStorage && (langInStorage !== 'null')){
 			console.log(langInStorage);
-			setLanguage( langInStorage );
+			setLanguage( langInStorage as Languages );
 		}
 	}
 	

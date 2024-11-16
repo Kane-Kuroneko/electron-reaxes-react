@@ -10,7 +10,7 @@
 		"electron-start:ahk-war3": "tsx scripts/electron.start/index.ts Autohotkey-GUI/War3",
 		"webpack-build": "tsx ./scripts/webpack.build/index.ts Autohotkey-GUI/War3 production",
 		"electron-build:ahk-war3": "cd projects/Autohotkey-GUI/projects/War3 & electron-builder build -w",
-		"test" : "tsx ./scripts/test-cluster.ts"
+		"test": "tsx ./scripts/test-cluster.ts"
 	},
 	"electronmon": {
 		"patterns": [
@@ -54,7 +54,7 @@
 		"@types/lodash": "^4.17.10",
 		"@types/node": "^22.9.0",
 		"@types/purdy": "^3.5.4",
-		"@types/react": "^18.3.3",
+		"@types/react": "^18.3.12",
 		"@types/react-dom": "^18.3.0",
 		"@types/webpack-dev-server": "^4.7.2",
 		"babel-loader": "^9.2.1",
