@@ -7,7 +7,7 @@ export type IPCChannels = {
 			key : string;
 			value : boolean|number
 		}[],
-		//
+		//GUI directive to main: 开启或停止war3进程监控
 		'monitor-war3exe-process' : 'start' | 'stop',
 		'spawn' : 'war3-ahk',
 		'exit-ahk' : null,

@@ -61,6 +61,10 @@ declare interface NodeModule {
 
 declare const RepoRoot: string;
 
+declare type ExtractData<T> = T extends any
+	? any  // 如果是 any 类型的通道，返回 any 类型
+	: {[K in keyof T]: { type: K; data: T[K] }}[keyof T];  // 提取出所有的 { type, data } 键值对
+
 
 declare type WebpackConfiguration = import("webpack").Configuration;
 

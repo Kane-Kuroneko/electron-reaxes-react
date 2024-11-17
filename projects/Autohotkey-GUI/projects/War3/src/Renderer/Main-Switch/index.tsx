@@ -12,7 +12,16 @@ export const MainSwitch = reaxper( () => {
 				<LoadingOutlined />
 			</span> }
 			unCheckedChildren = { i18n( "Enable" ) }
-			onChange = { toggleMainSwitch }
+			onChange = { () => {
+				if(GUI_Store.checkbox_AutoSwitch){
+					notification.warning( {
+						message : <I18n>When automatic detection is enabled, the main switch cannot be manually operated.</I18n> ,
+						duration : 6 ,
+						// placement : 'topLeft' ,
+					} );
+				}
+				toggleMainSwitch();
+			} }
 		/>
 		<br />
 		<label style={{display:"flex",justifyContent:'center',alignItems:'center'}}>
@@ -31,6 +40,6 @@ import { reaxel_GUI } from '../../reaxels/GUI';
 
 type props = React.PropsWithChildren<{}>;
 
-import { Switch ,Checkbox} from 'antd';
+import { Switch , Checkbox , notification } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import * as less from './style.module.less';

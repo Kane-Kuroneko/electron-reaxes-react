@@ -137,14 +137,14 @@ export const reaxel_GUI = reaxel( () => {
 	obsReaction( (first) => {
 		if (first) return;
 		IPC?.send( 'json' , {
-			type : 'monitor-war3-process' ,
-			value : GUI_Store.checkbox_AutoSwitch ? 'start' : 'stop' ,
+			type : 'monitor-war3exe-process' ,
+			data : GUI_Store.checkbox_AutoSwitch ? 'start' : 'stop' ,
 		} );
 	} , () => [ GUI_Store.checkbox_AutoSwitch ] );
 	
 	IPC?.on('json',(e,data) => {
 		if(data.type === 'war3-process-existence'){
-			ret.toggleMainSwitch(data.value);
+			ret.toggleMainSwitch(data.data);
 		}
 	});
 	
@@ -155,11 +155,21 @@ export const reaxel_GUI = reaxel( () => {
 			if( !GUI_Store.switch_main ) {
 				IPC?.send( "json" , {
 					type : 'spawn' ,
-					app : 'war3-ahk' ,
+					data : 'war3-ahk' ,
 				} );
 			}
 		} ,
+		shutdownAHK(){
+			IPC?.send( 'json' , {
+				type : 'exit-ahk' ,
+				data : null,
+			} );
+		},
 		toggleMainSwitch( value = !GUI_Store.switch_main ) {
+			//开启自动检测时此函数不应该继续往下执行.
+			if(GUI_Store.checkbox_AutoSwitch){
+				return;
+			}
 			if(isBrowser){
 				GUI_SetState({switch_main : !GUI_Store.switch_main});
 				return;
@@ -167,9 +177,7 @@ export const reaxel_GUI = reaxel( () => {
 			if( value && !GUI_Store.switch_main ) {
 				ret.spawnAHK();
 			} else {
-				IPC?.send( 'json' , {
-					type : 'exit-ahk' ,
-				} );
+				ret.shutdownAHK();
 			}
 			// GUI_Mutate( s => s.switch_main = value );
 		} ,

@@ -19,14 +19,14 @@ export const reaxel_AhkSpawner = reaxel( () => {
 	} );
 	
 	ipcMain.on( 'json' , ( e , data ) => {
-		if( data.type === 'spawn' && data.app === 'war3-ahk' ) {
+		if( data.type === 'spawn' && data.data === 'war3-ahk' ) {
 			ret.spawn();
 		}
 	} );
 	
-	ipcMain.on( 'json' , ( e , json ) => {
-		if( json.type === 'exit-ahk' ) {
-			ret.killAhk();
+	ipcMain.on( 'json' , ( e , data ) => {
+		if( data.type === 'exit-ahk' ) {
+			ret.shutdown();
 		}
 	} );
 	
@@ -45,7 +45,7 @@ export const reaxel_AhkSpawner = reaxel( () => {
 		};
 	}();
 	
-	const killAhk = () => {
+	const shutdown = () => {
 		const {ahk} = ahkSpawner_Store
 		if(ahk){
 			mainWindowLoaded.then( win => {
@@ -64,7 +64,7 @@ export const reaxel_AhkSpawner = reaxel( () => {
 		ahkSpawner_SetState,
 		ahkSpawner_Store,
 		ahkSpawner_Mutate,
-		killAhk,
+		shutdown,
 		sendMessageToAhk,
 		spawn() {
 			if( !ahkSpawner_Store.ahk ) {

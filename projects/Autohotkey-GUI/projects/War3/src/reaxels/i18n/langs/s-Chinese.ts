@@ -9,6 +9,8 @@ export default {
 	"Right-click detection delay (ms)": "右键检测延迟(ms)",
 	"Activing": "改键生效中",
 	"Enable": "开启改键",
+	"Auto Enable/Disable Main Switch Once Game Process Started/Closed": "检测魔兽进程以自动启停总开关",
+	"When automatic detection is enabled, the main switch cannot be manually operated.": "当开启自动检测时无法手动操作总开关",
 	"": "",
 } as any;
 
