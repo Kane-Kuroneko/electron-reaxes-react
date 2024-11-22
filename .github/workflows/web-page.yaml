@@ -1,5 +1,8 @@
 name: serve war3-ahk-reaxes
-
+permissions:
+   contents: write   # 允许读取和写入内容
+   pages: write      # 允许部署到 GitHub Pages
+   id-token: write   # 如果需要身份验证
 on:
    push:
       branches:
