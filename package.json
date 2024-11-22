@@ -7,11 +7,10 @@
 		"pack": "tsx scripts/webpack.build",
 		"build": "tsx scripts/webpack.build",
 		"start:ahk-war3": "concurrently \"npm run webpack-start:ahk-war3\" \"npm run electron-start:ahk-war3\" ",
-		"webpack-start": "tsx scripts/webpack.start/index.ts Autohotkey-GUI/War3 4444 ",
+		"webpack-start:ahk-war3": "tsx scripts/webpack.start/index.ts Autohotkey-GUI/War3 4444 ",
 		"electron-start:ahk-war3": "tsx scripts/electron.start/index.ts Autohotkey-GUI/War3",
-		"webpack-build": "tsx ./scripts/webpack.build/index.ts Autohotkey-GUI/War3 production",
+		"webpack-build:ahk-war3": "tsx ./scripts/webpack.build/index.ts Autohotkey-GUI/War3 production",
 		"electron-build:ahk-war3": "cd projects/Autohotkey-GUI/projects/War3 & electron-builder build -w",
-		"test": "tsx ./scripts/test-cluster.ts"
 	},
 	"electronmon": {
 		"patterns": [
