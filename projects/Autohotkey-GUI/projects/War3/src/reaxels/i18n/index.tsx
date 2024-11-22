@@ -1,3 +1,6 @@
+if(isElectron){
+	var { IPC } = await import('../../ENV/electron')
+}
 export let reaxel_I18n = reaxel(() => {
 	
 	let i18n = Refaxel_I18n( [
@@ -24,9 +27,9 @@ export let reaxel_I18n = reaxel(() => {
 	return () => {
 		return i18n();
 	}
-}); 
+});
 
-
+import { isElectron } from '../../ENV';
 import { Refaxel_I18n , Languages } from '#generic/reaxels/Factories/i18n';
 import { i18nEnhancer_Storage } from '#generic/reaxels/Factories/i18n/enhancers/storage';
 
