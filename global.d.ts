@@ -1,7 +1,7 @@
 declare global {
 	// export const requester : typeof import('#src/requester').requester;
-	
-	// export const _ : typeof import('lodash');
+	//@ts-ignore
+	export const _ : typeof import('lodash');
 	export const reaxel : typeof import('reaxes')['reaxel'];
 	export const orzMobx : typeof import('reaxes')['orzMobx'];
 	export const contrastedCallback : typeof import('reaxes')['Reaxes']['contrastedCallback'];
