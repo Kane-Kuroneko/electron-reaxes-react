@@ -18,7 +18,7 @@ jobs:
          - name: Setup Node.js
            uses: actions/setup-node@v4.1.0
            with:
-              node-version: '18'  # 设置 Node.js 版本，可以根据你的需求更改
+              node-version: '22'  # 设置 Node.js 版本，可以根据你的需求更改
          
          # 3. 安装依赖
          - name: Install dependencies
