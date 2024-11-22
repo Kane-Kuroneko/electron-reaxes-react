@@ -37,7 +37,9 @@ export const main = (
 
 export const renderer = (repoRootPath: string, subProjectRootPath: string): WebpackConfiguration => {
 	return {
-		
+		experiments: {
+			topLevelAwait: true,  // 启用顶层 await
+		},
 		entry: path.resolve(subProjectRootPath, "src/Renderer/index.tsx"),
 		
 		output: {

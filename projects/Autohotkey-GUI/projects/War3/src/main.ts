@@ -2,28 +2,27 @@
 
 logger.initialize();
 
-console.log(__NODE_ENV__);
+console.log( __NODE_ENV__ );
 
-app.whenReady().then(() => {
+app.whenReady().then( () => {
 	
 	const mainWindow = initializeMainWindow();
 	
-	useBeautifulDevtool(mainWindow);
+	useBeautifulDevtool( mainWindow );
 	
 	const {} = reaxel_AhkSpawner();
 	
 	// mainWindow.setIcon('https://img.piclabo.xyz/2023/10/25/d67adcffb89dd.jpg')
 	
 	ipcMain.on( 'json' , ( e , data ) => {
-		if(data.type === 'shortcut'){
-			console.log(11111111111111);
+		if( data.type === 'shortcut' ) {
+			console.log( 11111111111111 );
 			if( data.data.type === 'keydown' && data.data.key === 'F12' ) {
 				mainWindow.webContents.toggleDevTools();
 			}
 		}
 	} );
-})
-
+} );
 
 
 // 除了 macOS 外，当所有窗口都被关闭的时候退出程序。 因此, 通常
@@ -35,7 +34,7 @@ app.on( 'window-all-closed' , () => {
 
 
 app.whenReady().then( () => {
-
+	
 	const primaryDisplay = screen.getPrimaryDisplay();
 	
 	const scaleFactor = primaryDisplay.scaleFactor;
@@ -52,8 +51,8 @@ import { app , BrowserWindow , globalShortcut , ipcMain , ipcRenderer , screen }
 import path from 'path';
 import Config from '../config';
 import purdy from 'purdy';
-import cp,{ execSync } from 'child_process';
+import cp , { execSync } from 'child_process';
 import process from 'node:process';
-import { initializeMainWindow , mainWindowLoaded ,} from './Main/index';
+import { initializeMainWindow , mainWindowLoaded  } from './Main/index';
 import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
 import { reaxel_AhkSpawner } from './reaxels/ahk-spawner';

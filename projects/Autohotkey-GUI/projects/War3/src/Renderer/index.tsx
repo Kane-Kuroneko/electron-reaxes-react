@@ -2,7 +2,8 @@ if(isElectron){
 	var { IPC } = await import('../ENV/electron')
 }
 const root = createRoot( document.getElementById( "react-app-root" ) );
-
+console.log(i18n);
+console.log(I18n);
 // const ipcRenderer = _Danger_Native_IpcRenderer_;
 
 // console.log(_Danger_Native_IpcRenderer_);

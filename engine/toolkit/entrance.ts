@@ -6,6 +6,7 @@ const args = process.argv.slice(2);
 export let {
 	inputPort = 3333,
 	project = null as string,
+	runtime = 'web',
 	mock = null,
 	analyze = false,
 	method = "server",
@@ -26,6 +27,10 @@ export let {
 	{
 		regExp: /\bGamepad-Task-Manager|Linker|Proxy-Rules-Modifier|Autohotkey-GUI\b/,
 		key: "project" as const,
+	},
+	{
+		regExp: /\bweb|electron|andriod-webview|\b/i,
+		key: "runtime" as const,
 	},
 	{
 		regExp: /\bmock\b/,
