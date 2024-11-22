@@ -1,0 +1,39 @@
+name: serve war3-ahk-reaxes
+
+on:
+   push:
+      branches:
+         - github-pages  # 当推送到 main 分支时触发工作流
+
+jobs:
+   build-and-deploy:
+      runs-on: windows-latest  # 使用最新的 Ubuntu 环境
+      
+      steps:
+         # 1. Checkout 仓库内容
+         - name: Checkout repository
+           uses: actions/checkout@v4.2.2  # 检出仓库的代码
+         
+         # 2. Setup Node.js 环境
+         - name: Setup Node.js
+           uses: actions/setup-node@v4.1.0
+           with:
+              node-version: '18'  # 设置 Node.js 版本，可以根据你的需求更改
+         
+         # 3. 安装依赖
+         - name: Install dependencies
+           run: |
+              yarn install  # 安装项目的依赖
+         
+         # 4. 执行 Electron 构建命令
+         - name: Webpack Build
+           run: |
+              npm run webpack-build:ahk-war3  # 执行你的构建命令，这将生成构建文件
+         
+         # 5. 部署构建后的文件到 GitHub Pages
+         - name: Deploy to GitHub Pages
+           uses: peaceiris/actions-gh-pages@v4  # 使用 GitHub Pages 部署动作
+           with:
+              github_token: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub 提供的 token
+              publish_dir: ./projects/Autohotkey-GUI/projects/War3/dist/renderer  # 指定要发布的目录
+              publish_branch: gh-pages  # 指定要发布到的分支
