@@ -23,7 +23,7 @@ jobs:
          # 3. 安装依赖
          - name: Install dependencies
            run: |
-              yarn install  # 安装项目的依赖
+              npm i
          
          # 4. 执行 Electron 构建命令
          - name: Webpack Build
