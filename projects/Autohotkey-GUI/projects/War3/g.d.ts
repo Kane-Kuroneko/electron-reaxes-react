@@ -10,9 +10,9 @@ declare global {
 	type Channel = import('./src/reaxels/IPC-interfaces/channels').IPCChannels;
 	type IpcRendererEvent = import('electron/renderer').IpcRenderer;
 	export const IPC : {
-		send <T extends keyof Channel>(channel:T ,data:{type:keyof Channel[T] , data : Channel[T][keyof Channel[T]]}) : void ,
+		send <T extends keyof Channel>(channel:T ,data:Channel[T]) : void ,
 		
-		on<T extends keyof Channel>(channel:T,callback:(e:IpcRendererEvent,data:ExtractData<Channel[T]>) => void):void,
+		on<T extends keyof Channel>(channel:T,callback:(e:IpcRendererEvent,data:Channel[T]) => void):void,
 	}
 	
 	

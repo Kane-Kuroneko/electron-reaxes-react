@@ -2,14 +2,14 @@ if(isElectron){
 	var { IPC } = await import('../../ENV/electron')
 }
 
-const CONSTANTS_detectionDelay = 90;
+const CONSTANTS_detectionDelay = 85;
 
 export const reaxel_GUI = reaxel( () => {
 	
 	const {
-		store : GUI_Store ,
-		setState : GUI_SetState ,
-		mutate : GUI_Mutate ,
+		store ,
+		setState ,
+		mutate ,
 	} = orzMobx( {
 		switch_main : false ,
 		
@@ -17,16 +17,18 @@ export const reaxel_GUI = reaxel( () => {
 		switch_replaceF6 : true ,
 		switch_RbtnDragging : true ,
 		switch_MbtnToAttack : true ,
+		switch_SpaceF6SaveToSpecial : true,
 		
 		checkbox_AutoSwitch : true,
 		
-		input_detectionDelay : 90 ,
+		input_detectionDelay : CONSTANTS_detectionDelay ,
 		input_detectionDelay_editing : false ,
 	} );
 	IPC?.on( 'json' , ( e , json ) => {
 		console.log( e , json );
 		if( json.type === 'ahk-cp-status' ) {
-			GUI_SetState( { switch_main : json.data } );
+			const data = json.data;
+			setState( { switch_main : json.data } );
 		}
 	} );
 	
@@ -35,26 +37,27 @@ export const reaxel_GUI = reaxel( () => {
 		data : [
 			{
 				key : 'switch_main' ,
-				value : GUI_Store.switch_main ,
+				value : store.switch_main ,
 			} ,
 			{
 				key : 'switch_forbidWheelsZoom' ,
-				value : GUI_Store.switch_forbidWheelsZoom ,
+				value : store.switch_forbidWheelsZoom ,
 			} ,
 			{
 				key : 'switch_replaceF6' ,
-				value : GUI_Store.switch_replaceF6 ,
+				value : store.switch_replaceF6 ,
 			} ,
 			{
 				key : 'switch_RbtnDragging' ,
-				value : GUI_Store.switch_RbtnDragging ,
+				value : store.switch_RbtnDragging ,
 			} ,
 			{
 				key : 'input_detectionDelay' ,
-				value : GUI_Store.input_detectionDelay ,
+				value : store.input_detectionDelay ,
 			} ,
 		] ,
 	} );
+	
 	
 	obsReaction( ( first ) => {
 		if( first ) return;
@@ -63,11 +66,11 @@ export const reaxel_GUI = reaxel( () => {
 			data : [
 				{
 					key : 'switch_main' ,
-					value : GUI_Store.switch_main ,
+					value : store.switch_main ,
 				} ,
 			],
 		} );
-	} , () => [ GUI_Store.switch_main ] );
+	} , () => [ store.switch_main ] );
 	
 	obsReaction( ( first ) => {
 		if( first ) return;
@@ -76,11 +79,11 @@ export const reaxel_GUI = reaxel( () => {
 			data : [
 				{
 					key : 'switch_forbidWheelsZoom' ,
-					value : GUI_Store.switch_forbidWheelsZoom ,
+					value : store.switch_forbidWheelsZoom ,
 				} ,
 			],
 		} );
-	} , () => [ GUI_Store.switch_forbidWheelsZoom ] );
+	} , () => [ store.switch_forbidWheelsZoom ] );
 	
 	obsReaction( ( first ) => {
 		if( first ) return;
@@ -89,11 +92,11 @@ export const reaxel_GUI = reaxel( () => {
 			data : [
 				{
 					key : 'switch_replaceF6' ,
-					value : GUI_Store.switch_replaceF6 ,
+					value : store.switch_replaceF6 ,
 				} ,
 			],
 		} );
-	} , () => [ GUI_Store.switch_replaceF6 ] );
+	} , () => [ store.switch_replaceF6 ] );
 	
 	obsReaction( ( first ) => {
 		if( first ) return;
@@ -102,11 +105,11 @@ export const reaxel_GUI = reaxel( () => {
 			data : [
 				{
 					key : 'switch_RbtnDragging' ,
-					value : GUI_Store.switch_RbtnDragging ,
+					value : store.switch_RbtnDragging ,
 				} ,
 			],
 		} );
-	} , () => [ GUI_Store.switch_RbtnDragging ] );
+	} , () => [ store.switch_RbtnDragging ] );
 	
 	obsReaction( ( first ) => {
 		if( first ) return;
@@ -115,11 +118,11 @@ export const reaxel_GUI = reaxel( () => {
 			data : [
 				{
 					key : 'input_detectionDelay' ,
-					value : GUI_Store.input_detectionDelay ,
+					value : store.input_detectionDelay ,
 				} ,
 			],
 		} );
-	} , () => [ GUI_Store.input_detectionDelay ] );
+	} , () => [ store.input_detectionDelay ] );
 	
 	obsReaction( ( first ) => {
 		if( first ) return;
@@ -128,31 +131,31 @@ export const reaxel_GUI = reaxel( () => {
 			data : [
 				{
 					key : 'switch_MbtnToAttack' ,
-					value : GUI_Store.switch_MbtnToAttack ,
+					value : store.switch_MbtnToAttack ,
 				} ,
 			] ,
 		} );
-	} , () => [ GUI_Store.switch_MbtnToAttack ] );
+	} , () => [ store.switch_MbtnToAttack ] );
 	
 	obsReaction( (first) => {
-		if (first) return;
+		// if (first) return;
 		IPC?.send( 'json' , {
 			type : 'monitor-war3exe-process' ,
-			data : GUI_Store.checkbox_AutoSwitch ? 'start' : 'stop' ,
+			data : store.checkbox_AutoSwitch ? 'start' : 'stop' ,
 		} );
-	} , () => [ GUI_Store.checkbox_AutoSwitch ] );
+	} , () => [ store.checkbox_AutoSwitch ] );
+
 	
-	IPC?.on('json',(e,data) => {
-		if(data.type === 'war3-process-existence'){
-			ret.toggleMainSwitch(data.data);
-		}
-	});
 	
 	const ret = {
-		GUI_Store ,
-		GUI_Mutate ,
+		GUI_Store : store ,
+		GUI_SetState:setState,
+		GUI_Mutate : mutate ,
 		spawnAHK() {
-			if( !GUI_Store.switch_main ) {
+			if(store.checkbox_AutoSwitch){
+				return;
+			}
+			if( !store.switch_main ) {
 				IPC?.send( "json" , {
 					type : 'spawn' ,
 					data : 'war3-ahk' ,
@@ -165,47 +168,53 @@ export const reaxel_GUI = reaxel( () => {
 				data : null,
 			} );
 		},
-		toggleMainSwitch( value = !GUI_Store.switch_main ) {
+		toggleMainSwitch( value = !store.switch_main ) {
 			//开启自动检测时此函数不应该继续往下执行.
-			if(GUI_Store.checkbox_AutoSwitch){
+			if(store.checkbox_AutoSwitch){
 				return;
 			}
 			if(isBrowser){
-				GUI_SetState({switch_main : !GUI_Store.switch_main});
+				setState({switch_main : !store.switch_main});
 				return;
 			}
-			if( value && !GUI_Store.switch_main ) {
+			if( value && !store.switch_main ) {
 				ret.spawnAHK();
 			} else {
 				ret.shutdownAHK();
 			}
 			// GUI_Mutate( s => s.switch_main = value );
 		} ,
-		toggleWheelsZoom( value = !GUI_Store.switch_forbidWheelsZoom ) {
-			GUI_Mutate( s => s.switch_forbidWheelsZoom = value );
+		toggleWheelsZoom( value = !store.switch_forbidWheelsZoom ) {
+			mutate( s => s.switch_forbidWheelsZoom = value );
 		} ,
-		toggleReplaceF6( value = !GUI_Store.switch_replaceF6 ) {
-			GUI_Mutate( s => s.switch_replaceF6 = value );
+		toggleReplaceF6( value = !store.switch_replaceF6 ) {
+			mutate( s => s.switch_replaceF6 = value );
 		} ,
-		toggleRbtnDragging( value = !GUI_Store.switch_RbtnDragging ) {
-			GUI_Mutate( s => s.switch_RbtnDragging = value );
+		toggleRbtnDragging( value = !store.switch_RbtnDragging ) {
+			mutate( s => s.switch_RbtnDragging = value );
 		} ,
-		toggleMbuttonToAttack( value = !GUI_Store.switch_MbtnToAttack ) {
-			GUI_Mutate( s => s.switch_MbtnToAttack = value );
+		toggleMbuttonToAttack( value = !store.switch_MbtnToAttack ) {
+			mutate( s => s.switch_MbtnToAttack = value );
 		} ,
-		toggleAutoSwitch(value = !GUI_Store.checkbox_AutoSwitch){
-			GUI_SetState( {
+		toggleAutoSwitch(value = !store.checkbox_AutoSwitch){
+			setState( {
 				checkbox_AutoSwitch : value ,
 			} );
 		},
 		setDetectionDelay( ms ) {
-			GUI_Mutate( s => s.input_detectionDelay = ms );
+			mutate( s => s.input_detectionDelay = ms );
 		} ,
 		resetDetectionDelay() {
-			GUI_Mutate( s => s.input_detectionDelay = CONSTANTS_detectionDelay );
+			mutate( s => s.input_detectionDelay = CONSTANTS_detectionDelay );
 		},
 	};
-	ret.spawnAHK();
+	
+	if(!store.checkbox_AutoSwitch){
+		ret.spawnAHK();
+	}else{
+		
+	}
+	
 	return () => {
 		
 		

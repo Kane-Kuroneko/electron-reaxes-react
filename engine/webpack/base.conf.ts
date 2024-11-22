@@ -229,5 +229,5 @@ import {
 import babelConf from '../babel/conf';
 import _ from 'lodash';
 import path from 'path';
-import webpack from 'webpack';
+import webpack , {Configuration} from 'webpack';
 import TerserPlugin from 'terser-webpack-plugin';
