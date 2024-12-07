@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import {
 	getIPV4address ,
 } from '../utils';
-
+import type { Stats } from 'webpack';
 import { port } from './';
 
 /**
@@ -23,10 +23,10 @@ export class LogWhenSucceed {
 	
 	apply (compiler) {
 		this.count ++;
-		compiler.hooks.done.tap('LogAtSucceed' , (stats) => {
+		compiler.hooks.done.tap('LogAtSucceed' , (stats:Stats) => {
 			
 			if ( stats.hasErrors() ) {
-				return this.onFail(stats);
+				return this.onFail(stats.toJson().errors);
 			}
 			const whisper = this.env === "production" ? "" : ` , host : https://${ getIPV4address() }:${port}\n\r`;
 			console.log(chalk.green(`compiled successfully at ${ dayjs().format("HH:mm:ss") }${whisper}`));
@@ -73,10 +73,10 @@ export class LoggerWebpackPlugn {
 			// const whisper = this.env === "production" ? "" : ` , host : https://${ getIPV4address() }:${port}\n\r`;
 			// console.log(chalk.green(`compiled successfully at ${ dayjs().format("HH:mm:ss") }${whisper}`));
 		});
-		compiler.hooks.done.tap(this.PLUGIN_NAME , (stats) => {
+		compiler.hooks.done.tap(this.PLUGIN_NAME , (stats:Stats) => {
 			const logger = compiler.getInfrastructureLogger(this.PLUGIN_NAME);
 			if ( stats.hasErrors() ) {
-				console.error(stats);
+				console.error(stats.toJson().errors);
 				// debugger;
 				return failLog();
 			}

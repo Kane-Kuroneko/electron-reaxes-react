@@ -4,9 +4,9 @@ const { logger } = reaxel_Logger();
 export const reaxel_AhkSpawner = reaxel( () => {
 	
 	const {
-		setState : ahkSpawner_SetState, 
-		store: ahkSpawner_Store,
-		mutate : ahkSpawner_Mutate,
+		setState, 
+		store,
+		mutate ,
 	} = orzMobx( {
 		ahk : null as cp.ChildProcessWithoutNullStreams
 	} );
@@ -30,23 +30,34 @@ export const reaxel_AhkSpawner = reaxel( () => {
 		}
 	} );
 	
+	obsReaction( ( first , disposer ) => {
+		if( first ) return;
+		const {ahk} = store;
+		if(ahk){
+			ahk.stdout.on( 'data' , ( data ) => {
+				const { serverTime } = reaxel_ServerTime();
+			} );
+		}
+	} , () => [
+		store.ahk,
+	] );
 	
 	
 	const sendMessageToAhk = function () {
 		let opened = false;
 		return ( message: string ) => {
-			if( opened || !ahkSpawner_Store.ahk) {
+			if( opened || !store.ahk) {
 				return;
 			}
 			opened = true;
-			ahkSpawner_Store.ahk.stdin.write( message , () => {
+			store.ahk.stdin.write( message , () => {
 				opened = false;
 			} );
 		};
 	}();
 	
 	const shutdown = () => {
-		const {ahk} = ahkSpawner_Store
+		const {ahk} = store
 		if(ahk){
 			mainWindowLoaded.then( win => {
 				win.webContents.send( 'console' , ahk.pid );
@@ -61,15 +72,16 @@ export const reaxel_AhkSpawner = reaxel( () => {
 	
 	
 	const ret = {
-		ahkSpawner_SetState,
-		ahkSpawner_Store,
-		ahkSpawner_Mutate,
+		
+		ahkSpawner_Store:store,
+		ahkSpawner_SetState:setState,
+		ahkSpawner_Mutate:mutate,
 		shutdown,
 		sendMessageToAhk,
 		spawn() {
-			if( !ahkSpawner_Store.ahk ) {
-				ahkSpawner_SetState( {
-					ahk : spawnWar3AHK( { ahkSpawner_SetState , ahkSpawner_Store }) ,
+			if( !store.ahk ) {
+				setState( {
+					ahk : spawnWar3AHK( { ahkSpawner_SetState : setState , ahkSpawner_Store : store }) ,
 				} );
 				mainWindowLoaded.then( ( mainWindow ) => {
 					mainWindow.webContents.send( 'json' , {
@@ -80,7 +92,7 @@ export const reaxel_AhkSpawner = reaxel( () => {
 			}else {
 				console.warn('ahk进程已在运行中,不可重复调起多个实例');
 			}
-			return ahkSpawner_Store.ahk;
+			return store.ahk;
 		},
 	};
 	
@@ -117,13 +129,19 @@ function spawnWar3AHK( { ahkSpawner_SetState , ahkSpawner_Store }){
 	
 	const ahkexe = path.join(absAppStaticsPath ,`ahk-scripts/AutoHotkey64.exe`);
 	const ahkScriptPath = path.join(absAppStaticsPath ,"ahk-scripts/war3.ahk");
-	const ahk = cp.spawn( ahkexe , [ahkScriptPath] );
+	const ahk = cp.spawn( ahkexe , [ahkScriptPath] ,{
+		stdio: ['pipe', 'pipe', 'pipe'] // 确保 stdin, stdout 和 stderr 都连接
+	});
 	
 	ahkSpawner_SetState( {ahk} );
 	
+	ahk.stdin.setDefaultEncoding('utf8'); // 设置编码为字符串
+	ahk.stdin.on( 'data' , (data) => {
+		console.log('stdin:data--> ',data);
+	} );
 	ahk.stdout.on( 'data' , ( data ) => {
 		Buffer.isBuffer( data ) && (data = data.toString());
-		console.log(chalk.green(data));
+		console.log('ahk.stdout-> ',chalk.green(data));
 		// const json = JSON.parse( data );
 	} );
 	ahk.stderr.on( 'error' , ( data ) => {
@@ -155,11 +173,11 @@ function spawnWar3AHK( { ahkSpawner_SetState , ahkSpawner_Store }){
 type MessageTypes = 
 	//传输数据
 	"transfer" |
-	
+	//停止ahk进程
 	"stop";
 
 
-
+import { reaxel_ServerTime } from '#reaxels/server-time';
 import { reaxel_ElectronENV } from '#reaxels/env';
 import { reaxel_Logger } from '#reaxels/debuggers';
 import { mainWindowLoaded } from '../../Main/initialize-main-window';

@@ -12,7 +12,7 @@ export const devServerConf: Configuration = {
 		},
 	},
 	devMiddleware : {
-		writeToDisk : true,
+		// writeToDisk : true,
 	},
 	liveReload:true,
 	host: "0.0.0.0",

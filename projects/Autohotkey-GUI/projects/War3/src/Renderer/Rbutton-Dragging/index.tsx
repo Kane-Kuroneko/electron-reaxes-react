@@ -13,7 +13,9 @@ export const RbuttonDragging = reaxper( () => {
 	return <>
 		<FunctionSwitcher
 			value = { GUI_Store.switch_RbtnDragging }
-			onChange = { toggleRbtnDragging }
+			onChange = { (v) => {
+				toggleRbtnDragging( v );
+			} }
 		>
 			<I18n>
 				Enable Right Mouse Button Dragging

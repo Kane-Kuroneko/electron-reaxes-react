@@ -10,17 +10,17 @@ const absolutelyElectronExe = path.join( absolutelyPath_RepositoryRoot , 'node_m
 // 使用 spawn 来启动 Electron
 const electronProcess = spawn(absolutelyElectronExe, ['.'], {
 	cwd: absolutelyPath_subproject, // 设置当前工作目录为 subproject 路径
-	stdio: ['ignore', 'pipe', 'pipe'] // 忽略 stdin, 监听 stdout 和 stderr
+	stdio: 'inherit' // 忽略 stdin, 监听 stdout 和 stderr
 });
 
 // 实时获取 stdout 和 stderr
-electronProcess.stdout.on('data', (data) => {
-	console.log(`stdout: ${data.toString()}`);
-});
+// electronProcess.stdout.on('data', (data) => {
+// 	console.log(`stdout1111: ${data.toString()}`);
+// });
 
-electronProcess.stderr.on('data', (data) => {
-	console.error(`stderr: ${data.toString()}`);
-});
+// electronProcess.stderr.on('data', (data) => {
+// 	console.error(`stderr: ${data.toString()}`);
+// });
 
 // 监听进程关闭
 electronProcess.on('close', (code) => {

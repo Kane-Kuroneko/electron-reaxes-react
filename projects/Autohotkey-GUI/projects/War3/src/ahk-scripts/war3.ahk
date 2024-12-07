@@ -115,6 +115,17 @@ F6::{
 	time := FormatTime(,"yyyy.M.d HH：mm")
 	Send("QuickSave_" time "{Enter}")
 }
+;F6::{
+;	; 打开标准输出
+;	stdout := FileOpen("*", "w")
+;	; 构造要发送的信息
+;	msg := { type: "F6.normal", timestamp: A_TickCount }
+;   		
+;	; 将信息以 JSON 格式写入到标准输出
+;	stdout.WriteLine(jsongo.Stringify(msg))
+;	; 关闭标准输出（可选，根据需要决定是否保持打开状态）
+;	stdout.Close()
+;}
 
 #HotIf WinActive(WarcraftIIIProcess) && G_MainSwitch
 ;;防止ctrl+shift+s关闭声音

@@ -1,4 +1,4 @@
-import { contextBridge , ipcRenderer ,IpcRenderer,} from "electron";
+import { contextBridge , ipcRenderer ,IpcRenderer} from "electron";
 
 contextBridge.exposeInMainWorld( 'versions' , {
 	get node() {
@@ -14,10 +14,13 @@ contextBridge.exposeInMainWorld( 'versions' , {
 
 
 contextBridge.exposeInMainWorld( 'IPC' , {
-	send(...args:Parameters<IpcRenderer['send']>){
-		return ipcRenderer.send(...args);
-	},
-	on( ...args: Parameters<IpcRenderer['on']> ) {
-		return ipcRenderer.on( ...args );
-	},
+	send( channel,...args ) {
+		ipcRenderer.send( channel,...args );
+	} ,
+	on(channel, listener) {
+		return ipcRenderer.on( channel,listener );
+	} ,
+	invoke(channel,...args){
+		return ipcRenderer.invoke( channel,...args );
+	}
 } );

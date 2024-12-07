@@ -11,7 +11,7 @@ const { absolutelyPath_subproject , absolutelyPath_subprojectDist } = getProject
  * suggest dev环境建议使用全量source-map , 否则可能会导致错误栈无法定位到正确的模块
  */
 /*webpack基础配置*/
-export const webpackBaseConf:WebpackConfiguration = {
+export const webpackBaseConf:Configuration = {
 	mode: node_env as any,
 	output: {
 		filename: '[name].js',
@@ -139,7 +139,7 @@ export const webpackBaseConf:WebpackConfiguration = {
 				},
 				parser: {
 					dataUrlCondition: {
-						maxSize: 20 * 1024,
+						maxSize: 10 * 1024,
 					},
 				},
 			},
@@ -179,6 +179,8 @@ export const webpackBaseConf:WebpackConfiguration = {
 			__METHOD__ : JSON.stringify(method),
 			__EXPERIMENTAL__ : JSON.stringify(experimental === 'experimental'),
 			__DEV_PORT__ : JSON.stringify(port),
+			__REPO_ROOT__ : JSON.stringify( absolutelyPath_RepositoryRoot ),
+			
 		}),
 		new ProvidePlugin({
 			_: ['lodash'],

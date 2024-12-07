@@ -1,6 +1,6 @@
 const { IgnorePlugin } = webpack;
 
-export const electronMainConf: WebpackConfiguration = {
+export const electronMainConf: Configuration = {
 	target : 'electron-main' ,
 	mode : 'production',
 	externalsPresets : {
@@ -51,4 +51,4 @@ export const electronMainConf: WebpackConfiguration = {
 };
 
 import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';
-import webpack from 'webpack';
+import webpack , { Configuration } from 'webpack';

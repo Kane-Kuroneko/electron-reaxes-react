@@ -1,6 +1,6 @@
 const { ExternalsPlugin } = webpack;
 
-export const electronRendererConf : WebpackConfiguration = {
+export const electronRendererConf : Configuration = {
 	
 	// target : "electron-renderer",
 	externalsPresets : {
@@ -10,9 +10,9 @@ export const electronRendererConf : WebpackConfiguration = {
 		new webpack.ExternalsPlugin( 'commonjs' , [
 			'electron',
 		] ),
+		
 	],
 	
 }
 
-
-import webpack from 'webpack';
+import webpack,{Configuration} from 'webpack';

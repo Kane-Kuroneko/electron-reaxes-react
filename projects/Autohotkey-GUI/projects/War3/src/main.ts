@@ -1,5 +1,3 @@
-// Modules to control application life and create native browser window
-
 logger.initialize();
 
 console.log( __NODE_ENV__ );
@@ -47,7 +45,7 @@ app.whenReady().then( () => {
 // 也可以拆分成几个文件，然后用 require 导入。
 
 import logger from 'electron-log/main';
-import { app , BrowserWindow , globalShortcut , ipcMain , ipcRenderer , screen } from 'electron';
+import Electron ,{ app , BrowserWindow , globalShortcut , ipcMain , ipcRenderer , screen } from 'electron';
 import path from 'path';
 import Config from '../config';
 import purdy from 'purdy';

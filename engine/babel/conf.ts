@@ -1,4 +1,5 @@
 export default {
+	cacheDirectory: true, // 启用缓存以加速构建
 	presets: [
 		[
 			"@babel/preset-env",

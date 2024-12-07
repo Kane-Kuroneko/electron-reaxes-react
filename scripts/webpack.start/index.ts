@@ -9,6 +9,10 @@
  * build-renderer
  */
 const startRendererServer = async( conf: Configuration ) => {
+	if(!conf){
+		console.log(chalk.green('不需要打包renderer\n'));
+		return Promise.resolve();
+	}
 	try {
 		const { compiler } = await webpack_promise( conf );
 		const webpackServer = new WebpackDevServer( conf.devServer , compiler );
@@ -23,14 +27,18 @@ const startRendererServer = async( conf: Configuration ) => {
 			throw e;
 		} );
 	} catch ( e ) {
-		console.error( e );
-		console.warn( "WDS可能意外退出了!" );
-		return Promise.reject( e );
+		// console.error( e );
+		// console.warn( "WDS可能意外退出了!" );
+		// return Promise.reject( e );
 	}
 };
 
 
 const buildPreload = async (conf: Configuration) => {
+	if(!conf){
+		console.log(chalk.green('不需要打包preload'));
+		return Promise.resolve();
+	}
 	return webpack_promise( conf ).
 	then( ( { stats } ) => {
 		console.log( chalk.green( `Electron-Preload打包成功` ) );
@@ -57,16 +65,21 @@ const buildMain = async( conf: Configuration ) => {
 	} );
 };
 
-
 startRendererServer( webpack_conf_for_electron_renderer ).
 then( () => buildPreload( webpack_conf_for_electron_preload ) ).
 then( () => buildMain( webpack_conf_for_electron_main ) ).
 then( () => {
-	console.log(chalk.green('启动成功!'));
+	console.log(chalk.green('打包成功，点击启动Electron Dev'));
+	console.log('file://package.json:10');
+	console.log("Run the script: ./run-electron-start.sh");
+	// console.log("npm run electron-start:ahk-war3");
+	// exec('npm run electron-start:ahk-war3')'\x1b]8;;file:///path/to/your/file\x1b\\Click to open file\x1b]8;;\x1b\\'
 	
 } ).catch(e => {
 	console.log('打包失败!',purdy(e,{}));
 });
+
+
 import purdy from 'purdy';
 import { webpack_conf_for_electron_main , webpack_conf_for_electron_renderer ,webpack_conf_for_electron_preload } from "../utils/mixedRepoWebpackConf";
 

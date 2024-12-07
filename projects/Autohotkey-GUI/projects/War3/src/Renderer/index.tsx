@@ -2,8 +2,16 @@ if(isElectron){
 	var { IPC } = await import('../ENV/electron')
 }
 const root = createRoot( document.getElementById( "react-app-root" ) );
-console.log(i18n);
-console.log(I18n);
+
+IPC.on( 'json' , ( e , json ) => {
+	if( json.type === 'clear-localstorage' ) {
+		localStorage.clear();
+		location.reload();
+		console.log( 'localstorage cleared' );
+	}
+} );
+// console.log(i18n);
+// console.log(I18n);
 // const ipcRenderer = _Danger_Native_IpcRenderer_;
 
 // console.log(_Danger_Native_IpcRenderer_);
@@ -29,6 +37,7 @@ class App extends Reaxlass {
 			<MainSwitch />
 			
 			<RightBottomFloatButtons/>
+			<ModalSponsor/>
 		</div>;
 	}
 }
@@ -55,6 +64,7 @@ IPC?.on( 'console' , ( e , data ) => {
 } );
 
 
+import { ModalSponsor } from './Modal-Sponsor';
 import { RightBottomFloatButtons } from './RightBottom-FloatButtons';
 import { isElectron } from '../ENV';
 import { MButtonToAtttack } from './MButton-to-Atttack';

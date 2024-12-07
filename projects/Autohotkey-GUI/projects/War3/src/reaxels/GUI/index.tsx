@@ -21,9 +21,16 @@ export const reaxel_GUI = reaxel( () => {
 		
 		checkbox_AutoSwitch : true,
 		
+		ModalVisible_editSpecialSavesList:false,
+		
+		specialSavesList : [] as string[],
+		
 		input_detectionDelay : CONSTANTS_detectionDelay ,
 		input_detectionDelay_editing : false ,
 	} );
+	
+	const persist = Refaxel_BrowserPersist('GUI')({store,setState});
+	
 	IPC?.on( 'json' , ( e , json ) => {
 		console.log( e , json );
 		if( json.type === 'ahk-cp-status' ) {
@@ -99,6 +106,7 @@ export const reaxel_GUI = reaxel( () => {
 	} , () => [ store.switch_replaceF6 ] );
 	
 	obsReaction( ( first ) => {
+		console.log(store.switch_RbtnDragging);
 		if( first ) return;
 		IPC?.send( 'json' , {
 			type : 'ahk' ,
@@ -144,7 +152,7 @@ export const reaxel_GUI = reaxel( () => {
 			data : store.checkbox_AutoSwitch ? 'start' : 'stop' ,
 		} );
 	} , () => [ store.checkbox_AutoSwitch ] );
-
+	
 	
 	
 	const ret = {
@@ -201,6 +209,9 @@ export const reaxel_GUI = reaxel( () => {
 				checkbox_AutoSwitch : value ,
 			} );
 		},
+		toggleEditSpecialSavesListModalVisible(visible = !store.ModalVisible_editSpecialSavesList){
+			mutate( s => s.ModalVisible_editSpecialSavesList = !s.ModalVisible_editSpecialSavesList );
+		},
 		setDetectionDelay( ms ) {
 			mutate( s => s.input_detectionDelay = ms );
 		} ,
@@ -222,8 +233,8 @@ export const reaxel_GUI = reaxel( () => {
 	};
 } );
 
+import { Refaxel_BrowserPersist } from '#generic/reaxels/browser-persist';
 import { isElectron , isBrowser } from '../../ENV';
-
 
 
 

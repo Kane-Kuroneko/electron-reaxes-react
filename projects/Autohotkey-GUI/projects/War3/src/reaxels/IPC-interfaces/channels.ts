@@ -21,7 +21,9 @@ type JsonTypes =
 	| { type: 'system-info', data: { systemLanguage: Languages } }
 	
 	// ahk 进程的状态，data 是一个 boolean 值
-	| { type: 'ahk-cp-status', data: boolean };
+	| { type: 'ahk-cp-status', data: boolean }
+	
+	| { type: 'clear-localstorage' }
 
 
 export type IPCChannels = {

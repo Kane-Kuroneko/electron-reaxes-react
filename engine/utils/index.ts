@@ -2,19 +2,27 @@ export * from "./js-test-module-exts";
 export * from "./webpack-plugins";
 
 /*封装webpack回调为promise*/
-export const webpack_promise = (config:WebpackConfiguration) : Promise<{compiler:Compiler,error:Error,stats:Stats}> => {
+export const webpack_promise = (config:Configuration) : Promise<{compiler:Compiler,error:Error,stats:Stats}> => {
 	return new Promise((resolve, reject) => {
 		const compiler = webpack(config, (error, stats) => {
-			if (error == null) {
-				resolve({ compiler, error, stats });
-			} else if (stats?.hasErrors()) {
+			if (stats?.hasErrors()) {
 				throw stats.toJson().errors;
-			} else {
-				reject({
-					error,
-					stats,
-				});
+			}else if(error){
+				throw error;
+			}else {
+				resolve({ compiler, error, stats });
 			}
+			// if (error == null) {
+			//	
+			// } else if (stats?.hasErrors()) {
+			// 	throw stats.toJson().errors;
+			// } else {
+			// 	reject({
+			// 		error,
+			// 		stats,
+			// 		_:stats.errors,
+			// 	});
+			// }
 		});
 	});
 };
@@ -63,5 +71,5 @@ export const reflect = <M extends Array<{
 import { fileURLToPath, pathToFileURL } from "url";
 import path from "path";
 import os from "os";
-import webpack , {Compiler,Stats} from "webpack";
+import webpack , {Compiler,Stats,Configuration} from "webpack";
 import portfinder from "portfinder";

@@ -8,8 +8,8 @@ let partialWebpackConf_Main : WebpackConfiguration = {} ,
 try {
 	const { main, renderer , preload } = await import(path.join('file://',absolutelyPath_subproject,'partial.webpack-conf.ts'));
 	partialWebpackConf_Main = main(absolutelyPath_RepositoryRoot, absolutelyPath_subproject);
-	partialWebpackConf_Renderer = renderer(absolutelyPath_RepositoryRoot, absolutelyPath_subproject);
-	partialWebpackConf_Preload = preload(absolutelyPath_RepositoryRoot, absolutelyPath_subproject);
+	partialWebpackConf_Renderer = renderer?.(absolutelyPath_RepositoryRoot, absolutelyPath_subproject);
+	partialWebpackConf_Preload = preload?.(absolutelyPath_RepositoryRoot, absolutelyPath_subproject);
 }catch (e){
 	console.log(e);
 	console.log('import path error: ',path.join('file://',absolutelyPath_subproject,'partial.webpack-conf.ts'));
@@ -35,17 +35,17 @@ if(node_env === 'development'){
 	]
 }else if(node_env === 'production') {
 	main_configs = [
-		webpackBaseConf,
-		electronMainConf,
-		electronProdConf_Main,
-		partialWebpackConf_Main,
-	]
+		webpackBaseConf ,
+		electronMainConf ,
+		electronProdConf_Main ,
+		partialWebpackConf_Main ,
+	];
 	renderer_configs = [
-		webpackBaseConf,
-		electronRendererConf,
-		electronProdConf_Renderer,
-		partialWebpackConf_Renderer,
-	]
+		webpackBaseConf ,
+		electronRendererConf ,
+		electronProdConf_Renderer ,
+		partialWebpackConf_Renderer ,
+	];
 }
 preload_configs = [
 	webpackBaseConf,
@@ -53,9 +53,27 @@ preload_configs = [
 	partialWebpackConf_Preload,
 	node_env === 'production' ? {watch:false} : {}
 ];
-export const webpack_conf_for_electron_main = merge(main_configs);
-export const webpack_conf_for_electron_renderer = merge(renderer_configs);
-export const webpack_conf_for_electron_preload = merge(preload_configs);
+
+let webpack_conf_for_electron_main = merge(main_configs);
+let webpack_conf_for_electron_renderer ;
+let webpack_conf_for_electron_preload ;
+
+if(!partialWebpackConf_Renderer){
+	webpack_conf_for_electron_renderer = null;
+}else {
+	webpack_conf_for_electron_renderer = merge( renderer_configs );
+}
+
+if(!partialWebpackConf_Preload){
+	webpack_conf_for_electron_preload = null;
+}else {
+	webpack_conf_for_electron_preload = merge(preload_configs);
+}
+export {
+	webpack_conf_for_electron_main ,
+	webpack_conf_for_electron_renderer ,
+	webpack_conf_for_electron_preload,
+};
 
 // purdy( webpack_conf_for_electron_renderer,{depth:3} );
 

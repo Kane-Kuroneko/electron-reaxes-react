@@ -25,7 +25,7 @@ export let {
 		key: "inputPort" as const,
 	},
 	{
-		regExp: /\bGamepad-Task-Manager|Linker|Proxy-Rules-Modifier|Autohotkey-GUI\b/,
+		regExp: /\bGamepad-Task-Manager|Linker|Proxy-Rules-Modifier|Autohotkey-GUI|Electron-GPT\b/,
 		key: "project" as const,
 	},
 	{
