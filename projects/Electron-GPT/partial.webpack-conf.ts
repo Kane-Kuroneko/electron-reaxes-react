@@ -5,7 +5,7 @@ export const main = (
 	repoRootPath:string,
 	//子工程目录,即/projects/Autohotkey-GUI/projects/War3
 	subProjectRootPath:string
-): WebpackConfiguration => {
+): Configuration => {
 	
 	return {
 		entry: path.join(subProjectRootPath, "src/Main/index.tsx"),
@@ -42,5 +42,5 @@ export const preload = null;
 import path,{} from 'path';
 import WatchFilePlugin from 'webpack-watch-files-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import webpack from 'webpack';
+import webpack , { Configuration } from 'webpack';
 import CopyPlugin from 'copy-webpack-plugin';

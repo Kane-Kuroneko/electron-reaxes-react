@@ -1,6 +1,7 @@
 
 
 declare global {
+	
 	export const versions : {
 		node : string,
 		chrome : string,
@@ -20,8 +21,11 @@ declare global {
 		versions : typeof versions;
 		IPC : typeof IPC;
 	}
-	export const I18n : typeof import('#reaxels/exports')['I18n'];
-	export const i18n : typeof import('#reaxels/exports')['i18n'];
+	export const I18n : typeof import('#reaxels/exports.renderer')['I18n'];
+	export const i18n : typeof import('#reaxels/exports.renderer')['i18n'];
+	
+	export const IPCLogger: typeof import('#reaxels/exports.main')['IPCLogger'];
+	
 }
 
 export {}

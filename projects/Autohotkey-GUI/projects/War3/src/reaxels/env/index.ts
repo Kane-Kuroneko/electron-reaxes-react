@@ -78,6 +78,3 @@ type Reaxel_ENV = MainStore & RendererStore & CommonStore
 import path from 'node:path';
 import { dev , main , renderer } from 'electron-is';
 import logger from 'electron-log';
-import process from 'node:process';
-
-

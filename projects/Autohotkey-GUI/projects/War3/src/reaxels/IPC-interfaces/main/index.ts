@@ -18,4 +18,4 @@ export const reaxel_IPCInterfaces = reaxel( () => {
 
 
 import { app } from 'electron';
-import { mainWindowLoaded } from '../../../Main/initialize-main-window';
+import { mainWindowLoaded } from '#project/src/Main/mainWindow-loaded-promise';

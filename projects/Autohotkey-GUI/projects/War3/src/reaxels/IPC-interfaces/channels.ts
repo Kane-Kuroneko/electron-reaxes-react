@@ -1,4 +1,4 @@
-type JsonTypes =
+export type JsonTypes =
 // 魔兽游戏进程是否存在的轮询结果，暂时用不到
 	| { type: 'war3-process-existence', data: boolean }
 	
@@ -23,13 +23,13 @@ type JsonTypes =
 	// ahk 进程的状态，data 是一个 boolean 值
 	| { type: 'ahk-cp-status', data: boolean }
 	
-	| { type: 'clear-localstorage' }
+	| { type: 'clear-localstorage' , data:null }
 
 
 export type IPCChannels = {
 	json: JsonTypes,
 	
-	console: any,
+	console: any[],
 	
 }
 

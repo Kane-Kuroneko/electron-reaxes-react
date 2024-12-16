@@ -1,3 +1,4 @@
-export * from './initialize-main-window';
-import './IPC-listeners';
+import './tray';
 import './singleInstance';
+import './IPC-listeners';
+import "./webContents-listeners";

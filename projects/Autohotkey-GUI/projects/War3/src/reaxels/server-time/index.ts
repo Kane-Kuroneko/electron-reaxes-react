@@ -13,7 +13,6 @@ export const reaxel_ServerTime = reaxel(() => {
 		
 		const requestStartTime = Date.now();
 		let requestEndTime = 0;
-		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 		fetch('https://worldtimeapi.org/api/timezone/Etc/UTC',{
 			
 		}).
@@ -63,7 +62,7 @@ export const reaxel_ServerTime = reaxel(() => {
 	};
 	
 	obsReaction( () => {
-		console.log( 'tik tok:' , dayjs(store.serverTime).format('YYYY-MM-DD HH:mm:ss') );
+		// console.log( 'tik tok:' , dayjs(store.serverTime).format('YYYY-MM-DD HH:mm:ss') );
 	} , () => [store.serverTime] );
 	
 	return () => {

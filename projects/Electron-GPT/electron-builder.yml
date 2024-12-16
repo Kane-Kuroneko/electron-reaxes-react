@@ -1,15 +1,15 @@
 {
    icon: "statics/gpt",
-   directories : {
+   directories: {
       output : "__Bin"
    },
-   files : ["dist/"],
-   extraResources : [
+   files: ["dist/"],
+   extraResources: [
       {
-         from : "dist/statics",
-         to : "statics"
+         from: "dist/statics",
+         to: "statics"
       }
    ],
    electronVersion: "33.1.0",
-   asar : true,
+   asar: true,
 }

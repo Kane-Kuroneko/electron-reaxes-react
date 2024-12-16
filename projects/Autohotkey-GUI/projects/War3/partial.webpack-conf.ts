@@ -25,10 +25,13 @@ export const main = (
 						to : path.join( subProjectRootPath , 'dist/statics' ) 
 					} ,
 					{
-						from : path.join( subProjectRootPath , 'src/ahk-scripts' ) ,
-						to : path.join( subProjectRootPath , 'dist/statics/ahk-scripts' ) ,
+						from : path.join( subProjectRootPath , 'assets' ) ,
+						to : path.join( subProjectRootPath , 'dist/statics/assets' ) ,
 					} ,
 				] ,
+			} ),
+			new ProvidePlugin( {
+				'IPCLogger' : [ '#reaxels/exports.main' , 'IPCLogger' ] ,
 			} ),
 		],
 	};
@@ -53,25 +56,26 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Webp
 				'#reaxels' : path.join(subProjectRootPath,'src/reaxels'),
 			}
 		},
-		plugins: [
-			new WatchFilePlugin({
+		plugins : [
+			new WatchFilePlugin( {
 				files : [
-					path.join(subProjectRootPath,'src/ahk-scripts/**')
-				]
-			}),
-			new HtmlWebpackPlugin({
-				template: path.join(subProjectRootPath, "../../engine/index.template.html"),
-				filename: 'index.html',
-				minify: false,
-				hash: true,
+					path.join( subProjectRootPath , 'src/ahk-scripts/**' ),
+				] ,
+			} ) ,
+			new HtmlWebpackPlugin( {
+				template : path.join( subProjectRootPath , "../../engine/index.template.html" ) ,
+				filename : 'index.html' ,
+				minify : false ,
+				hash : true ,
 				// inject: false,
-			}),
-			new ProvidePlugin({
+			} ) ,
+			new ProvidePlugin( {
 				
-				'I18n': ['#reaxels/exports','I18n'],
-				'i18n': ['#reaxels/exports','i18n'],
-			})
+				'I18n' : [ '#reaxels/exports.renderer' , 'I18n' ] ,
+				'i18n' : [ '#reaxels/exports.renderer' , 'i18n' ] ,
+			} ),
 		],
+		
 	};
 };
 

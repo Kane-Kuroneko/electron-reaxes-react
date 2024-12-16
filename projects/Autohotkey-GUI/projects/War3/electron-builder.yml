@@ -1,4 +1,5 @@
 {
+   icon: "assets/ico/logo - mixin.ico",
    directories : {
       output : "__Bin"
    },

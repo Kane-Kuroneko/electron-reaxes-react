@@ -8,6 +8,7 @@ declare global {
 	export const obsReaction : typeof import('reaxes')['Reaxes']['obsReaction'];
 	export const collectDeps : typeof import('reaxes')['Reaxes']['collectDeps'];
 	export const reaxper : typeof import('reaxes-react')['reaxper'];
+	export const Reaxlass : typeof import('reaxes-react')['Reaxlass'];
 	export const Reaxes : typeof import('reaxes')['Reaxes'];
 	
 	export const utils : typeof import('#generic/utils');
