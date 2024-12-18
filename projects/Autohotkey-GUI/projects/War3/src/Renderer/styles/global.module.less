@@ -4,13 +4,14 @@
 		font-family: Consolas, 微软雅黑;
 		background-color: rgb(245, 245, 245);
 		
-		* {
-			user-select: none;
-		}
 	}
 	
 	body {
 		margin: 0;
+	}
+	
+	.selectable {
+		user-select: unset;
 	}
 	
 	#react-app-root {
@@ -21,17 +22,22 @@
 		
 		
 		.war3-ahk-reaxes {
-			width: 460px;
+			display: flex;
+			flex-flow: column nowrap;
+			justify-content: flex-start;
+			align-items: center;
+			width: 960px;
 			padding: 60px 40px 40px 40px;
+			margin-top: 60px;
 			
 			.ant-divider-horizontal {
 				margin: 20px 0;
 			}
 			
 			// 通过嵌套，修改 lang="en-US" 时的样式
-			html[lang='en-US'] & {
-				width: 620px;
-			}
+			//html[lang='en-US'] & {
+			//	width: 620px;
+			//}
 		}
 		
 	}

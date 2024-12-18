@@ -3,8 +3,23 @@ export let reaxel_I18n = reaxel(() => {
 	let i18n = Refaxel_I18n( [
 		{
 			language : 'zh-CN' ,
-			resourceLoader : () => import('./langs/s-Chinese').then(m => m.default) ,
+			resourceLoader : () => import('./langs/zh-CN').then(m => m.default) ,
 			name : '简体中文' ,
+		},
+		{
+			language : 'zh-TW' ,
+			resourceLoader : () => import('./langs/zh-TW').then(m => m.default) ,
+			name : '正體中文' ,
+		},
+		{
+			language : 'ja-JP' ,
+			resourceLoader : () => import('./langs/ja-JP').then(m => m.default) ,
+			name : '日本語' ,
+		},
+		{
+			language : 'ko-KR' ,
+			resourceLoader : () => import('./langs/ko-KR').then(m => m.default) ,
+			name : '한국어' ,
 		},
 		{
 			language : 'en-US' ,

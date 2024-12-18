@@ -3,6 +3,10 @@
 // declare const React : typeof import('react');
 declare const useLayoutEffect : typeof React.useLayoutEffect;
 declare const useCallback : typeof React.useCallback;
+// declare const useEffect : typeof React.useEffect;
+// declare const useRef : typeof React.useRef;
+// declare const reaxper : typeof React.useRef;
+
 declare namespace ORZ {
 	
 	export type env = "server_dev"|"server_yang" | "server_production" | "unset"  ;

@@ -2,7 +2,7 @@ export const useRouter = () => {
 	return {
 		navigate : useNavigate() ,
 		params : useParams() ,
-		location : useLocation() ,
+		hash : useLocation() ,
 	};
 };
 import {

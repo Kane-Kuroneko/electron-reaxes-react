@@ -79,17 +79,16 @@ export const Refaxel_I18n = function (
 	setLanguage( sourceLanguage );
 	
 	const i18n = function(){
-		let prevLang = sourceLanguage;
+
 		return (langText:string) => {
 			/*依赖收集,不要去掉否则有bug*/
 			const lang = (store.loading,store.language);
 			if(lang === sourceLanguage) return langText;
-			if(languageMaps[lang]){
-				prevLang = lang;
+
+			if(languageMaps[lang] && languageMaps[lang][langText]){
 				return languageMaps[lang][langText];
 			} else {
-				if(prevLang === sourceLanguage) return langText;
-				return languageMaps[ prevLang ][ langText ];
+				return `ERR_I18N_MISS_${lang}(${langText})`
 			}
 		};
 	}()
@@ -146,6 +145,8 @@ export type Config = /*common keys*/{
 	default?: boolean,
 	//语言的名字,如果不设置则使用Language替代
 	name?: string,
+	//true:当目标语言的文本miss时,回退至无警告的原始text  false:不可用时将文本替换为ERR_I18N_MISS_<language>(originalText),以提示开发者补全国际化
+	fallbackToOriginalText? : boolean,
 } & (
 	| {
 	isSource: boolean;

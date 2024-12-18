@@ -17,7 +17,7 @@ export const Refaxel_BrowserPersist = function (persistKey:string) {
 	 * * store,setState:由orzMobx创建
 	 * * filter: 可选的过滤器函数,返回与store相同(但可以裁剪不想要的分支)的结构
 	 */
-	return <T extends {store:S,setState,filter?},S,>({store,setState,filter}:{store:S,setState,filter:(store:S) => Partial<S>}) => {
+	return <T extends {store:S,setState,filter?},S,>({store,setState,filter}:{store:S,setState,filter?:(store:S) => Partial<S>}) => {
 		
 		const persistedData = localStorage.getItem( persistKey );
 		

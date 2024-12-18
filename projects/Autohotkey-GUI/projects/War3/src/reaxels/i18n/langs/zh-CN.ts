@@ -1,5 +1,3 @@
-
-
 export default {
 	"Left Alt": "左Alt",
 	"Mapping to inventory , Right Alt not modified": "对应物品栏，右Alt未改动",
@@ -19,6 +17,13 @@ export default {
 	"Space + F6 will be saved as a special name": "空格键 + F6生成特殊存档",
 	"Edit": "编辑",
 	"edit special list": "编辑特殊存档列表",
+	"Hot-Enhancer": "按键增强",
+	"Cheats": "秘籍",
+	"Copy": "复制",
+	"Operations": "操作",
+	"Cheat Code": "秘籍",
+	"Description": "作用",
+	"Drag to Sort": "拖拽排序",
 } as any;
 
  

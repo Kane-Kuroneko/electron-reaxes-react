@@ -28,7 +28,7 @@ export const reaxel_GUI = reaxel( () => {
 		input_detectionDelay : CONSTANTS_detectionDelay ,
 		input_detectionDelay_editing : false ,
 		
-		location : '/#/hot-enhancer'
+		hash : '/hot-enhancer'
 	} );
 	
 	const persist = Refaxel_BrowserPersist( 'GUI' )( {
@@ -71,15 +71,21 @@ export const reaxel_GUI = reaxel( () => {
 		] ,
 	} );
 	
+	window.addEventListener('hashchange',(e) => {
+		// console.log( e.newURL );
+	})
+	
 	obsReaction( (first,) => {
 		const hash = location.hash;
 		if(first && hash){
-			setState( { location : hash } );
+			setState( { hash } );
 			return;
 		}else {
-			history.pushState( '' , null , store.location );
+			console.log( store.hash );
+			// history.pushState( '' , null , store.location );
+			location.hash = store.hash;
 		}
-	} , () => [store.location] );
+	} , () => [store.hash] );
 	
 	obsReaction( ( first ) => {
 		if( first ) return;

@@ -2,6 +2,7 @@ export const Layout = reaxper( (props:React.PropsWithChildren) => {
 	
 	
 	return <div className = "war3-ahk-reaxes">
+		<SegmentedSwitcher/>
 		<I18NDropdown />
 		<Outlet/>
 		<RightBottomFloatButtons />
@@ -9,7 +10,7 @@ export const Layout = reaxper( (props:React.PropsWithChildren) => {
 	</div>;
 } );
 
-
+import { SegmentedSwitcher } from '#project/src/Renderer/components/Segmented-Switcher';
 import { ModalSponsor } from '#project/src/Renderer/components/Modal-Sponsor';
 import { RightBottomFloatButtons } from '#project/src/Renderer/components/Float-Buttons';
 import { I18NDropdown } from '#project/src/Renderer/components/I18N-Dropdown';

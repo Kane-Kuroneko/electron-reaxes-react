@@ -5,7 +5,7 @@ export const MButtonToAtttack = reaxper( () => {
 		toggleMbuttonToAttack,
 	} = reaxel_GUI();
 	const { language } = reaxel_I18n();
-	console.log(language);
+	
 	return <>
 		<FunctionSwitcher
 			value = { GUI_Store.switch_MbtnToAttack }

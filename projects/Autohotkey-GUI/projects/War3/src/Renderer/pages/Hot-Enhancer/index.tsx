@@ -1,21 +1,31 @@
 export const HotEnhancer = reaxper( () => {
 	
+	const { language } = reaxel_I18n();
 	
 	return <MainConententAreaContainer>
-		<AltInventory />
-		<Divider style = { { borderColor : '#dcdcdc' } } />
-		<ForbidMouseWheels />
-		<Divider style = { { borderColor : '#dcdcdc' } } />
-		<ReplaceF6 />
-		<Divider />
-		<RbuttonDragging />
-		<Divider style = { { borderColor : '#dcdcdc' } } />
-		<MButtonToAtttack />
-		<Divider style = { { borderColor : '#dcdcdc' } } />
-		<MainSwitch />
+		<div style={{
+			width : {
+				'zh-CN' : '500px',
+				'en-US' : '600px',
+			}[language] || '600px',
+			margin : '0 auto',
+		}}>
+			<AltInventory />
+			<Divider style = { { borderColor : '#dcdcdc' } } />
+			<ForbidMouseWheels />
+			<Divider style = { { borderColor : '#dcdcdc' } } />
+			<ReplaceF6 />
+			<Divider />
+			<RbuttonDragging />
+			<Divider style = { { borderColor : '#dcdcdc' } } />
+			<MButtonToAtttack />
+			<Divider style = { { borderColor : '#dcdcdc' } } />
+			<MainSwitch />
+		</div>
 	</MainConententAreaContainer>;
 } );
 
+import { reaxel_I18n } from '#reaxels/i18n';
 import { MainConententAreaContainer } from '#project/src/Renderer/pure-components/Main-Content-Area-Container';
 import { MButtonToAtttack } from '#project/src/Renderer/components/MButton-to-Atttack';
 import { ForbidMouseWheels } from '#project/src/Renderer/components/Forbid-MouseWheels';

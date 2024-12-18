@@ -1,6 +1,5 @@
 export const Routing = reaxper( () => {
-	
-	
+
 	return <HashRouter>
 		<Routes>
 			<Route
@@ -15,7 +14,7 @@ export const Routing = reaxper( () => {
 				<Route
 					path = "cheats"
 					Component = { Cheats }
-				></Route>
+				/>
 			
 			</Route>
 		
@@ -24,6 +23,6 @@ export const Routing = reaxper( () => {
 } );
 
 import { Cheats } from '#project/src/Renderer/pages/Cheats';
-import {HotEnhancer} from '#project/src/Renderer/pages/Hot-Enhancer';
+import { HotEnhancer } from '#project/src/Renderer/pages/Hot-Enhancer';
 import { Layout } from '#project/src/Renderer/components/Layout';
-import { Routes , HashRouter , Route } from 'react-router-dom';
+import { HashRouter , Route , Routes } from 'react-router-dom';
