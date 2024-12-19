@@ -24,6 +24,8 @@ export type JsonTypes =
 	| { type: 'ahk-cp-status', data: boolean }
 	
 	| { type: 'clear-localstorage' , data:null }
+	
+	| { type: 'fetch-ahk_cp-status' , data:boolean }
 
 
 export type IPCChannels = {

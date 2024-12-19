@@ -1,4 +1,4 @@
-export const DragSVG = reaxper( (props:React.SVGProps<SVGSVGElement>) => {
+export const SVG_Drag = reaxper( (props:React.SVGProps<SVGSVGElement>) => {
 	
 	
 	return <svg

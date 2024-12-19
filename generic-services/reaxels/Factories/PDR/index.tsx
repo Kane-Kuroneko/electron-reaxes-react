@@ -50,7 +50,7 @@ const reaxel_fetch = function(){
 			return text;
 		}).then((text) => {
 			return preventDup(() => {
-				console.log(text);
+				// console.log(text);
 				console.log(text.slice(0 , 1));
 			});
 		});

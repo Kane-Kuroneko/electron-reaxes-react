@@ -2,8 +2,8 @@ export const SegmentedSwitcher = reaxper( () => {
 	const { GUI_Store , GUI_SetState } = reaxel_GUI();
 	const options = [
 		{
-			label : i18n( 'Hot-Enhancer' ) ,
-			value : '/hot-enhancer' ,
+			label : i18n( 'Hotkey-Enhancer' ) ,
+			value : '/hotkey-enhancer' ,
 		} ,
 		{
 			label : i18n( 'Cheats' ) ,

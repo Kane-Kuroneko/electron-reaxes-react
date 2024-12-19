@@ -46,7 +46,7 @@ export const reaxel_ServerTime = reaxel(() => {
 		}).
 		catch(error => {
 			// 错误处理
-			console.error('There was a problem with the fetch operation:', error);
+			console.warn('There was a problem with the fetch operation:', error);
 		});
 	};
 	

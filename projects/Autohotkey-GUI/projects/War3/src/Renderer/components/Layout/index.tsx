@@ -5,14 +5,16 @@ export const Layout = reaxper( (props:React.PropsWithChildren) => {
 		<SegmentedSwitcher/>
 		<I18NDropdown />
 		<Outlet/>
-		<RightBottomFloatButtons />
+		<FloatButtons />
+		<Footer/>
 		<ModalSponsor />
 	</div>;
 } );
 
+import { Footer } from '#project/src/Renderer/components/Footer';
 import { SegmentedSwitcher } from '#project/src/Renderer/components/Segmented-Switcher';
 import { ModalSponsor } from '#project/src/Renderer/components/Modal-Sponsor';
-import { RightBottomFloatButtons } from '#project/src/Renderer/components/Float-Buttons';
+import { FloatButtons } from '#project/src/Renderer/components/Float-Buttons';
 import { I18NDropdown } from '#project/src/Renderer/components/I18N-Dropdown';
 import '#project/src/Renderer/styles/global.module.less';
 import '#project/src/Renderer/styles/index.less';

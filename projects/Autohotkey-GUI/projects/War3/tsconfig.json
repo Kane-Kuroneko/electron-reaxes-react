@@ -27,7 +27,7 @@
 		"checkJs" : true ,
 		"target" : "ESNext" ,
 		"allowSyntheticDefaultImports" : true ,
-		"typeRoots" : [ "node_modules/@types" , "./types" ] ,
+		"typeRoots" : [ "node_modules/@types" , "./types" , "../../../../" ] ,
 		"paths" : {
 			"#root/*" : ["../../../../*"],
 			"#root-projects/*" : ["../../../../projects/*"],
@@ -36,6 +36,6 @@
 			"#reaxels/*" : ["./src/reaxels/*"]
 		}
 	},
-	"include" : [ "../../../../*" , "**/*.ts" , "**/*.tsx" , "../../../../node_modules/@types/node/buffer.d.ts" ] ,
+	"include" : ["./src/**", "../../../../*" , "**/*.ts" , "**/*.tsx" , "../../../../node_modules/@types/node/buffer.d.ts" ] ,
 	"exclude" : [ "node_modules/@types/node" ]
 }

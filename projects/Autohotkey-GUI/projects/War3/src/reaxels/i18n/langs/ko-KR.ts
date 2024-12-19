@@ -17,7 +17,7 @@ export default {
 	"Space + F6 will be saved as a special name": "空格键 + F6生成特殊存档",
 	"Edit": "编辑",
 	"edit special list": "编辑特殊存档列表",
-	"Hot-Enhancer": "按键增强",
+	"Hotkey-Enhancer": "按键增强",
 	"Cheats": "秘籍",
 	"Copy": "复制",
 } as any;

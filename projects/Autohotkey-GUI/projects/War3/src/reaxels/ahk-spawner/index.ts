@@ -162,7 +162,7 @@ function spawnWar3AHK( { ahkSpawner_SetState , ahkSpawner_Store } ) {
 				data : false ,
 			} );
 			
-			IPCLogger( `'child_process-closed.', ${ e }` );
+			IPCLogger( `'child_process-closed with code: ', ${ e }` );
 		} );
 		ahkSpawner_SetState( { ahk : null } );
 		console.log( 'closed......................' );

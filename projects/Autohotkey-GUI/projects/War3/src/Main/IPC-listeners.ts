@@ -13,14 +13,23 @@ mainWindowLoaded.then( ( win ) => {
 	
 } );
 
-const { toggleWar3ProcessMonitor } = reaxel_ProcessMonitor();
 
-ipcMain.on( 'json' , async( e , data ) => {
-	if( data.type === 'monitor-war3exe-process' ) {
-		toggleWar3ProcessMonitor(data.data);
-	}
+useIPC( 'monitor-war3exe-process' ).run( ( e , data ) => {
+	const { toggleWar3ProcessMonitor } = reaxel_ProcessMonitor();
+	toggleWar3ProcessMonitor( data );
+} );
+useIPC( 'fetch-ahk_cp-status' ).run( ( e , data ) => {
+	const {ahkSpawner_Store} = reaxel_AhkSpawner();
+	mainWindowLoaded.then( ( win ) => {
+		win.webContents.send( 'json' , {
+			type : 'fetch-ahk_cp-status' ,
+			data : !!ahkSpawner_Store.ahk,
+		} );
+	} );
 } );
 
+import { reaxel_AhkSpawner } from '#reaxels/ahk-spawner';
+import { useIPC } from '#project/src/utils/useIPC.main';
 import { mainWindowLoaded } from '#project/src/Main/mainWindow-loaded-promise';
 import { reaxel_ProcessMonitor } from '#reaxels/process-monitor';
 import { ipcMain,ipcRenderer } from 'electron';

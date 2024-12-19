@@ -21,6 +21,7 @@ export const reaxel_GUI = reaxel( () => {
 		switch_SpaceF6SaveToSpecial : true ,
 		
 		
+		ModalVisible_F6ShowCase : false ,
 		ModalVisible_editSpecialSavesList : false ,
 		
 		specialSavesList : [] as string[] ,
@@ -28,19 +29,18 @@ export const reaxel_GUI = reaxel( () => {
 		input_detectionDelay : CONSTANTS_detectionDelay ,
 		input_detectionDelay_editing : false ,
 		
-		hash : '/hot-enhancer'
+		hash : '/hotkey-enhancer'
 	} );
 	
 	const persist = Refaxel_BrowserPersist( 'GUI' )( {
 		store , setState , filter( s ) {
-			return _.omit( s , 'switch_main' , 'checkbox_AutoSwitch' );
+			return _.omit( s , 'switch_main' );
 		} ,
 	} );
 	
 	IPC?.on( 'json' , ( e , json ) => {
 		console.log( e , json );
 		if( json.type === 'ahk-cp-status' ) {
-			const data = json.data;
 			setState( { switch_main : json.data } );
 		}
 	} );
@@ -167,7 +167,6 @@ export const reaxel_GUI = reaxel( () => {
 	} , () => [ store.switch_MbtnToAttack ] );
 	
 	obsReaction( ( first ) => {
-		// if (first) return;
 		IPC?.send( 'json' , {
 			type : 'monitor-war3exe-process' ,
 			data : store.checkbox_AutoSwitch ? 'start' : 'stop' ,
@@ -240,10 +239,8 @@ export const reaxel_GUI = reaxel( () => {
 		} ,
 	};
 	
-	if( !store.checkbox_AutoSwitch ) {
+	if( !store.checkbox_AutoSwitch && store.switch_main ) {
 		ret.spawnAHK();
-	} else {
-		
 	}
 	
 	return () => {

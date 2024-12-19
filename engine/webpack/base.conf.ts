@@ -132,7 +132,7 @@ export const webpackBaseConf:Configuration = {
 				],
 			},
 			{
-				test: /\.(png|jpe?g|te?xt|gif|woff|woff2|eot|ttf|otf|bmp|swf|mp4)$/,
+				test: /\.(png|jpe?g|te?xt|gif|woff|woff2|eot|ttf|otf|bmp|swf|mp4|mov)$/,
 				type: 'asset/resource',
 				generator: {
 					filename: 'static/[hash][ext][query]',

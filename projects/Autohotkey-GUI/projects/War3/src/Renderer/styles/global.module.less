@@ -13,11 +13,16 @@
 	.selectable {
 		user-select: unset;
 	}
+	html,body,#react-app-root {
+		width: 100%;
+		height: 100%;
+		overflow: auto;
+	}
 	
 	#react-app-root {
 		display: flex;
 		flex-flow: column nowrap;
-		justify-content: center;
+		justify-content: flex-start;
 		align-items: center;
 		
 		

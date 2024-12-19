@@ -63,6 +63,7 @@ export const reaxel_ProcessMonitor = reaxel( () => {
 	
 	let ret = {
 		toggleWar3ProcessMonitor( directive ) {
+			console.log( directive );
 			setState( {
 				monitorEnabled : {
 					'start' : true ,

@@ -1,15 +1,13 @@
 import { CSSProperties } from "react";
 
-export const I18nSvg = reaxper((props:{style?:CSSProperties,className?:string}) => {
+export const SVG_I18n = reaxper( ( props:React.SVGProps<SVGSVGElement> ) => {
 	
 	return <svg
-		t = "1731426844942"
-		className = { props.className }
-		style = { props.style }
 		viewBox = "0 0 1024 1024"
 		version = "1.1"
 		xmlns = "http://www.w3.org/2000/svg"
 		p-id = "12372"
+		{ ...props }
 	>
 		<path
 			d = "M512 0a512 512 0 1 0 512 512A512 512 0 0 0 512 0z m341.927 651.976a61.084 61.084 0 0 1-44.967 59.838l-221.896 55.652a365.078 365.078 0 0 1-130.36 1.87c-4.363-1.158-236.41-57.611-236.41-57.611a60.55 60.55 0 0 1-44.522-59.392V321.447a59.748 59.748 0 0 1 58.056-61.173 55.563 55.563 0 0 1 13.624 1.781l222.609 55.83c26.178 6.59 44.521 22.261 44.521 50.488 0-28.405 18.61-44.522 45.056-50.933l221.897-55.652a59.303 59.303 0 0 1 72.214 59.837z"
@@ -31,4 +29,4 @@ export const I18nSvg = reaxper((props:{style?:CSSProperties,className?:string}) 
 	</svg>;
 	
 	
-} )
+} );

@@ -7,8 +7,8 @@ export const Routing = reaxper( () => {
 				Component = { Layout }
 			>
 				<Route
-					path = "hot-enhancer"
-					Component = { HotEnhancer }
+					path = "hotkey-enhancer"
+					Component = { HotkeyEnhancer }
 				/>
 				
 				<Route
@@ -23,6 +23,6 @@ export const Routing = reaxper( () => {
 } );
 
 import { Cheats } from '#project/src/Renderer/pages/Cheats';
-import { HotEnhancer } from '#project/src/Renderer/pages/Hot-Enhancer';
+import { HotkeyEnhancer } from '#project/src/Renderer/pages/Hotkey-Enhancer';
 import { Layout } from '#project/src/Renderer/components/Layout';
 import { HashRouter , Route , Routes } from 'react-router-dom';

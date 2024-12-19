@@ -1,6 +1,6 @@
 /*global provider*/
 // declare const _ : typeof import('lodash');
-// declare const React : typeof import('react');
+// declare const React: typeof import('react');
 declare const useLayoutEffect : typeof React.useLayoutEffect;
 declare const useCallback : typeof React.useCallback;
 // declare const useEffect : typeof React.useEffect;
@@ -93,12 +93,78 @@ declare module '*.gif' {
 	export default gif;
 }
 
+declare type Languages = 
+	| 'en-US'
+	| 'en-GB'
+	| 'zh-CN'
+	| 'zh-TW'
+	| 'zh-HK'
+	| 'es-ES'
+	| 'es-MX'
+	| 'fr-FR'
+	| 'de-DE'
+	| 'it-IT'
+	| 'pt-PT'
+	| 'pt-BR'
+	| 'ja-JP'
+	| 'ko-KR'
+	| 'ru-RU'
+	| 'ar-SA'
+	| 'tr-TR'
+	| 'hi-IN'
+	| 'nl-NL'
+	| 'sv-SE'
+	| 'pl-PL'
+	| 'da-DK'
+	| 'no-NO'
+	| 'fi-FI'
+	| 'cs-CZ'
+	| 'sk-SK'
+	| 'ro-RO'
+	| 'hu-HU'
+	| 'el-GR'
+	| 'he-IL'
+	| 'th-TH'
+	| 'id-ID'
+	| 'ms-MY'
+	| 'vi-VN'
+	| 'tl-PH'
+	| 'bn-IN'
+	| 'pa-IN'
+	| 'kn-IN'
+	| 'ml-IN'
+	| 'te-IN'
+	| 'mr-IN'
+	| 'gu-IN'
+	| 'ta-IN'
+	| 'ne-NP'
+	| 'si-LK'
+	| 'km-KH'
+	| 'lo-LA'
+	| 'my-MM'
+	| 'bo-CN'
+	| 'hr-HR'
+	| 'sr-RS'
+	| 'bs-BA'
+	| 'mk-MK'
+	| 'sq-AL'
+	| 'is-IS'
+	| 'lv-LV'
+	| 'et-EE'
+	| 'lt-LT'
+	| 'bs-CY'
+;
+
+declare type I18nComponents = {
+	[lang in Languages]?: React.ComponentType
+}
 
 declare module '*.png';
 declare module '*.jpg';
 declare module '*.jpeg';
 declare module '*.svg';
 declare module '*.bmp';
+declare module '*.mov';
 // declare const orzPromise : typeof import('#utils').orzPromise;
 // declare const crayon : typeof import('#generic/utils').crayon;
 // declare const logProxy : typeof import('#utils').logProxy;

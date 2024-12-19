@@ -1,7 +1,6 @@
-export const SVG_Log = reaxper( forwardRef<any,any>((props, ref) => {
+export const SVG_Log = reaxper( React.forwardRef<any,any>((props:React.SVGProps<SVGSVGElement>, ref) => {
 	
 	return <svg
-		{...props}
 		ref = {ref}
 		style={{width:'100%',height:'100%'}}
 		// t = "1734095233916"
@@ -12,6 +11,7 @@ export const SVG_Log = reaxper( forwardRef<any,any>((props, ref) => {
 		p-id = "4290"
 		width = "256"
 		height = "256"
+		{...props}
 	>
 		<path
 			d = "M665.6 396.8h-256c-12.8 0-25.6-6.4-25.6-19.2s6.4-19.2 19.2-19.2h249.6c12.8 0 19.2 6.4 19.2 19.2s0 19.2-6.4 19.2zM665.6 531.2h-256c-12.8 0-25.6-12.8-25.6-25.6s6.4-19.2 19.2-19.2h249.6c12.8 0 19.2 6.4 19.2 19.2 12.8 12.8 0 25.6-6.4 25.6zM665.6 665.6h-256c-12.8 0-19.2-6.4-19.2-19.2s6.4-19.2 19.2-19.2h249.6c12.8 0 19.2 6.4 19.2 19.2s-6.4 19.2-12.8 19.2z"
@@ -30,5 +30,3 @@ export const SVG_Log = reaxper( forwardRef<any,any>((props, ref) => {
 		></path>
 	</svg>;
 }) );
-
-import { forwardRef } from 'react';

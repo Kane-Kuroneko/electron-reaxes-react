@@ -13,8 +13,10 @@ export const useIPC = <T extends IPCChannels['json']['type']>( type: T ) => {
 				return;
 			}
 			
-			
 			IPC.on( 'json' , ( e , json ) => {
+				if(json.type !== type){
+					return;
+				}
 				cb( e , json.data as V );
 			} );
 		},

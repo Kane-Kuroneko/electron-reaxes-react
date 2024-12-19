@@ -8,7 +8,7 @@ export const HotKey = reaxper( ( props:props ) => {
 		...others
 	} = props;
 	
-	return <span className = {`${less['hotKey']} ${small?'small':''} ${className}`} { ...others }>
+	return <span className = {`${less['hotkey']} ${small?'small':''} ${className}`} { ...others }>
 		{ children }
 	</span>;
 } );

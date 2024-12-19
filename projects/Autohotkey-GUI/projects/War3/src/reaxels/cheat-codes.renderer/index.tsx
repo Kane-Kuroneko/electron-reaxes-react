@@ -22,10 +22,11 @@ export const reaxel_CheatCodes = reaxel( () => {
 		return ret;
 	};
 } );
-interface DataType {
+export interface DataType {
 	key: string;
 	code: string;
 	description: string;
+	example? : string;
 	children? : DataType[],
 	// _zh_desc?:string,
 }

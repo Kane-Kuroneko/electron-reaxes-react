@@ -28,7 +28,7 @@ export const I18NDropdown = reaxper( () => {
 						e.preventDefault();
 					} }
 				>
-					<I18nSvg style={{width : '24px', height : '24px',marginTop : '1px'}}/>
+					<SVG_I18n style={{width : '24px', height : '24px',marginTop : '1px'}}/>
 					<span style={{
 						fontSize : '18px',
 						marginLeft : '5px'
@@ -64,7 +64,7 @@ const menu:DropDownProps['menu']['items']  = [
 
 type props = React.PropsWithChildren<{}>;
 
-import { I18nSvg } from '#project/src/Renderer/pure-components/SVG/I18n.component';
+import { SVG_I18n } from '#project/src/Renderer/pure-components/SVG/I18n.component';
 import * as less from './style.module.less';
 import { Dropdown , DropDownProps} from 'antd';
 import { reaxel_I18n } from '#reaxels/i18n';

@@ -1,15 +1,14 @@
 const iconGapPX = 68;
 const { I18n_Store } = reaxel_I18n();
 
-export const RightBottomFloatButtons = reaxper( () => {
+export const FloatButtons = reaxper( () => {
 	
 	return <>
 		{
-			IconElements.map( ( { key , Icon , tooltip,onClick } , index ) => {
+			IconElements.map( ( { key , Icon , Tooltip,onClick } , index ) => {
 				return <Tooltip
 					key = { key }
 					placement = "top"
-					title = { tooltip }
 				>
 					<FloatButton
 						onClick = { onClick }
@@ -22,15 +21,23 @@ export const RightBottomFloatButtons = reaxper( () => {
 			} )
 		}
 		<FloatLog />
+		<FloatResetAllConf/>
 	</>;
 } );
 
 const IconElements = [
 	{
 		key : 'github' ,
-		get tooltip (){
-			return i18n( 'View On Github' );
-		},
+		Tooltip : reaxper((props:TooltipProps) => {
+			return <Tooltip
+				{...props}
+				title={<Button.Group>
+					<Button><I18n>View On Github</I18n></Button>
+				</Button.Group>}
+				color={'white'}
+				
+			>{ props.children }</Tooltip>;
+		}),
 		onClick(){
 			window.open( 'https://github.com' );
 		},
@@ -40,9 +47,12 @@ const IconElements = [
 	} ,
 	{
 		key : 'sponsor' ,
-		get tooltip(){
-			return i18n( 'Donate to This Project' );
-		},
+		Tooltip : reaxper((props:TooltipProps) => {
+			return <Tooltip
+				{...props}
+				title={i18n( 'Donate to This Project' )}
+			>{ props.children }</Tooltip>;
+		}),
 		onClick() {
 			const reax_Sponsor = reaxel_Sponsor();
 			reax_Sponsor.toggleVisible( true );
@@ -61,10 +71,11 @@ const IconElements = [
 	} ,
 ];
 
+import { FloatResetAllConf } from './left/Reset-All-Conf';
 import { FloatLog } from './Float-Log';
 import { reaxel_Sponsor } from '#reaxels/GUI/sponsor';
 import { reaxel_I18n } from '#reaxels/i18n';
 import { GithubFilled , HeartOutlined , RedEnvelopeOutlined } from '@ant-design/icons';
-import { FloatButton , Button , Tooltip } from 'antd';
+import { FloatButton , Button , Tooltip , TooltipProps } from 'antd';
 
 import * as less from './style.module.less';

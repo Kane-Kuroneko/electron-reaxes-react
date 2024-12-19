@@ -27,18 +27,21 @@ export const originalCheatCodesData : DataType[] = [
 		key: 'KeyserSoze',
 		code: 'KeyserSoze',
 		description: 'Gives you X Gold (use [amount] for specifying)',
+		example : 'Example: KeyserSoze 1000',
 		_zh_desc : 'KeyserSoze <数量>立即会有<数量>个黄金打入你的账上,如果不输入<数量>则默认500'
 	},
 	{
 		key: 'LeafitToMe',
 		code: 'LeafitToMe',
 		description: 'Gives you X Lumber',
+		example : 'Example: LeafitToMe 1000',
 		_zh_desc : 'LeafitToMe <数量>立即会有<数量>个木材打入你的账上,如果不输入<数量>则默认500'
 	},
 	{
 		key: 'GreedIsGood',
 		code: 'GreedIsGood',
 		description: 'Gives you X Gold and Lumber (use [amount] for specifying)',
+		example : 'Example: GreedIsGood 1000',
 		_zh_desc : 'LeafitToMe <数量>立即会有<数量>个黄金和木材打入你的账上,如果不输入<数量>则默认500'
 	},
 	{
@@ -63,6 +66,7 @@ export const originalCheatCodesData : DataType[] = [
 		key: 'Motherland',
 		code: 'Motherland',
 		description: 'Level jump (use [race][1] and [level][2] for specification)',
+		example : 'Example: Motherland Human 2',
 		children : [
 			{
 				key : 'Human',
@@ -201,10 +205,11 @@ export const originalCheatCodesData : DataType[] = [
 		description: 'Resets all cooldowns',
 	},
 ];
-interface DataType {
+export interface DataType {
 	key: string;
 	code: string;
 	description: string;
+	example? : string;
 	children? : DataType[],
 	_zh_desc?:string,
 }

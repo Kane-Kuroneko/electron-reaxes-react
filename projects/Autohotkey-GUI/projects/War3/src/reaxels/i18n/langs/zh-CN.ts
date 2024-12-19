@@ -17,13 +17,14 @@ export default {
 	"Space + F6 will be saved as a special name": "空格键 + F6生成特殊存档",
 	"Edit": "编辑",
 	"edit special list": "编辑特殊存档列表",
-	"Hot-Enhancer": "按键增强",
+	"Hotkey-Enhancer": "按键增强",
 	"Cheats": "秘籍",
 	"Copy": "复制",
 	"Operations": "操作",
 	"Cheat Code": "秘籍",
 	"Description": "作用",
 	"Drag to Sort": "拖拽排序",
+	"These showing functions are not available until you download the app.": "提示：正在展示的魔兽助手开关没有实际作用,仅作展示。在下方下载安装后方可使用",
 } as any;
 
  

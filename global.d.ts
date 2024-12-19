@@ -20,6 +20,12 @@ declare global {
 	export const encodeQueryString : typeof import('#generic/utils')['encodeQueryString'];
 	export const stringify : typeof import('#generic/utils')['stringify'];
 	
+	module React {
+		
+		// @ts-ignore
+		export default ReactX & ReactT;
+		// export default ReactT
+	}
 	export const useEffect : typeof import('react')['useEffect'];
 	export const useRef : typeof import('react')['useRef'];
 	export const useMemo : typeof import('react')['useMemo'];
@@ -31,5 +37,9 @@ declare global {
 		ipcRenderer : typeof import('electron')['ipcRenderer']
 	}
 }
+
+
+import * as ReactX from 'react';
+import type ReactT from 'react';
 
 export {}
