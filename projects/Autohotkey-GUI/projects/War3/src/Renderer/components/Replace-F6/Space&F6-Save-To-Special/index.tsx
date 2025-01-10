@@ -48,7 +48,7 @@ export class SpaceF6SaveToSpecial extends Component {
 	}
 }
 
-import { reaxel_GUI } from '#reaxels/GUI';
+import { reaxel_GUI } from '#renderer/reaxels/hotkey-enhancer';
 import { Switch , Checkbox , Button , Modal } from 'antd';
 
 import { Component } from 'react';

@@ -66,8 +66,8 @@ export const ReplaceF6 = reaxper( () => {
 } );
 
 import { SpaceF6SaveToSpecial } from './Space&F6-Save-To-Special';
-import { reaxel_GUI } from '#reaxels/GUI';
-import { FunctionSwitcher , IconPopoverDesc , HotKey } from '#project/src/Renderer/pure-components';
+import { reaxel_GUI } from '#renderer/reaxels/hotkey-enhancer';
+import { FunctionSwitcher , IconPopoverDesc , HotKey } from '#renderer/pure-components';
 import { InfoCircleTwoTone } from '@ant-design/icons';
 import { Modal } from 'antd';
 import mov from './show case.mov';

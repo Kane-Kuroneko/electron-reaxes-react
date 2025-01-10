@@ -16,6 +16,6 @@ export const FloatLog = reaxper( () => {
 	</Tooltip>;
 } );
 
-import { SVG_Log } from '#project/src/Renderer/pure-components/SVG/Log.component';
+import { SVG_Log } from '#renderer/pure-components/SVG/Log.component';
 import { FloatButton , Tooltip } from 'antd';
 

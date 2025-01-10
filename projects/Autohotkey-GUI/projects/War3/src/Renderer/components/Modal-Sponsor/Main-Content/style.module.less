@@ -1,0 +1,72 @@
+.sponsor-main-content {
+	display: flex;
+	flex: 1 1 auto;
+	flex-flow: row nowrap;
+	justify-content: space-between;
+	
+	:global{
+		.narrative {
+			display: flex;
+			flex: 1;
+			flex-flow: column nowrap;
+			
+			h2 {
+				margin-top: 0;;
+			}
+			ol {
+				margin: 0;
+			}
+			
+			ol,li,code {
+				font-size: 18px;
+			}
+			ol,li {
+				font-family: Consolas,"Microsoft YaHei UI";
+			}
+			
+			code {
+				font-family: Consolas;
+				background-color: #f6f6f6;
+				padding: 2px 6px;
+				border-radius: 6px;
+				margin: 0 1px;
+			}
+		}
+		
+		.payment {
+			display: flex;
+			flex-flow: column nowrap;
+			flex: 1;
+		}
+		
+		.payment-title {
+			display: flex;
+			align-items: center;
+			
+			.text {
+				margin-left: 8px;
+				font-size: 16px;
+			}
+		}
+		
+		.payment-content {
+			display: flex;
+			justify-content: center;
+			user-select: none;
+			
+			&.paypal {
+				justify-content: flex-start;
+				margin-left: 24px;
+			}
+		}
+		
+		.link {
+			background-color: #fbfbfb;
+			display: flex;
+			height: 24px;
+			padding: 4px 12px;
+			border-radius: 8px;
+			text-decoration: underline;
+		}
+	}
+}

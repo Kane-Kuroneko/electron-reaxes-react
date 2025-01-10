@@ -1,34 +1,36 @@
 if(isElectron){
-	var { IPC } = await import('#project/src/ENV/electron')
+	var { IPC } = await import('#renderer/ENV/electron')
 }
 
 
-IPC?.on( 'console' , ( e , data ) => {
+IPC?.on( 'console' , ( e , ...data ) => {
 	console.log( ...data );
 } );
 
 
-// IPC?.on( 'json' , ( e , json ) => {
-// 	if( json.type === 'clear-localstorage' ) {
-// 		localStorage.clear();
-// 		location.reload();
-// 		console.log( 'localstorage cleared' );
-// 	}
-// } );
-
-useIPC( 'clear-localstorage' ).run( ( e , data ) => {
+IpcRendererOn( 'clear-localstorage' ).on( ( e , data ) => {
 	localStorage.clear();
 	location.reload();
 } );
 
-useIPC( 'fetch-ahk_cp-status' ).run( ( e , data ) => {
-	// console.log(11111111111,data);
-	crayon.orange('fetch-ahk_cp-status:  ',data)
-	reaxel_GUI().GUI_SetState({switch_main : data});
+IpcRendererOn( 'fetch-ahk_cp-status' ).on( ( e , data ) => {
+	crayon.orange( 'fetch-ahk_cp-status:  ' , data );
+	reaxel_GUI().GUI_SetState( { switch_main : data } );
 } );
 
-import { reaxel_GUI } from '#reaxels/GUI/index';
-import { useIPC } from '#project/src/utils/useIPC.renderer';
-import { isElectron } from '#project/src/ENV';
-import type {IpcRenderer} from 'electron';
-import type { IPCChannels } from '#project/src/reaxels/IPC-interfaces/channels';
+IpcRendererInvoke('screen-info').invoke({type:'primary'}).then(( { primaryScreen }) => {
+	const physicalSize : Size = {
+		height : primaryScreen.size.height * primaryScreen.scaleFactor,
+		width : primaryScreen.size.width * primaryScreen.scaleFactor,
+	}
+	
+}).catch(e => {
+	console.error('dddddddddddd,',e);
+})
+import { ipcRenderer } from 'electron';
+import { reaxel_GUI } from '#renderer/reaxels/hotkey-enhancer/index';
+import { IpcRendererOn , IpcRendererInvoke } from '#renderer/utils/useIPC';
+
+import { isElectron } from '#renderer/ENV';
+import type {IpcRenderer , Size} from 'electron';
+import type {  } from '#src/IPC-channels';

@@ -6,7 +6,9 @@
       <script value="electron-start:ahk-war3" />
     </scripts>
     <node-interpreter value="project" />
-    <envs />
+    <envs>
+      <env name="LANG" value="zh_CN.UTF-8" />
+    </envs>
     <method v="2" />
   </configuration>
 </component>

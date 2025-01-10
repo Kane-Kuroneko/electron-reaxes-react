@@ -17,5 +17,5 @@ export const FloatResetAllConf = reaxper(() => {
 	</Tooltip>;
 })
 
-import { SVG_Reset } from '#project/src/Renderer/pure-components/SVG/Reset.component';
+import { SVG_Reset } from '#renderer/pure-components/SVG/Reset.component';
 import { FloatButton , Tooltip } from 'antd';

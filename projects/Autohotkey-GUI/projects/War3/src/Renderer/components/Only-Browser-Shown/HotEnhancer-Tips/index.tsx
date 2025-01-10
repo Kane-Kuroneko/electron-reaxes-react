@@ -54,6 +54,6 @@ const I18nTipsDesc: I18nComponents = {
 	} ) ,
 };
 import { I18nDownloads } from './I18n-Downloads';
-import { reaxel_I18n } from '#reaxels/i18n';
+import { reaxel_I18n } from '#renderer/reaxels/i18n';
+import { isElectron } from '#renderer/ENV';
 import { Alert } from 'antd';
-import { isElectron } from '#project/src/ENV';

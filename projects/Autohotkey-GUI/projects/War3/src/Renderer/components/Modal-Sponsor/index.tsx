@@ -8,6 +8,38 @@ export const ModalSponsor = reaxper( () => {
 	} = reaxel_Sponsor();
 	const { language } = reaxel_I18n();
 	
+	const modalContent = function () {
+		if(termsVisible){
+			return <>
+				{ TermsI18n[language] }
+				<Button
+					type = "primary"
+					size="large"
+					style = { { display : 'block' , margin : '40px auto 10px auto' } }
+					onClick = { () => {
+						reaxel_Sponsor().toggleTermsVisible( false );
+					} }
+				><I18n>If you make a donation, it is assumed that you agree to these terms.</I18n></Button>
+			</>;
+		}else {
+			return <>
+				<MainContent />
+				<span className="terms-entry">
+					<I18n>If you make a donation, it is assumed that you agree to the</I18n>&nbsp;
+					<a
+						onClick = { ( e ) => {
+							e.preventDefault();
+							toggleTermsVisible( true );
+						} }
+					>
+						<I18n>Donation Guidelines and Terms</I18n>
+					</a>
+				</span>
+			
+			</>
+		}
+	}();
+	
 	return <>
 		
 		<Modal
@@ -27,35 +59,11 @@ export const ModalSponsor = reaxper( () => {
 			width = "92%"
 			centered
 		>
-			{ termsVisible && TermsI18n[language] }
-			{ termsVisible && <Button
-				type = "primary"
-				size="large"
-				style = { { display : 'block' , margin : '40px auto 10px auto' } }
-				onClick = { () => {
-					reaxel_Sponsor().toggleTermsVisible( false );
-				} }
-			><I18n>By donating, you agree to these terms</I18n></Button> }
-			
-			{ !termsVisible && <a
-				onClick = { ( e ) => {
-					e.preventDefault();
-					toggleTermsVisible( true );
-				} }
-			>
-				<I18n>Donation Guidelines and Terms</I18n>
-			</a> }
+			{ modalContent }
 		</Modal>
 	</>;
 } );
 
-@reaxper
-class SponsorContent {
-	
-	'zh-CN' = <>
-	
-	</>;
-}
 
 @reaxper
 class TermsI18n {
@@ -171,9 +179,9 @@ class TermsI18n {
 	</>;
 }
 
-console.log( less );
-import { reaxel_I18n } from '#reaxels/i18n';
+import { MainContent } from './Main-Content';
+import { reaxel_I18n } from '#renderer/reaxels/i18n';
 import * as less from './style.module.less';
-import { reaxel_Sponsor } from '#reaxels/GUI/sponsor';
+import { reaxel_Sponsor } from '#renderer/reaxels/hotkey-enhancer/sponsor';
 import { Modal , Button } from 'antd';
 

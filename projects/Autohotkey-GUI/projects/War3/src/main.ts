@@ -4,24 +4,20 @@ console.log( __NODE_ENV__ );
 
 app.whenReady().then( () => {
 	
-	const mainWindow = initializeMainWindow();
+	const reax_MainProcessHub = reaxel_MainProcessHub();
 	
-	useBeautifulDevtool( mainWindow );
-	
-
+	obsReaction( () => {
+		const { recreateMainWindow , mainWindow } = reax_MainProcessHub;
+		if(mainWindow){
+		}else {
+			recreateMainWindow({
+				openDevTools : dev()
+			});
+		}
+	} , () => [reax_MainProcessHub.mainWindow] );
 	
 	// mainWindow.setIcon('https://img.piclabo.xyz/2023/10/25/d67adcffb89dd.jpg')
-	
-	ipcMain.on( 'json' , ( e , data ) => {
-		if( data.type === 'shortcut' ) {
-			IPCLogger( 11111111111111 );
-			if( data.data.type === 'keydown' && data.data.key === 'F12' ) {
-				mainWindow.webContents.toggleDevTools();
-			}
-		}
-	} );
 } );
-
 
 // 除了 macOS 外，当所有窗口都被关闭的时候退出程序。 因此, 通常
 // 对应用程序和它们的菜单栏来说应该时刻保持激活状态, 
@@ -41,8 +37,10 @@ app.whenReady().then( () => {
 	// console.log( 'HDR support:' , hdrSupported );
 } );
 
-import "#project/src/Main/index";
-import { initializeMainWindow } from '#project/src/Main/initialize-main-window';
+import "#main/index";
+import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
+import { initializeMainWindow } from '#main/initialize-main-window';
 import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
 import { app , ipcMain , screen } from 'electron';
+import {dev} from 'electron-is';
 import logger from 'electron-log/main';

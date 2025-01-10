@@ -10,8 +10,8 @@ contextBridge.exposeInMainWorld( 'versions' , {
 	get electron() {
 		return process.versions.electron;
 	} ,
+	
 } );
-
 
 contextBridge.exposeInMainWorld( 'IPC' , {
 	send( channel,...args ) {
@@ -22,5 +22,6 @@ contextBridge.exposeInMainWorld( 'IPC' , {
 	} ,
 	invoke(channel,...args){
 		return ipcRenderer.invoke( channel,...args );
-	}
+	},
+	
 } );

@@ -85,7 +85,7 @@ class I18nElement {
 		<span style = { { lineHeight : '38px' } }>
 			This value controls how many milliseconds between pressing and releasing
 		</span>
-		<HotKey small>Mouse Right Button</HotKey>
+		<HotKey small>Right Mouse Button</HotKey>
 		<span>
 			is considered a right-click command.
 		</span>
@@ -103,9 +103,9 @@ type props = React.PropsWithChildren<{
 	placement?: TooltipProps['placement']
 }>;
 
-import { reaxel_GUI } from '#reaxels/GUI';
-import { reaxel_I18n } from '#reaxels/i18n';
-import { FunctionSwitcher , IconPopoverDesc , HotKey } from '#project/src/Renderer/pure-components';
+import { reaxel_GUI } from '#renderer/reaxels/hotkey-enhancer';
+import { reaxel_I18n } from '#renderer/reaxels/i18n';
+import { FunctionSwitcher , IconPopoverDesc , HotKey } from '#renderer/pure-components';
 import { TooltipProps , InputNumber , Tooltip } from 'antd';
 import { UndoOutlined , InteractionTwoTone } from '@ant-design/icons';
 

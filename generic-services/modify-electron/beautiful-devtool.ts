@@ -11,9 +11,6 @@ export const useBeautifulDevtool = ( window: BrowserWindow ) => {
 		if( !window ) {
 			return;
 		}
-		globalShortcut.register( 'F12' , () => {
-			window.webContents.toggleDevTools();
-		} );
 		
 		window.webContents.on( 'devtools-opened' , () => {
 			const css = `

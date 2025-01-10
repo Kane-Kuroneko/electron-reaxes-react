@@ -12,7 +12,7 @@ root.render( <App /> );
 
 import "./dom-listeners";
 import './ipc-listeners';
-import { Routing } from '#project/src/Renderer/routes';
+import { Routing } from '#renderer/routes';
 import { createRoot } from "react-dom/client";
 import './styles/index.less';
 import './styles/global.module.less';

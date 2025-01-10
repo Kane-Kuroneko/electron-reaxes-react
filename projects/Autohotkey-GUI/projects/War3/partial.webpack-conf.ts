@@ -14,7 +14,9 @@ export const main = (
 		},
 		resolve :{
 			alias : {
-				'#reaxels' : path.join(subProjectRootPath,'src/reaxels'),
+				'#main' : path.join(subProjectRootPath,'src/Main'),
+				'#renderer' : path.join(subProjectRootPath,'src/Renderer'),
+				'#src' : path.join(subProjectRootPath,'src'),
 			}
 		},
 		plugins : [
@@ -31,7 +33,7 @@ export const main = (
 				] ,
 			} ),
 			new ProvidePlugin( {
-				'IPCLogger' : [ '#reaxels/exports.main' , 'IPCLogger' ] ,
+				'IPCLogger' : [ '#main/exports' , 'IPCLogger' ] ,
 			} ),
 		],
 	};
@@ -53,7 +55,9 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Webp
 		},
 		resolve :{
 			alias : {
-				'#reaxels' : path.join(subProjectRootPath,'src/reaxels'),
+				'#main' : path.join(subProjectRootPath,'src/Main'),
+				'#renderer' : path.join(subProjectRootPath,'src/Renderer'),
+				'#src' : path.join(subProjectRootPath,'src'),
 			}
 		},
 		plugins : [
@@ -71,8 +75,8 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Webp
 			} ) ,
 			new ProvidePlugin( {
 				
-				'I18n' : [ '#reaxels/exports.renderer' , 'I18n' ] ,
-				'i18n' : [ '#reaxels/exports.renderer' , 'i18n' ] ,
+				'I18n' : [ '#renderer/reaxels/exports' , 'I18n' ] ,
+				'i18n' : [ '#renderer/reaxels/exports' , 'i18n' ] ,
 			} ),
 		],
 		

@@ -30,10 +30,12 @@
 		"typeRoots" : [ "node_modules/@types" , "./types" , "../../../../" ] ,
 		"paths" : {
 			"#root/*" : ["../../../../*"],
+			"#main/*" : ["./src/Main/*"],
+			"#renderer/*" : ["./src/Renderer/*"],
+			"#src/*" : ["./src/*"],
 			"#root-projects/*" : ["../../../../projects/*"],
 			"#generic/*" : ["../../../../generic-services/*"],
 			"#project/*" : ["./*"],
-			"#reaxels/*" : ["./src/reaxels/*"]
 		}
 	},
 	"include" : ["./src/**", "../../../../*" , "**/*.ts" , "**/*.tsx" , "../../../../node_modules/@types/node/buffer.d.ts" ] ,

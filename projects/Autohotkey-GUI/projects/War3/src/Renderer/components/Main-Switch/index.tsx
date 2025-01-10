@@ -36,7 +36,7 @@ export const MainSwitch = reaxper( () => {
 		</label>
 	</div>;
 } );
-import { reaxel_GUI } from '#reaxels/GUI';
+import { reaxel_GUI } from '#renderer/reaxels/hotkey-enhancer';
 
 type props = React.PropsWithChildren<{}>;
 

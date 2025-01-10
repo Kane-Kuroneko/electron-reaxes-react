@@ -73,8 +73,8 @@ const IconElements = [
 
 import { FloatResetAllConf } from './left/Reset-All-Conf';
 import { FloatLog } from './Float-Log';
-import { reaxel_Sponsor } from '#reaxels/GUI/sponsor';
-import { reaxel_I18n } from '#reaxels/i18n';
+import { reaxel_Sponsor } from '#renderer/reaxels/hotkey-enhancer/sponsor';
+import { reaxel_I18n } from '#renderer/reaxels/i18n';
 import { GithubFilled , HeartOutlined , RedEnvelopeOutlined } from '@ant-design/icons';
 import { FloatButton , Button , Tooltip , TooltipProps } from 'antd';
 

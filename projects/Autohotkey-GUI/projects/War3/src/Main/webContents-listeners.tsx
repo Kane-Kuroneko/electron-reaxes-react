@@ -1,23 +1,59 @@
-const { runInExcutable , absAppRunningPath , absAppStaticsPath } = reaxel_ElectronENV();
+const { runInExcutable } = reaxel_ElectronENV();
+const { observedMainWindow } = reaxel_MainProcessHub();
 
-mainWindowLoaded.then( ( mainWindow ) => {
-	const { ahkSpawner_Store } = reaxel_AhkSpawner();
-	if( ahkSpawner_Store.ahk ) {
-		mainWindowLoaded.then( ( mainWindow ) => {
-			mainWindow.webContents.send( 'json' , {
-				type : 'ahk-cp-status' ,
-				data : true ,
-			} );
-		} );
-	}
-	
-	if( !runInExcutable ) {
-		// 打开开发工具
-		mainWindow.webContents.openDevTools();
-	}
+observedMainWindow( ( win ) => {
+	win.webContents.on( 'before-input-event' , ( event , input ) => {
+		if( input.control && input.shift && input.key === 'R' ) {
+			console.log( 'Ctrl+Shift+R was pressed' );
+			useIpcSend( win )( "clear-localstorage" ).send( null );
+		}
+	} );
 } );
 
-import { mainWindowLoaded } from '#project/src/Main/mainWindow-loaded-promise';
-import { appQuitHook } from './tray';
-import { reaxel_ElectronENV } from '#reaxels/env';
-import { reaxel_AhkSpawner } from '#reaxels/ahk-spawner';
+observedMainWindow( ( win ) => {
+	const { ahkSpawner_Store } = reaxel_AhkSpawner();
+	if( ahkSpawner_Store.ahk ) {
+		useIpcSend( reaxel_MainProcessHub().mainWindow )( "ahk-cp-status" ).send( true );
+	}
+} );
+observedMainWindow( ( win ) => {
+	win.webContents.on( 'devtools-closed' , () => {
+		// reaxel_MainProcessHub().toggleDevTools( false );
+	} );
+} );
+
+observedMainWindow( ( win ) => {
+	const { scaleFactor } = screen.getPrimaryDisplay();
+	
+	win.webContents.on( 'devtools-opened' , () => {
+		win.webContents.focus();
+		
+		const devtoolsWidth = 1366;
+		const bounds = win.getBounds(); // 获取当前窗口尺寸
+		const currentHeight = bounds.height;
+		
+		win.setBounds( {
+			x : 350 / scaleFactor ,
+			y : 180 / scaleFactor ,
+			width : 2166 ,
+			height : currentHeight ,
+		} );
+	} );
+	win.webContents.on( 'devtools-closed' , () => {
+		win.webContents.focus();
+		
+		const devtoolsWidth = 1366;
+		win.setBounds( {
+			x : 1900 / scaleFactor ,
+			y : win.getBounds().y ,
+			width : 1800 / scaleFactor ,
+			height : 1800 / scaleFactor ,
+		} );
+	} );
+} );
+
+import { IpcMainOn , useIpcSend,IpcMainHandle } from '#main/utils/useIPC';
+import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
+import { reaxel_ElectronENV } from '#main/reaxels/runtime-paths';
+import { reaxel_AhkSpawner } from '#main/reaxels/ahk-spawner';
+import { screen } from 'electron';

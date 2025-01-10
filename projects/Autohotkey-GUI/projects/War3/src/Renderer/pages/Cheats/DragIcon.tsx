@@ -8,5 +8,5 @@ export const DragIcon = reaxper( ( props ) => {
 	/>;
 } );
 
-import { SVG_Drag } from '#project/src/Renderer/pure-components/SVG/Drag.component';
+import { SVG_Drag } from '#renderer/pure-components/SVG/Drag.component';
 import { useSortable } from '@dnd-kit/sortable';

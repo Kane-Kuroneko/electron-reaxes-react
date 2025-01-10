@@ -63,8 +63,8 @@ const addI18nToColumns = ( columns: TableColumnType<DataType>[] ) => {
 
 import { Row } from './Row';
 import { columns } from './columns';
-import { reaxel_CheatCodes } from '#reaxels/cheat-codes.renderer';
-import { MainConententAreaContainer } from '#project/src/Renderer/pure-components/Main-Content-Area-Container';
+import { reaxel_CheatCodes } from '#renderer/reaxels/cheats';
+import { MainConententAreaContainer } from '#renderer/pure-components/Main-Content-Area-Container';
 import { useforceUpdate } from '#generic/utils/src/hooks/useForceUpdate';
 import { Table , TableColumnType } from 'antd';
 import { DndContext , PointerSensor , useSensor , useSensors } from '@dnd-kit/core';

@@ -32,7 +32,7 @@ class I18nContent {
 	</IconPopoverDesc>;
 }
 
-import { reaxel_GUI } from '#reaxels/GUI';
-import { reaxel_I18n } from '#reaxels/i18n';
-import { FunctionSwitcher , IconPopoverDesc , HotKey } from '#project/src/Renderer/pure-components';
+import { reaxel_GUI } from '#renderer//reaxels/hotkey-enhancer';
+import { reaxel_I18n } from '#renderer/reaxels/i18n';
+import { FunctionSwitcher , IconPopoverDesc , HotKey } from '#renderer/pure-components';
 import {} from '@ant-design/icons';
