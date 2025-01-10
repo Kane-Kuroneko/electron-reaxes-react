@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkelectron_reaxes_react=self.webpackChunkelectron_reaxes_react||[]).push([[660],{4660:(e,r,a)=>{a.r(r),a.d(r,{IPC:()=>c});var c=IPC}}]);
