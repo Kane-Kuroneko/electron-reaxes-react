@@ -21,13 +21,13 @@ let main_configs = [],
 ;
 if(node_env === 'development'){
 	main_configs = [
-		webpackBaseConf,
+		webpackBaseConfNode,
 		electronMainConf,
 		electronDevConf_Main,
 		partialWebpackConf_Main,
 	]
 	renderer_configs = [
-		webpackBaseConf,
+		webpackBaseConfBrowser,
 		electronRendererConf,
 		electronDevConf_Renderer,
 		{devServer: devServerConf },
@@ -35,20 +35,20 @@ if(node_env === 'development'){
 	]
 }else if(node_env === 'production') {
 	main_configs = [
-		webpackBaseConf ,
+		webpackBaseConfNode ,
 		electronMainConf ,
 		electronProdConf_Main ,
 		partialWebpackConf_Main ,
 	];
 	renderer_configs = [
-		webpackBaseConf ,
+		webpackBaseConfBrowser ,
 		electronRendererConf ,
 		electronProdConf_Renderer ,
 		partialWebpackConf_Renderer ,
 	];
 }
 preload_configs = [
-	webpackBaseConf,
+	webpackBaseConfNode,
 	electronPreloadConf,
 	partialWebpackConf_Preload,
 	node_env === 'production' ? {watch:false} : {}
@@ -79,7 +79,7 @@ export {
 
 
 import { project , getProjectPaths , env , node_env , absolutelyPath_RepositoryRoot } from "../../engine/toolkit";
-import { webpackBaseConf } from "../../engine/webpack/base.conf";
+import { webpackBaseConf , webpackBaseConfBrowser,webpackBaseConfNode } from "../../engine/webpack/base.conf";
 import { electronPreloadConf } from '../../engine/webpack/electron-preload.conf';
 import { electronMainConf } from "../../engine/webpack/electron-main.conf";
 import { electronRendererConf } from "../../engine/webpack/electron-renderer.conf";

@@ -22,3 +22,5 @@ export const orzPromise = <T = any>(
 
   return promise as Promise<T> & {resolve; reject};
 };
+
+export type OrzPromise<T = any> = Promise<T> & {resolve:(value:T) => void; reject:(reason:any) => void}

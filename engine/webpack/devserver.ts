@@ -1,7 +1,7 @@
 
 export const devServerConf: Configuration = {
 	port,
-	hot: true,
+	// hot: true,
 	server: {
 		type: "https",
 		options: {

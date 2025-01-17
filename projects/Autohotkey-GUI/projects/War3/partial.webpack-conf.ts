@@ -30,6 +30,10 @@ export const main = (
 						from : path.join( subProjectRootPath , 'assets' ) ,
 						to : path.join( subProjectRootPath , 'dist/statics/assets' ) ,
 					} ,
+					{
+						from : path.join( repoRootPath , 'node_modules/regedit/vbs' ) ,
+						to : path.join( subProjectRootPath , 'dist/statics/assets/vbs' ) ,
+					} ,
 				] ,
 			} ),
 			new ProvidePlugin( {

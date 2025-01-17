@@ -42,7 +42,7 @@ export const initializeMainWindow = (
 	options.height = options.height / scaleFactor;
 	console.log( options );
 	const mainWindow = new BrowserWindow( options);
-	console.log('screen.getPrimaryDisplay().scaleFactor:',screen.getPrimaryDisplay().scaleFactor);
+	// console.log('screen.getPrimaryDisplay().scaleFactor:',screen.getPrimaryDisplay().scaleFactor);
 	// 加载 index.html
 	if( __NODE_ENV__ === 'development' && !runInExcutable ) {
 		mainWindow.loadURL( `https://127.0.0.1:${ __DEV_PORT__ }` );
@@ -71,6 +71,7 @@ type ExtraOptions = Partial<{
 
 import { useQuitHook } from './useQuitHook';
 import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
+import { reaxel_ScreenAdapter } from '#main/reaxels/screen-adpater';
 import { reaxel_ElectronENV } from '#main/reaxels/runtime-paths';
 import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
 import { dev } from 'electron-is';

@@ -7,6 +7,7 @@ const keysSet = {};
 export const Refaxel_BrowserPersist = function (persistKey:string) {
 	
 	if(keysSet.hasOwnProperty(persistKey)){
+		debugger;
 		throw new Error( `Refaxel-Persist ERROR : persist-key冲突,请将<${ persistKey }>修改为另一个不同的persist-key` );
 	}else {
 		keysSet[persistKey] = true;

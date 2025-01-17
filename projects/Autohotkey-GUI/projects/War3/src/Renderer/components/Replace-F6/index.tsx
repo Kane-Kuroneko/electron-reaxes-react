@@ -2,7 +2,7 @@ export const ReplaceF6 = reaxper( () => {
 	
 	const movRef = useRef<HTMLVideoElement>( null );
 	
-	const { GUI_Store , toggleReplaceF6 , GUI_Mutate , GUI_SetState } = reaxel_GUI();
+	const { GUI_Store , toggleReplaceF6 , GUI_Mutate , GUI_SetState } = reaxel_HotkeyEnhancer();
 	
 	useEffect( () => {
 		const disposer = obsReaction( ( first , disposer ) => {
@@ -66,7 +66,7 @@ export const ReplaceF6 = reaxper( () => {
 } );
 
 import { SpaceF6SaveToSpecial } from './Space&F6-Save-To-Special';
-import { reaxel_GUI } from '#renderer/reaxels/hotkey-enhancer';
+import { reaxel_HotkeyEnhancer } from '#renderer/reaxels/hotkey-enhancer';
 import { FunctionSwitcher , IconPopoverDesc , HotKey } from '#renderer/pure-components';
 import { InfoCircleTwoTone } from '@ant-design/icons';
 import { Modal } from 'antd';

@@ -1,10 +1,6 @@
-if( isElectron ) {
-	var { IPC } = await import('#renderer/ENV/electron');
-}
-
 const CONSTANTS_detectionDelay = 85;
 
-export const reaxel_GUI = reaxel( () => {
+export const reaxel_HotkeyEnhancer = reaxel( () => {
 	
 	const {
 		store ,
@@ -28,8 +24,6 @@ export const reaxel_GUI = reaxel( () => {
 		
 		input_detectionDelay : CONSTANTS_detectionDelay ,
 		input_detectionDelay_editing : false ,
-		
-		hash : '/hotkey-enhancer' ,
 	} );
 	
 	const persist = Refaxel_BrowserPersist( 'GUI' )( {
@@ -65,18 +59,6 @@ export const reaxel_GUI = reaxel( () => {
 			value : store.input_detectionDelay ,
 		} ,
 	] );
-	
-	obsReaction( ( first ) => {
-		const hash = location.hash;
-		if( first && hash ) {
-			setState( { hash } );
-			return;
-		} else {
-			console.log( store.hash );
-			// history.pushState( '' , null , store.location );
-			location.hash = store.hash;
-		}
-	} , () => [ store.hash ] );
 	
 	obsReaction( ( first ) => {
 		if( first ) return;

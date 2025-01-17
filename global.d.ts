@@ -20,17 +20,6 @@ declare global {
 	export const encodeQueryString : typeof import('#generic/utils')['encodeQueryString'];
 	export const stringify : typeof import('#generic/utils')['stringify'];
 	
-	module React {
-		
-		// @ts-ignore
-		export default ReactX & ReactT;
-		// export default ReactT
-	}
-	export const useEffect : typeof import('react')['useEffect'];
-	export const useRef : typeof import('react')['useRef'];
-	export const useMemo : typeof import('react')['useMemo'];
-	export const useState : typeof import('react')['useState'];
-	
 	const __DEV__ : boolean;
 	
 	export const electron : {
@@ -38,8 +27,5 @@ declare global {
 	}
 }
 
-
-import * as ReactX from 'react';
-import type ReactT from 'react';
 
 export {}

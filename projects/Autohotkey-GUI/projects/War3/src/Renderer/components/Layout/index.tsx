@@ -1,6 +1,5 @@
 export const Layout = reaxper( (props:React.PropsWithChildren) => {
 	
-	
 	return <div className = "war3-ahk-reaxes">
 		<SegmentedSwitcher/>
 		<I18NDropdown />

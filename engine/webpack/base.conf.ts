@@ -12,7 +12,7 @@ const { absolutelyPath_subproject , absolutelyPath_subprojectDist } = getProject
  */
 /*webpack基础配置*/
 export const webpackBaseConf:Configuration = {
-	mode: node_env as any,
+	mode: node_env as "development"|"production",
 	output: {
 		filename: '[name].js',
 		path : absolutelyPath_subprojectDist,
@@ -43,7 +43,7 @@ export const webpackBaseConf:Configuration = {
 				test: /\.(t|j)sx?$/i,
 				use: {
 					loader: 'babel-loader',
-					options : babelConf,
+					options : babelConf(node_env as "development"|"production" , 'browser'),
 				},
 				exclude: /node_modules/,
 			},
@@ -175,7 +175,7 @@ export const webpackBaseConf:Configuration = {
 			__IS_MOCK__ : mock ? 'true' : 'false' ,
 			__ENV__ : JSON.stringify(env) ,
 			// __ENV_CONFIG__ : JSON.stringify(__ENV_CONFIG__) ,
-			__NODE_ENV__ : JSON.stringify(node_env),
+			__NODE_ENV__ : JSON.stringify(node_env as "development"|"production" ),
 			__METHOD__ : JSON.stringify(method),
 			__EXPERIMENTAL__ : JSON.stringify(experimental === 'experimental'),
 			__DEV_PORT__ : JSON.stringify(port),
@@ -217,6 +217,47 @@ export const webpackBaseConf:Configuration = {
 		}),
 	],
 };
+
+export const webpackBaseConfBrowser : Configuration = {
+	...webpackBaseConf,
+	module : {
+		...webpackBaseConf.module,
+		rules : webpackBaseConf.module.rules.map( ( rule: webpack.RuleSetRule ) => {
+			if( _.isObject( rule.test ) && rule.test instanceof RegExp && rule.test.test( '.tsx' ) ) {
+				return {
+					test : /\.(t|j)sx?$/i ,
+					use : {
+						loader : 'babel-loader' ,
+						options : babelConf( node_env as "development" | "production" , 'browser' ) ,
+					} ,
+					exclude : /node_modules/ ,
+				};
+			} else {
+				return rule;
+			}
+		} ),
+	},
+}
+export const webpackBaseConfNode : Configuration = {
+	...webpackBaseConf,
+	module : {
+		...webpackBaseConf.module,
+		rules : webpackBaseConf.module.rules.map( ( rule: webpack.RuleSetRule ) => {
+			if( _.isObject( rule.test ) && rule.test instanceof RegExp && rule.test.test( '.tsx' ) ) {
+				return {
+					test : /\.(t|j)sx?$/i ,
+					use : {
+						loader : 'babel-loader' ,
+						options : babelConf( node_env as "development" | "production" , 'node' ) ,
+					} ,
+					exclude : /node_modules/ ,
+				};
+			} else {
+				return rule;
+			}
+		} ),
+	},
+}
 import {
 	absolutelyPath_RepositoryRoot ,
 	absolutelyPath_Projects,

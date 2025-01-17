@@ -3,7 +3,7 @@ export class SpaceF6SaveToSpecial extends Component {
 	constructor( props ) {super( props );}
 	
 	render() {
-		const { GUI_Store , GUI_SetState , GUI_Mutate , toggleEditSpecialSavesListModalVisible } = reaxel_GUI();
+		const { GUI_Store , GUI_SetState , GUI_Mutate , toggleEditSpecialSavesListModalVisible } = reaxel_HotkeyEnhancer();
 		return <>
 			<div
 				style={{marginLeft : '63px'}}
@@ -48,7 +48,7 @@ export class SpaceF6SaveToSpecial extends Component {
 	}
 }
 
-import { reaxel_GUI } from '#renderer/reaxels/hotkey-enhancer';
+import { reaxel_HotkeyEnhancer } from '#renderer/reaxels/hotkey-enhancer';
 import { Switch , Checkbox , Button , Modal } from 'antd';
 
 import { Component } from 'react';

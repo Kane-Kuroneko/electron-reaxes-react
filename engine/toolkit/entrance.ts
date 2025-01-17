@@ -74,6 +74,10 @@ if ( !node_env ) {
 	
 }
 
+export function setNodeEnv(newEnv) {
+	node_env = newEnv;
+}
+
 console.log('entreance: ');
 purdy({
 	inputPort,

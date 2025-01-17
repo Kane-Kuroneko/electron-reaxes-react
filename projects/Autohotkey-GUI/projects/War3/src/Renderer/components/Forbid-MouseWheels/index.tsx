@@ -1,5 +1,5 @@
 export const ForbidMouseWheels = reaxper(() => {
-	const { GUI_Store, toggleWheelsZoom } = reaxel_GUI();
+	const { GUI_Store, toggleWheelsZoom } = reaxel_HotkeyEnhancer();
 	const { language } = reaxel_I18n();
 	return <FunctionSwitcher
 		value = { GUI_Store.switch_forbidWheelsZoom }
@@ -32,7 +32,7 @@ class I18nContent {
 	</IconPopoverDesc>;
 }
 
-import { reaxel_GUI } from '#renderer//reaxels/hotkey-enhancer';
+import { reaxel_HotkeyEnhancer } from '#renderer//reaxels/hotkey-enhancer';
 import { reaxel_I18n } from '#renderer/reaxels/i18n';
 import { FunctionSwitcher , IconPopoverDesc , HotKey } from '#renderer/pure-components';
 import {} from '@ant-design/icons';

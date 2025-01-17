@@ -15,7 +15,7 @@ IpcRendererOn( 'clear-localstorage' ).on( ( e , data ) => {
 
 IpcRendererOn( 'fetch-ahk_cp-status' ).on( ( e , data ) => {
 	crayon.orange( 'fetch-ahk_cp-status:  ' , data );
-	reaxel_GUI().GUI_SetState( { switch_main : data } );
+	reaxel_HotkeyEnhancer().GUI_SetState( { switch_main : data } );
 } );
 
 IpcRendererInvoke('screen-info').invoke({type:'primary'}).then(( { primaryScreen }) => {
@@ -28,7 +28,7 @@ IpcRendererInvoke('screen-info').invoke({type:'primary'}).then(( { primaryScreen
 	console.error('dddddddddddd,',e);
 })
 import { ipcRenderer } from 'electron';
-import { reaxel_GUI } from '#renderer/reaxels/hotkey-enhancer/index';
+import { reaxel_HotkeyEnhancer } from '#renderer/reaxels/hotkey-enhancer/index';
 import { IpcRendererOn , IpcRendererInvoke } from '#renderer/utils/useIPC';
 
 import { isElectron } from '#renderer/ENV';

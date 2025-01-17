@@ -12,6 +12,7 @@ root.render( <App /> );
 
 import "./dom-listeners";
 import './ipc-listeners';
+import '#renderer/reaxels/core';
 import { Routing } from '#renderer/routes';
 import { createRoot } from "react-dom/client";
 import './styles/index.less';

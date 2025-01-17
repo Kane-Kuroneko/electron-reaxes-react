@@ -5,7 +5,7 @@ export const RbuttonDragging = reaxper( () => {
 		toggleRbtnDragging ,
 		setDetectionDelay ,
 		resetDetectionDelay ,
-	} = reaxel_GUI();
+	} = reaxel_HotkeyEnhancer();
 	const { language } = reaxel_I18n();
 	
 	return <>
@@ -103,7 +103,7 @@ type props = React.PropsWithChildren<{
 	placement?: TooltipProps['placement']
 }>;
 
-import { reaxel_GUI } from '#renderer/reaxels/hotkey-enhancer';
+import { reaxel_HotkeyEnhancer } from '#renderer/reaxels/hotkey-enhancer';
 import { reaxel_I18n } from '#renderer/reaxels/i18n';
 import { FunctionSwitcher , IconPopoverDesc , HotKey } from '#renderer/pure-components';
 import { TooltipProps , InputNumber , Tooltip } from 'antd';

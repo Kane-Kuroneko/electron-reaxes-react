@@ -1,6 +1,7 @@
 const {
 	ProvidePlugin ,
 	DefinePlugin,
+	HotModuleReplacementPlugin
 } = webpack;
 let first_main = true;
 let first_renderer = true;
@@ -94,9 +95,12 @@ export const electronDevConf_Renderer:WebpackConfiguration = {
 				first_renderer = false;
 			},
 		}),
+		new HotModuleReplacementPlugin(),
+		new ReactRefreshWebpackPlugin(),
 	]
 }
 
+import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 import dayjs from 'dayjs';
 import { port, project, absolutelyPath_RepositoryRoot, absolutelyPath_Engine,mock,env,node_env,method, experimental} from "../toolkit";
 import webpack from 'webpack';

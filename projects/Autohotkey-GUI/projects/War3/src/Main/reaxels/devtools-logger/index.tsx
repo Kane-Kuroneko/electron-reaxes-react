@@ -6,7 +6,6 @@ export const IPCLogger = ( ...log: any ) => {
 	promise.then( ( win ) => {
 		win.webContents.send( 'console' , ...log );
 	} );
-	console.log('是的是的是多少');
 };
 
 reaxel_MainProcessHub().observedMainWindow( ( win ) => {

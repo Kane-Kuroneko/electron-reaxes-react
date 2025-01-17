@@ -8,13 +8,14 @@ export const HotkeyEnhancer = reaxper( () => {
 			const screenPhysicalWidth = screen.width * window.devicePixelRatio;
 			// 屏幕的逻辑宽度（假设系统缩放为 100% 时等于逻辑像素）
 			const screenLogicalWidth = screen.width;
-			console.log(screenPhysicalWidth);
+			// console.log(screenPhysicalWidth);
 			return screenPhysicalWidth / screenLogicalWidth;
 		};
-		setInterval( () => {
+		const id = setInterval( () => {
 			
 			setDpr( getSystemZoom() );
 		} , 2000 );
+		return () => clearInterval( id ); 
 	} , [] );
 	
 	return <MainConententAreaContainer>

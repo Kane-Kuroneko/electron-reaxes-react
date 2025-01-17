@@ -1,5 +1,5 @@
 export const SegmentedSwitcher = reaxper( () => {
-	const { GUI_Store , GUI_SetState } = reaxel_GUI();
+	const { GUI_Core_Store , GUI_Core_SetState } = reaxel_GUI_Core();
 	const options = [
 		{
 			label : i18n( 'Hotkey-Enhancer' ) ,
@@ -13,10 +13,10 @@ export const SegmentedSwitcher = reaxper( () => {
 	
 	return <div className = { less.segementedSwitcher }>
 		<Segmented
-			value = { GUI_Store.hash.replaceAll( '#' , '' ) }
+			value = { GUI_Core_Store.hash.replaceAll( '#' , '' ) }
 			options = { options }
 			onChange = { ( value ) => {
-				GUI_SetState( { hash : value } );
+				GUI_Core_SetState( { hash : value } );
 			} }
 		/>
 		
@@ -24,6 +24,6 @@ export const SegmentedSwitcher = reaxper( () => {
 	</div>;
 } );
 
-import { reaxel_GUI } from '#renderer/reaxels/hotkey-enhancer';
+import { reaxel_GUI_Core } from '#renderer/reaxels/core';
 import { Segmented , Divider } from 'antd';
 import * as less from './style.module.less';

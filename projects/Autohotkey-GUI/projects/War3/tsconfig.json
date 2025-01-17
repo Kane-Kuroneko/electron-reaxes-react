@@ -35,9 +35,9 @@
 			"#src/*" : ["./src/*"],
 			"#root-projects/*" : ["../../../../projects/*"],
 			"#generic/*" : ["../../../../generic-services/*"],
-			"#project/*" : ["./*"],
+			"#project/*" : ["./*"]
 		}
 	},
-	"include" : ["./src/**", "../../../../*" , "**/*.ts" , "**/*.tsx" , "../../../../node_modules/@types/node/buffer.d.ts" ] ,
+	"include" : [ "./src/**" , "../../../../*" , "**/*.ts" , "**/*.tsx" , "../../../../node_modules/@types/node/buffer.d.ts" , "../../../../generic-services/global.d.ts" ] ,
 	"exclude" : [ "node_modules/@types/node" ]
 }

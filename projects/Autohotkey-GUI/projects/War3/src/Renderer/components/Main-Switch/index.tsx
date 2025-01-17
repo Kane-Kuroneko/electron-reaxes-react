@@ -1,5 +1,5 @@
 export const MainSwitch = reaxper( () => {
-	const { GUI_Store , toggleMainSwitch,toggleAutoSwitch } = reaxel_GUI();
+	const { GUI_Store , toggleMainSwitch,toggleAutoSwitch } = reaxel_HotkeyEnhancer();
 	
 	return <div className = { less['mainSwitchContainer'] }>
 		<Switch
@@ -36,7 +36,7 @@ export const MainSwitch = reaxper( () => {
 		</label>
 	</div>;
 } );
-import { reaxel_GUI } from '#renderer/reaxels/hotkey-enhancer';
+import { reaxel_HotkeyEnhancer } from '#renderer/reaxels/hotkey-enhancer';
 
 type props = React.PropsWithChildren<{}>;
 
