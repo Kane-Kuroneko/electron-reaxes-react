@@ -1,11 +1,5 @@
-export let windowsTextScale ;
-try {
-	windowsTextScale = parseFloat(execSync(
-		'powershell -Command "[Windows.UI.ViewManagement.UISettings]::new().TextScaleFactor"'
-	).toString().trim())
-}catch ( e ) {
-	console.error('使用powershell获取windowsTextScale失败');
-	debugger;
-}
+export const getWindowsTextScaleByPS = () => parseFloat( execSync(
+	'powershell -Command "[Windows.UI.ViewManagement.UISettings]::new().TextScaleFactor"',
+).toString().trim() );
 
 import { execSync } from 'child_process';

@@ -20,8 +20,9 @@ export const reaxel_MainProcessHub = reaxel( () => {
 			store.mainWindow.destroy();
 			setState( { mainWindow : null } );
 		}
-		const newWindow = initializeMainWindow();
-		setState( { mainWindow : newWindow } );
+		const newWindow = initializeMainWindow().then((mainWindow) => {
+			setState( { mainWindow } );
+		});
 		return newWindow;
 	};
 	

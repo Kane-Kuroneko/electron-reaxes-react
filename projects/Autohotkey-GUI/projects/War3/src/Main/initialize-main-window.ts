@@ -6,15 +6,16 @@ const appAttributes = {
 }
 const devtoolsWidth = 1366;
 
-export const initializeMainWindow = (
+export const initializeMainWindow = async (
 	options:BrowserWindowConstructorOptions & ExtraOptions = {
-		...appAttributes
+		
 	}
-):BrowserWindow => {
+):Promise<BrowserWindow> => {
 	const defaultExtraOptions:ExtraOptions = {
 		openDevTools : dev(),
 	}
-	
+	const { calcActualAppSize } = reaxel_ScreenAdapter();
+	const actualAppSize = await calcActualAppSize();
 	const defaultOptions:BrowserWindowConstructorOptions = {
 		webPreferences : {
 			devTools : true ,
@@ -22,6 +23,7 @@ export const initializeMainWindow = (
 			nodeIntegration : false,
 			preload : path.join(absAppRunningPath,'preload.js' ) ,
 			experimentalFeatures : false ,
+			
 		} ,
 		
 		resizable:false,
@@ -29,17 +31,13 @@ export const initializeMainWindow = (
 	};
 	
 	options = _.merge( {
-		width : appAttributes.width,
-		height : appAttributes.height,
+		...actualAppSize,
+		x : actualAppSize.width
 	} , defaultExtraOptions , defaultOptions ,options );
 	
 	if(options.openDevTools){
 		options.width += devtoolsWidth;
 	}
-	
-	const { scaleFactor } = screen.getPrimaryDisplay();
-	options.width = options.width / scaleFactor;
-	options.height = options.height / scaleFactor;
 	console.log( options );
 	const mainWindow = new BrowserWindow( options);
 	// console.log('screen.getPrimaryDisplay().scaleFactor:',screen.getPrimaryDisplay().scaleFactor);

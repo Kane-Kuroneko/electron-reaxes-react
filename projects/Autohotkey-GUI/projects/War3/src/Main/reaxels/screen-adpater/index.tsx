@@ -1,10 +1,14 @@
 /**
+ * 适配方案演示https://www.figma.com/design/5ttni1km306mFuZPRpGaVJ/Untitled?node-id=0-1&m=dev&t=1255ePvWcFfSgafX-1
  * 影响窗口在屏幕上展示的因素
  * [屏幕物理尺寸]
  * [屏幕分辨率]
  * [屏幕dpr]
  * [宽屏?方屏?竖屏?]
- *
+ ***************************
+ * - screen.width = 逻辑像素数 = 物理像素数/
+ * - dpr决定了用户观看距离
+ * - 16/9的ar为1.7777*
  */
 
 /*app在4k分辨率下的基础宽高*/
@@ -12,8 +16,10 @@ const baseAppBounds = {
 	width : 1600 ,
 	height : 1700 ,
 };
+const windowsTextScale = await getWindowsTextScale();
 const screenTypes = {};
-
+/*app的最佳观看视距大小为690mm/米 */
+const appHeightRatio = 690;
 export const reaxel_ScreenAdapter = reaxel( () => {
 	
 	const { store , setState } = orzMobx( {
@@ -21,35 +27,72 @@ export const reaxel_ScreenAdapter = reaxel( () => {
 		// screenHeight : height,
 		
 	} );
-	const reax_MainProcessHub = reaxel_MainProcessHub();
-	const calculateActualAppBounds = () => {
-		const systemSize = screen.getPrimaryDisplay().size;
-		const minAxis = Math.min( systemSize.width , systemSize.height );
-		// const heightPercent = 1700/2160;
-		const heightPercent = .85;
-		console.log( systemSize );
-		//宽屏模式
-		const actualHeight = systemSize.height * heightPercent;
-		const actualWidth = actualHeight / baseAppBounds.height * baseAppBounds.width;
-		
-		
+	
+	const calcActualAppSize = async (display:Display = screen.getPrimaryDisplay()) => {
+		try {
+			const currentPhysicalScreen = (await getPhysicalScreens()).find((itm,index,arr) => {
+				if(arr.length === 1) return true;
+				else {
+					/*需要完善显示器匹配逻辑*/
+					debugger;
+				}
+			});
+			const { shortSide , value } = getShortSide( display );
+			let percent = .9;
+			
+			//近距离使用大屏幕无缩放的场景
+			if(
+				getWindowsDisplayScale(display) < 1.2
+				&&
+				currentPhysicalScreen.ppi < 103 
+				&&
+				currentPhysicalScreen.width * currentPhysicalScreen.height >= 3840*2160
+				&&
+				(currentPhysicalScreen.width_mm > 950 || currentPhysicalScreen.height_mm > 534)
+			){
+				percent = .6;
+			}
+			if(shortSide === 'height'){
+				const appActualHeight = currentPhysicalScreen.height * percent;
+				const appActualWidth = appActualHeight;
+				return convertActualSizeToScaleSize({
+					width : appActualWidth,
+					height : appActualHeight,
+				})
+			}else {
+				const appActualWidth = currentPhysicalScreen.width * percent;
+				const appActualHeight = appActualWidth;
+				return convertActualSizeToScaleSize({
+					width : appActualWidth,
+					height : appActualHeight,
+				})
+			} 
+		}catch ( e ) {
+			console.error( e );
+		}
 	};
 	
-	const resetMainWindowBounds = () => {
-		reax_MainProcessHub.mainWindow?.setBounds( {
-			width : actualWidth ,
-			height : actualHeight ,
-			x : systemSize.width / 2 - actualWidth / 2 ,
-			y : systemSize.height / 2 - actualHeight / 2 ,
+	const resetMainWindowBounds = async (display = screen.getPrimaryDisplay()) => {
+		const {height,width} = await calcActualAppSize();
+		const {width:originalWidth,height:originalHeight} = await getCurrentPhysicalScreen(display);
+		reaxel_MainProcessHub().mainWindow?.setBounds( {
+			width ,
+			height ,
+			x : originalWidth / 2 - width / 2 ,
+			y : originalHeight / 2 - height / 2 ,
 			
 		} , true );
 	};
 	
-	obsReaction( () => {
-		if( reax_MainProcessHub.mainWindow ) {
-			calculateActualAppBounds();
-		}
-	} , () => [ reax_MainProcessHub.mainWindow ] );
+	const getCurrentPhysicalScreen = async (display:Display) => {
+		return (await getPhysicalScreens()).find(s => s.name === display.label);
+	}
+	
+	// obsReaction( () => {
+	// 	if( reaxel_MainProcessHub().mainWindow ) {
+	// 		resetMainWindowBounds();
+	// 	}
+	// } , () => [ reaxel_MainProcessHub().mainWindow ] );
 	
 	app.whenReady().then( () => {
 		
@@ -61,25 +104,25 @@ export const reaxel_ScreenAdapter = reaxel( () => {
 			console.log( `分辨率: ${ display.size.width }x${ display.size.height }` );
 			console.log( `缩放比例: ${ display.scaleFactor }` );
 			console.log( `变化的属性: ${ changedMetrics }` );
-			calculateActualAppBounds();
+			resetMainWindowBounds();
 		} );
 	} );
 	
-	let rets = {};
+	let rets = {
+		calcActualAppSize,
+	};
 	return () => {
 		
 		return rets;
 	};
 } );
-const display = screen.getPrimaryDisplay();
 
 
 console.log( JSON.stringify( {
 	'文本缩放比率' : windowsTextScale ,
-	'系统缩放比率' : windowsDisplayScale ,
+	'系统缩放比率' : await getWindowsDisplayScale(),
 	
 } , null , 3 ) );
-
 
 /**
  * 定义用户使用的设备及场景
@@ -113,55 +156,10 @@ class SceneType extends ScreenType {
 	}
 }
 
-/*原样显示 1800*1800 */
-const $32寸4k显示器 = new SceneType( {
-	width_px : 3840 ,
-	height_px : 2160 ,
-	width_inch : 27.9,
-	height_inch : 15.7,
-	distance_cm : 50,
-	dpr : 1
-} );
+import { getWindowsTextScale } from './getWindowsTextScale';
+import { calcDprEffectedRes , getShortSide , getPhysicalScreens , PhysicalScreen , convertActualSizeToScaleSize } from './utils';
 
-/*
-等价于24寸1080p当作显示器
-按照4k等比缩小, 占1080p屏幕一半
-900 * 900
- */
-var 大屏幕1080P会议 = new SceneType( {
-	width_px : 1920 ,
-	height_px : 1080 ,
-	width_inch : 47.94,
-	height_inch : 26.96,
-	distance_cm : 200,
-	dpr : 1
-} );
-
-/*
-
- */
-const 小屏幕4k显示器放大 = new SceneType( {
-	width_px : 3840 ,
-	height_px : 2160 ,
-	width_inch : 12.2,
-	height_inch : 6.85,
-	distance_cm : 50,
-	dpr : 2.5
-} );
-
-/*
-
- */
-const 小屏幕1080p15_6寸 = new SceneType( {
-	width_px : 1920 ,
-	height_px : 1080 ,
-	width_inch : 13.6,
-	height_inch : 7.65,
-	distance_cm : 35,
-	dpr : 1.25
-} );
-
-import { windowsTextScale } from './getWindowsTextScale';
-import { windowsDisplayScale } from './getWindowsDisplayScale';
+import { getWindowsDisplayScale } from './getWindowsDisplayScale';
 import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
 import { app , screen } from 'electron';
+import type {Display} from 'electron';

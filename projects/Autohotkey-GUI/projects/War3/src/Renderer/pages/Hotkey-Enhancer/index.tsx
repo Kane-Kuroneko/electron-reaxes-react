@@ -1,20 +1,20 @@
 export const HotkeyEnhancer = reaxper( () => {
 	
 	const { language } = reaxel_I18n();
-	const [ dpr , setDpr ] = useState( null );
+	const [ $screen , $setScreen ] = useState( {
+		width : screen.width,
+		height : screen.height,
+		dpr : window.devicePixelRatio,
+	} );
 	useEffect( () => {
-		const getSystemZoom = () => {
-			// 获取屏幕的物理像素宽度
-			const screenPhysicalWidth = screen.width * window.devicePixelRatio;
-			// 屏幕的逻辑宽度（假设系统缩放为 100% 时等于逻辑像素）
-			const screenLogicalWidth = screen.width;
-			// console.log(screenPhysicalWidth);
-			return screenPhysicalWidth / screenLogicalWidth;
-		};
+		
 		const id = setInterval( () => {
-			
-			setDpr( getSystemZoom() );
-		} , 2000 );
+			$setScreen( {
+				width : screen.width ,
+				height : screen.height ,
+				dpr : window.devicePixelRatio ,
+			} );
+		} , 1000 );
 		return () => clearInterval( id ); 
 	} , [] );
 	
@@ -39,7 +39,9 @@ export const HotkeyEnhancer = reaxper( () => {
 			<MButtonToAtttack />
 			<Divider style = { { borderColor : '#dcdcdc' } } />
 			<MainSwitch />
-			<h2>current DPR : { dpr }</h2>
+			<h2>DPR : { $screen.dpr }</h2>
+			<h2>Width_PX : { $screen.width }</h2>
+			<h2>Height_PX : { $screen.height }</h2>
 		</div>
 		<HotEnhancerTips />
 	</MainConententAreaContainer>;

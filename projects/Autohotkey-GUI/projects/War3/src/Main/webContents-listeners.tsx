@@ -37,7 +37,8 @@ observedMainWindow( ( win ) => {
 			y : 180 / scaleFactor ,
 			width : 2166 ,
 			height : currentHeight ,
-		} );
+			
+		} ,true);
 	} );
 	win.webContents.on( 'devtools-closed' , () => {
 		win.webContents.focus();
@@ -48,7 +49,7 @@ observedMainWindow( ( win ) => {
 			y : win.getBounds().y ,
 			width : 1800 / scaleFactor ,
 			height : 1800 / scaleFactor ,
-		} );
+		} ,true);
 	} );
 } );
 

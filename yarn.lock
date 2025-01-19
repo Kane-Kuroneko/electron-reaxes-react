@@ -3432,7 +3432,7 @@ core-js-pure@^3.23.3:
   resolved "https://registry.npmjs.org/core-js-pure/-/core-js-pure-3.40.0.tgz"
   integrity sha512-AtDzVIgRrmRKQai62yuSIN5vNiQjcJakJb4fbhVw3ehxx7Lohphvw9SGNWKhLFqSxC4ilD0g/L1huAYFQU3Q6A==
 
-core-util-is@^1.0.2, core-util-is@~1.0.0:
+core-util-is@~1.0.0:
   version "1.0.3"
   resolved "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.3.tgz"
   integrity sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==
@@ -5683,6 +5683,11 @@ less-loader@^12.2.0:
     needle "^3.1.0"
     source-map "~0.6.0"
 
+lifesized@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/lifesized/-/lifesized-1.0.1.tgz"
+  integrity sha512-226hBear9oMrHxB2bjByCjMSJ0RI8VFBLZi+PG4sNM0Y2KVv8F/+PV1o24LieN2PZcQ1kWguCdZJPlIGtD9jKQ==
+
 loader-runner@^4.2.0:
   version "4.3.0"
   resolved "https://registry.npmjs.org/loader-runner/-/loader-runner-4.3.0.tgz"
@@ -5752,11 +5757,6 @@ lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.20, lodash@^4.17.21, lodash@4.17.
   version "4.17.21"
   resolved "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
   integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
-
-lodash@~3.10.1:
-  version "3.10.1"
-  resolved "https://registry.npmjs.org/lodash/-/lodash-3.10.1.tgz"
-  integrity sha512-9mDDwqVIma6OZX79ZlDACZl8sBm0TEnkf99zV3iMA4GzkIT/9hiqP5mY0HoT1iNLCrKc/R1HByV+yJfRWVJryQ==
 
 log-symbols@^4.1.0:
   version "4.1.0"
@@ -6268,15 +6268,6 @@ node-api-version@^0.2.0:
   integrity sha512-fthTTsi8CxaBXMaBAD7ST2uylwvsnYxh2PfaScwpMhos6KlSFajXQPcM4ogNE1q2s3Lbz9GCGqeIHC+C6OZnKg==
   dependencies:
     semver "^7.3.5"
-
-node-dpi@^0.0.10:
-  version "0.0.10"
-  resolved "https://registry.npmjs.org/node-dpi/-/node-dpi-0.0.10.tgz"
-  integrity sha512-gQjqx0sYCQ9TvmHLHAPaosDN+5Q3DFuysQgTjgxOihNYgjPsC6Rykkqp58wad2QWFwDHEAa8MqQ3rvWfPn5UjA==
-  dependencies:
-    core-util-is "^1.0.2"
-    lodash "~3.10.1"
-    q "~1.4.1"
 
 node-forge@^1:
   version "1.3.1"
@@ -6986,11 +6977,6 @@ purdy@^3.6.0:
     "@hapi/bossy" "^6.0.1"
     chalk "^2.4.1"
     joi "^17.0.0"
-
-q@~1.4.1:
-  version "1.4.1"
-  resolved "https://registry.npmjs.org/q/-/q-1.4.1.tgz"
-  integrity sha512-/CdEdaw49VZVmyIDGUQKDDT53c7qBkO6g5CefWz91Ae+l4+cRtcDYwMTXh6me4O8TMldeGHG3N2Bl84V78Ywbg==
 
 qs@^6.12.3:
   version "6.13.1"
