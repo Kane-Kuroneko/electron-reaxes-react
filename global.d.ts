@@ -20,12 +20,26 @@ declare global {
 	export const encodeQueryString : typeof import('#generic/utils')['encodeQueryString'];
 	export const stringify : typeof import('#generic/utils')['stringify'];
 	
+	
+	// export const React: typeof ReactModule;
+	export const useLayoutEffect : typeof React.useLayoutEffect;
+	export const useCallback : typeof React.useCallback;
+	export const useState : typeof React.useState;
+	export const useEffect : typeof React.useEffect;
+	export const useRef : typeof React.useRef;
+	
+	namespace React {
+		type R = typeof import('react');
+		//@ts-expect-error
+		export = R;
+	}
+	
 	const __DEV__ : boolean;
 	
 	export const electron : {
 		ipcRenderer : typeof import('electron')['ipcRenderer']
 	}
 }
-
+import * as ReactModule from 'react';
 
 export {}

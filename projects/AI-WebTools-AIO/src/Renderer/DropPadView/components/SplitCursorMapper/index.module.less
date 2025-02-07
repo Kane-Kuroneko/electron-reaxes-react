@@ -1,0 +1,103 @@
+.split-cursor-mapper {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	pointer-events: none;;
+	
+	:global {
+		.container-dragging-over {
+			pointer-events: visible !important;
+		}
+		
+		.layer-diagonal-direction {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			display: grid;
+			grid-template-columns: repeat(2, 1fr);
+			grid-template-rows: repeat(2, 1fr);
+			pointer-events: none;
+			
+			
+			& > div.diagonal-direction-item {
+				display: flex;
+				
+				&.leftTop {
+					background-color: orange;
+				}
+				
+				&.leftBottom {
+					background-color: yellow;
+				}
+				
+				&.rightTop {
+					background-color: green;
+				}
+				
+				&.rightBottom {
+					background-color: purple;
+				}
+			}
+			
+			
+		}
+		
+		.layer-basic-direction {
+			position: absolute;
+			display: grid;
+			grid-template-columns: 1fr 1fr 1fr; /* 3列 */
+			grid-template-rows: 1fr 1fr 1fr; /* 3行 */
+			gap: 0;
+			width: 100%;
+			height: 100%;
+			pointer-events: none;
+			
+			& > div.basic-direction-item {
+				background-color: lightgray;
+				text-align: center;
+				pointer-events: none;
+				
+				&.top {
+					background-color: #c58a1d;
+					display: flex;
+					grid-column: 2; /* 居中，放在第2列 */
+					grid-row: 1; /* 放在第1行 */
+				}
+				
+				&.left {
+					background-color: #d5d51a;
+					display: flex;
+					grid-column: 1; /* 放在第1列 */
+					grid-row: 2; /* 放在第2行 */
+				}
+				
+				&.right {
+					background-color: #2a792a;
+					display: flex;
+					grid-column: 3; /* 放在第3列 */
+					grid-row: 2; /* 放在第2行 */
+				}
+				
+				&.bottom {
+					background-color: #c596c5;
+					display: flex;
+					grid-column: 2; /* 居中，放在第2列 */
+					grid-row: 3; /* 放在第3行 */
+				}
+			}
+		}
+		
+		.layer-center {
+			position: absolute;
+			display: flex;
+			width: calc(100% / 3);
+			height: calc(100% / 3);
+			background-color: gray;
+		}
+		
+		
+	}
+}

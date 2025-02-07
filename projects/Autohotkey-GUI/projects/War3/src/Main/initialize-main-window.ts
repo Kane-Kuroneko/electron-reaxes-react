@@ -25,7 +25,7 @@ export const initializeMainWindow = async (
 			experimentalFeatures : false ,
 			
 		} ,
-		
+		center : true,
 		resizable:false,
 		icon : path.join(absAppStaticsPath , 'assets/ico/logo - mixin.ico')
 	};
@@ -36,7 +36,7 @@ export const initializeMainWindow = async (
 	} , defaultExtraOptions , defaultOptions ,options );
 	
 	if(options.openDevTools){
-		options.width += devtoolsWidth;
+		// options.width += devtoolsWidth;
 	}
 	console.log( options );
 	const mainWindow = new BrowserWindow( options);
@@ -56,8 +56,12 @@ export const initializeMainWindow = async (
 		// mainWindowLoaded.resolve( mainWindow );
 	} );
 	if(options.openDevTools){
-		mainWindow.webContents.openDevTools();
+		useOpenDevtools( mainWindow , { 
+			width : devtoolsWidth / screen.getPrimaryDisplay().scaleFactor ,
+			devtoolsOptions : { mode : "left" , activate : true } } 
+		);
 	}
+	
 	
 	
 	return mainWindow as BrowserWindow;
@@ -69,9 +73,11 @@ type ExtraOptions = Partial<{
 
 import { useQuitHook } from './useQuitHook';
 import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
-import { reaxel_ScreenAdapter } from '#main/reaxels/screen-adpater';
+import { reaxel_ScreenAdapter ,  } from '#main/reaxels/screen-adpater';
+import { getWindowsDisplayScale } from '#main/reaxels/screen-adpater/getWindowsDisplayScale';
 import { reaxel_ElectronENV } from '#main/reaxels/runtime-paths';
 import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
+import { useOpenDevtools } from '#generic/modify-electron/open-devtools';
 import { dev } from 'electron-is';
 import { BrowserWindow , BrowserWindowConstructorOptions , app , screen } from 'electron';
 import path from 'path';

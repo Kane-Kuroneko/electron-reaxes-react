@@ -32,24 +32,24 @@ observedMainWindow( ( win ) => {
 		const bounds = win.getBounds(); // 获取当前窗口尺寸
 		const currentHeight = bounds.height;
 		
-		win.setBounds( {
-			x : 350 / scaleFactor ,
-			y : 180 / scaleFactor ,
-			width : 2166 ,
-			height : currentHeight ,
-			
-		} ,true);
+		// win.setBounds( {
+		// 	x : 350 / scaleFactor ,
+		// 	y : 180 / scaleFactor ,
+		// 	width : 2166 ,
+		// 	height : currentHeight ,
+		//	
+		// } ,true);
 	} );
 	win.webContents.on( 'devtools-closed' , () => {
 		win.webContents.focus();
 		
 		const devtoolsWidth = 1366;
-		win.setBounds( {
-			x : 1900 / scaleFactor ,
-			y : win.getBounds().y ,
-			width : 1800 / scaleFactor ,
-			height : 1800 / scaleFactor ,
-		} ,true);
+		// win.setBounds( {
+		// 	x : 1900 / scaleFactor ,
+		// 	y : win.getBounds().y ,
+		// 	width : 1800 / scaleFactor ,
+		// 	height : 1800 / scaleFactor ,
+		// } ,true);
 	} );
 } );
 

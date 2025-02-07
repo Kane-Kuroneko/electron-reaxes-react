@@ -1,12 +1,5 @@
 /*global provider*/
 // declare const _ : typeof import('lodash');
-// declare const React: typeof import('react');
-declare const useLayoutEffect : typeof React.useLayoutEffect;
-declare const useCallback : typeof React.useCallback;
-// declare const useEffect : typeof React.useEffect;
-// declare const useRef : typeof React.useRef;
-// declare const reaxper : typeof React.useRef;
-
 declare namespace ORZ {
 	
 	export type env = "server_dev"|"server_yang" | "server_production" | "unset"  ;
@@ -156,7 +149,7 @@ declare type Languages =
 ;
 
 declare type I18nComponents = {
-	[lang in Languages]?: React.ComponentType
+	[lang in Languages]?: typeof React.Component
 }
 
 declare module '*.png';
@@ -165,6 +158,15 @@ declare module '*.jpeg';
 declare module '*.svg';
 declare module '*.bmp';
 declare module '*.mov';
+declare module '*.raw.ts' {
+	const content: string;
+	export default content;
+}
+
+declare module '*.raw.tsx' {
+	const content: string;
+	export default content;
+}
 // declare const orzPromise : typeof import('#utils').orzPromise;
 // declare const crayon : typeof import('#generic/utils').crayon;
 // declare const logProxy : typeof import('#utils').logProxy;

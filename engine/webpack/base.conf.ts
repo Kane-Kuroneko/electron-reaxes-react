@@ -40,7 +40,15 @@ export const webpackBaseConf:Configuration = {
 			},
 			/*for react/ts/tsx etc. generation js files */
 			{
-				test: /\.(t|j)sx?$/i,
+				test: (value,) => {
+					switch( true ) {
+						//排除raw
+						case /\.raw\.(t|j)sx?$/i.test(value) : 
+							return false;
+						case /\.(t|j)sx?$/i.test(value):
+							return true;
+					}
+				},
 				use: {
 					loader: 'babel-loader',
 					options : babelConf(node_env as "development"|"production" , 'browser'),
@@ -143,6 +151,25 @@ export const webpackBaseConf:Configuration = {
 					},
 				},
 			},
+			//import js/ts as code string
+			{
+				test: /\.raw\.(t|j)sx?$/i,
+				use : [{
+					loader : path.join(absolutelyPath_Engine,'webpack/webpack-loader/index.ts')
+				}]
+				// use : [
+				// 	{
+				// 		loader : 'raw-loader',
+				// 		options : {
+				// 			esModule : false,
+				// 		}
+				// 	},
+				// 	{
+				// 		loader: 'babel-loader',
+				// 		options : babelConf(node_env as "development"|"production" , 'browser'),
+				// 	}
+				// ],
+			},
 			{
 				test: /\.component\.svg$/,
 				use: ['@svgr/webpack'],
@@ -218,21 +245,38 @@ export const webpackBaseConf:Configuration = {
 	],
 };
 
+
+const distributeScriptParser = (rule:webpack.RuleSetRule,hostEnv : "node"|"browser") => {
+	return {
+		...rule,
+		use : {
+			...rule.use as any,
+			options : babelConf( node_env as "development" | "production" , hostEnv ) ,
+		},
+	}
+}
+distributeScriptParser.judge = (rule:webpack.RuleSetRule) => {
+	if(!rule.test){
+		return false
+	}
+	let testResult;
+	switch( true ){
+		case _.isFunction(rule.test) && rule.test( 'app.tsx' ):
+		case _.isRegExp(rule.test) && rule.test.test( 'app.tsx' ):
+			return true;
+		default :
+			return false;
+	}
+}
+
 export const webpackBaseConfBrowser : Configuration = {
 	...webpackBaseConf,
 	module : {
 		...webpackBaseConf.module,
 		rules : webpackBaseConf.module.rules.map( ( rule: webpack.RuleSetRule ) => {
-			if( _.isObject( rule.test ) && rule.test instanceof RegExp && rule.test.test( '.tsx' ) ) {
-				return {
-					test : /\.(t|j)sx?$/i ,
-					use : {
-						loader : 'babel-loader' ,
-						options : babelConf( node_env as "development" | "production" , 'browser' ) ,
-					} ,
-					exclude : /node_modules/ ,
-				};
-			} else {
+			if(distributeScriptParser.judge(rule)){
+				return distributeScriptParser( rule,"browser" );
+			}else {
 				return rule;
 			}
 		} ),
@@ -243,24 +287,20 @@ export const webpackBaseConfNode : Configuration = {
 	module : {
 		...webpackBaseConf.module,
 		rules : webpackBaseConf.module.rules.map( ( rule: webpack.RuleSetRule ) => {
-			if( _.isObject( rule.test ) && rule.test instanceof RegExp && rule.test.test( '.tsx' ) ) {
-				return {
-					test : /\.(t|j)sx?$/i ,
-					use : {
-						loader : 'babel-loader' ,
-						options : babelConf( node_env as "development" | "production" , 'node' ) ,
-					} ,
-					exclude : /node_modules/ ,
-				};
-			} else {
+			if(distributeScriptParser.judge(rule)){
+				return distributeScriptParser( rule,"node" );
+			}else {
 				return rule;
 			}
 		} ),
 	},
 }
+
+import WebpackLoader from './webpack-loader';
 import {
 	absolutelyPath_RepositoryRoot ,
 	absolutelyPath_Projects,
+	absolutelyPath_Engine,
 	getProjectPaths ,
 	env ,
 	experimental ,
@@ -274,3 +314,4 @@ import _ from 'lodash';
 import path from 'path';
 import webpack , {Configuration} from 'webpack';
 import TerserPlugin from 'terser-webpack-plugin';
+import RawLoader from 'raw-loader';

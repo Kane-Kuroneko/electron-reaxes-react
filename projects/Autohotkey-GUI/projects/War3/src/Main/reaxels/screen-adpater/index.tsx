@@ -22,15 +22,16 @@ const screenTypes = {};
 const appHeightRatio = 690;
 export const reaxel_ScreenAdapter = reaxel( () => {
 	
-	const { store , setState } = orzMobx( {
-		// screenWidth : width,
-		// screenHeight : height,
-		
+	const { store , setState , mutate } = orzMobx( {
+		screenInfos : [],
+		get primaryInfo(){
+			return this.screenInfos.find( s => s.is_primary );
+		}
 	} );
 	
 	const calcActualAppSize = async (display:Display = screen.getPrimaryDisplay()) => {
 		try {
-			const currentPhysicalScreen = (await getPhysicalScreens()).find((itm,index,arr) => {
+			const currentPhysicalScreen = (await HoFCachedGetPhysicalScreens({store,setState})()).find((itm,index,arr) => {
 				if(arr.length === 1) return true;
 				else {
 					/*需要完善显示器匹配逻辑*/
@@ -84,10 +85,20 @@ export const reaxel_ScreenAdapter = reaxel( () => {
 		} , true );
 	};
 	
+	/**
+	 * @experimental
+	 */
 	const getCurrentPhysicalScreen = async (display:Display) => {
 		return (await getPhysicalScreens()).find(s => s.name === display.label);
 	}
 	
+	const centralWindowBounds = async (display = screen.getPrimaryDisplay()) => {
+		const {width,height} = await calcActualAppSize(display);
+		reaxel_MainProcessHub().mainWindow?.setPosition(
+			(display.size.width - width) / 2,
+			(display.size.height - height) / 2,
+		)
+	}
 	// obsReaction( () => {
 	// 	if( reaxel_MainProcessHub().mainWindow ) {
 	// 		resetMainWindowBounds();
@@ -157,9 +168,10 @@ class SceneType extends ScreenType {
 }
 
 import { getWindowsTextScale } from './getWindowsTextScale';
-import { calcDprEffectedRes , getShortSide , getPhysicalScreens , PhysicalScreen , convertActualSizeToScaleSize } from './utils';
+import { calcDprEffectedRes , getShortSide , getPhysicalScreens , PhysicalScreen , convertActualSizeToScaleSize , HoFCachedGetPhysicalScreens } from './utils';
+
 
 import { getWindowsDisplayScale } from './getWindowsDisplayScale';
 import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
-import { app , screen } from 'electron';
+import { app , screen  } from 'electron';
 import type {Display} from 'electron';

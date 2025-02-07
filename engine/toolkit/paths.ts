@@ -1,9 +1,5 @@
-/**
- * 
- */
 
-
-//工程根目录,也是启动nodejs的目录,Z:/electron-reaxes-react/
+/*工程根目录,也是启动nodejs的目录,Z:/electron-reaxes-react/*/
 export const absolutelyPath_RepositoryRoot = process.cwd();
 
 //electron-reaxes-react目录的文件路径,返回file:///F:/electron-reaxes-react/

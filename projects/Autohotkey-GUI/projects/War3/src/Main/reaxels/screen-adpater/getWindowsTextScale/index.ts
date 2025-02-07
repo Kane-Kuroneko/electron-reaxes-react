@@ -1,18 +1,18 @@
 export const getWindowsTextScale = async () => {
 	try {
-		const scale = getWindowsTextScaleByPS();
-		if(checkValidScale(scale)){
-			return Promise.resolve(scale);
-		}else throw new Error(`错误的windowsTextScale via ps1:`,{cause:scale});
-	}catch ( e ) {
-		console.log( e );
 		const scale = await getWindowsTextScaleByReg().catch( e => null as number );
 		if(checkValidScale(scale)){
 			return scale;
 		}else {
 			debugger;
-			throw new Error( '竟然连注册表也获取不到windowsTextScale' , {cause:scale} );
+			throw new Error( '注册表无法获取windowsTextScale' , {cause:scale} );
 		}
+	}catch ( e ) {
+		console.log( e );
+		const scale = getWindowsTextScaleByPS();
+		if(checkValidScale(scale)){
+			return Promise.resolve(scale);
+		}else throw new Error(`错误的windowsTextScale via ps1:`,{cause:scale});
 	}
 	
 }

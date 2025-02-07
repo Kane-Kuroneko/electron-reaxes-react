@@ -37,6 +37,16 @@ export const getPhysicalScreens = () => {
 	} );
 	return promise;
 }
+export const HoFCachedGetPhysicalScreens = ({store,setState}) => async () => {
+	if(store.screenInfos.length){
+		return store.screenInfos;
+	}
+	const physicalScreen = await getPhysicalScreens();
+	setState( {
+		screenInfos : physicalScreen,
+	} );
+	return physicalScreen;
+}
 
 export const convertActualSizeToScaleSize = ({width,height}) => {
 	const { scaleFactor } = screen.getPrimaryDisplay();
