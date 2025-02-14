@@ -6,7 +6,7 @@
 	width : 100%;
 	height : 100%;
 	background: linear-gradient(to right, rgb(101, 78, 163), rgb(234, 175, 200));
-	
+	pointer-events: visible;
 	box-sizing: border-box;
 	
 	
@@ -42,7 +42,6 @@
 			}
 		
 			.preview-box {
-				
 				border: 1px solid rgb(143, 143, 143);
 				background: rgba(255, 255, 255, 0.3); /* 半透明的背景 */
 				border-radius: 10px; /* 圆角 */
@@ -50,7 +49,7 @@
 				position: absolute;
 				margin: 2%;
 				backdrop-filter: blur(10px) saturate(120%) contrast(110%);; /* 背景模糊 */
-				
+				pointer-events: none;
 				
 				
 				&.center{

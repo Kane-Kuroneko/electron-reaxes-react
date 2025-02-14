@@ -6,3 +6,48 @@
 	height: 100%;
 	opacity: .2;
 }
+
+
+:global{
+	.spore-view {
+		width: 100%;
+		height: 100%;
+		overflow: auto;
+	}
+	.grid {
+		display: grid;
+		width: 100%;
+		height: 100%;
+		
+		&.hor {
+			grid-template-rows: 1fr 10px 1fr;
+		}
+		&.vert{
+			grid-template-columns: 1fr 10px 1fr;
+		}
+	}
+	
+	.gutter-col {
+		grid-row: 1/-1;
+		cursor: col-resize;
+	}
+	
+	.gutter-col-1 {
+		grid-column: 2;
+	}
+	
+	.gutter-row {
+		grid-column: 1/-1;
+		cursor: row-resize;
+	}
+	
+	.gutter-row-1 {
+		grid-row: 2;
+	}
+	
+	.gutter-col,.gutter-row {
+		background-color: #fff;
+		background-image: radial-gradient(#4a525f 15%, transparent 16%);
+		background-size: 6px 6px;
+	}
+}

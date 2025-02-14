@@ -23,7 +23,7 @@ export const reaxel_Core = reaxel(() => {
 
 export type Spore = {
 	url : string;
-	spore_id? : number;
+	spore_id? : number|string;
 	mounted : boolean;
 	/*如果不传则默认用host/favicon */
 	iconUrl? : string;
@@ -41,16 +41,16 @@ const getFavicon = async (url:string) => {
 		{
 			url : 'https://chatgpt.com' ,
 			mounted : false ,
-			spore_id : null ,
+			spore_id : 'chatGPT.openAI' ,
 			
 		},
 		{
 			url : `https://x.com/i/grok?focus=1` ,
 			mounted : false ,
-			spore_id : null ,
+			spore_id : 'grok.X' ,
 			
 		},
-	];
+	] as Spore[];
 	const getByWebsiteDefault = async () => {
 		const iconUrl = `${ url }/favicon.ico`;
 		fetch(iconUrl).then(r => {

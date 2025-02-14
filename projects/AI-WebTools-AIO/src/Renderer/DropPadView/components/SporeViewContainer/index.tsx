@@ -1,5 +1,5 @@
 export const SporeViewContainer = reaxper(({}) => {
-	const { Core_Store , Core_Mutate } = reaxel_Core();
+	const { Core_Store , Core_Mutate , onDragDropSpore } = reaxel_Core();
 	
 	return <div
 		className = { less.sporeViewContainer }
@@ -8,9 +8,17 @@ export const SporeViewContainer = reaxper(({}) => {
 			Core_Mutate(s => s.dragOverPreview.containerDragOver = true);
 		} }
 		onDragLeave = { () => {
-			Core_Mutate(s => s.dragOverPreview.containerDragOver = false);
+			setTimeout(() => {
+				Core_Mutate(s => s.dragOverPreview.containerDragOver = false);
+			},20);
 		} }
+		onMouseLeave={() => {
+			setTimeout(() => {
+				Core_Mutate(s => s.dragOverPreview.containerDragOver = false);
+			})
+		}}
 		onDrop = { ( event ) => {
+			
 			Core_Mutate(s => s.dragOverPreview.containerDragOver = false);
 			
 			const dataString = event.dataTransfer.getData('application/json');
@@ -18,35 +26,20 @@ export const SporeViewContainer = reaxper(({}) => {
 				console.warn(`没有dropData`);
 				return;
 			}
-			const json = JSON.parse(dataString);
-			console.log(`json:` , json);
+			const dragdropData: SporeDragdrop = JSON.parse(dataString);
+			onDragDropSpore(dragdropData);
+			console.log(`json:` , dragdropData);
 		} }
 	>
-		<SporeSplitAdjuster/>
+		{ Core_Store.layout && <SporeSplitAdjuster /> }
 		{/*{ !store.dragStatus && <EmptyRegion region = { region } /> }*/ }
 		{ <SplitCursorMapper /> }
 		{/*<DragOverPreview />*/}
-		{ Core_Store.dragOverPreview.dragOver && <DragOverPreview /> }
+		{ Core_Store.dragOverPreview.dragOver && <SpliterPreviewBox /> }
 	</div>;
 });
 
-const DragOverPreview = reaxper(() => {
-	const { Core_Store , Core_Mutate } = reaxel_Core();
-	return <div
-		className="drag-over-preview-container"
-		onDragOver={() => {
-			Core_Mutate(s => s.dragOverPreview.previewDragOver = true)
-		}}
-		onDragLeave={() => {
-			Core_Mutate(s => s.dragOverPreview.previewDragOver = false);
-		}}
-	>
-		<div
-			className = { `preview-box ${ Core_Store.dragOverPreview.position }` }
-		>
-		</div>
-	</div>
-})
+
 
 
 const EmptyRegion = reaxper(( { }) => {
@@ -59,6 +52,8 @@ const EmptyRegion = reaxper(( { }) => {
 	return null;
 });
 
+import type { SporeDragdrop } from '#renderer/types/spore-dragdrop';
+import { SpliterPreviewBox } from '#renderer/DropPadView/components/SpliterPreviewBox';
 import { SporeSplitAdjuster } from '#renderer/DropPadView/components/SporeSplitAdjuster';
 import { SplitCursorMapper } from '#renderer/DropPadView/components/SplitCursorMapper';
 import * as less from './index.module.less';
