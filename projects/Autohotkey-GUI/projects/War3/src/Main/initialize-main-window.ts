@@ -4,7 +4,7 @@ const appAttributes = {
 	width : 1800,
 	height : 1800
 }
-const devtoolsWidth = 1366;
+const devtoolsWidth = 1300;
 
 export const initializeMainWindow = async (
 	options:BrowserWindowConstructorOptions & ExtraOptions = {
@@ -12,7 +12,7 @@ export const initializeMainWindow = async (
 	}
 ):Promise<BrowserWindow> => {
 	const defaultExtraOptions:ExtraOptions = {
-		openDevTools : dev(),
+		openDevTools :( dev(),false,true),
 	}
 	const { calcActualAppSize } = reaxel_ScreenAdapter();
 	const actualAppSize = await calcActualAppSize();
@@ -32,13 +32,12 @@ export const initializeMainWindow = async (
 	
 	options = _.merge( {
 		...actualAppSize,
-		x : actualAppSize.width
 	} , defaultExtraOptions , defaultOptions ,options );
 	
 	if(options.openDevTools){
 		// options.width += devtoolsWidth;
 	}
-	console.log( options );
+	console.trace( options );
 	const mainWindow = new BrowserWindow( options);
 	// console.log('screen.getPrimaryDisplay().scaleFactor:',screen.getPrimaryDisplay().scaleFactor);
 	// 加载 index.html
@@ -61,8 +60,6 @@ export const initializeMainWindow = async (
 			devtoolsOptions : { mode : "left" , activate : true } } 
 		);
 	}
-	
-	
 	
 	return mainWindow as BrowserWindow;
 };

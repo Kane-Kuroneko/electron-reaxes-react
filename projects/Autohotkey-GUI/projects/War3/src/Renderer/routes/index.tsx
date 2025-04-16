@@ -30,9 +30,9 @@ export const Routing = reaxper( () => {
 } );
 
 const Index = reaxper( () => {
-	const { GUI_Core_SetState , GUI_Core_Store } = reaxel_GUI_Core();
+	
 	useEffect( () => {
-		GUI_Core_SetState( { hash : location.hash } );
+		reaxel_GUI_Core.setState( { hash : location.hash } );
 	} , [] );
 	return <Navigate to = "/hotkey-enhancer" />;
 } );

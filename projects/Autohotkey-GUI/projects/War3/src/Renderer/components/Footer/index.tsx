@@ -1,6 +1,6 @@
 export const Footer = reaxper( () => {
 	const { language } = reaxel_I18n();
-	const Component = I18nComponents[language];
+	const Component = I18nComponents[language] as React.FunctionComponent|React.ComponentClass;
 	return <div
 		className = { less.footer }
 	>
@@ -8,7 +8,7 @@ export const Footer = reaxper( () => {
 	</div>;
 } );
 
-const I18nComponents: I18nComponents = {
+const I18nComponents = {
 	'en-US' : reaxper( () => {
 		return <>
 			This application is powered by outstanding technical support from open-source libraries I developed, including <code>reaxes</code> , <code>reaxes-react</code> and <code>reaxel-i18n</code>.

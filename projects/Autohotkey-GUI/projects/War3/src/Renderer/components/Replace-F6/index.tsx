@@ -2,12 +2,12 @@ export const ReplaceF6 = reaxper( () => {
 	
 	const movRef = useRef<HTMLVideoElement>( null );
 	
-	const { GUI_Store , toggleReplaceF6 , GUI_Mutate , GUI_SetState } = reaxel_HotkeyEnhancer();
+	const { toggleReplaceF6 } = reaxel_HotkeyEnhancer();
 	
 	useEffect( () => {
 		const disposer = obsReaction( ( first , disposer ) => {
-			crayon.blue( '对GUI_Store.ModalVisible_F6ShowCase的监听:' , GUI_Store.ModalVisible_F6ShowCase );
-			const { ModalVisible_F6ShowCase } = GUI_Store;
+			crayon.blue( '对GUI_Store.ModalVisible_F6ShowCase的监听:' , reaxel_HotkeyEnhancer.store.ModalVisible_F6ShowCase );
+			const { ModalVisible_F6ShowCase } = reaxel_HotkeyEnhancer.store;
 			if( ModalVisible_F6ShowCase ) {
 				setTimeout( () => {
 					movRef.current?.play();
@@ -20,11 +20,11 @@ export const ReplaceF6 = reaxper( () => {
 			return disposer;
 		} , () => [] );
 		return disposer;
-	} , [ GUI_Store.ModalVisible_F6ShowCase ] );
+	} , [ reaxel_HotkeyEnhancer.store.ModalVisible_F6ShowCase ] );
 	
 	return <>
 		<FunctionSwitcher
-			value = { GUI_Store.switch_replaceF6 }
+			value = { reaxel_HotkeyEnhancer.store.switch_replaceF6 }
 			onChange = { toggleReplaceF6 }
 		>
 			<I18n>Replace F6 quick save with timestamped save</I18n>
@@ -32,14 +32,14 @@ export const ReplaceF6 = reaxper( () => {
 			<InfoCircleTwoTone
 				style = { { marginLeft : '14px' } }
 				onClick = { () => {
-					GUI_SetState( { ModalVisible_F6ShowCase : true } );
+					reaxel_HotkeyEnhancer.setState( { ModalVisible_F6ShowCase : true } );
 				} }
 			/>
 			<Modal
 				className = { less.F6ShowcaseModal }
-				open = { GUI_Store.ModalVisible_F6ShowCase }
+				open = { reaxel_HotkeyEnhancer.store.ModalVisible_F6ShowCase }
 				onCancel = { () => {
-					GUI_SetState( { ModalVisible_F6ShowCase : false } );
+					reaxel_HotkeyEnhancer.setState( { ModalVisible_F6ShowCase : false } );
 				} }
 				footer = { null }
 				closable

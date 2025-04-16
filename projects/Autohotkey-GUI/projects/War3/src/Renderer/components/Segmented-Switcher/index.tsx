@@ -1,5 +1,5 @@
 export const SegmentedSwitcher = reaxper( () => {
-	const { GUI_Core_Store , GUI_Core_SetState } = reaxel_GUI_Core();
+	
 	const options = [
 		{
 			label : i18n( 'Hotkey-Enhancer' ) ,
@@ -13,10 +13,10 @@ export const SegmentedSwitcher = reaxper( () => {
 	
 	return <div className = { less.segementedSwitcher }>
 		<Segmented
-			value = { GUI_Core_Store.hash.replaceAll( '#' , '' ) }
+			value = { reaxel_GUI_Core.store.hash.replaceAll( '#' , '' ) }
 			options = { options }
 			onChange = { ( value ) => {
-				GUI_Core_SetState( { hash : value } );
+				reaxel_GUI_Core.setState( { hash : value } );
 			} }
 		/>
 		

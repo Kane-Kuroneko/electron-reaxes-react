@@ -10,7 +10,7 @@ if(main()){
 		 * 可以将renderer和main的api整合在一起,但是初始化必须是空值,当在main或者renderer第一次使用时
 		 * 再初始化,从而避免掉在main中调用到webview api或者相反.
 		 */
-		const { store , setState } = orzMobx( {
+		const { store , setState } = createReaxable( {
 			/**
 			 * common apis below
 			 */

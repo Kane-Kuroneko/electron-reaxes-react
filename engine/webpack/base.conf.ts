@@ -29,7 +29,7 @@ export const webpackBaseConf:Configuration = {
 		},
 		extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
 	},
-	devtool: 'cheap-source-map',
+	devtool: node_env === 'production' ? 'cheap-source-map': 'source-map',
 	module: {
 		rules: [
 			{
@@ -221,14 +221,13 @@ export const webpackBaseConf:Configuration = {
 			
 			reaxper: ['reaxes-react', 'reaxper'],
 			Reaxlass: ['reaxes-react', 'Reaxlass'],
-			Reaxes: ['reaxes', 'Reaxes'],
-			orzMobx: ['reaxes', 'orzMobx'],
+			createReaxable: ['reaxes', 'createReaxable'],
 			reaxel: ['reaxes', 'reaxel'],
-			obsReaction : ["reaxes","Reaxes","obsReaction"],
-			contrastedCallback : ["reaxes","Reaxes","contrastedCallback"],
-			collectDeps : ["reaxes","Reaxes","collectDeps"],
+			obsReaction : ["reaxes","obsReaction"],
+			distinctCallback : ["reaxes","distinctCallback"],
+			collectDeps : ["reaxes","collectDeps"],
 			
-			orzPromise: ['reaxes-utils', 'orzPromise'],
+			xPromise: ['reaxes-utils', 'xPromise'],
 			utils: ['reaxes-utils'],
 			antd: ['antd'],
 			toolkits: ['reaxes-toolkits'],

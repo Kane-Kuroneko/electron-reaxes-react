@@ -1,8 +1,8 @@
 export const ForbidMouseWheels = reaxper(() => {
-	const { GUI_Store, toggleWheelsZoom } = reaxel_HotkeyEnhancer();
+	const { toggleWheelsZoom } = reaxel_HotkeyEnhancer();
 	const { language } = reaxel_I18n();
 	return <FunctionSwitcher
-		value = { GUI_Store.switch_forbidWheelsZoom }
+		value = { reaxel_HotkeyEnhancer.store.switch_forbidWheelsZoom }
 		onChange = { toggleWheelsZoom }
 	>
 		<I18n>Disable wheel zoom</I18n>

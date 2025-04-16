@@ -8,9 +8,12 @@ const { absolutelyPath_subproject } = getProjectPaths.default;
 const absolutelyElectronExe = path.join( absolutelyPath_RepositoryRoot , 'node_modules/electron/dist/electron.exe' );
 
 // 使用 spawn 来启动 Electron
-const electronProcess = spawn(absolutelyElectronExe, ['.'], {
+const electronProcess = spawn(absolutelyElectronExe, ['.','--inspect=5858'], {
 	cwd: absolutelyPath_subproject, // 设置当前工作目录为 subproject 路径
-	stdio: 'inherit' // 忽略 stdin, 监听 stdout 和 stderr
+	stdio: 'inherit', // 忽略 stdin, 监听 stdout 和 stderr
+	env :{
+		NODE_OPTIONS: '--enable-source-maps'
+	}
 });
 
 // 实时获取 stdout 和 stderr

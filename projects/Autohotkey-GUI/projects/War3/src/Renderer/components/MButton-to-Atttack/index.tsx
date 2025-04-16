@@ -1,14 +1,13 @@
 export const MButtonToAtttack = reaxper( () => {
 	
 	const {
-		GUI_Store ,
 		toggleMbuttonToAttack,
 	} = reaxel_HotkeyEnhancer();
 	const { language } = reaxel_I18n();
 	
 	return <>
 		<FunctionSwitcher
-			value = { GUI_Store.switch_MbtnToAttack }
+			value = { reaxel_HotkeyEnhancer.store.switch_MbtnToAttack }
 			onChange = { toggleMbuttonToAttack }
 		>
 			{I18nElement.title[language]?.()}

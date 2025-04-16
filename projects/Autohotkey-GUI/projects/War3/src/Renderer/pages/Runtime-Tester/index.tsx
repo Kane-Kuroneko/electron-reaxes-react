@@ -1,19 +1,22 @@
 export const RuntimeTester = reaxper( () => {
 	const ref: LottieRef = useRef();
 	
-	const [ scheme , setScheme ] = useState<'simple' | 'complex' | 'revert' | 'liquid' | 'heart'>( 'revert' );
-	const { mount , onComplete , toggleTo , unmount , lottie_Store , lottie_SetState , animationData , lottieProps } = {
+	const [ scheme , setScheme ] = useStateWithCallback<'simple' | 'complex' | 'revert' | 'liquid' | 'heart'>( 'revert' );
+	
+	const reaxel_CurrentLottie = {
 		'complex' : reaxel_Lottie_Complex ,
 		'simple' : reaxel_Lottie_Simple ,
 		'revert' : reaxel_Lottie_Revert ,
 		'liquid' : reaxel_Lottie_Liquid ,
 		'heart' : reaxel_Lottie_Heart ,
-	}[scheme]();
+	}[scheme];
+	
+	const { mount , onComplete , toggleTo , unmount  , animationData } = reaxel_CurrentLottie();
 	
 	useEffect( () => {
 		mount( ref.current );
 		// return unmount;
-		console.log( logProxy( _.omit( lottie_Store , 'lottie' ) ) );
+		console.log( logProxy( _.omit( reaxel_CurrentLottie.store , 'lottie' ) ) );
 		return () => {
 			unmount();
 		};
@@ -29,9 +32,9 @@ export const RuntimeTester = reaxper( () => {
 			onClick = { () => {
 				if( scheme === 'liquid' ) {
 					const asserted = toggleTo as ReturnType<typeof reaxel_Lottie_Liquid>['toggleTo'];
-					asserted( lottie_Store.currentScheme === 'enable' ? 'disable' : 'enable' ).
+					asserted( reaxel_CurrentLottie.store.currentScheme === 'enable' ? 'disable' : 'enable' ).
 					then( () => {
-						return asserted( lottie_Store.currentScheme === 'enable' ? 'disable' : 'enable' );
+						return asserted( reaxel_CurrentLottie.store.currentScheme === 'enable' ? 'disable' : 'enable' );
 					} );
 					return;
 				} else if( scheme === 'heart' ) {
@@ -45,30 +48,35 @@ export const RuntimeTester = reaxper( () => {
 					return;
 				} else if( scheme === 'complex' ) {
 					const asserted = toggleTo as ReturnType<typeof reaxel_Lottie_Complex>['toggleTo'];
-					asserted( lottie_Store.currentScheme === 'light' ? 'dark' : 'light' ).then( () => {
-						if( lottie_Store.currentScheme === 'dark' ) {
-							setScheme( 'simple' );
-							reaxel_Lottie_Simple().toggleTo( 'light' ).then( () => {
-								reaxel_Lottie_Simple().toggleTo( 'dark' );
-							} );
+					asserted( reaxel_CurrentLottie.store.currentScheme === 'light' ? 'dark' : 'light' ).then( () => {
+						if( reaxel_CurrentLottie.store.currentScheme === 'dark' ) {
+							setScheme( 'simple' ,() => {
+								
+							});
+							setTimeout(() => {
+								reaxel_Lottie_Simple().toggle().then( () => {
+									reaxel_Lottie_Simple().toggle();
+								} );
+							})
 						}
 					} );
+					return;
 				}
 				(
 					toggleTo as ReturnType<typeof reaxel_Lottie_Simple | typeof reaxel_Lottie_Complex | typeof reaxel_Lottie_Revert>['toggleTo']
-				)( lottie_Store.currentScheme === 'light' ? 'dark' : 'light' );
+				)( reaxel_CurrentLottie.store.currentScheme === 'light' ? 'dark' : 'light' );
 			} }
 			onComplete = { () => {
 				onComplete();
 			} }
 		/>
-		<h2>当前主题:{ scheme } , 显示模式:{ lottie_Store.currentScheme }</h2>
+		<h2>当前主题:{ scheme } , 显示模式:{ reaxel_CurrentLottie.store.currentScheme }</h2>
 		<Radio.Group
 			onChange = { ( e ) => {
 				setScheme( e.target.value );
 			} }
 			value = { scheme }
-			disabled = { lottie_Store.playing }
+			disabled = { reaxel_CurrentLottie.store.playing }
 		>
 			<Radio
 				value = "complex"
@@ -105,10 +113,9 @@ const reaxel_Lottie_Simple = Refaxel_Lottie<"dark" | "light">( {
 		{ name : "dark" as const , segments : [ 19 , 80 ] } ,
 		{ name : "light" as const , segments : [ 100 , 173 ] } ,
 	] as const ,
-	defaultScheme : 'dark' ,
+	defaultScheme : 'light' ,
 	animationData : simple ,
 	speed : 7 ,
-	lottieProps : {} ,
 } );
 
 const reaxel_Lottie_Revert = Refaxel_Lottie<"light" | "dark">( {
@@ -119,7 +126,6 @@ const reaxel_Lottie_Revert = Refaxel_Lottie<"light" | "dark">( {
 	defaultScheme : 'dark' ,
 	animationData : revert ,
 	speed : 2 ,
-	lottieProps : {} ,
 } );
 
 const reaxel_Lottie_Liquid = Refaxel_Lottie<"disable" | "enable">( {
@@ -130,7 +136,6 @@ const reaxel_Lottie_Liquid = Refaxel_Lottie<"disable" | "enable">( {
 	defaultScheme : 'disable' ,
 	animationData : liquid ,
 	speed : 2 ,
-	lottieProps : {} ,
 } );
 
 const reaxel_Lottie_Heart = Refaxel_Lottie<"play" | "reset" | "revert">( {
@@ -142,12 +147,37 @@ const reaxel_Lottie_Heart = Refaxel_Lottie<"play" | "reset" | "revert">( {
 	defaultScheme : 'reset' ,
 	animationData : heart ,
 	speed : 1 ,
-	lottieProps : {} ,
 } );
+
+
+export function useStateWithCallback<T>(initialState: T): [T, SetStateWithCallback<T>] {
+	const [state, setState] = useState<T>(initialState);
+	const callbackRef = useRef<((state: T) => void) | null>(null);
+	
+	const setStateWithCallback: SetStateWithCallback<T> = (newState, callback?) => {
+		callbackRef.current = callback || null;
+		setState(newState);
+	};
+	
+	useEffect(() => {
+		if (callbackRef.current) {
+			callbackRef.current(state);
+			// 调用后清空，避免重复调用
+			callbackRef.current = null;
+		}
+	}, [state]);
+	
+	return [state, setStateWithCallback];
+}
+
+type SetStateWithCallback<T> = (newState: SetStateAction<T>, callback?: (state: T) => void) => void;
+
+import { SetStateAction , useEffect , useRef , useState } from 'react';
+
 
 // import { Refaxel_BrowserPersist } from '#generic/reaxels/browser-persist';
 import { Radio } from 'antd';
-import { Options , Refaxel_Lottie } from '#generic/reaxels/Factories/lottie';
+import { Options , Refaxel_Lottie } from '#generic/refaxels/lottie';
 import Lottie , { LottieRef , LottieOptions } from "lottie-react";
 import * as complex from "./dark mode.json";
 import * as simple from "./simple animate.json";

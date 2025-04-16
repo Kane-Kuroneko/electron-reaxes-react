@@ -37,6 +37,7 @@ app.whenReady().then( () => {
 	// console.log( 'HDR support:' , hdrSupported );
 } );
 
+
 import "#main/index";
 import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
 import { initializeMainWindow } from '#main/initialize-main-window';

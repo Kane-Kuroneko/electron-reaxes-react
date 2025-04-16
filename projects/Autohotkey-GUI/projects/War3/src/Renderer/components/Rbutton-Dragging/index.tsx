@@ -1,7 +1,6 @@
 export const RbuttonDragging = reaxper( () => {
 	
 	const {
-		GUI_Store ,
 		toggleRbtnDragging ,
 		setDetectionDelay ,
 		resetDetectionDelay ,
@@ -10,7 +9,7 @@ export const RbuttonDragging = reaxper( () => {
 	
 	return <>
 		<FunctionSwitcher
-			value = { GUI_Store.switch_RbtnDragging }
+			value = { reaxel_HotkeyEnhancer.store.switch_RbtnDragging }
 			onChange = { ( v ) => {
 				toggleRbtnDragging( v );
 			} }
@@ -24,9 +23,9 @@ export const RbuttonDragging = reaxper( () => {
 				<I18n>Right-click detection delay</I18n>
 			</span>
 			<InputNumber
-				value = { GUI_Store.input_detectionDelay }
+				value = { reaxel_HotkeyEnhancer.store.input_detectionDelay }
 				onBlur = { () => {
-					setDetectionDelay( GUI_Store.input_detectionDelay );
+					setDetectionDelay( reaxel_HotkeyEnhancer.store.input_detectionDelay );
 				} }
 				style = { {
 					width : {

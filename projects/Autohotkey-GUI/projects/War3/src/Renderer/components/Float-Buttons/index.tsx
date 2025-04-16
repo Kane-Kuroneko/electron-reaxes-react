@@ -1,5 +1,4 @@
 const iconGapPX = 68;
-const { I18n_Store } = reaxel_I18n();
 
 export const FloatButtons = reaxper( () => {
 	
@@ -64,7 +63,7 @@ const IconElements = [
 				'zh-CN' : RedEnvelopeOutlined ,
 				'ja-JP' : HeartOutlined ,
 				'zh-TW' : HeartOutlined ,
-			}[I18n_Store.language];
+			}[reaxel_I18n.store.language];
 			
 			return <I />;
 		} ) ,
@@ -75,12 +74,12 @@ const IconElements = [
 const SponsorLottieIcon = reaxper( () => {
 	const ref: LottieRef = useRef();
 	
-	const { sleep , mount , onComplete , toggleTo , unmount , lottie_Store , lottie_SetState , animationData , lottieProps } = reaxel_Lottie_Love();
+	const { sleep , mount , onComplete , toggleTo , unmount , animationData } = reaxel_Lottie_Love();
 	
 	useEffect( () => {
 		mount( ref.current );
 		// return unmount;
-		console.log( logProxy( _.omit( lottie_Store , 'lottie' ) ) );
+		console.log( logProxy( _.omit( reaxel_Lottie_Love.store , 'lottie' ) ) );
 		
 		const runLottie = () => {
 			return toggleTo( 'play' ).
@@ -120,10 +119,9 @@ const reaxel_Lottie_Love = Refaxel_Lottie<"play" | "reset" | "revert">( {
 	defaultScheme : 'revert' ,
 	animationData : heart ,
 	speed : 1 ,
-	lottieProps : {} ,
 } );
 
-
+import { logProxy } from '#generic/utils/src/logProxy.utility';
 import dayjs from 'dayjs';
 import { FloatResetAllConf } from './left/Reset-All-Conf';
 import { FloatLog } from './Float-Log';
@@ -132,7 +130,7 @@ import { reaxel_I18n } from '#renderer/reaxels/i18n';
 import { GithubFilled , HeartOutlined , RedEnvelopeOutlined } from '@ant-design/icons';
 import { FloatButton , Button , Tooltip , TooltipProps } from 'antd';
 import { Radio } from 'antd';
-import { Options , Refaxel_Lottie } from '#generic/reaxels/Factories/lottie';
+import { Options , Refaxel_Lottie } from '#generic/refaxels/lottie';
 import Lottie , { LottieRef , LottieOptions } from "lottie-react";
 import * as heart from "./love.lottie.json";
 

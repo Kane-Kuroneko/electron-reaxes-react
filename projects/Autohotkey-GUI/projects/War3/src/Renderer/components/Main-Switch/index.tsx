@@ -1,9 +1,9 @@
 export const MainSwitch = reaxper( () => {
-	const { GUI_Store , toggleMainSwitch,toggleAutoSwitch } = reaxel_HotkeyEnhancer();
+	const { toggleMainSwitch,toggleAutoSwitch } = reaxel_HotkeyEnhancer();
 	
 	return <div className = { less['mainSwitchContainer'] }>
 		<Switch
-			value = { GUI_Store.switch_main }
+			value = { reaxel_HotkeyEnhancer.store.switch_main }
 			className = "main-switch"
 			// className = "stop-change"
 			checkedChildren = { <span style = { { marginLeft : '6px' } }>
@@ -13,7 +13,7 @@ export const MainSwitch = reaxper( () => {
 			</span> }
 			unCheckedChildren = { i18n( "Enable" ) }
 			onChange = { () => {
-				if(GUI_Store.checkbox_AutoSwitch){
+				if(reaxel_HotkeyEnhancer.store.checkbox_AutoSwitch){
 					notification.warning( {
 						message : <I18n>When automatic detection is enabled, the main switch cannot be manually operated.</I18n> ,
 						duration : 6 ,
@@ -26,7 +26,7 @@ export const MainSwitch = reaxper( () => {
 		<br />
 		<label style={{display:"flex",justifyContent:'center',alignItems:'center'}}>
 			<Checkbox 
-				indeterminate={GUI_Store.checkbox_AutoSwitch}
+				indeterminate={reaxel_HotkeyEnhancer.store.checkbox_AutoSwitch}
 				checked = {false}
 				onChange={ (e) => toggleAutoSwitch(e.target.value) }
 			/>

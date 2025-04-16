@@ -2,16 +2,15 @@ declare global {
 	// export const requester : typeof import('#src/requester').requester;
 	export const _ : typeof import('lodash');
 	export const reaxel : typeof import('reaxes')['reaxel'];
-	export const orzMobx : typeof import('reaxes')['orzMobx'];
-	export const contrastedCallback : typeof import('reaxes')['Reaxes']['contrastedCallback'];
-	export const obsReaction : typeof import('reaxes')['Reaxes']['obsReaction'];
-	export const collectDeps : typeof import('reaxes')['Reaxes']['collectDeps'];
+	export const createReaxable : typeof import('reaxes')['createReaxable'];
+	export const distinctCallback : typeof import('reaxes')['distinctCallback'];
+	export const obsReaction : typeof import('reaxes')['obsReaction'];
+	export const collectDeps : typeof import('reaxes')['collectDeps'];
 	export const reaxper : typeof import('reaxes-react')['reaxper'];
 	export const Reaxlass : typeof import('reaxes-react')['Reaxlass'];
-	export const Reaxes : typeof import('reaxes')['Reaxes'];
 	
 	export const utils : typeof import('#generic/utils');
-	export const orzPromise : typeof import('#generic/utils')['orzPromise'];
+	export const xPromise : typeof import('reaxes-utils')['xPromise'];
 	export const crayon : typeof import('#generic/utils')['crayon'];
 	export const logProxy : typeof import('#generic/utils')['logProxy'];
 	export const makePair : typeof import('#generic/utils')['makePair'];

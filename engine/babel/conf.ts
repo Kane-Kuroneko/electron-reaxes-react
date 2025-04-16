@@ -1,6 +1,7 @@
 export default (env : "development"|"production" , host : "browser"|"node"|"pure") => {
 	return {
 		cacheDirectory : true , // 启用缓存以加速构建
+		sourceMaps : true,
 		presets : [
 			[
 				"@babel/preset-env" ,
@@ -14,8 +15,12 @@ export default (env : "development"|"production" , host : "browser"|"node"|"pure
 					runtime : "automatic" ,
 				} ,
 			] ,
-			"@babel/preset-typescript" ,
-		].filter( Boolean ) ,
+			[ "@babel/preset-typescript" , 
+				{ 
+					// onlyRemoveTypeImports : true
+				}
+			] ,
+		].filter(Boolean) ,
 		plugins : [
 			(env === 'development') && (host === 'browser') && "react-refresh/babel" ,
 			[
@@ -30,5 +35,7 @@ export default (env : "development"|"production" , host : "browser"|"node"|"pure
 			"@babel/plugin-proposal-function-bind" ,
 			"@babel/plugin-proposal-throw-expressions" ,
 		].filter( Boolean ) ,
-	};
+	} as TransformOptions;
 };
+
+import type { TransformOptions } from '@babel/core';

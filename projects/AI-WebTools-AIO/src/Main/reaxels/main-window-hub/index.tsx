@@ -3,7 +3,7 @@ export const reaxel_MainWindowHub = reaxel(() => {
 		store ,
 		setState ,
 		mutate,
-	} = orzMobx( {
+	} = createReaxable( {
 		mainWindow : null as BrowserWindow ,
 	} );
 	
@@ -71,14 +71,13 @@ export const reaxel_MainWindowHub = reaxel(() => {
 		get mainWindow(){
 			return store.mainWindow;
 		},
-		MainWindow_Store:store,
-		MainWindow_SetState:setState,
-		MainWindow_Mutate:mutate,
 	};
-	return () => {
-		
-		return rtn;
-	}
+	
+	return Object.assign(() => rtn , {
+		store ,
+		setState ,
+		mutate ,
+	});
 })
 
 import { grokView } from '#main/WebContentsViews/PresetToolViews/Grok';

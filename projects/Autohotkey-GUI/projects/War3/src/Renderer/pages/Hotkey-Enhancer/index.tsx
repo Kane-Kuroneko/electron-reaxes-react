@@ -39,9 +39,6 @@ export const HotkeyEnhancer = reaxper( () => {
 			<MButtonToAtttack />
 			<Divider style = { { borderColor : '#dcdcdc' } } />
 			<MainSwitch />
-			<h2>DPR : { $screen.dpr }</h2>
-			<h2>Width_PX : { $screen.width }</h2>
-			<h2>Height_PX : { $screen.height }</h2>
 		</div>
 		<HotEnhancerTips />
 	</MainConententAreaContainer>;

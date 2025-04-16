@@ -3,13 +3,12 @@ export const reaxel_AllocatorController = reaxel(() => {
 		store ,
 		setState ,
 		mutate ,
-	} = orzMobx({
+	} = createReaxable({
 		allocatorView : null as WebContentsView ,
 		viewName : 'allocator' ,
 		spores : [] as ReturnType<ReturnType<typeof Refaxel_Spore>>['store'][] ,
 		
 	});
-	const reax_MainWindowHub = reaxel_MainWindowHub();
 	const createAllocatorView = _createAllocatorView({ store , setState });
 	const resize = ( win: BrowserWindow  ) => {
 		const { height } = win.getContentBounds();
@@ -21,24 +20,24 @@ export const reaxel_AllocatorController = reaxel(() => {
 		});
 	};
 	obsReaction(async() => {
-		if( reax_MainWindowHub.mainWindow ) {
+		if( reaxel_MainWindowHub.store.mainWindow ) {
 			const allocatorView = await createAllocatorView();
 			// store.allocatorView.webContents.openDevTools( { mode : 'detach' } );
-			reax_MainWindowHub.mainWindow.contentView.addChildView(store.allocatorView);
-			resize(reax_MainWindowHub.mainWindow);
+			reaxel_MainWindowHub.store.mainWindow.contentView.addChildView(store.allocatorView);
+			resize(reaxel_MainWindowHub.store.mainWindow);
 		}
 	} , () => [
-		reax_MainWindowHub.mainWindow,
+		reaxel_MainWindowHub.store.mainWindow,
 	]);
 	
 	obsReaction(async() => {
-		if( reax_MainWindowHub.mainWindow ) {
-			reax_MainWindowHub.mainWindow.on('resized' , () => {
-				resize(reax_MainWindowHub.mainWindow);
+		if( reaxel_MainWindowHub.store.mainWindow ) {
+			reaxel_MainWindowHub.store.mainWindow.on('resized' , () => {
+				resize(reaxel_MainWindowHub.store.mainWindow);
 			});
 		}
 	} , () => [
-		reax_MainWindowHub.mainWindow,
+		reaxel_MainWindowHub.store.mainWindow,
 	]);
 	
 	const rtn = {

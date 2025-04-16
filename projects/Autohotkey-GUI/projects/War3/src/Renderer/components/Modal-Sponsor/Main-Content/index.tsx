@@ -1,16 +1,14 @@
 @reaxper
 export class Payment extends React.Component {
 	
-	render() {
-		const { Sponsor_Store , Sponsor_SetState } = reaxel_Sponsor();
-		
+	render() {		
 		return <div className = "payment">
 			<h1><I18n>Choose a donation channel</I18n></h1>
 			<Collapse
 				items = { collapseItems }
-				activeKey = { Sponsor_Store.Collapse_expaned_keys }
+				activeKey = { reaxel_Sponsor.store.Collapse_expaned_keys }
 				onChange={(keys) => {
-					Sponsor_SetState( { Collapse_expaned_keys : keys } );
+					reaxel_Sponsor.setState( { Collapse_expaned_keys : keys } );
 				}}
 				accordion
 			>

@@ -1,5 +1,5 @@
 export const Cheats = reaxper( () => {
-	const { cheatCodes_Store , dragToSort } = reaxel_CheatCodes();
+	const { dragToSort } = reaxel_CheatCodes();
 	const forceUpdate = useforceUpdate();
 	
 	const sensors = useSensors(
@@ -13,7 +13,7 @@ export const Cheats = reaxper( () => {
 	
 	const onDragEnd = ( { active , over }: DragEndEvent ) => {
 		if( active.id !== over?.id ) {
-			const originalCopy = [ ...cheatCodes_Store.cheatCodesData ];
+			const originalCopy = [ ...reaxel_CheatCodes.store.cheatCodesData ];
 			const activeIndex = originalCopy.findIndex( ( i ) => i.key === active.id );
 			const overIndex = originalCopy.findIndex( ( i ) => i.key === over?.id );
 			dragToSort( arrayMove( originalCopy , activeIndex , overIndex ) );
@@ -31,7 +31,7 @@ export const Cheats = reaxper( () => {
 				onDragEnd = { onDragEnd }
 			>
 				<SortableContext
-					items = { cheatCodes_Store.cheatCodesData.map( ( i ) => i.key ) }
+					items = { reaxel_CheatCodes.store.cheatCodesData.map( ( i ) => i.key ) }
 					strategy = { verticalListSortingStrategy }
 				>
 					<Table<DataType>
@@ -40,7 +40,7 @@ export const Cheats = reaxper( () => {
 						} }
 						rowKey = "key"
 						columns = { addI18nToColumns( columns ) }
-						dataSource = { cheatCodes_Store.cheatCodesData }
+						dataSource = { reaxel_CheatCodes.store.cheatCodesData }
 						pagination = { false }
 						scroll = { {
 							y : 680 ,

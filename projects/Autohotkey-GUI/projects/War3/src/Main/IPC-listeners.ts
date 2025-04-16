@@ -4,9 +4,8 @@ IpcMainOn( 'monitor-war3exe-process' ).on( ( e , data ) => {
 } );
 
 IpcMainOn( 'fetch-ahk_cp-status' ).on( ( e , data , reply ) => {
-	const { ahkSpawner_Store } = reaxel_AhkSpawner();
 	reaxel_MainProcessHub().observedMainWindow( ( win ) => {
-		reply( 'fetch-ahk_cp-status').send(!!ahkSpawner_Store.ahk);
+		reply( 'fetch-ahk_cp-status').send(!!reaxel_AhkSpawner.store.ahk);
 	} );
 } );
 

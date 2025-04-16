@@ -1,7 +1,8 @@
 export const DarkModeSwitchLottie = reaxper( () => {
 	const ref: LottieRef = useRef();
 	
-	const { mount , onComplete , toggleTo , unmount , lottie_Store , lottie_SetState , animationData , lottieProps } = reaxel_Theme().reaxel_Lottie();
+	const { mount , onComplete , toggleTo , unmount , animationData } = reaxel_Theme.reaxel_Lottie();
+	const { theme } = reaxel_Theme();
 	
 	useEffect( () => {
 		mount( ref.current );
@@ -23,7 +24,7 @@ export const DarkModeSwitchLottie = reaxper( () => {
 	} }
 		lottieRef = { ref }
 		onClick = { () => {
-			toggleTo( lottie_Store.currentScheme === 'light' ? 'dark' : 'light' );
+			toggleTo( theme === 'light' ? 'dark' : 'light' );
 		} }
 		onComplete = { () => {
 			onComplete();

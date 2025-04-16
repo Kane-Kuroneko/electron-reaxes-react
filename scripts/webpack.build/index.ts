@@ -10,6 +10,7 @@ Promise.all( [
 ] ).
 then( ( [renderer, main , preload ] ) => {
 	console.log(chalk.green('complete'));
+	console.log(chalk.yellow('Open file to build Electron: ','electron-reaxes-react/package.json'));
 } ).
 catch( e => {
 	console.log( chalk.red( 'fatal' ) );
@@ -17,9 +18,6 @@ catch( e => {
 } );
 
 import chalk from 'chalk';
-import { node_env , setNodeEnv } from '../../engine/toolkit/entrance.ts';
+import { setNodeEnv } from '../../engine/toolkit/entrance.ts';
 import { webpack_promise } from '../../engine/utils';
-import {webpack_conf_for_electron_preload,webpack_conf_for_electron_main,webpack_conf_for_electron_renderer} from '../utils/mixedRepoWebpackConf.ts';
-import { register } from 'ts-node';
-import { Worker } from 'node:worker_threads';
-import { orzPromise } from 'reaxes-utils';
+import { webpack_conf_for_electron_main , webpack_conf_for_electron_preload , webpack_conf_for_electron_renderer } from '../utils/mixedRepoWebpackConf.ts';

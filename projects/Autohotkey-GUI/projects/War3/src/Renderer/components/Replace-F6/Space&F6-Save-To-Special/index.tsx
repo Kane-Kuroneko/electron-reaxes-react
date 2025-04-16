@@ -3,7 +3,7 @@ export class SpaceF6SaveToSpecial extends Component {
 	constructor( props ) {super( props );}
 	
 	render() {
-		const { GUI_Store , GUI_SetState , GUI_Mutate , toggleEditSpecialSavesListModalVisible } = reaxel_HotkeyEnhancer();
+		const { toggleEditSpecialSavesListModalVisible } = reaxel_HotkeyEnhancer();
 		return <>
 			<div
 				style={{marginLeft : '63px'}}
@@ -11,8 +11,8 @@ export class SpaceF6SaveToSpecial extends Component {
 				<label>
 					<Checkbox
 						style={{marginRight : 6}}
-						checked = { GUI_Store.switch_SpaceF6SaveToSpecial }
-						onChange = { e => GUI_Mutate( s => s.switch_SpaceF6SaveToSpecial = !s.switch_SpaceF6SaveToSpecial ) }
+						checked = { reaxel_HotkeyEnhancer.store.switch_SpaceF6SaveToSpecial }
+						onChange = { e => reaxel_HotkeyEnhancer.mutate( s => s.switch_SpaceF6SaveToSpecial = !s.switch_SpaceF6SaveToSpecial ) }
 					/>
 					<span
 						style = { {
@@ -32,7 +32,7 @@ export class SpaceF6SaveToSpecial extends Component {
 				
 				<Modal
 					title = {i18n('edit special list')}
-					open = { GUI_Store.ModalVisible_editSpecialSavesList }
+					open = { reaxel_HotkeyEnhancer.store.ModalVisible_editSpecialSavesList }
 					onCancel = { () => {
 						toggleEditSpecialSavesListModalVisible();
 					} }

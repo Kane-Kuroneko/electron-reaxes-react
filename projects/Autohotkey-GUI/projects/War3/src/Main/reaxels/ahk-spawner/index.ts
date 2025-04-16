@@ -6,7 +6,7 @@ export const reaxel_AhkSpawner = reaxel( () => {
 		setState ,
 		store ,
 		mutate ,
-	} = orzMobx( {
+	} = createReaxable( {
 		ahk : null as cp.ChildProcessWithoutNullStreams ,
 	} );
 	IpcMainOn( 'ahk' ).on( ( e , data ) => {
@@ -15,11 +15,11 @@ export const reaxel_AhkSpawner = reaxel( () => {
 	} );
 	IpcMainOn( 'spawn' ).on( ( e , data , reply ) => {
 		if( data === 'war3-ahk' ) {
-			ret.spawn();
+			rtn.spawn();
 		}
 	} );
 	IpcMainOn( 'exit-ahk' ).on( ( e , data , reply ) => {
-		ret.shutdown();
+		rtn.shutdown();
 	} );
 	
 	obsReaction( ( first , disposer ) => {
@@ -63,11 +63,7 @@ export const reaxel_AhkSpawner = reaxel( () => {
 	};
 	
 	
-	const ret = {
-		
-		ahkSpawner_Store : store ,
-		ahkSpawner_SetState : setState ,
-		ahkSpawner_Mutate : mutate ,
+	const rtn = {
 		shutdown ,
 		sendMessageToAhk ,
 		spawn() {
@@ -82,11 +78,11 @@ export const reaxel_AhkSpawner = reaxel( () => {
 			return store.ahk;
 		} ,
 	};
-	
-	return () => {
-		
-		return ret;
-	};
+	return Object.assign(() => rtn , {
+		store,
+		setState,
+		mutate,
+	});
 } );
 
 setTimeout( () => {
@@ -146,7 +142,7 @@ function spawnWar3AHK( { ahkSpawner_SetState , ahkSpawner_Store } ) {
 		useIpcSend( reaxel_MainProcessHub().mainWindow )( "ahk-cp-status" ).send( false );
 		IPCLogger( `'child_process-closed with code: ', ${ e }` );
 		ahkSpawner_SetState( { ahk : null } );
-		console.log( 'closed......................' );
+		console.log( chalk.green('war3.ahk exited') );
 	} );
 	return ahk;
 }
@@ -160,7 +156,7 @@ type MessageTypes =
 
 import { IpcMainOn , useIpcSend , IpcMainHandle } from '#main/utils/useIPC';
 import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
-import { IPCLogger } from '#main/reaxels/devtools-logger';
+import { IPCLogger } from '#main/utils/devtools-logger';
 import { reaxel_ServerTime } from '#main/reaxels/server-time';
 import { reaxel_ElectronENV } from '#main/reaxels/runtime-paths';
 // import { mainWindowLoaded } from '#project/src/Main/mainWindow-loaded-promise';

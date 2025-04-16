@@ -10,7 +10,7 @@ if(main()){
 		 * 可以将renderer和main的api整合在一起,但是初始化必须是空值,当在main或者renderer第一次使用时
 		 * 再初始化,从而避免掉在main中调用到webview api或者相反.
 		 */
-		const { store , setState } = orzMobx( {
+		const { store , setState ,mutate} = createReaxable( {
 			/**
 			 * common apis below
 			 */
@@ -33,9 +33,7 @@ if(main()){
 			 */
 		} );
 		logger.log('relative path: ' , path.resolve('./'));
-		const ret = {
-			reaxelENV_Store:store,
-			reaxelENV_SetState:setState,
+		const rtn = {
 			//是否运行在打包后的环境
 			get runInExcutable() {
 				return store.runInExcutable;
@@ -48,10 +46,13 @@ if(main()){
 			},
 			
 		};
-		return () => {
-			
-			return ret;
-		};
+		return Object.assign(() => {
+			return rtn;
+		} , {
+			store ,
+			setState ,
+			mutate ,
+		});
 	} );
 }else if(renderer()){
 	

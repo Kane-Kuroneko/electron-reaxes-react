@@ -53,4 +53,4 @@ export type IpcJsonOn = {
 };
 
 import type { Display } from 'electron/renderer';
-import type { Languages } from '#generic/reaxels/Factories/i18n';
+import type { Languages } from '../../../../../generic-services/refaxels/i18n';

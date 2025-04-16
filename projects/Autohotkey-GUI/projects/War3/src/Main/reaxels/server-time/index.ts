@@ -1,7 +1,7 @@
 export const reaxel_ServerTime = reaxel(() => {
 	
 	
-	const { store , setState } = orzMobx( {
+	const { store , setState ,mutate } = createReaxable( {
 		serverTime : 0,
 		
 	} );
@@ -54,7 +54,7 @@ export const reaxel_ServerTime = reaxel(() => {
 	//每5分钟与服务器同步一次时间
 	setInterval( (getServerTime(),getServerTime) , 5 * 60 * 1000 );
 	
-	const ret = {
+	const rtn = {
 		get serverTime() {
 			return store.serverTime;
 		},
@@ -65,10 +65,13 @@ export const reaxel_ServerTime = reaxel(() => {
 		// console.log( 'tik tok:' , dayjs(store.serverTime).format('YYYY-MM-DD HH:mm:ss') );
 	} , () => [store.serverTime] );
 	
-	return () => {
-		
-		return ret;
-	}
+	return Object.assign(() => {
+		return rtn;
+	} , {
+		store ,
+		setState ,
+		mutate ,
+	});
 });
 
 import dayjs from 'dayjs';

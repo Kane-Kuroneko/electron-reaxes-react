@@ -11,6 +11,8 @@ export const main = (
 		entry: path.join(subProjectRootPath, "src/main.ts"),
 		output: {
 			path: path.join(subProjectRootPath, "dist"),
+			devtoolModuleFilenameTemplate: 'webpack:[namespace]/[resource-path][loaders]',
+			pathinfo:false,
 		},
 		resolve :{
 			alias : {

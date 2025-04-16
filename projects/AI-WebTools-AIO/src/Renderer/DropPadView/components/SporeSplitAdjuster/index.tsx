@@ -113,6 +113,7 @@ const SporeView = reaxper((
 			debugger;
 		}
 	}();
+	
 	if( viewType === 'single-view' ) {
 		return <Info view={view}/>;
 	} else if( viewType === 'splited-view' ) {
