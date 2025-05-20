@@ -39,6 +39,7 @@ app.whenReady().then( () => {
 
 
 import "#main/index";
+import "#main/reaxels/menu";
 import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
 import { initializeMainWindow } from '#main/initialize-main-window';
 import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';

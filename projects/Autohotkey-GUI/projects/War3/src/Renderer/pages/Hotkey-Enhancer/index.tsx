@@ -39,12 +39,14 @@ export const HotkeyEnhancer = reaxper( () => {
 			<MButtonToAtttack />
 			<Divider style = { { borderColor : '#dcdcdc' } } />
 			<MainSwitch />
+			
+			<DonorCarousel/>
 		</div>
 		<HotEnhancerTips />
 	</MainConententAreaContainer>;
 } );
 
-
+import { DonorCarousel } from '#renderer/components/Donor-Carousel';
 import { HotEnhancerTips } from '#renderer/components/Only-Browser-Shown';
 import { reaxel_I18n } from '#renderer/reaxels/i18n';
 import { MainConententAreaContainer } from '#renderer/pure-components/Main-Content-Area-Container';

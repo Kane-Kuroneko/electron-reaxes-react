@@ -29,6 +29,10 @@ export const reaxel_ScreenAdapter = reaxel( () => {
 		}
 	} );
 	
+	const statics = {
+		mainWindowResolutionPresets,
+	};
+	
 	const calcActualAppSize = async (
 		display:Display = screen.getPrimaryDisplay() ,
 		options = {
@@ -142,6 +146,18 @@ export const reaxel_ScreenAdapter = reaxel( () => {
 		
 	} );
 	
+	obsReaction(async () => {
+		const { mainWindow } = reaxel_MainProcessHub.store;
+		if(mainWindow) {
+			mainWindow.on('moved' , async () => {
+				console.log('main-window moved');
+				windowOnScreen(mainWindow);
+				const r = await matchMonitors();
+			});
+		}
+		
+	} , () => [reaxel_MainProcessHub.store.mainWindow]);
+	
 	let rtn = {
 		calcActualAppSize,
 		windowsTextScale,
@@ -151,6 +167,7 @@ export const reaxel_ScreenAdapter = reaxel( () => {
 		store ,
 		setState ,
 		mutate ,
+		statics,
 	});
 } );
 
@@ -193,9 +210,12 @@ class SceneType extends ScreenType {
 	}
 }
 
+import { matchMonitors } from './getScreensInfo/matchPyScreenWithElectron';
+import { windowOnScreen } from './onMoveScreen';
 import { getTextScaleFactor } from './getWindowsTextScale';
 import { convertActualSizeToScaleSize , getPhysicalScreens , getShortSide , HoFCachedGetPhysicalScreens } from './utils';
 import { getWindowsDisplayScale } from './getWindowsDisplayScale';
 import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
 import type { Display } from 'electron';
 import { app , screen } from 'electron';
+import { mainWindowResolutionPresets } from './resolution-presets';

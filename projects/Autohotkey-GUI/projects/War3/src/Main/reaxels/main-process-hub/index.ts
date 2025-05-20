@@ -1,59 +1,57 @@
-export const reaxel_MainProcessHub = reaxel( () => {
-	const { store , setState , mutate } = createReaxable( {
+export const reaxel_MainProcessHub = reaxel(() => {
+	const { store , setState , mutate } = createReaxable({
 		mainWindow : null as BrowserWindow ,
-	} );
+	});
 	
 	const obsCallbacks = [];
 	
 	const observedMainWindow = ( cb: ( win: BrowserWindow ) => any ) => {
-		obsReaction( () => {
+		obsReaction(() => {
 			if( store.mainWindow ) {
-				cb( store.mainWindow );
+				cb(store.mainWindow);
 			}
-		} , () => [ store.mainWindow ] );
+		} , () => [ store.mainWindow ]);
 	};
 	
-	const recreateMainWindow = ( options = {
-		
-	} ) => {
+	const recreateMainWindow = ( options = {} ) => {
 		if( store.mainWindow ) {
 			store.mainWindow.destroy();
-			setState( { mainWindow : null } );
+			setState({ mainWindow : null });
 		}
-		const newWindow = initializeMainWindow().then((mainWindow) => {
-			setState( { mainWindow } );
+		const newWindow = initializeMainWindow().then(( mainWindow ) => {
+			setState({ mainWindow });
 		});
 		return newWindow;
 	};
 	
 	obsReaction(() => {
 		const { mainWindow } = store;
-		if(mainWindow){
+		if( mainWindow ) {
 			
-			mainWindow.webContents.on('devtools-closed',async () => {
+			mainWindow.webContents.on('devtools-closed' , async() => {
 				const { calcActualAppSize } = reaxel_ScreenAdapter();
-				console.log(1111111,'resized');
+				console.log(1111111 , 'resized');
 				console.log(store.mainWindow.getBounds());
 				const { height , width } = await calcActualAppSize();
 				mainWindow.setBounds({});
 				
-			})
+			});
 		}
 	} , () => [ store.mainWindow ]);
 	
 	const rtn = {
 		observedMainWindow ,
 		recreateMainWindow ,
-		get mainWindow() {
+		get mainWindow(){
 			return store.mainWindow;
 		} ,
 	};
-	return Object.assign( () => rtn , {
-		store,
+	return Object.assign(() => rtn , {
+		store ,
 		setState ,
 		mutate ,
-	} );
-} );
+	});
+});
 
 import { reaxel_ScreenAdapter } from '#main/reaxels/screen-adpater';
 import { initializeMainWindow } from '#main/initialize-main-window';

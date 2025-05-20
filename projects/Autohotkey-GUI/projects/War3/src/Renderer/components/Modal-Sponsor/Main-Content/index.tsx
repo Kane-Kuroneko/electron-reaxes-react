@@ -19,7 +19,7 @@ export class Payment extends React.Component {
 }
 
 @reaxper
-export class Narrative extends React.Component {
+export class Narrative extends Reaxlass {
 	static 'zh-CN'(){
 		return <div className = "narrative">
 			<h1>你知道吗?</h1>
@@ -99,6 +99,8 @@ const collapseItems: CollapseProps["items"] = [
 		children : <PayPalQrCode /> ,
 	} ,
 ];
+import {Reaxlass} from 'reaxes-react'
+
 import { PayPalTitle , PayPalQrCode } from './PayPal';
 import { AliPayQrCode , AliPayTitle } from './AliPay';
 import { WechatPayTitle , WechatPayQrCode } from './WechatPay';

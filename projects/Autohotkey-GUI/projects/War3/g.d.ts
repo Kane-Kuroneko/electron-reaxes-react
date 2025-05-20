@@ -56,8 +56,7 @@ declare global {
 	export const I18n: typeof import('#renderer/reaxels/exports')['I18n'];
 	export const i18n: typeof import('#renderer/reaxels/exports')['i18n'];
 	
-	export const IPCLogger: typeof import('#main/reaxels/exports')['IPCLogger'];
+	export const IPCLogger: typeof import('#main/utils/devtools-logger')['IPCLogger'];
 	
 }
-
 export {};

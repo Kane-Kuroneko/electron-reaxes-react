@@ -1,6 +1,10 @@
-
+const { absolutelyPath_subprojectDist } = getProjectPaths();
 export const devServerConf: Configuration = {
 	port,
+	static:{
+		directory: absolutelyPath_subprojectDist,
+		publicPath : '/',
+	},
 	// hot: true,
 	server: {
 		type: "https",
@@ -17,7 +21,9 @@ export const devServerConf: Configuration = {
 	liveReload:true,
 	host: "0.0.0.0",
 	allowedHosts: "all",
-	historyApiFallback: true,
+	historyApiFallback: {
+		index : '/renderer/index.html',
+	},
 };
 
 import { port , getProjectPaths , project , absolutelyPath_RepositoryRoot , absolutelyPath_Engine } from "../toolkit";

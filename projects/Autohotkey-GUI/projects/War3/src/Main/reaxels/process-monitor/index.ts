@@ -22,7 +22,7 @@ export const reaxel_ProcessMonitor = reaxel(() => {
 		let interval;
 		
 		const detectPSListSuccess = distinctCallback(() => {
-			IPCLogger('ps-list启动成功');
+			// IPCLogger('ps-list启动成功');
 		} , () => [ interval ]);
 		
 		return async() => {

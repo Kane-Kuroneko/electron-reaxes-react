@@ -16,11 +16,7 @@ app.whenReady().then( () => {
 		{
 			label : '退出' ,
 			async click() {
-				appQuitHook = () => {
-					appQuitHook = () => false;
-					return true;
-				}
-				app.quit();
+				quit('tray-exit');
 			} ,
 		} ,
 	] );
@@ -36,8 +32,7 @@ app.whenReady().then( () => {
 	
 } );
 
-export let appQuitHook = () => false;
-
+import { quit } from './useQuitEvent';
 import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
 import { reaxel_ElectronENV } from '#main/reaxels/runtime-paths';
 import { Tray , Menu , app } from 'electron';

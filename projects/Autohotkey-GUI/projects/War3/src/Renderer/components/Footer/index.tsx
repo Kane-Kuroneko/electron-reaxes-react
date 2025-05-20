@@ -20,7 +20,7 @@ const I18nComponents = {
 			<code>reaxes</code>，
 			<code>reaxes-react</code>，
 			<code>reaxel-i18n</code>
-			等开源库提供杰出技术支持
+			等系列开源库提供杰出技术支持
 		</>;
 	} ) ,
 };

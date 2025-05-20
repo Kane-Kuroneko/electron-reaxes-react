@@ -6,6 +6,8 @@
 		"electron": "tsx scripts/electron.ts <project>",
 		"pack": "tsx scripts/webpack.build",
 		"build": "tsx scripts/webpack.build",
+		"webpack-start:quenching": "tsx scripts/webpack.start/index.ts QuenChing-Mod-Client 4410 ",
+		"electron-start:quenching": "tsx scripts/electron.start/index.ts QuenChing-Mod-Client",
 		"webpack-start:ahk-war3": "tsx scripts/webpack.start/index.ts Autohotkey-GUI/War3 4444 ",
 		"electron-start:ahk-war3": "tsx scripts/electron.start/index.ts Autohotkey-GUI/War3",
 		"webpack-build:ahk-war3": "tsx ./scripts/webpack.build/index.ts Autohotkey-GUI/War3 production",
@@ -51,6 +53,7 @@
 		"reaxes-utils": "^2.0.7",
 		"regedit": "^5.1.3",
 		"shallowequal": "^1.1.0",
+		"swiper": "^11.2.6",
 		"webpack-bundle-analyzer": "^4.10.2"
 	},
 	"devDependencies": {
@@ -82,7 +85,7 @@
 		"copy-webpack-plugin": "^12.0.2",
 		"css-loader": "^7.1.2",
 		"dependency-cruiser": "^16.8.0",
-		"electron": "^33.1.0",
+		"electron": "^35.2.1",
 		"electron-builder": "^25.1.8",
 		"electron-is": "^3.0.0",
 		"electronmon": "^2.0.3",

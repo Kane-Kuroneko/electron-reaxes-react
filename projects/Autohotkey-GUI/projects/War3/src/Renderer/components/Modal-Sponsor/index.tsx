@@ -1,4 +1,4 @@
-export const ModalSponsor = reaxper( () => {
+export const ModalSponsor = reaxper(() => {
 	
 	const {
 		visible ,
@@ -8,35 +8,35 @@ export const ModalSponsor = reaxper( () => {
 	} = reaxel_Sponsor();
 	const { language } = reaxel_I18n();
 	
-	const modalContent = function () {
-		if(termsVisible){
+	const modalContent = function (){
+		if( termsVisible ) {
 			return <>
 				{ TermsI18n[language] }
 				<Button
 					type = "primary"
-					size="large"
+					size = "large"
 					style = { { display : 'block' , margin : '40px auto 10px auto' } }
 					onClick = { () => {
-						reaxel_Sponsor().toggleTermsVisible( false );
+						reaxel_Sponsor().toggleTermsVisible(false);
 					} }
 				><I18n>If you make a donation, it is assumed that you agree to these terms.</I18n></Button>
 			</>;
-		}else {
+		} else {
 			return <>
 				<MainContent />
-				<span className="terms-entry">
+				<span className = "terms-entry">
 					<I18n>If you make a donation, it is assumed that you agree to the</I18n>&nbsp;
 					<a
 						onClick = { ( e ) => {
 							e.preventDefault();
-							toggleTermsVisible( true );
+							toggleTermsVisible(true);
 						} }
 					>
 						<I18n>Donation Guidelines and Terms</I18n>
 					</a>
 				</span>
 			
-			</>
+			</>;
 		}
 	}();
 	
@@ -44,14 +44,14 @@ export const ModalSponsor = reaxper( () => {
 		
 		<Modal
 			closable = { termsVisible ? false : true }
-			title = { i18n( 'Donate to This Project' ) }
+			title = { i18n('Donate to This Project') }
 			open = { visible }
-			onClose = { () => toggleVisible( false ) }
+			onClose = { () => toggleVisible(false) }
 			onCancel = { () => {
 				if( termsVisible ) {
 					return;
 				}
-				toggleVisible( false );
+				toggleVisible(false);
 			} }
 			footer = { null }
 			className = { less.sponsorModal }
@@ -62,7 +62,7 @@ export const ModalSponsor = reaxper( () => {
 			{ modalContent }
 		</Modal>
 	</>;
-} );
+});
 
 
 @reaxper
@@ -93,7 +93,10 @@ class TermsI18n {
 			<h2>4. Donor Information</h2>
 			<p>
 				If you wish to display your donation information publicly, please specify your desired name or nickname in the
-				<span className = "highlight">payment note</span>. Otherwise, donor information will not be displayed by default.
+				<span
+					className = "highlight"
+					style = { { whiteSpace : 'nowrap' } }
+				>payment note</span>. Otherwise, donor information will not be displayed by default.
 				<br />
 				Public donation details will be updated on the donor page within 48-72 hours.
 				<br />
@@ -107,8 +110,20 @@ class TermsI18n {
 			<p>We reserve the right to adjust the usage of funds as needed.</p>
 			
 			<h2>7. Contact Information</h2>
-			<p>If you have any questions, feel free to contact us via email:
-				<a href = "mailto:kane.kuroneko@gmail.com">kane.kuroneko@gmail.com</a>.
+			<p>
+				If you have any questions, feel free to contact us via email:
+				<Tooltip
+					title = { i18n('Click to copy email to clipboard') }
+				>
+					<a
+						href = ""
+						onClick = { ( e ) => {
+							e.preventDefault();
+							copyMailToClipboard();
+						} }
+					>kane.kuroneko@gmail.com
+					</a>
+				</Tooltip>.
 			</p>
 			
 			<div className = "footer">
@@ -116,7 +131,7 @@ class TermsI18n {
 			</div>
 		
 		</div>
-		
+	
 	</>;
 	
 	static 'zh-CN' = <>
@@ -160,8 +175,18 @@ class TermsI18n {
 			
 			<h2>7. 联系方式</h2>
 			<p>如有任何疑问，欢迎通过邮箱联系我们：
-				<a href = "mailto:kane.kuroneko@gmail.com">kane.kuroneko@gmail.com</a>
-			   。
+				<Tooltip
+					title = { i18n('Click to copy email to clipboard') }
+				>
+					<a
+						href = ""
+						onClick = { ( e ) => {
+							e.preventDefault();
+							copyMailToClipboard();
+						} }
+					>kane.kuroneko@gmail.com
+					</a>
+				</Tooltip>。
 			</p>
 			
 			<div className = "footer">
@@ -169,19 +194,28 @@ class TermsI18n {
 			</div>
 		
 		</div>
-		{/*<Button*/}
-		{/*	type = "primary"*/}
-		{/*	style = { { display : 'block' , margin : '40px auto' } }*/}
-		{/*	onClick = { () => {*/}
-		{/*		reaxel_Sponsor().toggleTermsVisible( false );*/}
-		{/*	} }*/}
-		{/*>若发生捐赠行为则默认您同意此条款</Button>*/}
+		{/*<Button*/ }
+		{/*	type = "primary"*/ }
+		{/*	style = { { display : 'block' , margin : '40px auto' } }*/ }
+		{/*	onClick = { () => {*/ }
+		{/*		reaxel_Sponsor().toggleTermsVisible( false );*/ }
+		{/*	} }*/ }
+		{/*>若发生捐赠行为则默认您同意此条款</Button>*/ }
 	</>;
 }
+
+const copyMailToClipboard = () => {
+	const res = copy('kane.kuroneko@gmail.com');
+	if( res ) {
+		message.success(i18n('Copy email to clipboard successfully!'));
+	} else {
+		message.error(i18n('Failed to copy email to clipboard ,please copy it manually!'));
+	}
+};
 
 import { MainContent } from './Main-Content';
 import { reaxel_I18n } from '#renderer/reaxels/i18n';
 import * as less from './style.module.less';
 import { reaxel_Sponsor } from '#renderer/reaxels/hotkey-enhancer/sponsor';
-import { Modal , Button } from 'antd';
-
+import { Modal , Button , message , Tooltip } from 'antd';
+import copy from 'copy-to-clipboard';

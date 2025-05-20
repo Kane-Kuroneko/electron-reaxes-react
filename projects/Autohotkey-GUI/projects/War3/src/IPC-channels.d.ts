@@ -9,6 +9,13 @@ export type IpcJsonHandle = {
 		data: boolean;
 		reply : boolean;
 	};
+	'clipboard': {
+		data: { operation: 'write'; value: string };
+		reply: null;
+	}|{
+		data : {operation:'read';value:null};
+		reply: string;
+	};
 }
 export type IpcJsonOn = {
 	'war3-process-existence': {
@@ -43,9 +50,6 @@ export type IpcJsonOn = {
 	};
 	'open-url': {
 		data: string;
-	};
-	'clipboard': {
-		data: { operation: 'write'; value: string };
 	};
 	'screen-info': {
 		data: any;

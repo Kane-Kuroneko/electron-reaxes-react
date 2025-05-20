@@ -29,6 +29,7 @@ export const createI18nReactComponent = (reaxel_I18n:ReturnType<typeof Refaxel_I
 	} );
 }
 
+import { reaxper } from 'reaxes-react';
 import { useEffect } from 'react';
-import { Refaxel_I18n } from '../../index.tsx';
+import { Refaxel_I18n } from '../../index';
 import * as utils from '../../../../utils';

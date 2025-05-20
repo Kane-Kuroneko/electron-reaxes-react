@@ -48,7 +48,7 @@ export let reaxel_I18n = reaxel(() => {
 			return i18n().i18n;
 		} ,
 		get language(){
-			return i18n.store.language;
+			return i18n().language;
 		} ,
 	};
 	

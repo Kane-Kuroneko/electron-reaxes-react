@@ -25,7 +25,7 @@ export let {
 		key: "inputPort" as const,
 	},
 	{
-		regExp: /\bGamepad-Task-Manager|Linker|Proxy-Rules-Modifier|Autohotkey-GUI|AI-WebTools-AIO\b/,
+		regExp: /\bGamepad-Task-Manager|Linker|Proxy-Rules-Modifier|Autohotkey-GUI|AI-WebTools-AIO|QuenChing-Mod-Client\b/,
 		key: "project" as const,
 	},
 	{

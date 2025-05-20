@@ -38,7 +38,7 @@ export const columns: TableColumnType<DataType>[] = [
 		width : 200 ,
 		render( text , record , index ) {
 			return <div>
-				<Button type = "primary"><I18n>Copy</I18n></Button>
+				<CopyButton cheatCode={record.code}/>
 			</div>;
 		} ,
 	} ,
@@ -54,6 +54,7 @@ export const columns: TableColumnType<DataType>[] = [
 	} ,
 ];
 
+import { CopyButton } from './CopyButton';
 import { DragIcon } from './DragIcon';
 import { Button,Tooltip } from 'antd';
 import { InfoCircleTwoTone } from '@ant-design/icons';

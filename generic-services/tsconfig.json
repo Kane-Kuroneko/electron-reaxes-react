@@ -40,5 +40,6 @@
 			"" : ["./*"]
 		}
 	} ,
+	"include" : ["../global.d.ts"] ,
 	"exclude" : ["dist" , ".git" , ".idea" , ".svn" ]
 }

@@ -18,18 +18,22 @@ export const useOpenDevtools = (window:BrowserWindow,options : Options) => {
 		let current = window.getBounds().width;
 		
 		window.webContents.on('devtools-closed' , () => {
-			console.log('bbbbbbbbbbbbb');
-			window.setBounds({
-				width:current = current - options.width
-			});
+			// console.log('bbbbbbbbbbbbb');
+			if(options.width){
+				window.setBounds({
+					width:current = current - options.width
+				});
+			}
 		});
 		
 		window.webContents.on('devtools-opened' , () => {
-			window.setBounds({
-				width:current = getters.widthWithDevtools
-			});
+			if(options.width) {
+				window.setBounds({
+					width : current = getters.widthWithDevtools,
+				});
+			}
 		});
-		
+				
 		window.webContents.openDevTools( { mode : devtoolsPostion} );
 	});
 }
@@ -37,10 +41,12 @@ export const useOpenDevtools = (window:BrowserWindow,options : Options) => {
 
 export type Options = {
 	width? : number;
+	bounds?: Rectangle;
 	center? : "auto" | boolean ,
 	devtoolsOptions? : OpenDevToolsOptions
 }
 
 
 import { app } from 'electron';
-import type { BrowserWindow ,OpenDevToolsOptions } from 'electron';
+import { BrowserWindow ,OpenDevToolsOptions } from 'electron';
+import type { Rectangle } from 'electron';

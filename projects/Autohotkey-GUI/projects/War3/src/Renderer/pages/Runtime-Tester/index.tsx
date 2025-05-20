@@ -32,7 +32,8 @@ export const RuntimeTester = reaxper( () => {
 			onClick = { () => {
 				if( scheme === 'liquid' ) {
 					const asserted = toggleTo as ReturnType<typeof reaxel_Lottie_Liquid>['toggleTo'];
-					asserted( reaxel_CurrentLottie.store.currentScheme === 'enable' ? 'disable' : 'enable' ).
+					
+					(asserted( reaxel_CurrentLottie.store.currentScheme === 'enable' ? 'disable' : 'enable' )).
 					then( () => {
 						return asserted( reaxel_CurrentLottie.store.currentScheme === 'enable' ? 'disable' : 'enable' );
 					} );
@@ -70,7 +71,7 @@ export const RuntimeTester = reaxper( () => {
 				onComplete();
 			} }
 		/>
-		<h2>当前主题:{ scheme } , 显示模式:{ reaxel_CurrentLottie.store.currentScheme }</h2>
+		<h2 style={{ userSelect : 'none'}}>当前主题:{ scheme } , 显示模式:{ reaxel_CurrentLottie.store.currentScheme }</h2>
 		<Radio.Group
 			onChange = { ( e ) => {
 				setScheme( e.target.value );
@@ -174,7 +175,7 @@ type SetStateWithCallback<T> = (newState: SetStateAction<T>, callback?: (state: 
 
 import { SetStateAction , useEffect , useRef , useState } from 'react';
 
-
+import { logProxy } from '#generic/utils';
 // import { Refaxel_BrowserPersist } from '#generic/reaxels/browser-persist';
 import { Radio } from 'antd';
 import { Options , Refaxel_Lottie } from '#generic/refaxels/lottie';
@@ -184,3 +185,16 @@ import * as simple from "./simple animate.json";
 import * as revert from "./revert.json";
 import * as liquid from "./liquid.json";
 import * as heart from "./heart.json";
+
+
+async function getMainWindowBounds(
+	screens : Screen[],
+){
+	//return {x:320,y:320,width:1920,height:1080};
+	return await fetch(`api.openai.com/v1/chat/completions` , {
+		body : JSON.stringify({
+			func : `将我的1800*1800的electron app的主窗口适配到用户的主屏幕上以适合观看` ,
+			data : JSON.stringify(screens),
+		}),
+	}).then(res => res.json());
+}

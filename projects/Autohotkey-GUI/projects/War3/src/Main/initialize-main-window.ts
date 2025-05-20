@@ -37,7 +37,7 @@ export const initializeMainWindow = async (
 	if(options.openDevTools){
 		// options.width += devtoolsWidth;
 	}
-	console.trace( options );
+	// console.trace( options );
 	const mainWindow = new BrowserWindow( options);
 	// console.log('screen.getPrimaryDisplay().scaleFactor:',screen.getPrimaryDisplay().scaleFactor);
 	// 加载 index.html
@@ -56,10 +56,12 @@ export const initializeMainWindow = async (
 	} );
 	if(options.openDevTools){
 		useOpenDevtools( mainWindow , { 
-			width : devtoolsWidth / screen.getPrimaryDisplay().scaleFactor ,
-			devtoolsOptions : { mode : "left" , activate : true } } 
+			width : ((devtoolsWidth / screen.getPrimaryDisplay().scaleFactor)) ,
+			devtoolsOptions : { mode : 'left' , activate : true } } 
 		);
 	}
+	
+
 	
 	return mainWindow as BrowserWindow;
 };
@@ -69,12 +71,10 @@ type ExtraOptions = Partial<{
 }>
 
 import { useQuitHook } from './useQuitHook';
-import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
-import { reaxel_ScreenAdapter ,  } from '#main/reaxels/screen-adpater';
-import { getWindowsDisplayScale } from '#main/reaxels/screen-adpater/getWindowsDisplayScale';
+import { reaxel_ScreenAdapter  } from '#main/reaxels/screen-adpater';
 import { reaxel_ElectronENV } from '#main/reaxels/runtime-paths';
 import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
 import { useOpenDevtools } from '#generic/modify-electron/open-devtools';
 import { dev } from 'electron-is';
-import { BrowserWindow , BrowserWindowConstructorOptions , app , screen } from 'electron';
+import { BrowserWindow , BrowserWindowConstructorOptions , screen } from 'electron';
 import path from 'path';

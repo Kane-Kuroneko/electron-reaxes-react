@@ -1,6 +1,6 @@
 export const I18NDropdown = reaxper( () => {
 	
-	const { statics , setLanguage } = reaxel_I18n();
+	const { setLanguage } = reaxel_I18n();
 	
 	return (
 		<span className = { less["i18nDropdown"] }>
@@ -8,13 +8,15 @@ export const I18NDropdown = reaxper( () => {
 				menu = { {
 					items : menu ,
 					onClick : ( info ) => {
-						setLanguage( info.key );
+						setLanguage( info.key as Languages );
 					} ,
-				} as any}
+					selectedKeys : [reaxel_I18n.store.language]
+				} as MenuProps}
 				trigger = { [ "click" ] }
 				overlayStyle={{
 					fontFamily : "twemoji"
 				}}
+				
 			>
 				<span
 					style = { {
@@ -68,3 +70,4 @@ import { SVG_I18n } from '#renderer/pure-components/SVG/I18n.component';
 import * as less from './style.module.less';
 import { Dropdown , DropDownProps} from 'antd';
 import { reaxel_I18n } from '#renderer/reaxels/i18n';
+import { MenuProps } from 'antd';

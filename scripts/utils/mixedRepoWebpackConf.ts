@@ -85,7 +85,7 @@ import { electronMainConf } from "../../engine/webpack/electron-main.conf";
 import { electronRendererConf } from "../../engine/webpack/electron-renderer.conf";
 import { electronProdConf_Renderer , electronProdConf_Main } from '../../engine/webpack/prod.conf';
 import { electronDevConf_Main , electronDevConf_Renderer } from '../../engine/webpack/dev.conf';
-
+import type {Configuration as WebpackConfiguration} from 'webpack'
 import { devServerConf } from "../../engine/webpack/devserver";
 import { merge } from "webpack-merge";
 import path from 'node:path';

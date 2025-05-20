@@ -154,7 +154,8 @@ export type Options<SchemeNames extends string> = {
 	speed? : number,
 };
 
+import { reaxel , obsReaction , createReaxable } from 'reaxes';
 import type { LottieRef , LottieOptions } from 'lottie-react';
 import { AnimationDirection } from 'lottie-web';
-import { XPromise } from 'reaxes-utils';
-import {crayon} from 'reaxes-utils'
+import {xPromise, XPromise } from 'reaxes-utils';
+import { crayon } from 'reaxes-utils';

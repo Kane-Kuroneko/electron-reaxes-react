@@ -13,7 +13,7 @@ export const Refaxel_I18n = function (
 		throw new Error( '传入的配置中必须有一项拥有<isSource>属性,它作为自然语言编写于代码中' );
 	}
 	
-	//记录language被修改的次数,防止用户修改语言时异步加载A, 在此时切换语言B , 等到加载完成时又切回了A,所以后续会判断如果count有变化则加载脚本完成不再执行切换语言动作
+	//记录language被修改的次数,防止数据竞态:用户修改语言时异步加载A, 在此时切换语言B , 等到加载完成时又切回了A,所以后续会判断如果count有变化则加载脚本完成不再执行切换语言动作
 	let languageChangeCount = 0;
 	
 	const setLanguage = ( lang: Languages ) => {
@@ -235,3 +235,6 @@ export const enum_languages = {
 } as const;
 
 import _ from 'lodash';
+import { createReaxable , reaxel } from 'reaxes';
+import { xPromise } from 'reaxes-utils';
+

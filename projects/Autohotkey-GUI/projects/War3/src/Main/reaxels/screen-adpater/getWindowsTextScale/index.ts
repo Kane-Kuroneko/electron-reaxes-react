@@ -1,12 +1,7 @@
 export const getTextScaleFactor = async(): Promise<number> => {
 	
 	try {
-		const primaryScreen = await ( getTextSizeByPyScreenInfo().then(s => s.find(s => s.is_primary)) );
-		if( primaryScreen && primaryScreen.text_scale_factor ) {
-			return primaryScreen.text_scale_factor;
-		} else {
-			throw new Error('primaryScreen is undefined');
-		}
+		return await getTextScaleFactorByPyScreensInfo();
 	} catch ( e ) {
 		console.error(`无法通过py_screeninfo获取主屏幕的textScaleFactor`);
 		console.error(e);
@@ -56,4 +51,5 @@ function checkValidScale( scale: number ){
 
 import { getWindowsTextScaleByPS } from './powershell-style';
 import { getWindowsTextScaleByReg } from './registry-style';
-import { getTextSizeByPyScreenInfo } from './spawn-pyscreen-style';
+import { getTextScaleFactorByPyScreensInfo } from './spawn-pyscreen-style';
+
