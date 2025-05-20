@@ -248,9 +248,9 @@ importers:
 
   projects/Autohotkey-GUI: {}
 
-  projects/Gamepad-Task-Manager: {}
+  projects/Autohotkey-GUI/projects/War3: {}
 
-  projects/QuenChing-Mod-Client: {}
+  projects/Gamepad-Task-Manager: {}
 
 packages:
 

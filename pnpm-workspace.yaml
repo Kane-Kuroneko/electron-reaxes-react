@@ -1,2 +1,3 @@
 packages:
-   - 'projects/*'
+   - 'projects/**'
+   - 'projects/Autohotkey-GUI/projects/War3'
