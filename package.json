@@ -6,8 +6,6 @@
 		"electron": "tsx scripts/electron.ts <project>",
 		"pack": "tsx scripts/webpack.build",
 		"build": "tsx scripts/webpack.build",
-		"webpack-start:quenching": "tsx scripts/webpack.start/index.ts QuenChing-Mod-Client 4410 ",
-		"electron-start:quenching": "tsx scripts/electron.start/index.ts QuenChing-Mod-Client",
 		"webpack-start:ahk-war3": "tsx scripts/webpack.start/index.ts Autohotkey-GUI/War3 4444 ",
 		"electron-start:ahk-war3": "tsx scripts/electron.start/index.ts Autohotkey-GUI/War3",
 		"webpack-build:ahk-war3": "tsx ./scripts/webpack.build/index.ts Autohotkey-GUI/War3 production",

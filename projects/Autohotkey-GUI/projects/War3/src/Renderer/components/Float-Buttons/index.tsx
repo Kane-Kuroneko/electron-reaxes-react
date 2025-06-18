@@ -38,7 +38,12 @@ const IconElements = [
 			>{ props.children }</Tooltip>;
 		} ) ,
 		onClick() {
-			window.open( 'https://github.com' );
+			if(isBrowser){
+				window.open('https://github.com/Kane-Kuroneko/War3-AHK-Reaxes.git');
+			}else if(isElectron){
+				IpcRendererSend( 'open-url' ).send( 'https://github.com/Kane-Kuroneko/War3-AHK-Reaxes.git' );
+			}
+			
 		} ,
 		Icon : reaxper( () => {
 			return <GithubFilled />;
@@ -121,17 +126,17 @@ const reaxel_Lottie_Love = Refaxel_Lottie<"play" | "reset" | "revert">( {
 	speed : 1 ,
 } );
 
+import { env , isBrowser,isElectron } from '#renderer/ENV';
+import { IpcRendererSend } from '#renderer/utils/useIPC';
 import { logProxy } from '#generic/utils/src/logProxy.utility';
-import dayjs from 'dayjs';
 import { FloatResetAllConf } from './left/Reset-All-Conf';
 import { FloatLog } from './Float-Log';
 import { reaxel_Sponsor } from '#renderer/reaxels/hotkey-enhancer/sponsor';
 import { reaxel_I18n } from '#renderer/reaxels/i18n';
 import { GithubFilled , HeartOutlined , RedEnvelopeOutlined } from '@ant-design/icons';
-import { FloatButton , Button , Tooltip , TooltipProps } from 'antd';
-import { Radio } from 'antd';
-import { Options , Refaxel_Lottie } from '#generic/refaxels/lottie';
-import Lottie , { LottieRef , LottieOptions } from "lottie-react";
+import { Button , FloatButton , Tooltip , TooltipProps } from 'antd';
+import { Refaxel_Lottie } from '#generic/refaxels/lottie';
+import Lottie , { LottieRef } from "lottie-react";
 import * as heart from "./love.lottie.json";
 
 import * as less from './style.module.less';

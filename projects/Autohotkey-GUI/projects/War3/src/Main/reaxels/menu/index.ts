@@ -1,3 +1,6 @@
+/**
+ * 使electron-menu受控
+ */
 export const reaxel_MainWinMenu = reaxel(() => {
 	
 	const { store , mutate , setState } = createReaxable({});
