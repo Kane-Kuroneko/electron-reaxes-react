@@ -25,7 +25,16 @@ export let {
 		key: "inputPort" as const,
 	},
 	{
-		regExp: /\bGamepad-Task-Manager|Linker|Proxy-Rules-Modifier|Autohotkey-GUI|AI-WebTools-AIO|QuenChing-Mod-Client\b/,
+		// regExp: /\bGamepad-Task-Manager|Linker|Proxy-Rules-Modifier|Autohotkey-GUI|AI-WebTools-AIO|QuenChing-Mod-Client\b/,
+		regExp: {
+			test (input){
+				const dirs = fs.readdirSync(absolutelyPath_Projects);
+				return dirs.some(( item ) => {
+					const [ projectName ] = input.split('/');
+					return item === projectName;
+				});
+			}
+		},
 		key: "project" as const,
 	},
 	{
@@ -74,10 +83,6 @@ if ( !node_env ) {
 	
 }
 
-export function setNodeEnv(newEnv) {
-	node_env = newEnv;
-}
-
 console.log('entreance: ');
 purdy({
 	inputPort,
@@ -94,10 +99,8 @@ purdy({
 export const port = await getPort(inputPort);
 
 
-
-
 import { getPort , reflect } from "../utils";
-import { absolutelyFileProtocolPath_RepositoryRoot , absolutelyPath_RepositoryRoot } from './paths';
-import { readdirSync } from 'fs';
+import { absolutelyPath_Projects } from './repo-paths';
+import fs from 'fs';
 import path from "path";
 import purdy from 'purdy';

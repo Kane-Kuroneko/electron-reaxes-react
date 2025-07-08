@@ -73,6 +73,27 @@ const IconElements = [
 			return <I />;
 		} ) ,
 	} ,
+	{
+		key : 'bug-report' ,
+		Tooltip : reaxper( ( props: TooltipProps ) => {
+			return <Popover
+				{ ...props }
+				content={<div style={{
+					display : 'flex',
+					flexFlow : 'column nowrap',
+					userSelect : 'none',
+					
+				}}>
+					<a href="">Github Issue</a>
+					<a href="mailto:kane.kuroneko@gmail.com">E-Mail</a>
+				</div>}
+				title = { i18n( 'Report Bug' ) }
+			>{ props.children }</Popover>;
+		} ) ,
+		onClick() {
+		} ,
+		Icon : BugOutlined ,
+	} ,
 ];
 
 
@@ -133,8 +154,9 @@ import { FloatResetAllConf } from './left/Reset-All-Conf';
 import { FloatLog } from './Float-Log';
 import { reaxel_Sponsor } from '#renderer/reaxels/hotkey-enhancer/sponsor';
 import { reaxel_I18n } from '#renderer/reaxels/i18n';
-import { GithubFilled , HeartOutlined , RedEnvelopeOutlined } from '@ant-design/icons';
-import { Button , FloatButton , Tooltip , TooltipProps } from 'antd';
+import { GithubFilled , HeartOutlined , RedEnvelopeOutlined , BugOutlined} from '@ant-design/icons';
+import { Button , FloatButton , Tooltip , TooltipProps , Popover } from 'antd';
+
 import { Refaxel_Lottie } from '#generic/refaxels/lottie';
 import Lottie , { LottieRef } from "lottie-react";
 import * as heart from "./love.lottie.json";

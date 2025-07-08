@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { getProjectPaths , absolutelyPath_RepositoryRoot } from '../../engine/toolkit/paths.ts';
+import { absolutelyPath_RepositoryRoot } from '../../engine/toolkit/repo-paths';
+import { getProjectPaths } from '../../engine/toolkit/project-paths';
 
 
 const { absolutelyPath_subproject } = getProjectPaths.default;

@@ -12,7 +12,7 @@ export const initializeMainWindow = async (
 	}
 ):Promise<BrowserWindow> => {
 	const defaultExtraOptions:ExtraOptions = {
-		openDevTools :( dev(),false,true),
+		openDevTools :dev(),
 	}
 	const { calcActualAppSize } = reaxel_ScreenAdapter();
 	const actualAppSize = await calcActualAppSize();

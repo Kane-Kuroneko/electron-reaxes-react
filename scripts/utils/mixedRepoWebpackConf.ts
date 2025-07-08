@@ -39,12 +39,14 @@ if(node_env === 'development'){
 		electronMainConf ,
 		electronProdConf_Main ,
 		partialWebpackConf_Main ,
+		{watch:false}
 	];
 	renderer_configs = [
 		webpackBaseConfBrowser ,
 		electronRendererConf ,
 		electronProdConf_Renderer ,
 		partialWebpackConf_Renderer ,
+		{watch:false}
 	];
 }
 preload_configs = [

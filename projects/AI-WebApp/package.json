@@ -1,0 +1,13 @@
+{
+  "name": "ai-webapp",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "keywords": [],
+  "author": "",
+  "license": "WTFPL",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "commonjs",
+  "description": ""
+}

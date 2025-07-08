@@ -16,7 +16,7 @@ export const electronPreloadConf: WebpackConfiguration = {
 		
 	],
 	externals : [],
-	watch : true,
+	watch : false,
 	
 	node : {
 		__dirname : false ,

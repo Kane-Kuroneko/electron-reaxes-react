@@ -36,6 +36,7 @@ export default {
 	"Click to copy email to clipboard" : "点击复制邮箱到剪贴板" ,
 	"copied successfully" : "已复制到剪切板" ,
 	"copy failed, please copy manually" : "复制失败,请手动复制" ,
+	"Report Bug" : "反馈问题/Bug" ,
 	"" : "" ,
 } as any;
 

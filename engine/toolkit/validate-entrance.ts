@@ -17,7 +17,7 @@ if (packageList.every((repoName) => project.startsWith(repoName))) {
 
 import {project} from './entrance';
 import { getPort , reflect } from "../utils";
-import { absolutelyFileProtocolPath_RepositoryRoot , absolutelyPath_RepositoryRoot } from './paths';
+import { absolutelyFileProtocolPath_RepositoryRoot , absolutelyPath_RepositoryRoot } from './repo-paths';
 import { readdirSync } from 'fs';
 import path from "path";
 import purdy from 'purdy';

@@ -56,9 +56,6 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Webp
 		output: {
 			path: path.join(subProjectRootPath, "dist/renderer"),
 		},
-		watchOptions : {
-			
-		},
 		resolve :{
 			alias : {
 				'#main' : path.join(subProjectRootPath,'src/Main'),
