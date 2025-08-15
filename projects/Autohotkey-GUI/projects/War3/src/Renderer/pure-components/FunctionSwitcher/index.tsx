@@ -19,4 +19,4 @@ type props = React.PropsWithChildren<{
 console.log(style);
 import {Switch,SwitchProps} from 'antd';
 // import {} from '';
-import * as style from './style.module.less';
+import style from './style.module.less';

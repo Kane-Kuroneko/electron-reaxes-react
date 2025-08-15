@@ -26,7 +26,7 @@ declare const __IS_MOCK__: boolean;
 declare const __DEV_PORT__: number;
 declare const __EXPERIMENTAL__: boolean;
 declare const __METHOD__: "server"|"build";
-declare const __NODE_ENV__ : "development"|"production";
+// declare const __NODE_ENV__ : "development"|"production";
 declare const __ENV__ : ORZ.env;
 
 

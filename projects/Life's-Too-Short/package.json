@@ -1,0 +1,22 @@
+{
+	"name": "Life.s-Too-Short-AI",
+	"version": "0.0.1",
+	"main": "dist/main.js",
+	"scripts": {
+		"start:webpack": "cd ../../ && npx --yes tsx scripts/webpack.start/index.ts Life's-Too-Short 4444",
+		"start:electron": "cd ../../ && npx --yes tsx scripts/electron.start/index.ts Life's-Too-Short",
+		"build:webpack": "cd ../../ && npx --yes tsx scripts/webpack.build/index.ts Life's-Too-Short production",
+		"build:electron": "electron-builder build -w",
+		"pro": "tsx ./scripts/run.ts"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"node-fetch": "^3.3.2",
+		"react-markdown": "^10.1.0",
+		"rehype-highlight": "^7.0.2",
+		"remark-gfm": "^4.0.1"
+	},
+	"description": ""
+}

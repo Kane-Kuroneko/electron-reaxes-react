@@ -1,0 +1,45 @@
+.prompt-box {
+	position: sticky;
+	top : 0;
+	
+	:global {
+		.prompt-show-box {
+			min-height: 80px;
+			max-height: 200px;
+			background-color: #fcfcfc;
+			border: 1px solid #d6d6d6;
+			padding: 12px;
+			border-radius: 12px;
+			user-select: none;
+			box-sizing: border-box;
+			font-size: 18px;
+			font-family: "Microsoft YaHei", Consolas;
+			line-height: normal;
+			
+			&.disabled{
+				cursor: not-allowed;
+				background-color: #eeeeee;
+			}
+		}
+		.prompt-editing-textarea{
+			font-size: 18px;
+			min-height: 80px;
+			max-height: 200px;
+			padding: 12px;
+			border-radius: 12px;
+			box-sizing: border-box;
+			font-family: "Microsoft YaHei", Consolas;
+			line-height: normal;
+		}
+		.tool-area {
+			display: flex;
+			flex-flow: row nowrap;
+			justify-content: space-between;
+			position: absolute;
+			bottom: 8px;
+			padding: 0 12px;
+			box-sizing: border-box;
+			width: 100%;
+		}
+	}
+}

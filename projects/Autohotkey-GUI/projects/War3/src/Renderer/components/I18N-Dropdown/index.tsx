@@ -67,7 +67,7 @@ const menu:DropDownProps['menu']['items']  = [
 type props = React.PropsWithChildren<{}>;
 
 import { SVG_I18n } from '#renderer/pure-components/SVG/I18n.component';
-import * as less from './style.module.less';
+import less from './style.module.less';
 import { Dropdown , DropDownProps} from 'antd';
 import { reaxel_I18n } from '#renderer/reaxels/i18n';
 import { MenuProps } from 'antd';

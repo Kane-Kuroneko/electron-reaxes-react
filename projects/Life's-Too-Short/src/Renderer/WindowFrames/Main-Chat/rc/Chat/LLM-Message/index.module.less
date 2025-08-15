@@ -1,0 +1,29 @@
+.llm-message {
+	flex-flow: column nowrap;
+	
+	:global{
+		.md-content{
+			margin: 0 auto;
+			padding: 24px;
+			
+			@media screen and (width < 1366px){
+				max-width: 95%;
+			}
+			@media screen and (width > 1366px) and (width < 1920px){
+				max-width: 80%;
+			}
+			
+			code {
+				background-color: #ececec;
+				padding: .15rem .3rem;
+				font-size: .875em;
+				border-radius: .25rem;
+			}
+			
+			hr {
+				border: none;
+				border-top: 1px solid rgba(0, 0, 0, 0.15);
+			}
+		}
+	}
+}

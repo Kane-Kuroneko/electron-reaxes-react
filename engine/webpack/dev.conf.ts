@@ -39,17 +39,7 @@ export const electronDevConf_Renderer:WebpackConfiguration = {
 	stats : 'normal',
 	devtool : 'inline-source-map',
 	cache: {
-		type: 'filesystem',
-		buildDependencies: {
-			config : [
-				// path.join( absolutelyPath_RepositoryRoot , 'engine' ).replaceAll('\\','/'),
-				// path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/base.conf.ts' ),
-				'./engine/'
-				// path.join( absolutelyPath_RepositoryRoot , '' ),
-				// path.join( absolutelyPath_RepositoryRoot , '' ),
-			], // 缓存依赖的配置文件
-			
-		},
+		type: 'filesystem'
 	},
 	externals : {
 	// 	'mobx' : `commonjs ${path.join(absolutelyPath_RepositoryRoot , 'vendors','mobx.development@6.13.5#umd.js')}`,
@@ -97,7 +87,21 @@ export const electronDevConf_Renderer:WebpackConfiguration = {
 		}),
 		new HotModuleReplacementPlugin(),
 		new ReactRefreshWebpackPlugin(),
-	]
+	],
+	optimization:{
+		splitChunks: {
+			chunks: 'all',
+			cacheGroups: {
+				vendors: {
+					test: /[\\/]node_modules[\\/]/,
+					name: 'vendors',
+					enforce: true,
+					priority: -10
+				}
+			}
+		}
+	}
+	
 }
 
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';

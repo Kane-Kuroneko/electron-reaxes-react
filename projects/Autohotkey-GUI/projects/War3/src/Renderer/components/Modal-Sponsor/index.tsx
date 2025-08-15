@@ -215,7 +215,7 @@ const copyMailToClipboard = () => {
 
 import { MainContent } from './Main-Content';
 import { reaxel_I18n } from '#renderer/reaxels/i18n';
-import * as less from './style.module.less';
+import less from './style.module.less';
 import { reaxel_Sponsor } from '#renderer/reaxels/hotkey-enhancer/sponsor';
 import { Modal , Button , message , Tooltip } from 'antd';
 import copy from 'copy-to-clipboard';

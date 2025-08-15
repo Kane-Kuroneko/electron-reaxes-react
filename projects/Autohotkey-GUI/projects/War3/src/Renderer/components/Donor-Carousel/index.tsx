@@ -89,7 +89,7 @@ const data = [
 ];
 
 import { reaxel_I18n } from '#renderer/reaxels/i18n';
-import * as style from './style.module.less';
+import style from './style.module.less';
 import 'swiper/css/bundle';
 import { Swiper , SwiperSlide } from 'swiper/react';
 import { Autoplay } from 'swiper/modules';

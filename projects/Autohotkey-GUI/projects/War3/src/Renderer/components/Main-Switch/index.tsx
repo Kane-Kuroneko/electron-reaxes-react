@@ -42,4 +42,4 @@ type props = React.PropsWithChildren<{}>;
 
 import { Switch , Checkbox , notification } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
-import * as less from './style.module.less';
+import less from './style.module.less';

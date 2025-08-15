@@ -108,4 +108,4 @@ import { FunctionSwitcher , IconPopoverDesc , HotKey } from '#renderer/pure-comp
 import { TooltipProps , InputNumber , Tooltip } from 'antd';
 import { UndoOutlined , InteractionTwoTone } from '@ant-design/icons';
 
-import * as less from './style.module.less';
+import less from './style.module.less';
