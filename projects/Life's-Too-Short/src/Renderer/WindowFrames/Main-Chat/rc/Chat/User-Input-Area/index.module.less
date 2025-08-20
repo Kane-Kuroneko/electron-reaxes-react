@@ -6,11 +6,20 @@
 	:global{
 		.input-box {
 			max-height: max(35svh, 5rem);
-			
+			height: 100px;
+			min-height: 5rem;
+			border-radius: 12px;
+			resize: none;
 		}
 		
 		.operation-container{
 			display: flex;
+		}
+		
+		.fire {
+			position: absolute;
+			right: 20px;
+			bottom: 20px;
 		}
 	}
 }

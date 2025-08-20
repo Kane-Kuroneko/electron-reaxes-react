@@ -1,0 +1,51 @@
+.wheeled-picker {
+	height: 38px;
+	overflow: visible;
+	display: flex;
+	align-items: center;
+	position: relative;
+	/* padding-top: 200px; */
+	
+	&:global(.open){
+		z-index: 9999;
+		
+		[data-rwp-wrapper]{
+			max-height: 140px;
+		}
+		
+	}
+	
+	:global{
+		
+		
+		
+		[data-rwp-wrapper] {
+			width: calc(14rem);
+			border-radius : calc(0.625rem);
+			border: 1px solid #e4e4e7;
+			background-color: #ffffff;
+			display: flex;
+			align-items: center;
+			max-height: 36px;
+			transition: height,max-height ease 0.2s;
+		}
+		
+		[data-rwp-option] {
+			color: #a1a1aa;
+		}
+		[data-rwp] {
+			color: #a1a1aa;
+			box-sizing: border-box;
+			padding: 0 4px;
+		}
+		
+		[data-rwp-highlight-wrapper] {
+			background-color: #f4f4f5;
+			color: #09090b;
+			border-radius : calc(0.625rem - 2px);
+			box-sizing: border-box;
+			width: calc(100% - 8px);
+		}
+		
+	}
+}

@@ -1,46 +1,73 @@
 export const Routing = reaxper( () => {
 	
-	return <HashRouter>
-		<Routes>
-			<Route
-				path = "tests"
-				Component = { RuntimeTester }
-			/>
+	return <>
+		<HashRouter>
+			<Routes>
+				<Route
+					path="/"
+					Component={ Layout }
+				>
+					<Route
+						index
+						element={ <Navigate to="chat" /> }
+					/>
+					<Route
+						path="settings"
+					>
+						<Route
+							index
+							element={ <Navigate to="general" /> }
+						/>
+						<Route
+							path=":setting_id"
+							element={ <Settings /> }
+						/>
+					</Route>
+					<Route
+						path="chat"
+						element={ <Outlet /> }
+					>
+						{/* 默认 /chat 时跳转到 /chat/new */ }
+						<Route
+							index
+							element={ <Navigate
+								to="new"
+							/> }
+						/>
+						
+						<Route
+							path=":chat_id"
+							element={ <ChatView /> }
+						/>
+						<Route
+							path="new"
+							element={ <Home /> }
+						/>
+					</Route>
+					
+					
+					<Route
+						path="test"
+						Component={ RuntimeTester }
+					/>
+				</Route>
 			
-			<Route
-				path = "/"
-				Component = { Layout }
-			>
-				<Route
-					Component = { Index }
-					index
-				/>
-				<Route
-					path = "hotkey-enhancer"
-					Component = { HotkeyEnhancer }
-				/>
-				<Route
-					path = "cheats"
-					Component = { Cheats }
-				/>
-			</Route>
+			</Routes>
+		</HashRouter>
 		
-		</Routes>
-	</HashRouter>;
+	</>;
 } );
 
-const Index = reaxper( () => {
-	
-	useEffect( () => {
-		reaxel_GUI_Core.setState( { hash : location.hash } );
-	} , [] );
-	return <Navigate to = "/hotkey-enhancer" />;
-} );
-
-
-import { reaxel_GUI_Core } from '#renderer/reaxels/core';
-import { RuntimeTester } from '#renderer/pages/Runtime-Tester';
-import { Cheats } from '#renderer/pages/Cheats';
-import { HotkeyEnhancer } from '#renderer/pages/Hotkey-Enhancer';
-import { Layout } from '#renderer/components/Layout';
-import { HashRouter , Route , Routes , Navigate} from 'react-router-dom';
+import { QueryRoute } from '#renderer/WindowFrames/shared/rc/QueryRoute';
+import { ChatView } from "#Main-Chat/rc/Chat";
+import { Settings } from '#Main-Chat/rc/Settings';
+import { RuntimeTester } from '#renderer/WindowFrames/shared/rc/Runtime-Test';
+import { Layout } from '#Main-Chat/rc/Layout';
+import {
+	HashRouter ,
+	Route ,
+	Routes ,
+	Navigate ,
+	Outlet ,
+} from 'react-router-dom';
+import { Home } from "#Main-Chat/rc/Home";

@@ -1,0 +1,37 @@
+.channel-header {
+	display: flex;
+	flex-flow: row nowrap;
+	justify-content: space-between;
+	align-items: center;
+	user-select: none;
+	
+	:global{
+		.title-container {
+			display: flex;
+			flex-flow: row nowrap;
+			align-items: center;
+			font-size: 20px;
+			padding: 2px;
+			
+			.title {
+				font-weight: 400;
+				font-size: 14px;
+				font-family: ui-sans-serif, -apple-system, system-ui, Segoe UI, Helvetica, Apple Color Emoji, Arial, sans-serif, Segoe UI Emoji, Segoe UI Symbol;
+				color: #8f8f8f;
+			}
+			
+			&>.icon{
+				width: 22px;
+				height: 22px;
+			};
+		};
+	}
+	
+	&>:global(.icon){
+		width: 20px;
+		height: 20px;
+		cursor: pointer;
+		padding: 0 6px 0 0;
+	}
+	
+}

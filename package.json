@@ -1,7 +1,7 @@
 {
 	"name": "electron-reaxes-react",
 	"version": "0.0.1",
-	"licenses": "WTFPL",
+	"licenses": "MIT",
 	"scripts": {
 		"start:webpack": "tsx scripts/webpack.start/index.ts",
 		"start:electron": "tsx scripts/electron.start/index.ts",
@@ -23,7 +23,11 @@
 		],
 		"logLevel": "quiet"
 	},
+	"private" : true ,
 	"packages": [
+		"projects/*"
+	],
+	"workspaces": [
 		"projects/*"
 	],
 	"type": "module",

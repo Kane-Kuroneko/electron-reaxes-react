@@ -5,7 +5,11 @@ type T<Data,Code> = {
 
 export namespace WS {
 	export type ClientSend = {
-		
+		'new-free-chat' : T<{
+			input : string|File[];
+			chat_temp_id : string;
+			
+		}>
 	}
 	
 	export type ServerSend = {
