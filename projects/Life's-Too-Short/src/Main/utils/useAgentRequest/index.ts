@@ -6,7 +6,7 @@ export const useAgentRequest= async (url: URL | RequestInfo, init?: RequestInit)
 		url,
 		{
 			...init,
-			agent : new HttpsProxyAgent('http://127.0.0.1:7897'),
+			agent : new HttpsProxyAgent('http://127.0.0.1:8888'),
 		}
 	)
 }

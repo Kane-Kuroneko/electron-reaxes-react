@@ -1,7 +1,15 @@
+import { reaxel_Chats } from "#renderer/WindowFrames/shared/reaxels/chats";
+
 export const Layout = reaxper( () => {
 	
 	const outlet = useOutlet();
+	const queryChatId = useParams().chat_id;
 	
+	useEffect(() => {
+		if(!queryChatId){
+			reaxel_Chats.setState( { current_chat_id : null } );
+		}
+	},[queryChatId]);
 	return <div className={ less['layout'] }>
 		<LeftSide />
 		{ outlet }
@@ -15,15 +23,13 @@ export const Layout = reaxper( () => {
 	</div>;
 } );
 
-import { useOutlet } from 'react-router-dom';
-import { SearchBar } from '#Main-Chat/rc/LeftAside/SearchBar';
+import {
+	useOutlet ,
+	useParams,
+} from 'react-router-dom';
 import { FloatBottomRight } from '#Main-Chat/rc/Float-Btn-Group/Bottom-Right';
 import { LeftSide } from "#Main-Chat/rc/LeftAside";
-import type { Message } from '#src/types/Message';
-import type { Channel } from '#src/types/Channel';
-import type { Chat } from '#src/types/Chat';
 import less from './index.module.less';
 
 import { QueryRoute } from '#renderer/WindowFrames/shared/rc/QueryRoute';
 import { Settings } from '#Main-Chat/rc/Settings';
-import { Home } from "#Main-Chat/rc/Home";

@@ -1,19 +1,22 @@
-export type Author = Author.User | Author.LLM | Author.System;
+export type Author = Author.User | Author.Assistant | Author.System;
 
 export namespace Author {
 	export type User = {
-		type: 'user';
+		role: 'user';
 		user_id: string;
+		metadata : {};
 		name?: string;
 	};
 	
-	export type LLM = {
-		type: 'llm';
+	export type Assistant = {
+		role: 'assistant';
 		model: string;
+		metadata? : {};
 	};
 	
 	export type System = {
-		type: 'system';
+		role: 'system';
+		metadata : {};
 		desc?: string;
 	};
 }

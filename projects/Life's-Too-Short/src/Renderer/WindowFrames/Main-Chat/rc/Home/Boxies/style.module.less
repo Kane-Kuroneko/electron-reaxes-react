@@ -1,0 +1,25 @@
+.boxies {
+	display: grid;
+	grid-column: 2;
+	grid-row: 2;;
+	grid-template-columns: repeat(2, 1fr); /* 两列 */
+	grid-template-rows: repeat(2, 1fr);    /* 两行 */
+	gap: 24px; /* 可选：设置行列间距 */
+	
+	;:global {
+		.box{
+			display: flex;
+			flex-flow: column nowrap;
+			align-items: center;
+			cursor: pointer;
+			user-select: none;
+			
+			.text{
+				color: #838383;
+				font-weight: 600;
+				font-size: 14px;
+				
+			}
+		}
+	}
+}

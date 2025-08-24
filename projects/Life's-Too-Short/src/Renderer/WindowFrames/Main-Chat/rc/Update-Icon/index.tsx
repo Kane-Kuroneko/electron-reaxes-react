@@ -73,7 +73,7 @@ export const UpdateIcon = reaxper( ( props: UpdateIconProps ) => {
 		/>
 	</div>;
 } );
-console.log(less);
+
 export type UpdateIconProps = {
 	onClick?: ( e: React.MouseEvent<HTMLDivElement , MouseEvent> ) => void;
 	style? : React.CSSProperties,

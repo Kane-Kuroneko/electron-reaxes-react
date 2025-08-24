@@ -4,9 +4,9 @@ export const UserMessage = reaxper( (props:UserMessageProps) => {
 		<div
 			className="content"
 		>
-			{props.contents.reduce((accu,value) => {
-				if(value.type === 'text'){
-					return accu.concat( value.text );
+			{props.contents.reduce((accu,message) => {
+				if(message.type === 'text'){
+					return accu.concat( message.contents.join('\n\n') );
 				}
 			},'')}
 		</div>
@@ -23,17 +23,17 @@ export type MessageContent =
 
 export type TextContent = {
 	type: 'text';
-	text: string;
+	contents: string[];
 };
 export type FileContent = {
 	type: 'file';
-	file: {
+	contents: {
 		name: string;
 		size: number;
 		mime: string;
 		url?: string; // 可用于预览
 		raw?: File;   // 若仍保留原始 File 对象
-	};
+	}[];
 };
 
 import less from './index.module.less';

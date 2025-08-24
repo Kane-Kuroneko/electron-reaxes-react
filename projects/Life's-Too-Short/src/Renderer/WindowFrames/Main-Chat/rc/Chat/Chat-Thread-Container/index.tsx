@@ -1,17 +1,42 @@
+import { useChat } from "#Main-Chat/rc/Chat/useChat";
 
 /**
  * 用户与LLM对话的Turn List
  */
 export const ChatThreadContainer = reaxper( () => {
-	return <div className={less.chatThreadContainer}>
-		<UserMessage contents={[
-			{
-				type : 'text',
-				text : "但是用react-markdown无法直接渲染整个字符串 , 还需要判断有哪些来渲染为md , 有没有什么方式整体渲染 无需判断?"
-			}
-		]}/>
-		<LLMMessage/>
-	</div>
+	const {chat,chat_id,messages} = useChat();
+	
+	console.log(chat,chat_id,messages);
+	
+	const turns = messages.map(message => {
+		if(message.author.role === 'assistant'){
+			return <LLMMessage
+				key={message.message_id}
+				format = "markdown"
+				contents={ [
+					{
+						type : 'text' ,
+						contents : message.contents ,
+					},
+				] }
+			/>;
+		}else if(message.author.role === 'user'){
+			return <UserMessage
+				key={message.message_id}
+				contents={ [
+					{
+						type : 'text' ,
+						contents : message.contents  ,
+					},
+				] }
+			/>;
+		}
+		
+	})
+	
+	return <div className={ less.chatThreadContainer }>
+		{ turns }
+	</div>;
 } );
 function normalizeMarkdown(raw: string): string {
 	// 1. 将 JSON 字符串中的 \n 转换为换行

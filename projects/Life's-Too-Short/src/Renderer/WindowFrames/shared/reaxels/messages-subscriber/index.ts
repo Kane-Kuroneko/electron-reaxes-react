@@ -81,6 +81,5 @@ ws.onerror = ( err ) => {
 	console.error( 'WebSocket 错误:' , err );
 };
 
-import { reaxel_Chats } from '#renderer/WindowFrames/shared/reaxels/chats';
 import { IpcRendererInvoke } from '#renderer/utils/useIPC';
-import { WS } from '#src/types/WS';
+import { type WS } from '#src/types/WS';

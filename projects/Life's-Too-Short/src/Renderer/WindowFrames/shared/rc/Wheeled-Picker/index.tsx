@@ -1,89 +1,56 @@
-const options: WheelPickerOption[] = [
-	{
-		value : 'gpt-4o' ,
-		label : 'GPT-4o' ,
-	} ,
-	{
-		value : 'gpt-5' ,
-		label : 'GPT-5' ,
-	} ,
-	{
-		value : 'gpt-4.1min2323i' ,
-		label : 'GPT-4.1-min2323i' ,
-	} ,
-	{
-		value : 'gpt-4.1min111i' ,
-		label : 'GPT-4.1-mi111ni' ,
-	} ,
-	{
-		value : 'gpt-4.1mi333ni' ,
-		label : 'GPT-4.1-min444i' ,
-	} ,
-];
-
-interface WheeledPickerProps {
-	options,
-	value,
-	onSelect(),
-	infinite:boolean;
-	
+interface WheeledPickerProps<T extends{
+	value : any,
+	label : React.ReactNode
+}[] = {
+	value : any,
+	label : React.ReactNode
+}[]> {
+	options : T;
+	value : T[number]['value'];
+	onSelect(value:T[number]['value']);
+	infinite?:boolean;
+	itemHeightPx? : number;
+	title?:string;
 }
 
-
-
 export const WheeledPicker = reaxper( (props:WheeledPickerProps) => {
-	const ref = useRef();
+
 	const {store,setState} = useReaxable({
-		selected : "gpt-4o",
+		selected : "gpt-5-nano",
 		open : false,
 	})
 	
-	
-	useEffect( () => {
-		const handleGlobalClick = ( e: MouseEvent ) => {
-			if( ref.current && (
-				e.composedPath() as Node[]
-			).includes( ref.current ) ) {
-				return;
-			}
-			setTimeout( () => {
-				setState( { open : false } );
-			} , 10 );
-		};
-		document.addEventListener( 'mousedown' , handleGlobalClick , true );
-		return () => {
-			document.removeEventListener( 'mousedown' , handleGlobalClick , true );
-		};
-	} , [] );
+	const contextMenuRef = useContextMenuGlobalCancel<HTMLDivElement>( {
+		close : () => setState( { open : false } ) ,
+	} );
 	
 	return <div
 		className={classnames(less.wheeledPicker,store.open && "open")}
-		ref = {ref}
+		ref = {contextMenuRef}
+		title={props.title}
 		onClick={() => {
 			setState({open : !store.open});
 		}}
 	>
 		<WheelPickerWrapper>
 			<WheelPicker
-				options={ options }
-				value={ store.selected }
-				onValueChange={ (value) => {
-					setState( { selected : value } );
-				} }
-				infinite
+				options={ props.options }
+				value={ props.value }
+				onValueChange={ props.onSelect }
+				infinite = {props.infinite ?? true}
+				optionItemHeight={props.itemHeightPx ?? 30}
 			/>
 		</WheelPickerWrapper>
 	</div>;
 } );
 
-import classnames from 'classnames';
-
-
+import { useContextMenuGlobalCancel } from "#renderer/WindowFrames/shared/hooks/useContextMenuGlobalCancel";
 import {
 	WheelPicker ,
 	WheelPickerWrapper ,
 	type WheelPickerOption ,
 } from "./sc@react-wheel-picker";
+import classnames from 'classnames';
 import less from './style.module.less';
 
 

@@ -9,13 +9,14 @@ export const FloatBottomRight = reaxper(() => {
 		<FloatButton
 			shape="square"
 			icon={<InfoCircleTwoTone />}
-			tooltip={`当前版本:${IPC.info.app_version}`}
+			tooltip={`当前版本:${IPC?.info.app_version}`}
 		>
-			当前版本:{IPC.info.app_version}
+			当前版本:{IPC?.info.app_version}
 		</FloatButton>
 	</Group>
 })
 
+import {IPC} from '#renderer/ENV/electron';
 import less from './style.module.less';
 import { FloatButton } from 'antd';
 import {InfoCircleTwoTone} from '@ant-design/icons';

@@ -11,18 +11,18 @@ interface ReaderOptions {
 	stopOnDone?: boolean;
 }
 
-export function readOpenAIStream(
+export function readOpenAIStream<BodyType = string[]>(
 	stream: ReadableLike,
 	options: ReaderOptions = {}
-) {
+):ReadOpenAIStreamReturnType<BodyType> {
 	const { chunkSize = 1024, stopOnDone = true } = options;
 	
 	const { store, setState, mutate } = createReaxable({
-		content: [] as string[],
+		content: [] as BodyType,
 		events: [] as any[],  // 新增: 存储每个 parsed 事件对象，用于提取外层信息如 response.id 等
 	});
 	
-	const done = xPromise<{ content: string[], events: any[] }>()
+	const done = xPromise<{ content: BodyType, events: any[] }>()
 	
 	// 内部状态
 	let isRunning = false;
@@ -162,5 +162,10 @@ export function readOpenAIStream(
 	} as const;
 }
 
+export type ReadOpenAIStreamReturnType<T = string[]> = {
+	content : T;
+	events : any;
+	done : XPromise<{content:T;events:any[]}>
+}
 
-import { xPromise } from 'reaxes-utils';
+import { xPromise , XPromise } from 'reaxes-utils';

@@ -1,7 +1,13 @@
+import { useChat } from "#Main-Chat/rc/Chat/useChat";
+
 export const StickyHeader = reaxper(() => {
-	
+	const {
+		chat_id ,
+		chat ,
+		messages,
+	} = useChat();
 	return <header className={less.chatStickyHeader}>
-		<h2 className="title">{"Learn English"}</h2>
+		<h2 className="title">{chat.chat_title}</h2>
 		<PromptBox/>
 	</header>
 })

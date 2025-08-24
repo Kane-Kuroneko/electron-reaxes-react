@@ -7,13 +7,15 @@ import { getProjectPaths } from '../../engine/toolkit/project-paths';
 const { absolutelyPath_subproject } = getProjectPaths.default;
 
 const absolutelyElectronExe = path.join( absolutelyPath_RepositoryRoot , 'node_modules/electron/dist/electron.exe' );
+const charlesCertPath = path.join(absolutelyPath_RepositoryRoot, './engine/cert/charles+fiddler.mixed.pem');
 
 // 使用 spawn 来启动 Electron
 const electronProcess = spawn(absolutelyElectronExe, ['.','--inspect=9229','--experimental-network-inspection'], {
 	cwd: absolutelyPath_subproject, // 设置当前工作目录为 subproject 路径
 	stdio: 'inherit', // 忽略 stdin, 监听 stdout 和 stderr
 	env :{
-		NODE_OPTIONS: '--enable-source-maps'
+		NODE_OPTIONS: '--enable-source-maps',
+		NODE_EXTRA_CA_CERTS: charlesCertPath
 	}
 });
 

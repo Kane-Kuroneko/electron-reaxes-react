@@ -23,6 +23,7 @@ export namespace OpenAI {
 		| 'gpt-4-0613'
 		| 'gpt-4-32k'
 		| 'gpt-4-32k-0613'
+		| 'gpt-5'
 		| 'gpt-5-nano';
 	
 }

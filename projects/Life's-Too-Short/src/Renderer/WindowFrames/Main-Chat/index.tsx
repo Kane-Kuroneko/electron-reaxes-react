@@ -3,15 +3,16 @@ const root = createRoot( document.getElementById( "react-app-root" ) );
 @reaxper
 class App extends Reaxlass {
 	render() {
-		
 		return <Routing/>;
 	}
 }
 
-import { WheeledPicker } from '#renderer/WindowFrames/shared/rc/Wheeled-Picker';
+console.log(11111111111111111);
 root.render( <App /> );
 
-import { Layout } from './rc/Layout';
+import { useParams } from 'react-router-dom';
 import { Routing } from './routes';
 import { createRoot } from "react-dom/client";
 import './global.module.less';
+
+

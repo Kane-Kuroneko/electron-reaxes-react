@@ -17,6 +17,7 @@
 		"react-markdown": "^10.1.0",
 		"rehype-highlight": "^7.0.2",
 		"@ncdai/react-wheel-picker" : "^1.0.15",
+		"react-router-dom" : "file:../../node_modules/react-router-dom" ,
 		"remark-gfm": "^4.0.1"
 	},
 	"description": ""

@@ -32,7 +32,6 @@
  * );
  */
 export const useContextMenu = ( { menuItems }: UseContextMenuProps ) => {
-	const menuRef = useRef<HTMLDivElement>( null );
 	
 	const {
 		store ,
@@ -45,24 +44,9 @@ export const useContextMenu = ( { menuItems }: UseContextMenuProps ) => {
 		} ,
 	} );
 	
-	
-	useEffect( () => {
-		if( !store.visible ) return;
-		const handleGlobalClick = ( e: MouseEvent ) => {
-			if( menuRef.current && (
-				e.composedPath() as Node[]
-			).includes( menuRef.current ) ) {
-				return;
-			}
-			setTimeout( () => {
-				setState( { visible : false } );
-			} , 10 );
-		};
-		document.addEventListener( 'mousedown' , handleGlobalClick , true );
-		return () => {
-			document.removeEventListener( 'mousedown' , handleGlobalClick , true );
-		};
-	} , [ store.visible ] );
+	const contextMenuRef = useContextMenuGlobalCancel<HTMLDivElement>( {
+		close : () => setState( { visible : false } ) ,
+	} );
 	
 	const handleContextMenu = (handler: (e:React.MouseEvent<HTMLSpanElement,MouseEvent>) => void) => ( e:React.MouseEvent<HTMLSpanElement,MouseEvent> ) => {
 		e.preventDefault();
@@ -87,7 +71,7 @@ export const useContextMenu = ( { menuItems }: UseContextMenuProps ) => {
 	const ContextMenu = reaxper( () => {
 		if( store.visible ) {
 			return <div
-				ref={ menuRef }
+				ref={ contextMenuRef }
 				className={less.contextMenu}
 				style={ {
 					top : store.position.y ,
@@ -99,8 +83,6 @@ export const useContextMenu = ( { menuItems }: UseContextMenuProps ) => {
 					items={ menuItems }
 					onClick={ ( mi ) => {
 						mi.domEvent.stopPropagation();
-						console.log( mi.domEvent.nativeEvent.composedPath().includes( menuRef.current ) );
-						console.log( mi.keyPath );
 						setState( {visible : false} );
 					} }
 				/>
@@ -118,7 +100,8 @@ interface UseContextMenuProps {
 	menuItems: ItemType[];
 }
 
-import less from './style.module.less';
+import { useContextMenuGlobalCancel } from "#renderer/WindowFrames/shared/hooks/useContextMenuGlobalCancel";
 import { ItemType } from 'antd/lib/menu/interface';
 import { MenuInfo } from 'rc-menu/lib/interface';
 import { Menu } from 'antd';
+import less from './style.module.less';

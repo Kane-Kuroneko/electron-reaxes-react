@@ -68,7 +68,7 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Webp
 				'#src' : path.join(subProjectRootPath,'src'),
 				'#Main-Chat' : path.join(subProjectRootPath,'src/Renderer/WindowFrames/Main-Chat'),
 				'#Float-Channels-Chat' : path.join(subProjectRootPath,'src/Renderer/WindowFrames/Float-Channels-Chat'),
-			}
+			},
 		},
 		plugins : [
 			new HtmlWebpackPlugin( {

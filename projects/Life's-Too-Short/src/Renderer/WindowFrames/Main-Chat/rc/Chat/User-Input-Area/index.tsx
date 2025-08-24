@@ -1,4 +1,4 @@
-import { ScrollableSelect } from "#renderer/WindowFrames/shared/rc/ScrollableSelect";
+
 
 const { TextArea } = Input;
 export const UserInputArea = reaxper( () => {
@@ -8,7 +8,7 @@ export const UserInputArea = reaxper( () => {
 		setState ,
 		mutate,
 	} = useReaxable( {
-		chat_model_open : false ,
+		open_model_selector : false ,
 	} );
 	
 	const { talkToLLM } = reaxel_UserChatInput();
@@ -18,17 +18,8 @@ export const UserInputArea = reaxper( () => {
 		
 		<div className = "operation-container">
 			<div className = "options">
-				{ true ? <WheeledPicker/> : <ScrollableSelect
-					options={ reaxel_UserChatInput.store.chat_models }
-					open={ store.chat_model_open }
-					value={ reaxel_UserChatInput.store.select_UserSelectedLLM }
-					onWheelSelect={ ( selected ) => {
-						reaxel_UserChatInput.setState( { select_UserSelectedLLM : selected.value } );
-					} }
-					onOpenToggle={ ( oepn ) => {
-						setState( { chat_model_open : oepn } );
-					} }
-				/> }
+				<ModelPicker/>
+				<LanguagePicker/>
 			</div>
 			
 		</div>
@@ -54,6 +45,9 @@ import {
 	Button ,
 	Select ,
 } from 'antd';
-
+import { LLMModels } from '#src/shared/LLM-Models';
+import { ScrollableSelect } from "#renderer/WindowFrames/shared/rc/ScrollableSelect";
 import less from './index.module.less';
 import { WheeledPicker } from "#renderer/WindowFrames/shared/rc/Wheeled-Picker";
+import { LanguagePicker } from "#Main-Chat/rc/Chat/User-Input-Area/Chat-Options/Language-Picker";
+import { ModelPicker } from "#Main-Chat/rc/Chat/User-Input-Area/Chat-Options/Model-Picker";

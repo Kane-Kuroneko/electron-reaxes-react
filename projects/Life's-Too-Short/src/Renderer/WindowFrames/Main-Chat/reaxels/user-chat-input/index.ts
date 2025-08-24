@@ -1,3 +1,5 @@
+import { wsSend } from "#renderer/WindowFrames/shared/reaxels/messages-subscriber";
+
 export const reaxel_UserChatInput = reaxel( () => {
 	
 	const {
@@ -7,23 +9,8 @@ export const reaxel_UserChatInput = reaxel( () => {
 	} = createReaxable( {
 		textArea_UserInputChatText : '今天是什么日子' ,
 		select_UserSelectedLLM : 'gpt-5' ,
+		select_UserSelectedLanguage : 'zh_CN' as Languages,
 		
-		chat_models : [
-			{
-				value : 'gpt-4o' ,
-				label : 'GPT-4o' ,
-			} ,
-			{
-				value : 'gpt-5' ,
-				label : 'GPT-5' ,
-			} ,
-			{
-				value : 'gpt-4.1mini' ,
-				label : 'GPT-4.1-mini' ,
-			} ,
-		],
-		
-		current_chat_id : null,
 		prompts : {
 			prompt_contents : [],
 			disabled_custom_prompts : false,
@@ -33,21 +20,16 @@ export const reaxel_UserChatInput = reaxel( () => {
 	} );
 	
 	const talkToLLM = async() => {
-		IpcRendererInvoke( 'llm-chat' ).invoke( {
+		wsSend( 'new-chat',{
 			model : 'gpt-5-nano' ,
-			input : [
+			inputs : [
 				{
-					role : 'user' ,
-					content : store.textArea_UserInputChatText,
-					message_id : ''
+					type:'text',
+					text : store.textArea_UserInputChatText,
 				},
 			] ,
-			
-		} ).then( ( res ) => {
-			console.log( res );
-		} ).catch( e => {
-			console.error( e );
-		} );
+			chat_temp_id:uuidv4()
+		} ,1000)
 		
 	};
 	
@@ -67,3 +49,6 @@ import {
 	IpcRendererSend ,
 	IpcRendererOn,
 } from '#renderer/utils/useIPC';
+import { Languages } from "#root/generic-services/refaxels/i18n";
+import { v4 as uuidv4 } from 'uuid';
+

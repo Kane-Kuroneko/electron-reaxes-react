@@ -1,13 +1,14 @@
 export type Message = {
 	message_id: string;
 	fk_chat_id: string;
-	author: Author;
-	content: string|string[];
-	role: Message.Role;
+	author: Author; // role 对应 system/user/assistant/tool
+	contents: Message.MessageContent[];
 	create_time?: number;
-	//server和client_BE端使用,当client_FE传此字段时回传
 	client_message_id?: string;
 };
+
+
+
 /**
  * Message代表的是某个独立的信息片段
  */
@@ -33,6 +34,28 @@ export namespace Message {
 	export type PendingMessage = Omit<Message, "message_id"> & {
 		client_message_id: string;
 	};
+	
+	export type TextContent = {
+		type: 'text';
+		text: string;
+	};
+	
+	export type ImageContent = {
+		type: 'image_url';
+		image_url: string; // URL 或 base64
+	};
+	
+	// 文件不在 chat.completions 直接使用
+	// 仅保存 file_id（来自 /files 上传）
+	export type FileReference = {
+		type: 'file_ref';
+		file_id: string;
+		filename?: string;
+	};
+	
+	export type MessageContent = TextContent | ImageContent | FileReference;
+	
+	
 }
 
 

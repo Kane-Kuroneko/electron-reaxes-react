@@ -19,3 +19,15 @@ export type Prompt = {
 	files?: Array<File>;           // 前端上传文件场景
 	metadata?: Record<string, any>; // 自定义扩展字段
 };
+
+
+export type ChannelPrompts = {
+	about_model_message?: string;
+	about_user_message?: string;
+	
+}
+
+export type ChatPrompts = {
+	about_model_message?: string;
+	about_user_message?: string;
+};

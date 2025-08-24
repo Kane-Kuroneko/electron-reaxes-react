@@ -8,7 +8,7 @@ export type Chat = {
 	is_free_chat : boolean;
 	/*取消对话上下文关联*/
 	disable_turn_context: boolean;
-	
+	children : string[];
 	created_at? : number;
 	current_node? : string;
 	is_do_not_remember? : string;
