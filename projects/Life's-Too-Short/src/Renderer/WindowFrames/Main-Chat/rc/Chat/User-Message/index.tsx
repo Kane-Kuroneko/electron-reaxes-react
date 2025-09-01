@@ -1,30 +1,21 @@
+import { Message } from "#src/types/Message";
 
 export const UserMessage = reaxper( (props:UserMessageProps) => {
 	return <div className = { less.userMessageContainer }>
 		<div
 			className="content"
 		>
-			{props.contents.reduce((accu,message) => {
-				if(message.type === 'text'){
-					return accu.concat( message.contents.join('\n\n') );
-				}
-			},'')}
+			{
+				props.contents.filter(content => content.type === 'text').map((it) => it.text).join('\n\n')
+			}
 		</div>
 	</div>;
 } );
 
 export type UserMessageProps = {
-	contents?: MessageContent[];
+	contents?: Message.MessageContent[];
 };
 
-export type MessageContent =
-	| TextContent
-	| FileContent;
-
-export type TextContent = {
-	type: 'text';
-	contents: string[];
-};
 export type FileContent = {
 	type: 'file';
 	contents: {

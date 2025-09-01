@@ -7,7 +7,6 @@ class App extends Reaxlass {
 	}
 }
 
-console.log(11111111111111111);
 root.render( <App /> );
 
 import { useParams } from 'react-router-dom';

@@ -4,7 +4,7 @@
 export type Chat = {
 	chat_id : string;
 	fk_channel_id : Channel['channel_id'];
-	chat_title : string;
+	chat_title? : string;
 	is_free_chat : boolean;
 	/*取消对话上下文关联*/
 	disable_turn_context: boolean;
@@ -14,6 +14,14 @@ export type Chat = {
 	is_do_not_remember? : string;
 }
 
+export namespace Chat{
+	export type DraftChat = Omit<Chat , "chat_id"> & {
+		client_chat_id : string;
+	}
+	export type MatchedChat = Chat & {
+		client_chat_id : string;
+	}
+}
 
 import type { Channel } from './Channel';
 import type { Message } from './Message';

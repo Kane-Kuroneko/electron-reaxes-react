@@ -1,3 +1,5 @@
+import { useChat } from "#Main-Chat/rc/Chat/useChat";
+
 export const FreeChat = reaxper( () => {
 	
 	const { setCurrentChat } = reaxel_Chats();
@@ -27,7 +29,6 @@ export const FreeChat = reaxper( () => {
 	return <div
 		className={ less.freeChat }
 	>
-		
 		<Menu
 			className="menu"
 			theme="light"

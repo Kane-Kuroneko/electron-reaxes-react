@@ -24,6 +24,7 @@ export type OpenAIRequestParams<Stream extends boolean> = {
 	model: OpenAI.Model,
 	input: OpenAI.Message[];
 	stream: Stream;
+	response_format?:object;
 }
 
 

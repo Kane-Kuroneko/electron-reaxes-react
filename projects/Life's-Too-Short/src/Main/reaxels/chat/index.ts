@@ -14,22 +14,14 @@ export const reaxel_Chat = reaxel( () => {
 			
 		] as Chat[],
 		messages : [] as Message[],
-		Channels : [] as Channel[],
+		channels : [] as Channel[],
 		
 	} );
-	
 	
 	const {
 		status : chatStatus ,
 		setStatus : setChatStatus,
 	} = rexaStatus();
-	
-
-	obsReaction(() => {
-		wssSend( 'messages-updated' , store.messages , 1000 );
-	},() => [
-		store.messages
-	])
 	
 	wssOn('new-chat',async (ws, data, code) => {
 		try {
@@ -37,101 +29,137 @@ export const reaxel_Chat = reaxel( () => {
 			 * 判断是free-chat还是channel-chat
 			 * free-chat-->
 			 * 生成chat,先返回前端..
-			 * 当api invoke持续吐字时,给前端对应的message_id发送message-update..
+			 * 当api invoke持续吐字时,给前端对应的mes sage_id发送message-update..
 			 * 吐字完成后,给前端发送assistant-done ws事件..
 			 * 
 			 */
-			const textInput = data.inputs.filter(it => it.type === 'text').reduce((accu:string,it:Message.TextContent) => `${accu} \n\n ${it.text}`,'');
+			const userTextInputs = data.contexts.reduce((accu,message) => {
+				if(message.author.role === 'user')
+					return accu + message.contents.filter(it => it.type === 'text').map(it => it.text).join('\n\n');
+				else 
+					return accu
+			},'');
 			
-			const chat_id = uuidv4();
-			
-			const llmRouter = async() => {
-				const prompt = `你是一个对话标题生成器和意图分析器。你的任务是根据用户输入的对话内容，生成一个简洁的聊天标题，并评估其复杂程度。
-
-请严格遵守以下规则：
-1. 你的输出必须是一个有效的、不带任何额外文本的 JSON 对象。
-2. JSON 对象中必须包含以下两个字段：
-   - "summary": string，这是一个用于表示聊天主题的简洁标题，长度不超过15个汉字或字符。
-   - "complex": number，这是一个介于 1 到 5 之间的整数，用于评估用户请求的复杂程度。1表示简单（如：问候、闲聊、简单查询），5表示非常复杂（如：需要多步操作、包含多个主题或深层技术问题）。
-
-示例：
-用户输入：“帮我查一下今天北京的天气怎么样？”
-你的输出：{"summary":"北京天气查询","complex":1}`;;
-				
-				LLMRqster.openai.chat<{ content: string }>( {
-					model : 'gpt-5-nano' ,
-					input : [
-						{
-							content : prompt ,
-							role : 'system' ,
-							// message_id:''
-						} ,
-						{
-							content : textInput ,
-							role : 'user',
-						},
-					] ,
-					stream : false ,
-				} ).then(s => {
-					debugger;
-				}).catch(e => {
-					debugger;
-				});
-			};
-			
-			try {
-				llmRouter().then((r) => {
-					debugger;
-				}).catch(e => {
-					debugger;
-				});
-				debugger;
-			}catch ( e ) {
-				
+			if(data.client_chat_id && !data.chat_id){
+				var chat_id = uuidv4();
+			}else if(data.chat_id){
+				var chat_id = data.chat_id;
 			}
-			return;
-			const chat:Chat = {
-				chat_title : NaN,
+			
+			const {
+				summary ,
+				intent,
+				topics,
+				confidence,
+				complex
+			} = await llmRouter( { userInput : userTextInputs } );
+			
+			//先处理messages
+			const {messagesForModify,messagesForAppend} = data.contexts.reduce((accu,it) => {
+				const result = _.cloneDeep(it) as Message.DraftMessage & Message;
+				/*对messages进行分流,已有的和新增的*/
+				result.fk_chat_id = chat_id;
+				
+				if((it as Message.DraftMessage & Message).client_message_id && !(it as Message).message_id){
+					result.message_id = uuidv4();
+					accu.messagesForAppend.push(result as Message.MatchedResponseMessage);
+				}else if((it as Message).message_id){
+					const found = store.messages.find(msg => msg.message_id === (it as Message).message_id);
+					if(found)
+						accu.messagesForModify.push(result as Message);
+				}
+				return accu;
+			},{messagesForModify:[] as Message[],messagesForAppend:[] as Message.MatchedResponseMessage[]});
+			
+			
+			/**
+			 * 构造预响应Message
+			 */
+			const resp_message_id = uuidv4();
+			const immediateMessage:Message.ImmediateResponsedMessage = {
+				message_id : resp_message_id,
+				fk_chat_id : chat_id,
+				author:{role:'assistant',model:data.model},
+				contents:[],
+				done:false,
+			}
+			/**
+			 * 当router请求完成完成后立即返回Chat,并在实际请求响应时append数据块
+			 */
+			const immediateChat:Chat.MatchedChat = {
+				chat_title:summary,
 				chat_id,
-				children:[chat_id],
-				is_free_chat : data.is_free_chat,
+				client_chat_id : data.client_chat_id,
+				is_free_chat:data.is_free_chat,
+				children : [...messagesForModify,...messagesForAppend].map(it => it.message_id).concat([resp_message_id]),
 				fk_channel_id : data.fk_channel_id,
-				created_at:Date.now(),
+				created_at : Date.now(),
 				disable_turn_context:data.disable_turn_context
 			};
+			wssSend('chats-updated' , _.cloneDeep([ immediateChat ]) , 1000 );
+			wssSend('messages-updated' ,_.cloneDeep( [
+					...messagesForModify ,
+					...messagesForAppend ,
+					immediateMessage,
+				] ) ,1000,);
 			
-			wssSend('messages-updated')
+			//合并进store.messages
+			mutate( s => {
+				if( messagesForAppend.length )
+					s.messages = [
+						...messagesForAppend ,
+						...s.messages,
+					];
+				if( messagesForModify.length )
+					messagesForModify.forEach( ( it ) => {
+						Object.assign( s.messages.find( message => message.message_id === it.message_id ) , it );
+					} );
+			} );
+			
 			const {
 				done ,
 				content ,
 				events,
-			} = await LLMRqster.openai( {
+			} = await LLMRqster.openai.chat( {
 				model : data.model ,
-				input : [
-					{
-						content : textInput ,
-						role : 'user' ,
-						// message_id:''
-					} ,
-				] ,
+				input : data.contexts.map(it => ({
+					content : it.contents.filter(({type}) => type === 'text' ).map(({text}:Message.TextContent) => text).join('\n\n'),
+					role : it.author.role
+				})) ,
 				stream : true ,
 			} );
-			console.log(JSON.parse(JSON.stringify({content,events})));
 			
 			const dis = obsReaction( (first, disposer) => {
-				
+				// console.log(JSON.parse(JSON.stringify({content,events})));
+				console.log(content.join(''));
+				wssSend( 'messages-updated' , [ {
+					message_id: immediateMessage.message_id,
+					contents : [{type:'text',text:content.join('')}]
+				} ] , 1000 );
 			} , () => [content.length] );
 			
 			done.finally(dis);
-			
+			done.then(({events,content,root}) => {
+				const result = JSON.parse( JSON.stringify( {
+					events ,
+					root ,
+					content ,
+				} ) );
+				wssSend( 'messages-updated' , [ {
+					message_id: immediateMessage.message_id,
+					done : true,
+				} ] , 1000 );
+				// debugger;
+			})
 		} catch ( e ) {
 			console.error( e );
+			debugger;
 		}
 	})
 	
-	IpcMainOn( 'new-channel' ).on( ( e , data , reply ) => {
-		
-	} );
+	// IpcMainOn( 'new-channel' ).on( ( e , data , reply ) => {
+	//	
+	// } );
 	
 	
 	const rtn = {
@@ -147,22 +175,18 @@ export const reaxel_Chat = reaxel( () => {
 	} );
 } );
 
+
 import {
 	wssOn ,
-	wssSend,
+	wssSend ,
 } from '#main/services/wss-messager';
 import { v4 as uuidv4 } from 'uuid';
 import { Message } from '#src/types/Message';
 import { Chat } from '#src/types/Chat';
-import { OpenAI } from '#main/services/LLM-requester/openai/type';
 import { LLMRqster } from '#main/services/LLM-requester';
-import type { Channel } from '#src/types/Channel';
+import { Channel } from '#src/types/Channel';
 import { rexaStatus } from 'reaxes-toolkit';
-import createUUID from 'uuid';
-import { OPENAI_API_KEY } from '#project/.env.json';
-import {
-	IpcMainOn ,
-	IpcMainHandle ,
-	useIpcSend,
-} from '#main/utils/useIPC';
-import {WebSocketServer} from 'ws';
+import { IpcMainOn } from '#main/utils/useIPC';
+import { llmRouter } from "#main/reaxels/chat/LLM-Router";
+
+

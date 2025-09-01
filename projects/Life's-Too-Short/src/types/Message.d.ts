@@ -4,7 +4,6 @@ export type Message = {
 	author: Author; // role 对应 system/user/assistant/tool
 	contents: Message.MessageContent[];
 	create_time?: number;
-	client_message_id?: string;
 };
 
 
@@ -30,10 +29,23 @@ export namespace Message {
 		author: Author.System;
 	};
 	
+	export type PartialMessage = Partial<Message> & {
+		message_id:string;
+		done?:boolean;
+	}
+	
 	//前端发送的消息,此时还不存在message_id,
-	export type PendingMessage = Omit<Message, "message_id"> & {
+	export type DraftMessage = Omit<Message , "message_id"> & {
 		client_message_id: string;
 	};
+	//Stream模式下 ,后端立即返回给前端一个空壳结构,后续往里填充content
+	export type ImmediateResponsedMessage = Message & {
+		done:boolean;
+	}
+	//服务端生成message_id且与client_message_id并存
+	export type MatchedResponseMessage = Message & {
+		client_message_id: string;
+	}
 	
 	export type TextContent = {
 		type: 'text';

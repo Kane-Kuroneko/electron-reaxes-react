@@ -19,11 +19,11 @@ const createOpenAI = () => {
 	
 	async function chat<BodyType>(
 		params: OpenAIRequestParamsStreaming
-	): Promise<ReadOpenAIStreamReturnType<BodyType>>;
+	): Promise<ReadOpenAIStreamReturnType>;
 	
 	async function chat<BodyType>(
 		{ stream, input, model }: OpenAIRequestParamsStreaming | OpenAIRequestParamsNonStreaming
-	): Promise<ReadOpenAIStreamReturnType<BodyType> | BodyType> {
+	): Promise<ReadOpenAIStreamReturnType | BodyType> {
 		const { url, init } = await openai_rqst_opts({
 			model,
 			stream,
@@ -33,7 +33,7 @@ const createOpenAI = () => {
 		const res = await useAgentRequest(url, init);
 		
 		if (stream) {
-			return readOpenAIStream<BodyType>(res.body);
+			return readOpenAIStream(res.body);
 		} else {
 			return (await res.json()) as BodyType;
 		}

@@ -6,6 +6,8 @@ export const StickyHeader = reaxper(() => {
 		chat ,
 		messages,
 	} = useChat();
+	if(!chat) return null;
+	
 	return <header className={less.chatStickyHeader}>
 		<h2 className="title">{chat.chat_title}</h2>
 		<PromptBox/>

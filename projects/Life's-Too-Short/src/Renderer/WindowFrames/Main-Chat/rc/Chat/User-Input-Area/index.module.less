@@ -1,6 +1,11 @@
 .user-input-area {
 	display: flex;
 	flex-flow: column nowrap;
+	position: absolute;
+	//bottom:12px;
+	//left: 12px;
+	//right: 12px; /* 代替 width: 100%，避免溢出 */
+	inset : auto 12px 12px;
 	
 	
 	:global{

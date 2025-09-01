@@ -11,7 +11,7 @@ export const UserInputArea = reaxper( () => {
 		open_model_selector : false ,
 	} );
 	
-	const { talkToLLM } = reaxel_UserChatInput();
+	const { newChat } = reaxel_UserChatInput();
 	
 	
 	return <div className = { less.userInputArea }>
@@ -33,7 +33,7 @@ export const UserInputArea = reaxper( () => {
 		<div className="fire">
 			<Button
 				type = "primary"
-				onClick={() => talkToLLM()}
+				onClick={() => newChat()}
 			>Send</Button>
 		</div>
 	</div>;

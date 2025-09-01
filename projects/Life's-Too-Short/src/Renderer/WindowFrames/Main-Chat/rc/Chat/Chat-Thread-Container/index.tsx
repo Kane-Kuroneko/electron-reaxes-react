@@ -1,4 +1,3 @@
-import { useChat } from "#Main-Chat/rc/Chat/useChat";
 
 /**
  * 用户与LLM对话的Turn List
@@ -6,29 +5,20 @@ import { useChat } from "#Main-Chat/rc/Chat/useChat";
 export const ChatThreadContainer = reaxper( () => {
 	const {chat,chat_id,messages} = useChat();
 	
-	console.log(chat,chat_id,messages);
+	if(!chat) return null;
+	// console.log(chat,chat_id,messages);
 	
 	const turns = messages.map(message => {
 		if(message.author.role === 'assistant'){
 			return <LLMMessage
 				key={message.message_id}
 				format = "markdown"
-				contents={ [
-					{
-						type : 'text' ,
-						contents : message.contents ,
-					},
-				] }
+				contents={ message.contents }
 			/>;
 		}else if(message.author.role === 'user'){
 			return <UserMessage
 				key={message.message_id}
-				contents={ [
-					{
-						type : 'text' ,
-						contents : message.contents  ,
-					},
-				] }
+				contents={ message.contents }
 			/>;
 		}
 		
@@ -49,7 +39,7 @@ function normalizeMarkdown(raw: string): string {
 }
 import { UserMessage } from '#Main-Chat/rc/Chat/User-Message';
 import { LLMMessage } from '#Main-Chat/rc/Chat/LLM-Message';
-
+import { useChat } from "#Main-Chat/rc/Chat/useChat";
 import ReactMarkdown from 'react-markdown';
 
 import remarkGfm from 'remark-gfm';

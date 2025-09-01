@@ -108,7 +108,7 @@ export const preload = ( repoRootPath: string , subProjectRootPath: string ): We
 };
 
 
-import type {Configuration as WebpackConfiguration} from 'webpack'
+import type {Configuration as WebpackConfiguration} from 'webpack';
 import path,{} from 'path';
 import WatchFilePlugin from 'webpack-watch-files-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';

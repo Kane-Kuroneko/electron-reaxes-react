@@ -15,7 +15,16 @@ export const wsOn = <Type extends keyof WS.ServerSend>(
 	if (!wsHandlers.has(msgType as string)) {
 		wsHandlers.set(msgType as string, []);
 	}
-	wsHandlers.get(msgType as string)!.push(cb);
+	const handlers = wsHandlers.get(msgType as string)!;
+	handlers.push(cb);
+	
+	// disposer
+	return function dispose(){
+		const idx = handlers.indexOf(cb);
+		if (idx !== -1) {
+			handlers.splice(idx, 1);
+		}
+	};
 };
 
 ws.addEventListener("message", (evt) => {
