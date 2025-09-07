@@ -10,7 +10,17 @@ export const ChatView = reaxper( () => {
 	return <div className = { less.mainChat }>
 		<StickyHeader />
 		<ChatThreadContainer />
-		<UserInputArea />
+		<div
+			style={{
+				inset : 'auto 0 0 0',
+				width : 'auto',
+				position : 'absolute',
+				padding : '12px',
+				
+			}}
+		>
+			<UserInputArea />
+		</div>
 	</div>;
 	
 } );

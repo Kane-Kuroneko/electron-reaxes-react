@@ -4,6 +4,7 @@ export type Message = {
 	author: Author; // role 对应 system/user/assistant/tool
 	contents: Message.MessageContent[];
 	create_time?: number;
+	
 };
 
 

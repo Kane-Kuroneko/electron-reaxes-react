@@ -1,5 +1,3 @@
-
-
 const { TextArea } = Input;
 export const UserInputArea = reaxper( () => {
 	

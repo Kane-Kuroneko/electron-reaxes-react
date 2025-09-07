@@ -92,10 +92,10 @@ export const reaxel_Chats = reaxel( () => {
 				"disable_turn_context": false,
 				"children" : ["23c0d795-498a-4cea-a503-6dc5ea9b46dd","ef133dd7-e559-4976-a6ee-154cbedafac8"],
 				"created_at": 1691923380000,
-				"prompts" : {
-					channel_prompts : {},
-					chat_prompts : {},
-					
+				"chat_prompt" : {
+					"custom" : null,
+					"addons" : [],
+					"enable_channel_prompt" : null,
 				}
 			},
 		] as const as Chat[] ,
@@ -103,7 +103,20 @@ export const reaxel_Chats = reaxel( () => {
 			{
 				"channel_id" : "4b6523c8-8d8a-46a5-be0d-de100e15fe36" ,
 				"channel_title" : "英语学习" ,
-				"systemPrompt" : "将中文翻译为英语" ,
+				"channel_prompts" : {
+					system : [{type:'text',text:'你是一个英语学习助手，帮助用户提高英语水平。'}],
+					custom : [{type:'text',text:'主要以雅思考试为目标，侧重听说读写全面提升。'}],
+					outputTemplate : `
+<英语原文句子1>
+<中文翻译1>
+<知识点A>
+<知识点B>
+
+<英语原文句子2>
+<中文翻译2>
+...
+`
+				},
 				"created_at" : 1755109632387 ,
 				"archived" : false,
 			} ,
@@ -181,6 +194,7 @@ export const reaxel_Chats = reaxel( () => {
 							created_at: chat.created_at,
 							fk_channel_id: chat.fk_channel_id,
 							is_free_chat: chat.is_free_chat,
+							chat_prompt : chat.chat_prompt,
 							current_node: null,
 							chat_title: chat.chat_id,
 							children: chat.children,
@@ -201,14 +215,7 @@ export const reaxel_Chats = reaxel( () => {
 			});
 		})
 	}
-	//@ts-ignore
-	window.chats = () => {
-		return JSON.parse(JSON.stringify(store.chats))
-	}
-	//@ts-ignore
-	window.messages = () => {
-		return JSON.parse(JSON.stringify(store.messages))
-	}
+
 	
 	const rtn = {
 		setCurrentChat(chat_id:string){

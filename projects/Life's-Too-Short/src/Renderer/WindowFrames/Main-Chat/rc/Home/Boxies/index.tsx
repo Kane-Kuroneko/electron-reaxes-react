@@ -28,6 +28,29 @@ export const Boxies = reaxper( () => {
 	</div>;
 } );
 
+export const CreateBar = reaxper(() => {
+	
+	return <div
+		style={{
+			display : 'flex',
+			flexFlow : 'row nowrap',
+			justifyContent : 'space-between',
+			width : '100%' ,
+			padding : '8px 24px'
+		}}
+	>
+		<CreateButton>Create Channel</CreateButton>
+		<CreateButton>Create Project</CreateButton>
+	</div>;
+	
+})
+
+const CreateButton = reaxper((props) => {
+	return <Button
+		style={{width:'300px'}}
+	>{props.children}</Button>
+})
+
 const Box = reaxper( ( props: BoxProps ) => {
 	
 	const mixedProps = Object.assign( {
@@ -45,5 +68,5 @@ export type BoxProps = {
 	logo : React.ReactNode;
 }
 
-import { Empty } from 'antd';
+import { Empty , Button } from 'antd';
 import less from './style.module.less';

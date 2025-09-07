@@ -1,8 +1,3 @@
-import {
-	wsOn ,
-	wsSend,
-} from "#renderer/WindowFrames/shared/reaxels/messages-subscriber";
-
 export const SymFreeChat = Symbol('Free-Chat');
 
 //free-chat或channel_id
@@ -22,7 +17,9 @@ export const reaxel_UserChatInput = reaxel( () => {
 		chat_mode : "Free-Chat" as ChatMode,
 		
 		prompts : {
-			prompt_contents : [],
+			chat_system_prompt : null as string | null,
+			chat_user_info_prompt : null as string | null,
+			
 			disabled_custom_prompts : false,
 			
 		},
@@ -53,6 +50,7 @@ export const reaxel_UserChatInput = reaxel( () => {
 			chat_title : null ,
 			disable_turn_context : null ,
 			created_at : null ,
+			chat_prompt : null,
 			fk_channel_id : (store.chat_mode !== 'Free-Chat') ? store.chat_mode : null ,
 			children : [ user_client_message_id ] ,
 			current_node : null ,
@@ -110,4 +108,7 @@ import { Message } from "#src/types/Message";
 import { Chat } from "#src/types/Chat";
 import { reaxel_Chats } from "#renderer/WindowFrames/shared/reaxels/chats";
 import { outsideNavigate } from "#renderer/WindowFrames/shared/hooksAPIOutsideComponents/navigate";
-
+import {
+	wsOn ,
+	wsSend,
+} from "#renderer/WindowFrames/shared/reaxels/messages-subscriber";

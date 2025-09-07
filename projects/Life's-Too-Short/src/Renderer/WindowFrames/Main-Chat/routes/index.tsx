@@ -9,7 +9,7 @@ export const Routing = reaxper( () => {
 				>
 					<Route
 						index
-						element={ <Navigate to="chat" /> }
+						element={ <Home/> }
 					/>
 					<Route
 						path="settings"
@@ -23,6 +23,41 @@ export const Routing = reaxper( () => {
 							element={ <Settings /> }
 						/>
 					</Route>
+					
+					<Route
+						path="channel"
+					>
+						<Route
+							index
+							Component={reaxper(function CreateNewChannel () {
+								return 'New Channel';
+							})}
+						/>
+						<Route
+							path=":channel_id"
+							Component={reaxper(function ChannelHome (){
+								return 'Channel Home';
+								
+							})}
+							
+						>
+							<Route
+								index
+								Component={reaxper(function ChannelHome () {
+									return 'Channel Home';
+								})}
+							/>
+							<Route
+								path="new-chat"
+								Component={reaxper(function NewChatInChannel () {
+									return 'New Chat In Channel';
+								})}
+							/>
+						</Route>
+					</Route>
+					
+					
+					
 					<Route
 						path="chat"
 						element={ <Outlet /> }
@@ -31,7 +66,7 @@ export const Routing = reaxper( () => {
 						<Route
 							index
 							element={ <Navigate
-								to="new"
+								to="new-chat"
 							/> }
 						/>
 						
@@ -40,7 +75,10 @@ export const Routing = reaxper( () => {
 							element={ <ChatView /> }
 						/>
 						<Route
-							path="new"
+							path="new-chat"
+							Component={reaxper(function NewChat(){
+								return 'New Chat';
+							})}
 							element={ <Home /> }
 						/>
 					</Route>

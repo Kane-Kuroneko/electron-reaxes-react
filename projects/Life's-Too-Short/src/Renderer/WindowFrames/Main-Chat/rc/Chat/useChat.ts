@@ -5,12 +5,11 @@ export const useChat = () => {
 	const chat = reaxel_Chats.store.chats.find(chat => chat.chat_id === chat_id);
 	
 	if(!chat){
-		
-		console.warn( `找不到与query匹配的chat_id:${chat_id}` );
+		// console.warn( `找不到与query匹配的chat_id:${chat_id}` );
 	}
 	useLayoutEffect(() => {
 		if(!chat){
-			navigate('/');
+			// navigate('/');
 		}
 	},[chat_id]);
 	

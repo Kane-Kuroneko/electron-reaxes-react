@@ -1,10 +1,15 @@
-import {
-	NavigateFunction ,
-	useNavigate,
-} from "react-router-dom";
-import { useChat } from "#Main-Chat/rc/Chat/useChat";
-import { reaxel_Chats } from "#renderer/WindowFrames/shared/reaxels/chats";
-import { useLayoutEffect } from "react";
+/**
+ * hooks-tunnel
+ * 最大的问题在于, Component可以被react渲染多次,与hookCall形成多对一的关系
+ * 😯可能的方案:
+ * 1- 将Component设计为单例,被渲染多次时警告并return
+ * 2- 通过hook call传入参数,hooks内部进行判断
+ * 3- 组件渲染时通过props传入参数,配合hook call调用参数
+ * 
+ * 
+ * ?-是否需要在<Com>{() => ?? }</Com>中渲染children的返回值?
+ * 
+ */
 
 const {store,setState,mutate} = createReaxable({
 	fn: null as (navigate:NavigateFunction) => void ,
@@ -148,3 +153,10 @@ window.h_nav = () => {
 }
 
 import {} from 'reaxes-utils';
+import {
+	NavigateFunction ,
+	useNavigate,
+} from "react-router-dom";
+import { useChat } from "#Main-Chat/rc/Chat/useChat";
+import { reaxel_Chats } from "#renderer/WindowFrames/shared/reaxels/chats";
+import { useLayoutEffect } from "react";

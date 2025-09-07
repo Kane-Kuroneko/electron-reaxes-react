@@ -96,12 +96,15 @@ export const useContextMenu = ( { menuItems }: UseContextMenuProps ) => {
 	};
 };
 
-interface UseContextMenuProps {
+export interface UseContextMenuProps {
 	menuItems: ItemType[];
 }
 
+
+import { type ItemType } from 'antd/lib/menu/interface';
 import { useContextMenuGlobalCancel } from "#renderer/WindowFrames/shared/hooks/useContextMenuGlobalCancel";
-import { ItemType } from 'antd/lib/menu/interface';
 import { MenuInfo } from 'rc-menu/lib/interface';
 import { Menu } from 'antd';
 import less from './style.module.less';
+
+export { type ItemType };

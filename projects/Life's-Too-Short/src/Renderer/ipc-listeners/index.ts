@@ -13,10 +13,6 @@ IpcRendererOn( 'clear-localstorage' ).on( ( e , data ) => {
 	location.reload();
 } );
 
-IpcRendererOn( 'fetch-ahk_cp-status' ).on( ( e , data ) => {
-	crayon.orange( 'fetch-ahk_cp-status:  ' , data );
-	reaxel_HotkeyEnhancer.setState( { switch_main : data } );
-} );
 
 IpcRendererInvoke('screen-info').invoke({type:'primary'}).then(( { primaryScreen }) => {
 	const physicalSize : Size = {
@@ -26,11 +22,11 @@ IpcRendererInvoke('screen-info').invoke({type:'primary'}).then(( { primaryScreen
 	
 }).catch(e => {
 	console.error('dddddddddddd,',e);
-})
-import { ipcRenderer } from 'electron';
-import { reaxel_HotkeyEnhancer } from '#renderer/reaxels/hotkey-enhancer/index';
-import { IpcRendererOn , IpcRendererInvoke } from '#renderer/utils/useIPC';
+} )
+import type { Size } from 'electron';
+import {
+	IpcRendererInvoke ,
+	IpcRendererOn,
+} from '#renderer/utils/useIPC';
 
 import { isElectron } from '#renderer/ENV';
-import type {IpcRenderer , Size} from 'electron';
-import type {  } from '#src/IPC-channels';
