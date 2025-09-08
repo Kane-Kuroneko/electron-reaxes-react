@@ -1,9 +1,4 @@
-import {
-	useContextMenu ,
-	ItemType ,
-} from "#Main-Chat/rc/LeftAside/Channels/useContextMenu";
-
-export const QuickPromptPreset = reaxper( ( props: QuickPromptPreset ) => {
+export const QuickPromptPreset = reaxper( ( props: QuickPromptPresetProps ) => {
 	
 	const {
 		store ,
@@ -42,16 +37,6 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPreset ) => {
 		handleContextMenu ,
 		ContextMenu ,
 	} = useContextMenu( { menuItems } );
-	
-	useCtrlEnter( ( activeElement ) => {
-		if( !store.editing ) return;
-		// 判断是否聚焦在 input 或 textarea
-		const isInput = inputRef.current?.input === activeElement;
-		const isTextArea = textAreaRef.current?.resizableTextArea.textArea === activeElement;
-		if( isInput || isTextArea ) {
-			handleEdit();
-		}
-	} );
 	
 	const editing = {
 		get title (){
@@ -122,7 +107,7 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPreset ) => {
 		get enabledSwitch(){
 			return <Switch
 				style={ {
-					zoom : 0.62 ,
+					zoom : 0.65 ,
 					marginLeft : 8 ,
 				} }
 				value={ store.enabled }
@@ -147,6 +132,16 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPreset ) => {
 		} );
 	};
 	
+	useCtrlEnter( ( activeElement ) => {
+		if( !store.editing ) return;
+		// 判断是否聚焦在 input 或 textarea
+		const isInput = inputRef.current?.input === activeElement;
+		const isTextArea = textAreaRef.current?.resizableTextArea.textArea === activeElement;
+		if( isInput || isTextArea ) {
+			handleEdit();
+		}
+	} );
+	
 	// 1. Focus textarea on entering edit mode
 	useEffect( () => {
 		if( store.editing && textAreaRef.current?.resizableTextArea ) {
@@ -155,14 +150,7 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPreset ) => {
 				textAreaRef.current.resizableTextArea.textArea.focus();
 			} );
 		}
-		
 	} , [ store.editing ] );
-	
-	useEffect( () => {
-		window.getElements = () => [
-			inputRef.current ,
-			textAreaRef.current?.resizableTextArea?.textArea ,]
-	} , [inputRef.current,textAreaRef.current] );
 	
 	// 2. Alt+Up/Down to switch focus between input and textarea
 	useAltArrowFocus( {
@@ -172,10 +160,9 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPreset ) => {
 				textAreaRef.current?.resizableTextArea?.textArea ,
 			] as Element[];
 		} ,
-		get triggerCondition() {
+		getTriggerCondition() {
 			return store.editing;
 		} ,
-		getDefaultFocusEl : () => document.activeElement ,
 		cycle : true ,
 	} );
 	
@@ -184,10 +171,7 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPreset ) => {
 			if( store.editing ) {
 				return;
 			}
-			return handleContextMenu( ( e ) => {
-				
-			} )( event );
-			
+			return handleContextMenu( ( e ) => {} )( event );
 		} }
 		className={ classnames( less.quickPromptPreset , !store.enabled && 'disabled' ) }
 	>
@@ -216,7 +200,7 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPreset ) => {
 	</div>;
 } );
 
-export type QuickPromptPreset = {
+export type QuickPromptPresetProps = {
 	preset: {
 		title: string;
 		content: string;
@@ -230,124 +214,15 @@ export type QuickPromptPreset = {
 	onDelete?: ( preset_prompt_id: string ) => void;
 }
 
-const useCtrlEnter = ( fn: ( activeElement: Element | null , e: KeyboardEvent ) => void ) => {
-	useEffect( () => {
-		const handler = ( e: KeyboardEvent ) => {
-			if( e.key === 'Enter' && e.ctrlKey ) {
-				fn( document.activeElement , e );
-			}
-		};
-		window.addEventListener( 'keydown' , handler );
-		return () => {
-			window.removeEventListener( 'keydown' , handler );
-		};
-	} , [ fn ] );
-};
-
-
-/**
- * @desc
- * [Alt] + ⬆️/⬇️ 键切换焦点
- * @description
- * `getElements`和`getDefaultFocusEl`需要动态返回,因为如果是静态传入,在useEffect()运行时传入的element还未commit到dom中,element必须在useEffect执行回调时才能拿到挂载好的elements
- * @param getElements 可foucs的元素合集,按照上下顺序排列,这个顺序决定了按上下键时的切换顺序
- * @param getDefaultFocusEl 默认聚焦的元素
- * @param cycle 是否循环切换,默认true
- * @param triggerCondition 只有为true时才会触发hooks内的逻辑
- */
-const useAltArrowFocus = ( {
-	getElements ,
-	getDefaultFocusEl ,
-	cycle = true ,
-	triggerCondition ,
-}: {
-	getElements: () => Element[];
-	cycle?: boolean;
-	getDefaultFocusEl: () => Element;
-	triggerCondition?: boolean;
-} ) => {
-	const {
-		store ,
-		setState,
-	} = useReaxable( {
-		currentIndex : 0 ,
-	} );
-	useEffect( () => {
-		if( !triggerCondition ) {
-			return;
-		}
-		const handler = ( e: KeyboardEvent ) => {
-			if( !e.altKey || (
-				e.key !== 'ArrowUp' && e.key !== 'ArrowDown'
-			) ) return;
-			if( e.key === 'ArrowDown' ) {
-				var offset = 1;
-			} else if( e.key === 'ArrowUp' ) {
-				var offset = -1;
-			}
-			
-			const elements = getElements();
-			const nextElementIndex = cycle === false ? 
-				
-				store.currentIndex + offset :
-				
-				(store.currentIndex + offset + elements.length) % elements.length;
-			
-			if( nextElementIndex < 0 || nextElementIndex >= elements.length ) return;
-			
-			const nextElement = elements[nextElementIndex] as HTMLElement;
-			if( nextElement ) {
-				e.preventDefault();
-				nextElement.focus();
-				setState( { currentIndex : nextElementIndex } );
-			}
-		};
-		window.addEventListener( 'keydown' , handler );
-		return () => window.removeEventListener( 'keydown' , handler );
-	} , [ triggerCondition , getElements() ] );
-	
-	useEffect( () => {
-		if( !triggerCondition ) {
-			return;
-		}
-		const elements = getElements();
-		setState( {
-			currentIndex : elements.indexOf( getDefaultFocusEl() ) ,
-		} );
-	} , [ triggerCondition ] );
-	
-};
-
-const presets = [
-	{
-		"title" : "简洁模式" ,
-		"content" : "只返回核心答案，不做解释，不提供额外背景信息。" ,
-	} ,
-	{
-		"title" : "详细模式" ,
-		"content" : "在回答时提供完整推理过程、背景知识和相关案例。" ,
-	} ,
-	{
-		"title" : "批判模式" ,
-		"content" : "对问题或观点进行多角度分析，强调缺陷、限制和潜在反例。" ,
-	} ,
-	{
-		"title" : "创意模式" ,
-		"content" : "给出新颖、不拘泥于常规的答案，可以包含假设性和探索性内容。" ,
-	} ,
-	{
-		"title" : "教学模式" ,
-		"content" : "以循序渐进的方式解释问题，面向学习者，避免过度省略。" ,
-	} ,
-];
-
-
+import {
+	ItemType ,
+	useContextMenu ,
+} from "#Main-Chat/rc/LeftAside/Channels/useContextMenu";
 import {
 	Input ,
-	Button ,
-	Space ,
+	type InputRef ,
 	Popover ,
-	Checkbox ,
+	Space ,
 	Switch ,
 } from 'antd';
 import {
@@ -356,7 +231,7 @@ import {
 } from '@ant-design/icons';
 import less from './style.module.less';
 import classnames from 'classnames';
-import { type InputRef } from 'antd';
 import { type TextAreaRef } from 'antd/lib/input/TextArea';
 import { useEffect } from "react";
-import { shallowEqual } from "reaxes-utils";
+import { useCtrlEnter } from "#renderer/WindowFrames/shared/hooks/useCtrlEnter";
+import { useAltArrowFocus } from "#renderer/WindowFrames/shared/hooks/useAltArrowFocus";

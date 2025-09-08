@@ -1,0 +1,32 @@
+[
+	{
+		"id" : "Preset-Prompt-35457b0a-5725-4202-9d75-7cf1d572e03a" ,
+		"title" : "Learn English" ,
+		"content" : "I want you to act as an English language tutor and conversation"
+	} ,
+	{
+		"id" : "Preset-Prompt-1e3a4f3c-1d6b-4f7e-8c3a-2f5e9b6c9d2b" ,
+		"title" : "Concise Mode" ,
+		"content" : "Explain the answer in short and simple terms."
+	} ,
+	{
+		"id" : "Preset-Prompt-2b4c5d6e-7f8a-9b0c-1d2e-3f4g5h6i7j8k" ,
+		"title" : "批判模式" ,
+		"content" : "对问题或观点进行多角度分析，强调缺陷、限制和潜在反例。"
+	} ,
+	{
+		"id" : "Preset-Prompt-3c4d5e6f-7g8h-9i0j-1k2l-3m4n5o6p7q8r" ,
+		"title" : "教学模式" ,
+		"content" : "以循序渐进的方式解释问题，面向学习者，避免过度省略。"
+	} ,
+	{
+		"id" : "Preset-Prompt-4d5e6f7g-8h9i-0j1k-2l3m-4n5o6p7q8r9s" ,
+		"title" : "简洁模式" ,
+		"content" : "只返回核心答案，不做解释，不提供额外背景信息。"
+	} ,
+	{
+		"id" : "Preset-Prompt-5e6f7g8h-9i0j-1k2l-3m4n-5o6p7q8r9s0t" ,
+		"title" : "详细模式" ,
+		"content" : "在回答时提供完整推理过程、背景知识和相关案例。"
+	}
+]
