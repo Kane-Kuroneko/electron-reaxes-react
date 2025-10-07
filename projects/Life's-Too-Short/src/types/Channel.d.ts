@@ -17,7 +17,11 @@ export type Channel = {
 	}
 }
 
-
+export namespace Channel {
+	export type PartialChannel = Partial<Channel> & { channel_id : string };
+	
+	export type DraftChannel = Partial<Omit<Channel,'channel_id'>> & { client_channel_id? : string };
+}
 
 import type {TextPrompt} from './Prompt';
 

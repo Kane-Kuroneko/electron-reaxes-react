@@ -22,10 +22,10 @@ declare const __ENV_CONFIG__: {
 	"secure" : boolean,
 }[];
 
-declare const __IS_MOCK__: boolean;
-declare const __DEV_PORT__: number;
-declare const __EXPERIMENTAL__: boolean;
-declare const __METHOD__: "server"|"build";
+// declare const __IS_MOCK__: boolean;
+// declare const __DEV_PORT__: number;
+// declare const __EXPERIMENTAL__: boolean;
+// declare const __METHOD__: "server"|"build";
 // declare const __NODE_ENV__ : "development"|"production";
 declare const __ENV__ : ORZ.env;
 
@@ -51,6 +51,7 @@ declare interface NodeModule {
 	};
 }
 
+declare type Reaxable<T extends { store: any; setState: any; mutate: any }> = Pick<T, 'store' | 'setState' | 'mutate'>;
 
 declare const __REPO_ROOT__: string;
 

@@ -1,4 +1,4 @@
-export const QuickPromptPreset = reaxper( ( props: QuickPromptPresetProps ) => {
+export const QuickPrompts = reaxper( ( props: QuickPromptPresetProps ) => {
 	
 	const {
 		store ,
@@ -10,7 +10,7 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPresetProps ) => {
 		editingTitle : props.preset.title ,
 		editingText : props.preset.content ,
 	} );
-	
+		
 	const menuItems: ItemType[] = useRef( [
 		{
 			key : 'edit' ,
@@ -29,9 +29,9 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPresetProps ) => {
 			} ,
 		} ,
 	] ).current;
-	
-	const inputRef = useRef<InputRef>( null ) ;
+
 	const textAreaRef = useRef<TextAreaRef>( null );
+	const editableTitleRef = useRef<HTMLSpanElement>( null );
 	
 	const {
 		handleContextMenu ,
@@ -40,13 +40,30 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPresetProps ) => {
 	
 	const editing = {
 		get title (){
-			return <Input
-				ref={ inputRef }
-				value={ store.editingTitle }
-				onChange={ ( e ) => {
-					setState( { editingTitle : e.target.value } );
+			
+			return <div
+				key="editing"
+				style={ {
+					margin : '7px 11px' ,
+					display : 'flex' ,
+					alignItems : 'center' ,
 				} }
-				suffix={ <Space.Compact size="small">
+			>
+				<span
+					contentEditable
+					suppressContentEditableWarning
+					ref={ editableTitleRef }
+					onBlur={() => {
+						setState( { editingTitle : editableTitleRef.current?.textContent } );
+					}}
+					className="editing-title"
+					// onInput={ ( e ) => {
+					// 	setState( { editingTitle : e.currentTarget.textContent  } );
+					// } }
+				>
+					{ store.editingTitle }
+				</span>
+				<Space.Compact size="small" style={{marginLeft:8}}>
 					<CheckCircleTwoTone
 						style={ {
 							fontSize : '20px' ,
@@ -72,9 +89,8 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPresetProps ) => {
 							} );
 						} }
 					/>
-				</Space.Compact> }
-				variant="borderless"
-			/>;
+				</Space.Compact>
+			</div>;
 		},
 		get content (){
 			return <Input.TextArea
@@ -85,7 +101,7 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPresetProps ) => {
 				} }
 				rows={ 6 }
 				autoFocus
-				variant="borderless"
+				variant="filled"
 			/>;
 		} 
 	};
@@ -108,7 +124,6 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPresetProps ) => {
 			return <Switch
 				style={ {
 					zoom : 0.65 ,
-					marginLeft : 8 ,
 				} }
 				value={ store.enabled }
 				onChange={ ( e ) => {
@@ -127,20 +142,24 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPresetProps ) => {
 		
 		setState( {
 			editing : false ,
-			editingText : props.preset.content ,
-			editingTitle : props.preset.title ,
 		} );
 	};
 	
 	useCtrlEnter( ( activeElement ) => {
 		if( !store.editing ) return;
 		// 判断是否聚焦在 input 或 textarea
-		const isInput = inputRef.current?.input === activeElement;
+		const isInput = editableTitleRef.current === activeElement;
 		const isTextArea = textAreaRef.current?.resizableTextArea.textArea === activeElement;
 		if( isInput || isTextArea ) {
 			handleEdit();
 		}
 	} );
+	
+	useEffect(() => {
+		if(!store.editing){
+			setState({editingTitle : props.preset.title})
+		}
+	},[props.preset.title])
 	
 	// 1. Focus textarea on entering edit mode
 	useEffect( () => {
@@ -156,7 +175,7 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPresetProps ) => {
 	useAltArrowFocus( {
 		getElements() {
 			return [
-				inputRef.current?.input! ,
+				editableTitleRef.current ,
 				textAreaRef.current?.resizableTextArea?.textArea ,
 			] as Element[];
 		} ,
@@ -168,7 +187,7 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPresetProps ) => {
 	
 	return <div
 		onContextMenu={ ( event ) => {
-			if( store.editing ) {
+			if( store.editing || !store.enabled ) {
 				return;
 			}
 			return handleContextMenu( ( e ) => {} )( event );
@@ -189,6 +208,7 @@ export const QuickPromptPreset = reaxper( ( props: QuickPromptPresetProps ) => {
 							margin : '7px 11px' ,
 							display : 'flex' ,
 							alignItems : 'center',
+							gap : 8
 						} }
 					>
 						{ ordinary.title }

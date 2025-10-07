@@ -1,3 +1,8 @@
+
+if(typeof IPC !== 'undefined'){
+	var {wsOn,wsSend} = await import('#renderer/WindowFrames/shared/reaxels/websocket-messager');
+}
+
 export const SymFreeChat = Symbol('Free-Chat');
 
 //free-chat或channel_id
@@ -46,6 +51,7 @@ export const reaxel_UserChatInput = reaxel( () => {
 		};
 		const chat: Chat.DraftChat = {
 			client_chat_id,
+			turn_state : 'idle',
 			is_free_chat : store.chat_mode === 'Free-Chat' ,
 			chat_title : null ,
 			disable_turn_context : null ,
@@ -65,8 +71,8 @@ export const reaxel_UserChatInput = reaxel( () => {
 			console.log('超時30s已自動釋放');
 			setState({pending_client_chat_id : null});
 		},30000);
-		const dispose = wsOn('chats-updated',(data, code) => {
-			const pendingChat = data.find(it => it.client_chat_id === store.pending_client_chat_id); 
+		const dispose = wsOn('chats::update',(data, code) => {
+			const pendingChat = data.chats.find(it => it.client_chat_id === store.pending_client_chat_id); 
 			if(pendingChat){
 				outsideNavigate(navigate => {
 					navigate(`/chat/${pendingChat.chat_id}`);
@@ -75,16 +81,68 @@ export const reaxel_UserChatInput = reaxel( () => {
 				dispose();
 			}
 		});
-		wsSend( 'new-chat' , {
+		wsSend( 'chat::new' , {
 			client_chat_id : client_chat_id ,
 			contexts : [ message ] ,
+			//todo: 构造chat_prompt
+			chat_prompt : null ,
 			model : 'gpt-5-nano' ,
 			is_free_chat : true ,
 			fk_channel_id : null ,
 			disable_turn_context : null ,
-		} , 1000 );
-		
+		} , 1 );
 	};
+	
+	const sendToChat = async ({
+		chat_id,
+	}) => {
+		const user_client_message_id = uuidv4();
+		const message: Message.DraftMessage = {
+			client_message_id : user_client_message_id ,
+			contents : [
+				{
+					type : 'text' ,
+					text : store.textArea_UserInputChatText,
+				},
+			] ,
+			author : { role : 'user' } ,
+			fk_chat_id : chat_id ,
+		};
+		wsSend( 'chat::reply' , {
+			chat_id ,
+			user_replied_message :  message  ,
+			model : 'gpt-5-nano' ,
+			disable_turn_context : null ,
+		} , 1 );
+	}
+	
+	const send = async () => {
+		const chat_id = stolenChatId((hookRtn) => hookRtn.chat_id);
+		if(chat_id){
+			//继续对话
+			//先检测是否正在等待
+			const chat = reaxel_Chats.store.chats.find(it => it.chat_id === chat_id);
+			if(!chat){
+				debugger;
+			}
+			//正在等待中, 则不允许发送新消息
+			if(chat.turn_state && chat.turn_state !== 'idle' && chat.turn_state !== 'error'){
+				debugger;
+				throw new Error('不应该能执行到这, 检查代码');
+			}
+			if(chat.turn_state === 'idle'){
+				const message : Message.DraftMessage = {
+					
+				}
+			}
+			
+			console.error('無法發送消息, chat_id 不存在');
+			return;
+		}else {
+			//走创建新chat
+			newChat();
+		} 
+	}
 	
 	const rtn = {
 		newChat,
@@ -97,18 +155,10 @@ export const reaxel_UserChatInput = reaxel( () => {
 	} );
 } );
 
-import {
-	IpcRendererInvoke ,
-	IpcRendererSend ,
-	IpcRendererOn,
-} from '#renderer/utils/useIPC';
+import { reaxel_Chats } from "#renderer/WindowFrames/shared/reaxels/chats";
+import { stolenChatId } from "#Main-Chat/reaxels/user-chat-input/hook-tunnels/chat.stealth-hook";
 import { Languages } from "#root/generic-services/refaxels/i18n";
-import { v4 as uuidv4 } from 'uuid';
 import { Message } from "#src/types/Message";
 import { Chat } from "#src/types/Chat";
-import { reaxel_Chats } from "#renderer/WindowFrames/shared/reaxels/chats";
 import { outsideNavigate } from "#renderer/WindowFrames/shared/hooksAPIOutsideComponents/navigate";
-import {
-	wsOn ,
-	wsSend,
-} from "#renderer/WindowFrames/shared/reaxels/messages-subscriber";
+import { v4 as uuidv4 } from 'uuid';

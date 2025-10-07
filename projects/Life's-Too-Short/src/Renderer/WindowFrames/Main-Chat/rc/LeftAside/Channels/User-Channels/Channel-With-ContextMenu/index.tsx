@@ -1,52 +1,68 @@
+import { reaxel_UI } from "#Main-Chat/reaxels/UI";
 
-export const ChannelWithContextMenu = reaxper(() => {
+const {
+	store ,
+	setState,
+} = createReaxable( {
+	currentContextMenuChannelId : null as string | null ,
+} );
+
+export const ChannelWithContextMenu = reaxper( () => {
 	const { setCurrentChat } = reaxel_Chats();
+	
+	const {setExpandChannels} = reaxel_UI();
 	
 	const {
 		handleContextMenu ,
-		ContextMenu,
+		onCancel,
+		ContextMenu ,
 	} = useContextMenu( {
 		menuItems : [
 			{
-				key : '1' ,
-				label : '选项 1' ,
-				onClick : () => {
-					console.log( '点击了选项 1' );
+				key : 'search' ,
+				label : <span>Search In This Channel</span> ,
+				onClick : ({keyPath}) => {
+					
+					const [,channel_id] = keyPath;
+					console.log(reaxel_Chats.store.channels.find( c => c.channel_id === channel_id ).channel_title);
+					reaxel_Chats().setFilterScope(channel_id);
 				} ,
 			} ,
 			{
-				key : '2' ,
-				label : '选项 2' ,
+				key : 'rename' ,
+				label : 'Rename' ,
 				onClick : () => {
-					console.log( '点击了选项 2' );
+					
+				} ,
+			} ,
+			{
+				key : 'edit' ,
+				label : 'Edit' ,
+				onClick : () => {
+					
+				} ,
+			} ,
+			{
+				key : 'del' ,
+				label : 'Delete' ,
+				onClick : () => {
+					
 				} ,
 			} ,
 		] ,
 	} );
 	
-	const channelItems = reaxel_Chats.store.channels.map( ( channel ): ItemType => {
-		return {
-			key : channel.channel_id ,
-			title : channel.channel_title ,
-			label : <span
-				style={{display:'block'}}
-				onContextMenu={ handleContextMenu( ( e ) => {
-					console.log( `右键了channel:${channel.channel_title}` );
-				} ) }
-			>{ channel.channel_title }</span> ,
-			children : reaxel_Chats.store.chats.filter( chat => chat.fk_channel_id === channel.channel_id ).map( ( chat ): ItemType => {
-				return {
-					key : chat.chat_id ,
-					title : chat.chat_title ,
-					className : "item" ,
-					label : <ChatItem
-						chat_id={ chat.chat_id }
-						label={ chat.chat_title }
-					/> ,
-				};
-			} ) ,
-		};
-	} );
+	//关闭菜单时清除当前channel_id
+	useEffect( () => onCancel( () => {
+		setState( { currentContextMenuChannelId : null } );
+	} ) , [] );
+		
+	const channelItems = reaxel_Chats.store.channels.map( ( {channel_id,channel_title} ): ItemType => channelItemWithContextMenu({
+		channel_title,
+		channel_id,
+		ContextMenu,
+		handleContextMenu,
+	}) );
 	
 	return <>
 		<Menu
@@ -54,15 +70,59 @@ export const ChannelWithContextMenu = reaxper(() => {
 			theme="light"
 			selectedKeys={ [ reaxel_Chats.store.current_chat_id ] }
 			mode="inline"
+			openKeys={reaxel_UI.store.expanded_channels.user_channels}
+			onOpenChange={(keys) => {
+				setExpandChannels(keys);
+			}}
 			items={ channelItems }
 			onSelect={ ( si ) => {
 				setCurrentChat( si.selectedKeys[0] );
 			} }
-			defaultOpenKeys={[]}
+			defaultOpenKeys={ [] }
 		/>
-		<ContextMenu/>
-	</>
+	</>;
+} );
+
+const channelItemWithContextMenu = ( ( { 
+	channel_id ,
+	channel_title ,
+	ContextMenu ,
+	handleContextMenu ,
+} : {
+	channel_id : string ;
+	channel_title : string;
+	ContextMenu : React.FC ;
+	handleContextMenu : ( handler: ( e: React.MouseEvent<HTMLSpanElement, MouseEvent> ) => void ) => ( e: React.MouseEvent<HTMLSpanElement, MouseEvent> ) => void ;
+} ) => {
+	
+	
+	return {
+		key : channel_id ,
+		title : channel_title ,
+		label : <span
+			style={ { display : 'block' } }
+			onContextMenu={ handleContextMenu( ( e ) => {
+				console.log( `右键了channel:${ channel_title }` );
+				setState({currentContextMenuChannelId:channel_id});
+			} ) }
+		>
+			<b>{ channel_title }</b>
+			{ channel_id === store.currentContextMenuChannelId && <ContextMenu /> }
+		</span> ,
+		children : reaxel_Chats.store.chats.filter( chat => chat.fk_channel_id === channel_id ).map( ( chat ): ItemType => {
+			return {
+				key : chat.chat_id ,
+				title : chat.chat_title ,
+				className : "item" ,
+				label : <ChatItem
+					chat_id={ chat.chat_id }
+					label={ chat.chat_title }
+				/> ,
+			};
+		} ) ,
+	};
 })
+
 
 import { useContextMenu } from "#Main-Chat/rc/LeftAside/Channels/useContextMenu";
 
@@ -71,4 +131,5 @@ import { ChannelHeader } from '#Main-Chat/rc/LeftAside/Channels/User-Channels/He
 import { Menu  } from 'antd';
 import { ItemType } from 'antd/lib/menu/interface';
 import { reaxel_Chats } from '#renderer/WindowFrames/shared/reaxels/chats';
-import less from './style.module.less';
+import less from './style.module.less';import { ChannelIconSvg } from "#renderer/WindowFrames/shared/rc/SVG.Component/Channel-Icon.svg";
+

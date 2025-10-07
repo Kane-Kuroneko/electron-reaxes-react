@@ -5,12 +5,10 @@ export const Channels = reaxper( () => {
 		className={less.channelContainer}
 	>
 		<FreeChat/>
-		<Divider/>
 		<UserChannels/>
 	</div>
 } );
 
-import {Divider} from '../Divider';
 import { FreeChat } from './Free-Chat';
 import { UserChannels } from './User-Channels';
 

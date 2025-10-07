@@ -1,3 +1,5 @@
+import { useChat } from "#Main-Chat/rc/Chat/useChat";
+
 const { TextArea } = Input;
 export const UserInputArea = reaxper( () => {
 	
@@ -8,6 +10,12 @@ export const UserInputArea = reaxper( () => {
 	} = useReaxable( {
 		open_model_selector : false ,
 	} );
+	
+	const {
+		chat_id ,
+		chat,
+	} = useChat();
+	
 	
 	const { newChat } = reaxel_UserChatInput();
 	
@@ -23,6 +31,7 @@ export const UserInputArea = reaxper( () => {
 		</div>
 		<TextArea
 			className = "input-box"
+			variant="filled"
 			value = { reaxel_UserChatInput.store.textArea_UserInputChatText }
 			onChange = { ( e ) => {
 				reaxel_UserChatInput.mutate( s => s.textArea_UserInputChatText = e.target.value );
@@ -30,8 +39,13 @@ export const UserInputArea = reaxper( () => {
 		/>
 		<div className="fire">
 			<Button
-				type = "primary"
+				disabled={ !!chat && ['requesting','triaging','responding.streaming','responding'].includes(chat.turn_state) }
+				type = "default"
+				variant="dashed"
 				onClick={() => newChat()}
+				style={{
+					fontWeight:'bold'
+				}}
 			>Send</Button>
 		</div>
 	</div>;

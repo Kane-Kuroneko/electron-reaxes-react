@@ -16,10 +16,20 @@
 	
 	:global{
 		
+		.editing-title {
+			font-size: 14px;
+			outline: none;
+		}
 		
 		.ordinary-title {
 			font-size: 14px;
 			user-select: none;
+			align-items: center;
+			max-width: 200px;
+			text-wrap: nowrap;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+			overflow: hidden;
 		}
 	}
 }

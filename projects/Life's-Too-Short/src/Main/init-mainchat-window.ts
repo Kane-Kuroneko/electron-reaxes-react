@@ -26,7 +26,7 @@ export const initMainchatWindow = async (
 			
 		} ,
 		center : true,
-		resizable:false,
+		// resizable:false,
 		icon : path.join(absAppStaticsPath , 'assets/ico/logo - mixin.ico')
 	};
 	

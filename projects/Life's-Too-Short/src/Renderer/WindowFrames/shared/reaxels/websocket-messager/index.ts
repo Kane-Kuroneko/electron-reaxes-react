@@ -2,16 +2,28 @@ const wss_port = await IpcRendererInvoke('get-wss-port:message').invoke();
 
 const ws = new WebSocket( `ws://localhost:${wss_port}` );
 
+const wsPromise = new Promise<WebSocket>( ( resolve , reject ) => {
+	ws.onopen = () => {
+		console.log( '已连接到服务器' );
+		resolve( ws );
+	};
+	ws.onerror = ( err ) => {
+		console.error( 'WebSocket 错误:' , err );
+		reject( err );
+	};
+} );
+
 const wsHandlers = new Map<string, ((data: any, code?: number) => void)[]>();
 
 // 注册函数（接收）
-export const wsOn = <Type extends keyof WS.ServerSend>(
+export const wsOn = async<Type extends keyof WS.ServerSend>(
 	msgType: Type,
 	cb: (
 		data: WS.ServerSend[Type]["data"],
 		code: WS.ServerSend[Type]["code"]
 	) => void
 ) => {
+	await wsPromise;
 	if (!wsHandlers.has(msgType as string)) {
 		wsHandlers.set(msgType as string, []);
 	}
@@ -44,11 +56,12 @@ ws.addEventListener("message", (evt) => {
 });
 
 // 发送函数
-export const wsSend = <Type extends keyof WS.ClientSend>(
+export const wsSend = async<Type extends keyof WS.ClientSend>(
 	type: Type,
 	data: WS.ClientSend[Type]["data"],
 	code: WS.ClientSend[Type]["code"]
 ) => {
+	await wsPromise;
 	ws.send(JSON.stringify({ type, data, code }));
 };
 
@@ -69,26 +82,12 @@ ws.addEventListener("message", (evt) => {
 	}
 });
 
-// 连接成功
-ws.onopen = () => {
-	console.log( '已连接到服务器' );
-	ws.send( '你好，服务器' );
-};
-
-// 接收消息
-ws.onmessage = ( event ) => {
-	console.log( '收到服务器消息:' , event.data );
-};
 
 // 连接关闭
 ws.onclose = () => {
 	console.log( '连接已关闭' );
 };
 
-// 发生错误
-ws.onerror = ( err ) => {
-	console.error( 'WebSocket 错误:' , err );
-};
 
 import { IpcRendererInvoke } from '#renderer/utils/useIPC';
 import { type WS } from '#src/types/WS';

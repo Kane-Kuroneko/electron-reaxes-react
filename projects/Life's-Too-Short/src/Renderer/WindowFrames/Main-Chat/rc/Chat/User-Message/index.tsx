@@ -9,12 +9,19 @@ export const UserMessage = reaxper( (props:UserMessageProps) => {
 				props.contents.filter(content => content.type === 'text').map((it) => it.text).join('\n\n')
 			}
 		</div>
+		<UserMessageOperations
+			message_id={props.message_id}
+		/>
 	</div>;
 } );
 
 export type UserMessageProps = {
 	contents?: Message.MessageContent[];
+	chat_id?: string;
+	message_id?: string;
 };
+
+
 
 export type FileContent = {
 	type: 'file';
@@ -28,4 +35,5 @@ export type FileContent = {
 };
 
 import less from './index.module.less';
+import { UserMessageOperations } from "#Main-Chat//rc/Chat/User-Message/UserMessageOperations";
 

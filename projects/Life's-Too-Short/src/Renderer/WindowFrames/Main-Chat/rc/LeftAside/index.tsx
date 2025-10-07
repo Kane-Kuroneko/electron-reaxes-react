@@ -1,14 +1,17 @@
+
+
 export const LeftSide = reaxper( () => {
-	
+
 	return <div className="sidebar-left">
 		<Logo/>
 		<SearchBar/>
-		<Channels/>
+		{ reaxel_Chats.store.search.isSearching ? <SearchResult/> : <Channels /> }
 		<User/>
 	</div>;
 } );
 
-
+import { reaxel_Chats } from "#renderer/WindowFrames/shared/reaxels/chats";
+import { SearchResult } from '#Main-Chat/rc/LeftAside/SearchResult';
 import { Logo } from "#Main-Chat/rc/LeftAside/Logo";
 import { User } from "#Main-Chat/rc/LeftAside/User";
 import { Channels } from '#Main-Chat/rc/LeftAside/Channels';

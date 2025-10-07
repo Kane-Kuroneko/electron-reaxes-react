@@ -1,1 +1,1 @@
-eclare module '*.less';
+declare module '*.less';

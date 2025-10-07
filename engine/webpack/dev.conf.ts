@@ -38,9 +38,6 @@ export const electronDevConf_Renderer:WebpackConfiguration = {
 	mode : 'development',
 	stats : 'normal',
 	devtool : 'inline-source-map',
-	cache: {
-		type: 'filesystem'
-	},
 	externals : {
 	// 	'mobx' : `commonjs ${path.join(absolutelyPath_RepositoryRoot , 'vendors','mobx.development@6.13.5#umd.js')}`,
 	// 	'react' : `commonjs ${path.join(absolutelyPath_RepositoryRoot , 'vendors','react.development@18.3.1#umd.js')}`,
@@ -88,19 +85,24 @@ export const electronDevConf_Renderer:WebpackConfiguration = {
 		new HotModuleReplacementPlugin(),
 		new ReactRefreshWebpackPlugin(),
 	],
-	optimization:{
+	optimization: {
+		minimize:false,
 		splitChunks: {
 			chunks: 'all',
 			cacheGroups: {
 				vendors: {
 					test: /[\\/]node_modules[\\/]/,
 					name: 'vendors',
-					enforce: true,
-					priority: -10
+					enforce: false,            // 不强制所有匹配都打包
+					priority: 10,              // 高优先级保证稳定拆分
+					reuseExistingChunk: true   // 如果已有相同 chunk，复用
 				}
 			}
-		}
+		},
+		moduleIds: 'deterministic',   // 保证模块 id 稳定
+		chunkIds: 'deterministic'     // 保证 chunk id 稳定
 	}
+	
 	
 }
 

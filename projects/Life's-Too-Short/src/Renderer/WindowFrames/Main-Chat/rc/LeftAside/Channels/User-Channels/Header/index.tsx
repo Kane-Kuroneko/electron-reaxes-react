@@ -1,48 +1,73 @@
-export const ChannelHeader = reaxper(() => {
+import { useContextMenu } from "#Main-Chat/rc/LeftAside/Channels/useContextMenu";
+
+export const ChannelHeader = reaxper( () => {
+	const { toggleNewChannelModal } = reaxel_Chats();
 	
+	const {
+		handleContextMenu ,
+		ContextMenu ,
+	} = useContextMenu( {
+		menuItems : [
+			{
+				key : 'search' ,
+				label : 'Search In All Channels' ,
+				
+				onClick(){
+					reaxel_Chats().setFilterScope('all-channels' );
+				}
+			} ,
+			{
+				key : '1' ,
+				label : 'New Channel' ,
+				onClick : () => {
+					toggleNewChannelModal();
+				} ,
+			} ,
+			{
+				key : '2' ,
+				label : 'Collapse All' ,
+				onClick : () => {
+					console.log( '点击了选项 2' );
+				} ,
+			} ,
+		] ,
+	} );
 	
 	return <div
 		className={ less.channelHeader }
+		onContextMenu={ handleContextMenu( () => {} ) }
 	>
+		<ContextMenu />
 		<span className="title-container">
-			<svg
-				width="18"
-				height="18"
-				viewBox="-1 -1 25 25"
-				fill="none"
-				xmlns="http://www.w3.org/2000/svg"
-				className="stroke-[2] "
-			>
-				<path
-					d="M3.33965 17L11.9999 22L20.6602 17V7L11.9999 2L3.33965 7V17Z"
-					stroke="currentColor"
-				></path>
-				<path
-					d="M11.9999 12L3.4999 7M11.9999 12L12 21.5M11.9999 12L20.5 7"
-					stroke="currentColor"
-				></path>
-			</svg>
+			<ChannelIconSvg/>
 			<span className="title">Channels</span>
 		</span>
-		<svg
+		<span
 			className="icon"
-			viewBox="0 0 1024 1024"
-			version="1.1"
-			xmlns="http://www.w3.org/2000/svg"
-			p-id="10582"
-			width="256"
-			height="256"
+			title="collapse all"
 		>
-			<path
-				d="M536.832 401.344C535.552 403.648 534.4 406.016 532.48 408 526.208 414.272 517.952 416.832 509.696 416.512 501.504 416.832 493.248 414.272 486.976 408 485.056 406.016 483.904 403.648 482.56 401.344L230.016 147.84C218.048 135.872 218.048 116.48 230.016 104.512 241.92 92.544 261.312 92.544 273.216 104.512L509.696 341.824 746.24 104.512C758.144 92.544 777.536 92.544 789.44 104.512 801.408 116.48 801.408 135.872 789.44 147.84L536.832 401.344ZM483.52 621.248C484.864 618.944 485.952 616.576 487.936 614.592 494.208 608.32 502.464 605.76 510.72 606.08 518.976 605.76 527.232 608.32 533.504 614.592 535.488 616.576 536.576 618.944 537.92 621.248L791.424 874.752C803.392 886.72 803.392 906.112 791.424 918.08 779.456 930.048 760.064 930.048 748.096 918.08L510.72 680.768 273.344 918.08C261.376 930.048 241.984 930.048 230.016 918.08 218.048 906.112 218.048 886.72 230.016 874.752L483.52 621.248Z"
-				p-id="10583"
-				fill="#bfbfbf"
-			></path>
-		</svg>
-	</div>
-} )
+			<svg
+				style={{width:22,height:22}}
+				viewBox="0 0 1024 1024"
+				version="1.1"
+				xmlns="http://www.w3.org/2000/svg"
+				p-id="3000"
+				width="256"
+				height="256"
+			>
+				<path
+					d="M725.333333 128h-85.333333v85.333333h-85.333333v85.333334h-85.333334V213.333333H384V128H298.666667v85.333333h85.333333v85.333334h85.333333v85.333333h85.333334V298.666667h85.333333V213.333333h85.333333V128zM170.666667 554.666667h682.666666v-85.333334H170.666667v85.333334z m384 170.666666h-85.333334v-85.333333h85.333334v85.333333z m85.333333 85.333334h-85.333333v-85.333334h85.333333v85.333334z m0 0h85.333333v85.333333h-85.333333v-85.333333z m-256 0h85.333333v-85.333334H384v85.333334z m0 0H298.666667v85.333333h85.333333v-85.333333z"
+					p-id="3001"
+				></path>
+			</svg>
+		</span>
+	</div>;
+} );
 
 
 import less from './style.module.less';
-import {} from 'antd';
+import {Input} from 'antd';
 import {} from '@ant-design/icons';
+import { reaxel_Chats } from "#renderer/WindowFrames/shared/reaxels/chats";
+import { ChannelIconSvg } from "#renderer/WindowFrames/shared/rc/SVG.Component/Channel-Icon.svg";
+

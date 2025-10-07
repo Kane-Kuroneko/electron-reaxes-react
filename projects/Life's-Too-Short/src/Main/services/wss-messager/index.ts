@@ -85,5 +85,5 @@ import {
 	IpcMainHandle,
 } from '#main/utils/useIPC';
 import { WS } from '#src/types/WS';
-import WebSocket, { Server as WebSocketServer } from 'ws';
+import { WebSocketServer , WebSocket } from "ws";
 import portfinder from 'portfinder';

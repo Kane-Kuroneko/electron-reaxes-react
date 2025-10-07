@@ -1,0 +1,26 @@
+.user-message-operations {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 4px;
+	margin-right: 18px;
+	gap: 8px;
+
+	.operation-button {
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 4px;
+		border-radius: 4px;
+		transition: background-color 0.2s;
+
+		&:hover {
+			background-color: rgba(0, 0, 0, 0.1);
+		}
+
+		svg {
+			width: 16px;
+			height: 16px;
+			fill: #555;
+		}
+	}
+}

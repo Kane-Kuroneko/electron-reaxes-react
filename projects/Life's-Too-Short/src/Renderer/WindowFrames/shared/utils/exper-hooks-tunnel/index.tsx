@@ -1,5 +1,22 @@
 import { NavigateFunction  } from "react-router-dom";
 
+/**
+ * @description
+ * Create a tunnel to use React hooks inside non-component contexts.
+ * This utility allows you to "steal" a function that uses hooks and call it outside of React components.
+ * It works by storing the function in a reaxable state, which can then be accessed via a function call.
+ * @example
+ * const {stealthCall,StealthHookComponent} = createHooksTunnel<(navigate:NavigateFunction) => void>();
+ * //in component
+ * <StealthHookComponent>{ (navigate) => {
+ *    //use navigate here
+ * }}</StealthHookComponent>
+ * //outside component
+ * stealthCall((navigate) => {
+ *    navigate('/chat');
+ * });
+ * 
+ */
 export const createHooksTunnel = <T extends (...args:any[]) => any>() => {
 	
 	const {store,setState} = createReaxable({
@@ -15,16 +32,4 @@ export const createHooksTunnel = <T extends (...args:any[]) => any>() => {
 			return null;
 		})
 	}
-}
-
-export const {
-	StealthHookComponent ,
-	stealthCall,
-} = createHooksTunnel<(navigate:NavigateFunction,chat_id:string) => void>();
-
-//@ts-ignore
-window.sc = () => {
-	stealthCall((navigate,chat_id) => {
-		navigate('/chat');
-	})
 }

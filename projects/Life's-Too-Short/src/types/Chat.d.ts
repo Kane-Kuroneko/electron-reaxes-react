@@ -6,27 +6,18 @@ export type Chat = {
 	fk_channel_id : Channel['channel_id'];
 	chat_title? : string;
 	is_free_chat : boolean;
-	/*取消对话上下文关联*/
+	/*取消对话上下文关联,不会再将历史对话一起发送*/
 	disable_turn_context: boolean;
 	children : string[];
 	created_at? : number;
 	current_node? : string;
 	is_do_not_remember? : string;
 	
-	chat_prompt : {
-		//用户在chat中添加的提示词,仅本chat生效
-		custom? : null | {
-			enabled : boolean;
-			content : string;
-		};
-		//快捷添加预设提示词块
-		addons? : (PresetPrompt&{
-			//chat中可以单独开关每个已添加的addon
-			enabled : boolean;
-			
-		})[];
-		enable_channel_prompt? : boolean;
-	}
+	model? : string;
+	
+	turn_state? : Chat.TurnState;
+	
+	chat_prompt : Chat.ChatPrompt;
 }
 
 
@@ -36,6 +27,23 @@ export namespace Chat{
 	}
 	export type MatchedChat = Chat & {
 		client_chat_id : string;
+	}
+	
+	export type TurnState = "idle" |"requesting" | "triaging" | "responding.streaming" | "responding" | "error";
+	
+	export type ChatPrompt = {
+		//用户在chat中添加的提示词,仅本chat生效
+		custom? : null | {
+			enabled : boolean;
+			content : string;
+		};
+		//快捷添加预设提示词块
+		quick_prompts? : (PresetPrompt&{
+			//chat中可以单独开关每个已添加的addon
+			enabled : boolean;
+			
+		})[];
+		enable_channel_prompt? : boolean;
 	}
 }
 

@@ -235,6 +235,7 @@ export const webpackBaseConf:Configuration = {
 			Reaxlass: ['reaxes-react', 'Reaxlass'],
 			
 			xPromise: ['reaxes-utils', 'xPromise'],
+			xImport: ['reaxes-utils', 'xImport'],
 			utils: ['reaxes-utils'],
 			antd: ['antd'],
 			toolkits: ['reaxes-toolkits'],

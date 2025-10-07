@@ -9,12 +9,19 @@ export const QuickPresetPromptGroup = reaxper( () => {
 	return <div
 		className={ less.quickPresetPromptGroup }
 	>
+		<PlusCircleTwoTone
+			style={{
+				fontSize : 20,
+				cursor : 'pointer',
+				
+			}}
+		/>
 		{ reaxel_QuickPrompts.store.presets.map( ( {
 				id ,
 				title ,
 				content ,
 			} ) =>
-				<QuickPromptPreset
+				<QuickPrompts
 					key={ id }
 					preset={ {
 						preset_prompt_id : id ,
@@ -33,10 +40,12 @@ export const QuickPresetPromptGroup = reaxper( () => {
 					} }
 				/> ,
 		) }
+		
 	</div>;
 } );
 
-import { QuickPromptPreset } from "#renderer/WindowFrames/shared/rc/QuickPromptPreset";
+import {PlusCircleTwoTone} from '@ant-design/icons';
+import { QuickPrompts } from "#renderer/WindowFrames/shared/rc/QuickPrompts";
 import { reaxel_QuickPrompts } from "#renderer/WindowFrames/shared/reaxels/quick-prompts";
 import { Button } from 'antd';
 import less from './style.module.less';

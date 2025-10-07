@@ -43,5 +43,5 @@
 		
 	} ,
 	
-	"exclude" : ["dist" , ".git" , ".idea" , ".svn" ,"vendors" ]
+	"exclude" : ["dist" , ".git" , ".idea" , ".svn" ,"vendors","projects" ]
 }

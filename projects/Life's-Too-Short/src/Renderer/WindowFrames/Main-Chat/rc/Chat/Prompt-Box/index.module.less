@@ -13,7 +13,7 @@
 			user-select: none;
 			box-sizing: border-box;
 			font-size: 18px;
-			font-family: "Microsoft YaHei", Consolas;
+			font-family: "Microsoft YaHei", Consolas, sans-serif;
 			line-height: normal;
 			
 			&.disabled{
@@ -28,18 +28,21 @@
 			padding: 12px;
 			border-radius: 12px;
 			box-sizing: border-box;
-			font-family: "Microsoft YaHei", Consolas;
+			font-family: "Microsoft YaHei", Consolas, sans-serif;
 			line-height: normal;
 		}
-		.tool-area {
+		.switch-btn {
+			position: absolute;
+			inset: auto auto 8px 8px;
+			
+		}
+		.operations {
 			display: flex;
 			flex-flow: row nowrap;
-			justify-content: space-between;
 			position: absolute;
-			bottom: 8px;
-			padding: 0 12px;
+			inset: auto 4px 8px auto;
+			padding: 0px;
 			box-sizing: border-box;
-			width: 100%;
 		}
 	}
 }

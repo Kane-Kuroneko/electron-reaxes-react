@@ -5,8 +5,13 @@
 export const ChatThreadContainer = reaxper( () => {
 	const {chat,chat_id,messages} = useChat();
 	
-	if(!chat) return null;
 	// console.log(chat,chat_id,messages);
+	
+	useEffect(() => {
+		console.log(chat_id);
+	},[chat_id]);
+	
+	if(!chat) return null;
 	
 	const turns = messages.map(message => {
 		if(message.author.role === 'assistant'){

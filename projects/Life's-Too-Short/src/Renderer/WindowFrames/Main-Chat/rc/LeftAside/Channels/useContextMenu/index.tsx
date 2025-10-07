@@ -44,8 +44,13 @@ export const useContextMenu = ( { menuItems }: UseContextMenuProps ) => {
 		} ,
 	} );
 	
+	const onCancelCallbacks = useRef<( ( e: MouseEvent ) => void )[]>( [] );
+	
 	const contextMenuRef = useContextMenuGlobalCancel<HTMLDivElement>( {
-		close : () => setState( { visible : false } ) ,
+		close : () => {
+			setState( { visible : false } )
+			onCancelCallbacks.current.forEach( cb => cb( new MouseEvent( 'click' ) ) );
+		} ,
 	} );
 	
 	const handleContextMenu = (handler: (e:React.MouseEvent<HTMLSpanElement,MouseEvent>) => void) => ( e:React.MouseEvent<HTMLSpanElement,MouseEvent> ) => {
@@ -92,6 +97,12 @@ export const useContextMenu = ( { menuItems }: UseContextMenuProps ) => {
 	
 	return {
 		handleContextMenu ,
+		onCancel(callback:(e:MouseEvent) => void) {
+			onCancelCallbacks.current.push( callback );
+			return () => {
+				onCancelCallbacks.current = onCancelCallbacks.current.filter( cb => cb !== callback );
+			}
+		},
 		ContextMenu,
 	};
 };

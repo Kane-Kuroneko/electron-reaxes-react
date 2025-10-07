@@ -43,7 +43,9 @@ export const PromptBox = reaxper( (props:PromptBoxProps) => {
 			</div>
 			
 		}
-		<div className="tool-area">
+		<div
+			className="switch-btn"
+		>
 			<Switch
 				value={ store.enabled }
 				onChange={ ( status ) => {
@@ -53,13 +55,13 @@ export const PromptBox = reaxper( (props:PromptBoxProps) => {
 					} );
 				} }
 			/>
-			
-			<span style={ {} }>
-				{ !store.editing && <EditPromptBtn>复制</EditPromptBtn> }
-				{ !store.editing && <EditPromptBtn onClick={ () => setState( { editing : true } ) }>编辑</EditPromptBtn> }
-				{ store.editing && <EditPromptBtn>保存</EditPromptBtn> }
-				{ store.editing && <EditPromptBtn onClick={ () => setState( { editing : false } ) }>取消</EditPromptBtn> }
-			</span>
+		</div>
+		<div className="operations">
+			{ !store.editing && <EditPromptBtn>复制</EditPromptBtn> }
+			{ !store.editing && <EditPromptBtn onClick={ () => setState( { editing : true } ) }>编辑</EditPromptBtn> }
+			{ store.editing && <EditPromptBtn>保存</EditPromptBtn> }
+			{ store.editing && <EditPromptBtn onClick={ () => setState( { editing : false } ) }>取消</EditPromptBtn> }
+		
 		</div>
 	</div>;
 } );
