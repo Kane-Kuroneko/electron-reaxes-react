@@ -13,6 +13,9 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
+		"@types/better-sqlite3": "^7.6.13",
+		"better-sqlite3": "^12.4.1",
+		"drizzle-orm": "^0.44.6",
 		"node-fetch": "^3.3.2",
 		"react-markdown": "^10.1.0",
 		"rehype-highlight": "^7.0.2",

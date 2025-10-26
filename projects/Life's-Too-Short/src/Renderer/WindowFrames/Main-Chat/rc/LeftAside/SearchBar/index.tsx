@@ -21,6 +21,7 @@ export const SearchBar = reaxper( () => {
 	
 	return <div className={ less.searchBar }>
 		<Select
+			variant="underlined"
 			ref={ ref }
 			mode="tags"
 			open={ false }

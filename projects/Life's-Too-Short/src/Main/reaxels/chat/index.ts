@@ -59,7 +59,7 @@ export const reaxel_Chat = reaxel( () => {
 	} );
 } );
 
-
+export type ReaxelChat = Pick<typeof reaxel_Chat , "mutate"|"setState"|"store">;
 
 import {
 	wssOn ,

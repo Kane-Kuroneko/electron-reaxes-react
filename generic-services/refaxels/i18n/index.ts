@@ -2,7 +2,7 @@ export const Refaxel_I18n = function (
 	config: Config[] ,
 ) {
 	const { setState , mutate , store } = createReaxable( {
-		language : null as Languages ,
+		language : null satisfies Languages ,
 		//如果loading则是正在加载的语言的Promise
 		loading : false as false | Promise<Languages> ,
 	} );

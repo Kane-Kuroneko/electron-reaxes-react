@@ -1,14 +1,11 @@
 {
-	"name" : "AI-WebTools-AIO" ,
-	"version" : "1.0.0" ,
-	"description" : "" ,
-	"main" : "dist/main.js" ,
-	"scripts" : {
-		
-	} ,
-	"repository" : {
-		"type" : "git" ,
-		"url" : "https://github.com/Kane-Kuroneko/electron-reaxes-react.git"
-	} ,
-	"private" : true
+	"name": "AI-WebTools-AIO",
+	"version": "1.0.0",
+	"description": "",
+	"main": "dist/main.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Kane-Kuroneko/electron-reaxes-react.git"
+	},
+	"private": true
 }

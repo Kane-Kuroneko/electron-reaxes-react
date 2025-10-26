@@ -2,6 +2,7 @@ const newChannel_store = reaxel_Chats.store.newChannel;
 const newChannel_setState = reaxel_Chats.setState.newChannel;
 const newChannel_mutate = reaxel_Chats.mutate.newChannel;
 
+
 type TransferItem = {
 	key: string;
 	title: string;
@@ -158,11 +159,11 @@ export const NewChannelModal = reaxper( () => {
 	const enabledGroupIds = new Set(
 		newChannel_store.quick_prompts.filter(p => p.enabled).map(p => p.group_id)
 	);
-	const treeData: TreeDataNode[] = preset_quick_prompts.map(group => {
+	const treeData: TreeDataNode[] = preset_quick_prompts.map((group,idx) => {
 		const isGroupEnabled = enabledGroupIds.has(group.group_id);
 		return {
 			key: group.group_id,
-			title: group.group_name,
+			title: <Tag tag={ idx % 2 === 0 ? "exclusive" : 'inclusive' }>{group.group_name}</Tag>,
 			selectable: false,
 			checkable: true,
 			children: group.radio_options.map(option => ({
@@ -174,7 +175,8 @@ export const NewChannelModal = reaxper( () => {
 				// 关键：disabled 状态直接由派生出的 enabledGroupIds 决定
 				disabled: !isGroupEnabled,
 			})),
-		};
+			
+		} as TreeDataNode;
 	});
 	const checkedKeys = [
 		...Array.from(enabledGroupIds), // 启用的组
@@ -291,6 +293,9 @@ export const NewChannelModal = reaxper( () => {
 						checkedKeys={checkedKeys}
 						treeData={treeData}
 					/>
+					<Button type="link">
+						Add Custom Quick Prompt
+					</Button>
 				</div>
 			</Form.Item>
 		</Form>
@@ -323,3 +328,4 @@ import {
 import { reaxel_Chats } from "#renderer/WindowFrames/shared/reaxels/chats";
 import { type Key } from 'rc-tree/lib/interface';
 import { type CheckInfo } from 'rc-tree/lib/Tree';
+import Tag from "#renderer/WindowFrames/shared/rc/(Ex)(In)clusiveTag";

@@ -236,6 +236,7 @@ export const webpackBaseConf:Configuration = {
 			
 			xPromise: ['reaxes-utils', 'xPromise'],
 			xImport: ['reaxes-utils', 'xImport'],
+			checkAs: ['reaxes-utils/type-helpers', 'checkAs'],
 			utils: ['reaxes-utils'],
 			antd: ['antd'],
 			toolkits: ['reaxes-toolkits'],

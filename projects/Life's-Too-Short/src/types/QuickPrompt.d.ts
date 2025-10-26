@@ -2,16 +2,6 @@ export namespace QuickPrompt {
 	/**
 	 * 一组QuickPrompt包含了几个预设风格,每个风格下有多个可选项
 	 */
-	export type QuickPromptGroup = {
-		group_id : string;
-		group_name : string;
-		radio_options : {
-			label : string;
-			prompt_opt_id : string;
-			desc?:string;
-			content : string;
-		}[];
-	}
 	
 	export type QuickPromptItem = {
 		quick_prompt_id: string; // UUID
@@ -27,7 +17,60 @@ export namespace QuickPrompt {
 		created_at?: number; // 创建时间戳
 		updated_at?: number; // 更新时间戳
 	}
+	
+	export namespace PresetPromptGroup {
+		export namespace Group {
+			
+			abstract type Group = {
+				title: string;
+				preset_group_id:string;
+				is_sys_preset?:boolean;
+				desc?: string;
+			}
+			export type MultiGroup = Group & {
+				type : 'group::multi';
+				multi_options : string[];
+				selected?:string[];
+			}
+			export type SingleGroup = Group & {
+				type : 'group::single';
+				single_options : string[];
+				selected?:string;
+			}
+			
+		}
+		
+		export namespace Plain {
+			export type PlainPrompt = {
+				type : 'plain::text',
+				title : string;
+				plain_prompt_id:string;
+				contents : Message.MessageContent[],
+			}
+		}
+	}
+	
+	export namespace Option {
+		abstract type Option = {
+			fk_quick_prompt_group_id : string;
+			title:string;
+			contents : Message.MessageContent[];
+			desc?:string;
+			disabled?:boolean;
+			//演示效果
+			showcase?:string;
+		}
+		export type MultiOption = Option & {
+			multi_selected?:string[];
+			quick_prompt_multi_option_id : string;
+		}
+		export type SingleOption = Option & {
+			single_selected?: string;
+			quick_prompt_single_option_id : string;
+		}
+	}
 }
 
 
-import { Role } from '#src/types/Role';
+import type { Role } from '#src/types/Role';
+import type { Message } from '#src/types/Message';

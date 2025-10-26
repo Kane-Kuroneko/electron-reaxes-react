@@ -19,6 +19,7 @@ export namespace WS {
 		
 		//从后端拿预设提示词,如果不写query,则拿所有
 		'quick-prompts-presets::get' : T<WS_QuickPrompt.Get,1>;
+		'quick-prompt::update' : T<WS_QuickPrompt.Get,1>;
 		//mcc即message&chat&channel.此接口用于初次加载时获取所有数据
 		'mcc::get[all]' : T<null,1>;
 	}

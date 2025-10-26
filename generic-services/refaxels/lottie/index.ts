@@ -4,10 +4,10 @@
 export const Refaxel_Lottie = <SchemeNames extends string>( initOptions: Options<SchemeNames> ) => {
 	return reaxel( () => {
 		const { store , setState , mutate } = createReaxable({
-			currentScheme : null as SchemeNames ,
+			currentScheme : null satisfies SchemeNames ,
 			playing : false ,
 			lottie : null ,
-			toggling : null as SchemeNames ,
+			toggling : null satisfies SchemeNames ,
 			sleeping : false ,
 		});
 		let lottiePromise = xPromise<LottieRef['current']>();

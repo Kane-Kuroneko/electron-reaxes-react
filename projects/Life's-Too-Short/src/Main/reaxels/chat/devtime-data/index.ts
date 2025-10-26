@@ -271,8 +271,7 @@ export const rehance_DevtimeData = ({
 	return {};
 }
 
-type ReaxelChat = Pick<typeof import('#src/Main/reaxels/chat').reaxel_Chat , "store" | "setState" | "mutate">;
-
+import {type ReaxelChat } from '../';
 import { Channel } from '#src/types/Channel';
 import { Chat } from "#src/types/Chat";
 import { Message } from "#src/types/Message";
