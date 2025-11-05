@@ -14,6 +14,7 @@ const reaxel_lottie_Update = Refaxel_Lottie<"start">( {
 } );
 
 export const UpdateIcon = reaxper( ( props: UpdateIconProps ) => {
+	return null;
 	const ref: LottieRef = useRef();
 	const {
 		mount ,

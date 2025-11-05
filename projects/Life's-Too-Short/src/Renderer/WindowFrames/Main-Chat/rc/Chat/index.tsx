@@ -10,6 +10,7 @@ export const ChatView = reaxper( () => {
 				width : 'auto',
 				position : 'absolute',
 				padding : '12px',
+				display : 'flex',
 				
 			}}
 		>

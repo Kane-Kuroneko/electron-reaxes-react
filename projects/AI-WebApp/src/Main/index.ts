@@ -49,3 +49,4 @@ import {
 } from 'electron';
 import process from 'node:process';
 import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
+
