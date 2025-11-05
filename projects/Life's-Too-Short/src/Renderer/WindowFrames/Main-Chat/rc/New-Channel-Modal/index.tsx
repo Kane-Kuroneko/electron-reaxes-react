@@ -280,6 +280,7 @@ export const NewChannelModal = reaxper( () => {
 					} }
 				/>
 			</Form.Item>
+			{/*应该能够拖拽排序,越靠前的preset优先级越高*/}
 			<Form.Item label="Quick Prompts">
 				<div>
 					<Tree<TreeDataNode>

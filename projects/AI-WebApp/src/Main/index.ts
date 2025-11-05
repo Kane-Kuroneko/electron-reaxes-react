@@ -2,9 +2,11 @@
 
 logger.initialize();
 process.title = "Electron-GPT";
+
+
 app.whenReady().then( async () => {
 	
-	const win = initializeMainWindow();
+	const win = mainWindow;
 	
 	const BW_GoogleTranslation = new BrowserView();
 	
@@ -13,7 +15,8 @@ app.whenReady().then( async () => {
 	const proxyRules = 'http=127.0.0.1:7897;https=127.0.0.1:7897';
 	const ses = win.webContents.session;
 	await ses.setProxy({ proxyRules });
-	
+	reaxel_Menu();
+	return win;
 } );
 
 
@@ -34,9 +37,15 @@ app.on( 'before-quit' , () => {
 // 在当前文件中你可以引入所有的主进程代码
 // 也可以拆分成几个文件，然后用 require 导入。
 
-import { useOpenLinkViaChrome } from '#generic/modify-electron/link-handler.ts';
-import { initializeMainWindow,mainWindowLoaded } from './mainWindow.ts';
+import { mainWindow } from './mainWindow';
+import { reaxel_Menu } from './reaxels/menu';
+import { useOpenLinkViaChrome } from '#generic/modify-electron/link-handler';
 import logger from 'electron-log/main';
-import { app , ipcMain , screen , BrowserWindow ,BrowserView} from 'electron';
+import {
+	app ,
+	BrowserView ,
+	BrowserWindow ,
+	screen ,
+} from 'electron';
 import process from 'node:process';
 import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';

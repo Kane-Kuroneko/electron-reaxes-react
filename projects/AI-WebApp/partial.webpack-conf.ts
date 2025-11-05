@@ -14,7 +14,9 @@ export const main = (
 		},
 		resolve :{
 			alias : {
-				// '#reaxels' : path.join(subProjectRootPath,'src/reaxels'),
+				'#main' : path.join(subProjectRootPath,'src/Main'),
+				'#renderer' : path.join(subProjectRootPath,'src/Renderer'),
+				'#src' : path.join(subProjectRootPath,'src'),
 			}
 		},
 		plugins : [

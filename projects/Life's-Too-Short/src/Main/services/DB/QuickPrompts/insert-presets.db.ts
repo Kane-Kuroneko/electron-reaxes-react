@@ -258,17 +258,27 @@ export const insertQuickPrompts = async () => {
 	// return;
 	db.transaction<any>((tx) => {
 		
-		const groupResult = tx.insert(quickPromptGroups).values(groupsToDB()).run();
-		const singleResult = tx.insert(singleOptions).values(singleOptionToDB()).run();
-		const multiResult = tx.insert(multiOptions).values(multiOptionToDB()).run();
-		const plainResult = tx.insert(plainPrompts).values(plainPromptToDB()).run();
+		[
+			{
+				table : quickPromptGroups ,
+				data : groupsToDB() ,
+			} ,
+			{
+				table : singleOptions ,
+				data : singleOptionToDB() ,
+			} ,
+			{
+				table : multiOptions ,
+				data : multiOptionToDB() ,
+			} ,
+			{
+				table : plainPrompts ,
+				data : plainPromptToDB() ,
+			},
+		].forEach( it =>  {
+			tx.insert(it.table).values(it.data).onConflictDoNothing().run();
+		});
 		
-		return {
-			groupResult,
-			singleResult,
-			multiResult,
-			plainResult,
-		};
 	});
 	
 };

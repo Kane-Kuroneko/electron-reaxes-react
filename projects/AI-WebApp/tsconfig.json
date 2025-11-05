@@ -40,9 +40,6 @@
 			"#main/*" : [
 				"./src/Main/*"
 			] ,
-			"#renderer/*" : [
-				"./src/Renderer/*"
-			] ,
 			"#src/*" : [
 				"./src/*"
 			] ,
@@ -51,9 +48,6 @@
 			] ,
 			"#generic/*" : [
 				"../../generic-services/*"
-			] ,
-			"#Main-Chat/*" : [
-				"./src/Renderer/WindowFrames/Main-Chat/*"
 			] ,
 			"#project/*" : [
 				"./*"
