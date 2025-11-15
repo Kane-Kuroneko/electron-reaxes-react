@@ -1,0 +1,23 @@
+{
+   appId: "com.reaxes.lts",
+   icon: "assets/ico/logo - mixin.ico",
+   directories: {
+      output: "__Bin"
+   },
+   artifactName: "Life.s-Too-Short-AI-Setup-${version}.${ext}",
+   publish: {
+      provider: "github",
+      owner: "Kane-Kuroneko",
+      repo: "Life-s-Too-Short-AI-Release",
+      releaseType: "prerelease",
+   },
+   files: [ "dist/" ],
+   extraResources: [
+      {
+         from: "dist/statics",
+         to: "statics"
+      }
+   ],
+   electronVersion: "35.2.2",
+   asar: true,
+}

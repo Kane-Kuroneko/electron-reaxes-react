@@ -72,4 +72,4 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { arrayMove , SortableContext , verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { DataType } from './types';
 import type { DragEndEvent } from '@dnd-kit/core';
-import * as less from './style.module.less';
+import less from './style.module.less';

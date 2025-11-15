@@ -161,4 +161,4 @@ import { Refaxel_Lottie } from '#generic/refaxels/lottie';
 import Lottie , { LottieRef } from "lottie-react";
 import * as heart from "./love.lottie.json";
 
-import * as less from './style.module.less';
+import less from './style.module.less';

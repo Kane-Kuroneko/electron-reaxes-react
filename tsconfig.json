@@ -16,7 +16,8 @@
 		"strictNullChecks" : false ,
 		"allowUnreachableCode" : true ,
 		"module" : "ESNext" ,
-		"moduleResolution" : "Bundler" ,
+		"moduleResolution": "node",
+		"target": "ESNext",
 		"noEmit" : true ,
 		"noImplicitAny" : false ,
 		"noImplicitReturns" : false ,
@@ -25,7 +26,6 @@
 		"noUnusedParameters" : false ,
 		"preserveConstEnums" : true ,
 		"checkJs" : true ,
-		"target" : "ESNext" ,
 		"allowSyntheticDefaultImports" : true ,
 		"allowImportingTsExtensions" : true ,
 		"allowArbitraryExtensions" : true,
@@ -39,7 +39,9 @@
 			"" : ["./*"],
 			"" : ["./*"],
 			"" : ["./*"]
-		}
+		},
+		
 	} ,
-	"exclude" : ["dist" , ".git" , ".idea" , ".svn" ,"vendors" ]
+	
+	"exclude" : ["dist" , ".git" , ".idea" , ".svn" ,"vendors","projects" ]
 }

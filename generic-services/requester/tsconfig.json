@@ -27,7 +27,6 @@
 		"preserveConstEnums" : true ,
 		"removeComments" : true ,
 		"sourceMap" : true ,
-		"target" : "ES2020" ,
 		"watch" : false ,
 		"allowSyntheticDefaultImports" : true ,
 		"paths" : {

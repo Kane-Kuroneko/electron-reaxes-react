@@ -1,40 +1,37 @@
-export const useOpenDevtools = (window:BrowserWindow,options : Options) => {
-	
+export const useOpenDevtools = (window: BrowserWindow, options: Options) => {
 	app.whenReady().then(() => {
-		
-		let devtoolsPostion = options.devtoolsOptions?.mode ?? 'left';
-		const getters = {
-			get widthWithDevtools(){
-				const { width } = window.getBounds();
-				switch( devtoolsPostion ) {
-					case "left":
-					case "right": {
-						return options.width + width;
-					};
-				}
-			}
-		};
-		
-		let current = window.getBounds().width;
-		
-		window.webContents.on('devtools-closed' , () => {
-			// console.log('bbbbbbbbbbbbb');
-			if(options.width){
+		let devtoolsPosition = options.devtoolsOptions?.mode ?? 'left';
+		window.webContents.on('devtools-closed', () => {
+			if (options.width && (devtoolsPosition === 'left' || devtoolsPosition === 'right')) {
+				const bounds = window.getBounds();
+				const delta = options.width;
+				const newWidth = bounds.width - delta;
+				const newX = bounds.x + Math.floor(delta / 2);
 				window.setBounds({
-					width:current = current - options.width
+					x: newX,
+					y: bounds.y,
+					width: newWidth,
+					height: bounds.height
 				});
 			}
+			// Similar logic can be added for 'bottom' mode using options.height if needed.
 		});
-		
-		window.webContents.on('devtools-opened' , () => {
-			if(options.width) {
+		window.webContents.on('devtools-opened', () => {
+			if (options.width && (devtoolsPosition === 'left' || devtoolsPosition === 'right')) {
+				const bounds = window.getBounds();
+				const delta = options.width;
+				const newWidth = bounds.width + delta;
+				const newX = bounds.x - Math.floor(delta / 2);
 				window.setBounds({
-					width : current = getters.widthWithDevtools,
+					x: newX,
+					y: bounds.y,
+					width: newWidth,
+					height: bounds.height
 				});
 			}
+			// Similar logic can be added for 'bottom' mode using options.height if needed.
 		});
-				
-		window.webContents.openDevTools( { mode : devtoolsPostion} );
+		window.webContents.openDevTools({ mode: devtoolsPosition });
 	});
 }
 

@@ -109,4 +109,4 @@ import { CollapseProps , Collapse , Button , Flex , QRCode , Divider } from 'ant
 import { reaxel_I18n } from '#renderer/reaxels/i18n';
 import { reaxel_Sponsor } from '#renderer/reaxels/hotkey-enhancer/sponsor';
 import { VerticalDiver } from '#renderer/pure-components/Vertical-Diver';
-import * as less from './style.module.less';
+import less from './style.module.less';

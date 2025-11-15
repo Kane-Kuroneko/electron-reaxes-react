@@ -2,8 +2,12 @@ const cssLoaderOptions = {
 	sourceMap: true,
 	modules: {
 		exportLocalsConvention: 'dashes',
-		localIdentName: '[local]--[hash:base64:4]',
+		localIdentName: node_env === 'development' ? '[name]__[local]' : '[hash:base64:5]',
+		
+		namedExport: false,
+		exportOnlyLocals: false
 	},
+	esModule: false
 };
 const { ProvidePlugin , DefinePlugin} = webpack;
 const { absolutelyPath_subproject , absolutelyPath_subprojectDist } = getProjectPaths.default;
@@ -181,6 +185,7 @@ export const webpackBaseConf:Configuration = {
 		],
 	},
 	optimization: {
+		minimize: true,
 		minimizer: [
 			new TerserPlugin({
 				extractComments: false,
@@ -189,7 +194,7 @@ export const webpackBaseConf:Configuration = {
 						comments: false,
 					},
 				},
-			}),
+			})
 		],
 	},
 	performance: {
@@ -219,15 +224,19 @@ export const webpackBaseConf:Configuration = {
 			useMemo: ['react', 'useMemo'],
 			useCallback: ['react', 'useCallback'],
 			
-			reaxper: ['reaxes-react', 'reaxper'],
-			Reaxlass: ['reaxes-react', 'Reaxlass'],
-			createReaxable: ['reaxes', 'createReaxable'],
 			reaxel: ['reaxes', 'reaxel'],
 			obsReaction : ["reaxes","obsReaction"],
-			distinctCallback : ["reaxes","distinctCallback"],
+			createReaxable: ['reaxes', 'createReaxable'],
 			collectDeps : ["reaxes","collectDeps"],
+			distinctCallback : ["reaxes","distinctCallback"],
+			
+			reaxper: ['reaxes-react', 'reaxper'],
+			useReaxable: ['reaxes-react/hooks', 'useReaxable'],
+			Reaxlass: ['reaxes-react', 'Reaxlass'],
 			
 			xPromise: ['reaxes-utils', 'xPromise'],
+			xImport: ['reaxes-utils', 'xImport'],
+			checkAs: ['reaxes-utils/type-helpers', 'checkAs'],
 			utils: ['reaxes-utils'],
 			antd: ['antd'],
 			toolkits: ['reaxes-toolkits'],

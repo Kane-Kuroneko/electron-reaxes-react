@@ -62,4 +62,4 @@ import { TooltipProps , InputNumber , Tooltip } from 'antd';
 import { UndoOutlined } from '@ant-design/icons';
 import { FunctionSwitcher , IconPopoverDesc , HotKey } from '#renderer/pure-components';
 
-import * as less from './style.module.less';
+import less from './style.module.less';

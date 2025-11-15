@@ -7,4 +7,4 @@ export const MainConententAreaContainer = reaxper( ( props: React.PropsWithChild
 } );
 
 
-import * as less from './style.module.less';
+import less from './style.module.less';

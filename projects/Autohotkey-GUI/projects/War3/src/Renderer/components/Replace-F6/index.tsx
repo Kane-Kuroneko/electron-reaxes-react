@@ -71,4 +71,4 @@ import { FunctionSwitcher , IconPopoverDesc , HotKey } from '#renderer/pure-comp
 import { InfoCircleTwoTone } from '@ant-design/icons';
 import { Modal } from 'antd';
 import mov from './show case.mov';
-import * as less from './style.module.less';
+import less from './style.module.less';

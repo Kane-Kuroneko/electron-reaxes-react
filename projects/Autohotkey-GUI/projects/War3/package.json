@@ -2,7 +2,12 @@
 	"name": "war3-ahk-gui",
 	"version": "1.0.0",
 	"main": "dist/main.js",
-	"scripts": {},
+	"scripts": {
+		"start:webpack": "cd ../../../../ && npx --yes tsx scripts/webpack.start/index.ts Autohotkey-GUI/War3 5555",
+		"start:electron": "cd ../../../../ && npx --yes tsx scripts/electron.start/index.ts Autohotkey-GUI/War3",
+		"build:webpack": "cd ../../../../ && npx --yes tsx scripts/webpack.build/index.ts Autohotkey-GUI/War3 production",
+		"build:electron": "electron-builder build -w"
+	},
 	"keywords": [],
 	"author": "",
 	"license": "ISC",

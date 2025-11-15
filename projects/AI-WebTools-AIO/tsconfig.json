@@ -26,7 +26,6 @@
 		"noUnusedParameters" : false ,
 		"preserveConstEnums" : true ,
 		"checkJs" : true ,
-		"target" : "ESNext" ,
 		"allowSyntheticDefaultImports" : true ,
 		"typeRoots" : [ "node_modules/@types" , "./types" , "../../../../" ] ,
 		"paths" : {

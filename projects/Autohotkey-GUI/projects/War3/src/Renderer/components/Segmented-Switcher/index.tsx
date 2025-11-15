@@ -26,4 +26,4 @@ export const SegmentedSwitcher = reaxper( () => {
 
 import { reaxel_GUI_Core } from '#renderer/reaxels/core';
 import { Segmented , Divider } from 'antd';
-import * as less from './style.module.less';
+import less from './style.module.less';

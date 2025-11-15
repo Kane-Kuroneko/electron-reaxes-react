@@ -17,4 +17,4 @@ type props = React.PropsWithChildren<{
 	small? : boolean,
 }> & React.HTMLAttributes<any>
 
-import * as less from './style.module.less';
+import less from './style.module.less';

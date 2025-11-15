@@ -8,9 +8,12 @@ declare global {
 	export const collectDeps : typeof import('reaxes')['collectDeps'];
 	export const reaxper : typeof import('reaxes-react')['reaxper'];
 	export const Reaxlass : typeof import('reaxes-react')['Reaxlass'];
+	export const useReaxable : typeof import('reaxes-react/hooks')['useReaxable'];
 	
 	export const utils : typeof import('#generic/utils');
 	export const xPromise : typeof import('reaxes-utils')['xPromise'];
+	export const xImport : typeof import('reaxes-utils')['xImport'];
+	export const checkAs : typeof import('reaxes-utils/type-helpers')['checkAs'];
 	export const crayon : typeof import('#generic/utils')['crayon'];
 	export const logProxy : typeof import('#generic/utils')['logProxy'];
 	export const makePair : typeof import('#generic/utils')['makePair'];

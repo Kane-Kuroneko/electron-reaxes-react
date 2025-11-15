@@ -1,0 +1,40 @@
+.user-input-area {
+	display: flex;
+	flex-flow: column nowrap;
+	//position: absolute;
+	//bottom:12px;
+	//left: 12px;
+	//right: 12px; /* 代替 width: 100%，避免溢出 */
+	inset : auto 12px 12px;
+	flex: 1 1 auto;
+	
+	
+	:global{
+		.input-box {
+			max-height: max(35svh, 5rem);
+			height: 100px;
+			min-height: 5rem;
+			border-radius: 12px;
+			resize: none;
+			padding: 10px 15px;
+			font-size: 16px;
+		}
+		
+		.operation-container{
+			display: flex;
+			margin: 0 0px 5px;
+			
+			.options {
+				display: flex;
+				gap: 12px;
+				flex-flow: row nowrap;
+			}
+		}
+		
+		.fire {
+			position: absolute;
+			right: 20px;
+			bottom: 120px;
+		}
+	}
+}

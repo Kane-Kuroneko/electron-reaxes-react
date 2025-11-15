@@ -1,0 +1,35 @@
+.quick-prompt-preset {
+	display: inline-flex;
+	align-items: center;
+	border-radius: 999px;
+	background: #eeeeee;
+	padding: 0 4px;
+	
+	&:global(.disabled){
+		opacity: 0.5;
+	}
+	
+	&>span:first-child{
+		display: flex;
+		align-items: center;
+	}
+	
+	:global{
+		
+		.editing-title {
+			font-size: 14px;
+			outline: none;
+		}
+		
+		.ordinary-title {
+			font-size: 14px;
+			user-select: none;
+			align-items: center;
+			max-width: 200px;
+			text-wrap: nowrap;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+			overflow: hidden;
+		}
+	}
+}

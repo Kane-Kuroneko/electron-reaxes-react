@@ -35,4 +35,4 @@ export const AltInventory = reaxper(() => {
 
 import { reaxel_I18n } from '../../reaxels/i18n';
 import { HotKey } from '../HotKey';
-import * as less from './style.module.less';
+import less from './style.module.less';

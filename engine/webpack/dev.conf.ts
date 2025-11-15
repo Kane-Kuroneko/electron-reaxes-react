@@ -38,19 +38,6 @@ export const electronDevConf_Renderer:WebpackConfiguration = {
 	mode : 'development',
 	stats : 'normal',
 	devtool : 'inline-source-map',
-	cache: {
-		type: 'filesystem',
-		buildDependencies: {
-			config : [
-				// path.join( absolutelyPath_RepositoryRoot , 'engine' ).replaceAll('\\','/'),
-				// path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/base.conf.ts' ),
-				'./engine/'
-				// path.join( absolutelyPath_RepositoryRoot , '' ),
-				// path.join( absolutelyPath_RepositoryRoot , '' ),
-			], // 缓存依赖的配置文件
-			
-		},
-	},
 	externals : {
 	// 	'mobx' : `commonjs ${path.join(absolutelyPath_RepositoryRoot , 'vendors','mobx.development@6.13.5#umd.js')}`,
 	// 	'react' : `commonjs ${path.join(absolutelyPath_RepositoryRoot , 'vendors','react.development@18.3.1#umd.js')}`,
@@ -97,7 +84,29 @@ export const electronDevConf_Renderer:WebpackConfiguration = {
 		}),
 		new HotModuleReplacementPlugin(),
 		new ReactRefreshWebpackPlugin(),
-	]
+	],
+	optimization: {
+		minimize:true,
+		usedExports:true,
+		sideEffects:true,
+		minimizer: [
+			new TerserPlugin({
+				extractComments: false,
+				terserOptions: {
+					format: {
+						comments: /webpack.*|!/,
+						beautify: true,
+						semicolons: false,
+					},
+					compress: {
+						passes: 2,
+					},
+				},
+			})
+		],
+	}
+	
+	
 }
 
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
@@ -108,3 +117,4 @@ import path from "path";
 import { LoggerWebpackPlugn, LogWhenSucceed } from "../toolkit";
 import {Configuration as WebpackConfiguration} from 'webpack';
 import {BundleAnalyzerPlugin} from 'webpack-bundle-analyzer';
+import TerserPlugin from "terser-webpack-plugin";

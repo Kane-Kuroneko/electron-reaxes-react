@@ -1,0 +1,31 @@
+{
+	"name": "Life.s-Too-Short-AI",
+	"version": "0.0.1",
+	"main": "dist/main.js",
+	"scripts": {
+		"start:webpack": "cd ../../ && npx --yes tsx scripts/webpack.start/index.ts Life's-Too-Short 4444",
+		"start:electron": "cd ../../ && npx --yes tsx scripts/electron.start/index.ts Life's-Too-Short",
+		"build:webpack": "cd ../../ && npx --yes tsx scripts/webpack.build/index.ts Life's-Too-Short production",
+		"build:electron": "electron-builder build -w",
+		"pro": "tsx ./scripts/run.ts",
+		"postinstall": "tsx ./scripts/link-better-sqlite3.ts"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"better-sqlite3": "^12.4.1",
+		"drizzle-orm": "^0.44.7",
+		"node-fetch": "^3.3.2",
+		"react-markdown": "^10.1.0",
+		"rehype-highlight": "^7.0.2",
+		"remark-gfm": "^4.0.1",
+		"ws": "^8.18.3"
+	},
+	"description": "",
+	"devDependencies": {
+		"@types/better-sqlite3": "^7.6.13",
+		"@types/uuid": "^10.0.0",
+		"@types/ws": "^8.18.1"
+	}
+}

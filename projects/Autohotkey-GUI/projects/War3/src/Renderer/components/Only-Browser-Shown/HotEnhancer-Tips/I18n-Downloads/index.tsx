@@ -45,6 +45,6 @@ export const I18nDownloads: I18nComponents = {
 	'ko-KR' : en_US ,
 	
 };
-import * as less from './style.module.less';
+import less from './style.module.less';
 import { Button , ButtonProps } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';

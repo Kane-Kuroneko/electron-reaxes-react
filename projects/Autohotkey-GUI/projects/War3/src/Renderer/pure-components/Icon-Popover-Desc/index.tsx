@@ -21,4 +21,4 @@ type props = React.PropsWithChildren<{
 
 import { Popover , TooltipProps } from 'antd';
 import { InfoCircleTwoTone } from '@ant-design/icons';
-import * as less from './style.module.less';
+import less from './style.module.less';

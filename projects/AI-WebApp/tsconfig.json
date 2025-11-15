@@ -1,0 +1,58 @@
+{
+	"compilerOptions" : {
+		"allowJs" : true ,
+		"allowSyntheticDefaultImports" : true ,
+		"allowUnusedLabels" : true ,
+		"baseUrl" : "." ,
+		"declaration" : false ,
+		"declarationMap" : false ,
+		"esModuleInterop" : true ,
+		"experimentalDecorators" : true ,
+		"jsx" : "react-jsx" ,
+		"resolveJsonModule" : true ,
+		"strictFunctionTypes" : false ,
+		"strict" : false ,
+		"strictBindCallApply" : false ,
+		"module" : "ESNext" ,
+		"target" : "ESNext" ,
+		"moduleResolution" : "bundler" ,
+		"strictNullChecks" : false ,
+		"allowUnreachableCode" : true ,
+		"noEmit" : true ,
+		"noImplicitAny" : false ,
+		"noImplicitReturns" : false ,
+		"noImplicitUseStrict" : false ,
+		"noUnusedLocals" : false ,
+		"noUnusedParameters" : false ,
+		"preserveConstEnums" : true ,
+		"checkJs" : true ,
+		"allowSyntheticDefaultImports" : true ,
+		"skipLibCheck" : true ,
+		"allowUmdGlobalAccess" : true ,
+		
+		"typeRoots" : ["./","./node_modules/@types" ] ,
+		"paths" : {
+			//避免软链接错误识别到链接源的目录去而非本目录
+			"reaxes": ["../../node_modules/reaxes/types/index.d.ts"] ,
+			"#root/*" : [
+				"../../*"
+			] ,
+			"#main/*" : [
+				"./src/Main/*"
+			] ,
+			"#src/*" : [
+				"./src/*"
+			] ,
+			"#root-projects/*" : [
+				"../../projects/*"
+			] ,
+			"#generic/*" : [
+				"../../generic-services/*"
+			] ,
+			"#project/*" : [
+				"./*"
+			]
+		}
+	},
+	"include" : ["src","scripts" ,"module.d.ts","g.d.ts","../../global.d.ts" ,"../../g.d.ts" ]
+}

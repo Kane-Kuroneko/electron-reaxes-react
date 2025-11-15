@@ -1,30 +1,29 @@
-export const initializeMainWindow = (
-	options:BrowserWindowConstructorOptions = {}
-) => {
-	// console.log('__Absolutely_ProjectDist_Path__ : ',JSON.stringify(__Absolutely_ProjectDist_Path__));
-	const defaultOptions:BrowserWindowConstructorOptions = {
-		width : dev() ? 2000 :1000 ,
-		height : dev() ? 1300 : 1400 ,
-		webPreferences : {
-			nodeIntegration: false,
-			contextIsolation: true,
-		} ,
-	};
-	// Create the browser window.
-	const mainWindow = new BrowserWindow( _.merge(options,defaultOptions));
+import { reaxel_ElectronENV } from "#generic/reaxels/runtime-paths";
+
+const {absAppRunningPath} = reaxel_ElectronENV()
+
+const defaultOptions:BrowserWindowConstructorOptions = {
+	width : dev() ? 2000 :1000 ,
+	height : dev() ? 1300 : 1400 ,
+	webPreferences : {
+		nodeIntegration: false,
+		contextIsolation: true,
+		preload: path.join(absAppRunningPath, 'preload.js'),
+	} ,
 	
-	mainWindow.loadURL( "https://chatgpt.com" );
-	
-	return mainWindow;
 };
+app.disableHardwareAcceleration();
+await app.whenReady();
+// Create the browser window.
+export const mainWindow = new BrowserWindow( _.merge({},defaultOptions));
 
-
-// 使用 Omit 将 BrowserWindow 类型中的 webContents 排除
-type BrowserWindowWithoutWebContents = Omit<BrowserWindow, 'webContents'>;
-// 定义主窗口类型，给 webContents 赋予自定义的类型
-export const mainWindowLoaded = xPromise<BrowserWindowWithoutWebContents>();
 
 import {xPromise} from 'reaxes-utils'
 import { dev } from 'electron-is';
-import { BrowserWindow , BrowserWindowConstructorOptions } from 'electron';
+import {
+	app ,
+	BrowserWindow ,
+	BrowserWindowConstructorOptions,
+} from 'electron';
 import _ from 'lodash';
+import * as path from 'node:path';

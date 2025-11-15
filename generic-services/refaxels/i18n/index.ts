@@ -2,7 +2,7 @@ export const Refaxel_I18n = function (
 	config: Config[] ,
 ) {
 	const { setState , mutate , store } = createReaxable( {
-		language : null as Languages ,
+		language : null satisfies Languages ,
 		//如果loading则是正在加载的语言的Promise
 		loading : false as false | Promise<Languages> ,
 	} );
@@ -139,7 +139,7 @@ type LanguageMap = {
 // 		} ,
 // 	] ,
 // );
-export type Languages = typeof enum_languages[keyof typeof enum_languages];
+// export type Languages = typeof enum_languages[keyof typeof enum_languages];
 export type Config = /*common keys*/{
 	//此项配置的语言的名字
 	language: Languages,
@@ -233,6 +233,483 @@ export const enum_languages = {
 	'lt_LT' : 'lt-LT' , // 立陶宛语（立陶宛）
 	'bs_CY' : 'bs-CY' , // 塞浦路斯语（塞浦路斯）
 } as const;
+
+export const languages = {
+	"en_US": {
+		code: "en-US",
+		locale: "en-us",
+		legacyCode: "en_US",
+		englishName: "English (United States)",
+		genericName: "English",
+		nativeName: "English (US)"
+	},
+	"en_GB": {
+		code: "en-GB",
+		locale: "en-gb",
+		legacyCode: "en_GB",
+		englishName: "English (United Kingdom)",
+		genericName: "English",
+		nativeName: "English (UK)"
+	},
+	"zh_CN": {
+		code: "zh-CN",
+		locale: "zh-cn",
+		legacyCode: "zh_CN",
+		englishName: "Simplified Chinese",
+		genericName: "Chinese",
+		nativeName: "简体中文"
+	},
+	"zh_TW": {
+		code: "zh-TW",
+		locale: "zh-tw",
+		legacyCode: "zh_TW",
+		englishName: "Traditional Chinese (Taiwan)",
+		genericName: "Chinese",
+		nativeName: "繁體中文（台灣）"
+	},
+	"zh_HK": {
+		code: "zh-HK",
+		locale: "zh-hk",
+		legacyCode: "zh_HK",
+		englishName: "Traditional Chinese (Hong Kong)",
+		genericName: "Chinese",
+		nativeName: "繁體中文（香港）"
+	},
+	"es_ES": {
+		code: "es-ES",
+		locale: "es-es",
+		legacyCode: "es_ES",
+		englishName: "Spanish (Spain)",
+		genericName: "Spanish",
+		nativeName: "Español (España)"
+	},
+	"es_MX": {
+		code: "es-MX",
+		locale: "es-mx",
+		legacyCode: "es_MX",
+		englishName: "Spanish (Mexico)",
+		genericName: "Spanish",
+		nativeName: "Español (México)"
+	},
+	"fr_FR": {
+		code: "fr-FR",
+		locale: "fr-fr",
+		legacyCode: "fr_FR",
+		englishName: "French (France)",
+		genericName: "French",
+		nativeName: "Français"
+	},
+	"de_DE": {
+		code: "de-DE",
+		locale: "de-de",
+		legacyCode: "de_DE",
+		englishName: "German (Germany)",
+		genericName: "German",
+		nativeName: "Deutsch"
+	},
+	"it_IT": {
+		code: "it-IT",
+		locale: "it-it",
+		legacyCode: "it_IT",
+		englishName: "Italian (Italy)",
+		genericName: "Italian",
+		nativeName: "Italiano"
+	},
+	"pt_PT": {
+		code: "pt-PT",
+		locale: "pt-pt",
+		legacyCode: "pt_PT",
+		englishName: "Portuguese (Portugal)",
+		genericName: "Portuguese",
+		nativeName: "Português (Portugal)"
+	},
+	"pt_BR": {
+		code: "pt-BR",
+		locale: "pt-br",
+		legacyCode: "pt_BR",
+		englishName: "Portuguese (Brazil)",
+		genericName: "Portuguese",
+		nativeName: "Português (Brasil)"
+	},
+	"ja_JP": {
+		code: "ja-JP",
+		locale: "ja-jp",
+		legacyCode: "ja_JP",
+		englishName: "Japanese",
+		genericName: "Japanese",
+		nativeName: "日本語"
+	},
+	"ko_KR": {
+		code: "ko-KR",
+		locale: "ko-kr",
+		legacyCode: "ko_KR",
+		englishName: "Korean",
+		genericName: "Korean",
+		nativeName: "한국어"
+	},
+	"ru_RU": {
+		code: "ru-RU",
+		locale: "ru-ru",
+		legacyCode: "ru_RU",
+		englishName: "Russian",
+		genericName: "Russian",
+		nativeName: "Русский"
+	},
+	"ar_SA": {
+		code: "ar-SA",
+		locale: "ar-sa",
+		legacyCode: "ar_SA",
+		englishName: "Arabic (Saudi Arabia)",
+		genericName: "Arabic",
+		nativeName: "العربية"
+	},
+	"tr_TR": {
+		code: "tr-TR",
+		locale: "tr-tr",
+		legacyCode: "tr_TR",
+		englishName: "Turkish",
+		genericName: "Turkish",
+		nativeName: "Türkçe"
+	},
+	"hi_IN": {
+		code: "hi-IN",
+		locale: "hi-in",
+		legacyCode: "hi_IN",
+		englishName: "Hindi (India)",
+		genericName: "Hindi",
+		nativeName: "हिन्दी"
+	},
+	"nl_NL": {
+		code: "nl-NL",
+		locale: "nl-nl",
+		legacyCode: "nl_NL",
+		englishName: "Dutch (Netherlands)",
+		genericName: "Dutch",
+		nativeName: "Nederlands"
+	},
+	"sv_SE": {
+		code: "sv-SE",
+		locale: "sv-se",
+		legacyCode: "sv_SE",
+		englishName: "Swedish",
+		genericName: "Swedish",
+		nativeName: "Svenska"
+	},
+	"pl_PL": {
+		code: "pl-PL",
+		locale: "pl-pl",
+		legacyCode: "pl_PL",
+		englishName: "Polish",
+		genericName: "Polish",
+		nativeName: "Polski"
+	},
+	"da_DK": {
+		code: "da-DK",
+		locale: "da-dk",
+		legacyCode: "da_DK",
+		englishName: "Danish",
+		genericName: "Danish",
+		nativeName: "Dansk"
+	},
+	"nb_NO": {
+		code: "nb-NO",
+		locale: "nb-no",
+		legacyCode: "nb_NO",
+		englishName: "Norwegian Bokmål",
+		genericName: "Norwegian",
+		nativeName: "Norsk bokmål"
+	},
+	"fi_FI": {
+		code: "fi-FI",
+		locale: "fi-fi",
+		legacyCode: "fi_FI",
+		englishName: "Finnish",
+		genericName: "Finnish",
+		nativeName: "Suomi"
+	},
+	"cs_CZ": {
+		code: "cs-CZ",
+		locale: "cs-cz",
+		legacyCode: "cs_CZ",
+		englishName: "Czech",
+		genericName: "Czech",
+		nativeName: "Čeština"
+	},
+	"sk_SK": {
+		code: "sk-SK",
+		locale: "sk-sk",
+		legacyCode: "sk_SK",
+		englishName: "Slovak",
+		genericName: "Slovak",
+		nativeName: "Slovenčina"
+	},
+	"ro_RO": {
+		code: "ro-RO",
+		locale: "ro-ro",
+		legacyCode: "ro_RO",
+		englishName: "Romanian",
+		genericName: "Romanian",
+		nativeName: "Română"
+	},
+	"hu_HU": {
+		code: "hu-HU",
+		locale: "hu-hu",
+		legacyCode: "hu_HU",
+		englishName: "Hungarian",
+		genericName: "Hungarian",
+		nativeName: "Magyar"
+	},
+	"el_GR": {
+		code: "el-GR",
+		locale: "el-gr",
+		legacyCode: "el_GR",
+		englishName: "Greek",
+		genericName: "Greek",
+		nativeName: "Ελληνικά"
+	},
+	"he_IL": {
+		code: "he-IL",
+		locale: "he-il",
+		legacyCode: "he_IL",
+		englishName: "Hebrew",
+		genericName: "Hebrew",
+		nativeName: "עברית"
+	},
+	"th_TH": {
+		code: "th-TH",
+		locale: "th-th",
+		legacyCode: "th_TH",
+		englishName: "Thai",
+		genericName: "Thai",
+		nativeName: "ไทย"
+	},
+	"id_ID": {
+		code: "id-ID",
+		locale: "id-id",
+		legacyCode: "id_ID",
+		englishName: "Indonesian",
+		genericName: "Indonesian",
+		nativeName: "Bahasa Indonesia"
+	},
+	"ms_MY": {
+		code: "ms-MY",
+		locale: "ms-my",
+		legacyCode: "ms_MY",
+		englishName: "Malay",
+		genericName: "Malay",
+		nativeName: "Bahasa Melayu"
+	},
+	"vi_VN": {
+		code: "vi-VN",
+		locale: "vi-vn",
+		legacyCode: "vi_VN",
+		englishName: "Vietnamese",
+		genericName: "Vietnamese",
+		nativeName: "Tiếng Việt"
+	},
+	"fil_PH": {
+		code: "fil-PH",
+		locale: "fil-ph",
+		legacyCode: "fil_PH",
+		englishName: "Filipino",
+		genericName: "Filipino",
+		nativeName: "Wikang Filipino"
+	},
+	"bn_IN": {
+		code: "bn-IN",
+		locale: "bn-in",
+		legacyCode: "bn_IN",
+		englishName: "Bengali (India)",
+		genericName: "Bengali",
+		nativeName: "বাংলা"
+	},
+	"pa_IN": {
+		code: "pa-IN",
+		locale: "pa-in",
+		legacyCode: "pa_IN",
+		englishName: "Punjabi",
+		genericName: "Punjabi",
+		nativeName: "ਪੰਜਾਬੀ"
+	},
+	"kn_IN": {
+		code: "kn-IN",
+		locale: "kn-in",
+		legacyCode: "kn_IN",
+		englishName: "Kannada",
+		genericName: "Kannada",
+		nativeName: "ಕನ್ನಡ"
+	},
+	"ml_IN": {
+		code: "ml-IN",
+		locale: "ml-in",
+		legacyCode: "ml_IN",
+		englishName: "Malayalam",
+		genericName: "Malayalam",
+		nativeName: "മലയാളം"
+	},
+	"te_IN": {
+		code: "te-IN",
+		locale: "te-in",
+		legacyCode: "te_IN",
+		englishName: "Telugu",
+		genericName: "Telugu",
+		nativeName: "తెలుగు"
+	},
+	"mr_IN": {
+		code: "mr-IN",
+		locale: "mr-in",
+		legacyCode: "mr_IN",
+		englishName: "Marathi",
+		genericName: "Marathi",
+		nativeName: "मराठी"
+	},
+	"gu_IN": {
+		code: "gu-IN",
+		locale: "gu-in",
+		legacyCode: "gu_IN",
+		englishName: "Gujarati",
+		genericName: "Gujarati",
+		nativeName: "ગુજરાતી"
+	},
+	"ta_IN": {
+		code: "ta-IN",
+		locale: "ta-in",
+		legacyCode: "ta_IN",
+		englishName: "Tamil",
+		genericName: "Tamil",
+		nativeName: "தமிழ்"
+	},
+	"ne_NP": {
+		code: "ne-NP",
+		locale: "ne-np",
+		legacyCode: "ne_NP",
+		englishName: "Nepali",
+		genericName: "Nepali",
+		nativeName: "नेपाली"
+	},
+	"si_LK": {
+		code: "si-LK",
+		locale: "si-lk",
+		legacyCode: "si_LK",
+		englishName: "Sinhala",
+		genericName: "Sinhala",
+		nativeName: "සිංහල"
+	},
+	"km_KH": {
+		code: "km-KH",
+		locale: "km-kh",
+		legacyCode: "km_KH",
+		englishName: "Khmer",
+		genericName: "Khmer",
+		nativeName: "ភាសាខ្មែរ"
+	},
+	"lo_LA": {
+		code: "lo-LA",
+		locale: "lo-la",
+		legacyCode: "lo_LA",
+		englishName: "Lao",
+		genericName: "Lao",
+		nativeName: "ລາວ"
+	},
+	"my_MM": {
+		code: "my-MM",
+		locale: "my-mm",
+		legacyCode: "my_MM",
+		englishName: "Burmese",
+		genericName: "Burmese",
+		nativeName: "မြန်မာဘာသာ"
+	},
+	"bo_CN": {
+		code: "bo-CN",
+		locale: "bo-cn",
+		legacyCode: "bo_CN",
+		englishName: "Tibetan",
+		genericName: "Tibetan",
+		nativeName: "བོད་ཡིག"
+	},
+	"hr_HR": {
+		code: "hr-HR",
+		locale: "hr-hr",
+		legacyCode: "hr_HR",
+		englishName: "Croatian",
+		genericName: "Croatian",
+		nativeName: "Hrvatski"
+	},
+	"sr_RS": {
+		code: "sr-RS",
+		locale: "sr-rs",
+		legacyCode: "sr_RS",
+		englishName: "Serbian",
+		genericName: "Serbian",
+		nativeName: "Српски"
+	},
+	"bs_BA": {
+		code: "bs-BA",
+		locale: "bs-ba",
+		legacyCode: "bs_BA",
+		englishName: "Bosnian",
+		genericName: "Bosnian",
+		nativeName: "Bosanski"
+	},
+	"mk_MK": {
+		code: "mk-MK",
+		locale: "mk-mk",
+		legacyCode: "mk_MK",
+		englishName: "Macedonian",
+		genericName: "Macedonian",
+		nativeName: "Македонски"
+	},
+	"sq_AL": {
+		code: "sq-AL",
+		locale: "sq-al",
+		legacyCode: "sq_AL",
+		englishName: "Albanian",
+		genericName: "Albanian",
+		nativeName: "Shqip"
+	},
+	"is_IS": {
+		code: "is-IS",
+		locale: "is-is",
+		legacyCode: "is_IS",
+		englishName: "Icelandic",
+		genericName: "Icelandic",
+		nativeName: "Íslenska"
+	},
+	"lv_LV": {
+		code: "lv-LV",
+		locale: "lv-lv",
+		legacyCode: "lv_LV",
+		englishName: "Latvian",
+		genericName: "Latvian",
+		nativeName: "Latviešu"
+	},
+	"et_EE": {
+		code: "et-EE",
+		locale: "et-ee",
+		legacyCode: "et_EE",
+		englishName: "Estonian",
+		genericName: "Estonian",
+		nativeName: "Eesti"
+	},
+	"lt_LT": {
+		code: "lt-LT",
+		locale: "lt-lt",
+		legacyCode: "lt_LT",
+		englishName: "Lithuanian",
+		genericName: "Lithuanian",
+		nativeName: "Lietuvių"
+	},
+	"el_CY": {
+		code: "el-CY",
+		locale: "el-cy",
+		legacyCode: "el_CY",
+		englishName: "Greek (Cyprus)",
+		genericName: "Greek",
+		nativeName: "Ελληνικά (Κύπρος)"
+	}
+} as const;
+
+export type Languages = keyof typeof languages;
 
 import _ from 'lodash';
 import { createReaxable , reaxel } from 'reaxes';

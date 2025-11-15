@@ -26,4 +26,4 @@ const I18nComponents = {
 };
 
 import { reaxel_I18n } from '#renderer/reaxels/i18n';
-import * as less from './style.module.less';
+import less from './style.module.less';
