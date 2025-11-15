@@ -1,10 +1,16 @@
+import { reaxel_ElectronENV } from "#generic/reaxels/runtime-paths";
+
+const {absAppRunningPath} = reaxel_ElectronENV()
+
 const defaultOptions:BrowserWindowConstructorOptions = {
 	width : dev() ? 2000 :1000 ,
 	height : dev() ? 1300 : 1400 ,
 	webPreferences : {
 		nodeIntegration: false,
 		contextIsolation: true,
+		preload: path.join(absAppRunningPath, 'preload.js'),
 	} ,
+	
 };
 app.disableHardwareAcceleration();
 await app.whenReady();
@@ -20,3 +26,4 @@ import {
 	BrowserWindowConstructorOptions,
 } from 'electron';
 import _ from 'lodash';
+import * as path from 'node:path';

@@ -86,21 +86,24 @@ export const electronDevConf_Renderer:WebpackConfiguration = {
 		new ReactRefreshWebpackPlugin(),
 	],
 	optimization: {
-		minimize:false,
-		splitChunks: {
-			chunks: 'all',
-			cacheGroups: {
-				vendors: {
-					test: /[\\/]node_modules[\\/]/,
-					name: 'vendors',
-					enforce: false,            // 不强制所有匹配都打包
-					priority: 10,              // 高优先级保证稳定拆分
-					reuseExistingChunk: true   // 如果已有相同 chunk，复用
-				}
-			}
-		},
-		moduleIds: 'deterministic',   // 保证模块 id 稳定
-		chunkIds: 'deterministic'     // 保证 chunk id 稳定
+		minimize:true,
+		usedExports:true,
+		sideEffects:true,
+		minimizer: [
+			new TerserPlugin({
+				extractComments: false,
+				terserOptions: {
+					format: {
+						comments: /webpack.*|!/,
+						beautify: true,
+						semicolons: false,
+					},
+					compress: {
+						passes: 2,
+					},
+				},
+			})
+		],
 	}
 	
 	
@@ -114,3 +117,4 @@ import path from "path";
 import { LoggerWebpackPlugn, LogWhenSucceed } from "../toolkit";
 import {Configuration as WebpackConfiguration} from 'webpack';
 import {BundleAnalyzerPlugin} from 'webpack-bundle-analyzer';
+import TerserPlugin from "terser-webpack-plugin";

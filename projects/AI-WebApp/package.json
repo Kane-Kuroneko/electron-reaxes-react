@@ -8,6 +8,7 @@
 	"scripts" : {
 		"start:webpack": "cd ../../ && npx --yes tsx scripts/webpack.start/index.ts AI-WebApp 4444",
 		"start:electron": "cd ../../ && npx --yes tsx scripts/electron.start/index.ts AI-WebApp" ,
+		"build:webpack" : "cd ../../ && npx --yes tsx scripts/webpack.build/index.ts AI-WebApp production",
 		"build:electron": "electron-builder build -w"
 	} ,
 	"type" : "commonjs" ,
