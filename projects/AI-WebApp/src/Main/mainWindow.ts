@@ -1,10 +1,8 @@
-import { reaxel_ElectronENV } from "#generic/reaxels/runtime-paths";
-
 const {absAppRunningPath} = reaxel_ElectronENV()
 
 const defaultOptions:BrowserWindowConstructorOptions = {
-	width : dev() ? 2000 :1000 ,
-	height : dev() ? 1300 : 1400 ,
+	width : dev() ? 1920 :400 ,
+	height : dev() ? 1080 : 300 ,
 	webPreferences : {
 		nodeIntegration: false,
 		contextIsolation: true,
@@ -12,14 +10,16 @@ const defaultOptions:BrowserWindowConstructorOptions = {
 	} ,
 	
 };
+
 app.disableHardwareAcceleration();
 await app.whenReady();
 // Create the browser window.
 export const mainWindow = new BrowserWindow( _.merge({},defaultOptions));
-
-
 import {xPromise} from 'reaxes-utils'
+
+
 import { dev } from 'electron-is';
+import { reaxel_ElectronENV } from "#generic/reaxels/runtime-paths";
 import {
 	app ,
 	BrowserWindow ,

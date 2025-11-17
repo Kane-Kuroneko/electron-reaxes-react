@@ -1,76 +1,111 @@
 const root = createRoot( document.getElementById( "react-app-root" ) );
 
-const {Item} = Form;
-
-const {store,setState,mutate} = createReaxable({
-	userinputs : {
-		proxy : '',
-	}
-});
+const { Item } = Form;
 
 @reaxper
 class App extends Reaxlass {
+	
+	menu: ItemType[] = [
+		{
+			label : 'Network' ,
+			key : 'net' ,
+		} ,
+		{
+			label : 'Apperence' ,
+			key : 'appe' ,
+		} ,
+		{
+			label : 'Manage AIs' ,
+			key : 'manage' ,
+		} ,
+	];
+	
 	render() {
+		const { getSettings } = reaxel_SettingsView();
 		
-		const userInputsStore = store.userinputs;
-		const setUserInputs = setState.userinputs;
+		const {
+			store ,
+			setState,
+		} = reaxel_SettingsView;
 		
-		useEffect(() => {
-			(async () => {
-				const {proxy} = await IPC.invoke('get-settings');
-				setUserInputs({
-					proxy : proxy
-				});
-			})();
-		},[]);
+		useEffect( () => {
+			~async function(){
+				const settings = await getSettings();
+				setState.UIControls.global_proxy( settings?.global_proxy ?? {} );
+			}();
+		} , [] );
 		
-		return <div style={{
-			display:'flex',
-			flexFlow : 'row nowrap'
-		}}>
-			<Menu
-				items={[
-					{
-						label:'proxy',
-						key:'proxy',
-					}
-				]}
-				onChange={
-					(key) => {
-						console.log(key);
-					}
-				}
-			/>
-			<div>
-				<Item
-					label="Proxy"
-				>
-					<Input
-						value={userInputsStore.proxy}
-						onChange={
-							(e) => {
-								setUserInputs({
-									proxy : e.target.value
-								});
-							}
+		
+		return <div>
+			<div
+				style={ {
+					display : 'flex' ,
+					flexFlow : 'row nowrap' ,
+				} }
+			>
+				<Menu
+					items={ this.menu }
+					onChange={
+						( key ) => {
+							console.log( key );
 						}
-						suffix={<Button>Save</Button>}
-					/>
-				</Item>
+					}
+					defaultSelectedKeys={ [ "net" ] }
+				/>
+				<Form
+					layout="vertical"
+				>
+					<div>
+						
+					</div>
+				</Form>
+			</div>
+			<div>
+				<Button
+					type="dashed"
+					onClick={ () => {
+						IPC.send( 'exit-settings' );
+					} }
+				>Exit Settings</Button>
+				
+				<Button
+					type="primary"
+					danger
+					onClick={ () => {
+						IPC.send( 'exit-settings' );
+					} }
+				>Discard All Changes</Button>
 			</div>
 		</div>;
 	}
 }
-IPC.invoke('get-settings').then(() => {
-	
-})
+
+
 root.render( <App /> );
 
 
-import {Menu,Form,Input,Button} from 'antd'
-import {createReaxable,obsReaction,} from 'reaxes';
-import {reaxper,Reaxlass} from 'reaxes-react';
+
+import { type ItemType } from 'antd/lib/menu/interface';
+import {
+	Menu ,
+	Form ,
+	Input ,
+	Button ,
+	Switch ,
+	Radio ,
+	Select ,
+	Space ,
+	Segmented ,
+	Checkbox ,
+} from 'antd';
+import {
+	createReaxable ,
+	obsReaction ,
+} from 'reaxes';
+import {
+	reaxper ,
+	Reaxlass ,
+} from 'reaxes-react';
 import { createRoot } from "react-dom/client";
-import './index.module.less';
-
-
+import './index.less';
+import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels";

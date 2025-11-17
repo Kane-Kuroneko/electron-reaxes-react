@@ -19,22 +19,24 @@ export const reaxel_AIViews = reaxel(() => {
 	
 	const rtn = {
 		get currentAIView() {
-			const { currentViewName } = Reaxel_View.store;
-			if(!AIKeys.find(k => currentViewName === k)){
+			const { currentAIViewKey } = Reaxel_View.store;
+			if(!AIKeys.find(k => currentAIViewKey === k)){
 				return null;
 			}
-			return store.AIViews.find( ({AIName}) => AIName === currentViewName );
+			return store.AIViews.find( ({AIName}) => AIName === currentAIViewKey );
 		},
 		initAIView( name:AI ){
+			var view:WebContentsView;
 			mutate( s => {
 				const targetView = s.AIViews.find( ( { AIName } ) => AIName === name );
 				if( !targetView.view ) {
-					targetView.view = initWebContentsView( {
+					view = (targetView.view = initWebContentsView( {
 						type : 'AI-View' ,
 						domain : targetView.domain ,
-					} );
+					} ));
 				}
 			} );
+			return view;
 		}
 	}
 	return Object.assign( () => rtn , {

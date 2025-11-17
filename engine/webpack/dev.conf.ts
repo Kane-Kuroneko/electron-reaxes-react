@@ -86,7 +86,7 @@ export const electronDevConf_Renderer:WebpackConfiguration = {
 		new ReactRefreshWebpackPlugin(),
 	],
 	optimization: {
-		minimize:true,
+		minimize:false,
 		usedExports:true,
 		sideEffects:true,
 		minimizer: [

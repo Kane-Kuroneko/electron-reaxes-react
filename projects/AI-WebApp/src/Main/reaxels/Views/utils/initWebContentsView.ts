@@ -4,7 +4,7 @@ const { absAppRunningPath } = reaxel_ElectronENV();
 export const initWebContentsView = (options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
 	
 	const view = new WebContentsView(options);
-	
+	view.webContents.setVisualZoomLevelLimits(1,5);
 	mainWindow.contentView.addChildView(view);
 	
 	if(options.type==='Settings-View'){
@@ -32,25 +32,27 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	
 	//当用户ctrl+r时reload当前view;f12 devtools
 	view.webContents.on('before-input-event', (event, input) => {
-		if (input.control && input.key.toLowerCase() === 'r') {
-			if (input.shift) {
-				// Ctrl+Shift+R 强制重置域名
-				view.webContents.loadURL(options.domain || "https://chatgpt.com");
-			} else {
-				// Ctrl+R 重新加载当前页面
-				view.webContents.reload();
-			}
-		}
-		if(input.key.toLowerCase() === 'f12'){
-			view.webContents.toggleDevTools();
-		}
+		// if (input.control && input.key.toLowerCase() === 'r') {
+		// 	if (input.shift) {
+		// 		// Ctrl+Shift+R 强制重置域名
+		// 		view.webContents.loadURL(options.domain || "https://chatgpt.com");
+		// 	} else {
+		// 		// Ctrl+R 重新加载当前页面
+		// 		view.webContents.reload();
+		// 	}
+		// }
 	});
 	
 	return view;
 }
 
 const useSettingsView = (view:WebContentsView,options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
-	view.webContents.loadFile(path.join(absAppRunningPath,`./renderer/SettingsView/index.html`))
+	if(dev()){
+		view.webContents.loadURL(`https://localhost:${__DEV_PORT__}/SettingsView`)
+	}else {
+		view.webContents.loadFile(path.join(absAppRunningPath,`./renderer/SettingsView/index.html`))
+	}
+	
 }
 const useAIView = (view:WebContentsView,options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
 	view.webContents.setWindowOpenHandler(({ url }) => {
@@ -63,11 +65,13 @@ const useAIView = (view:WebContentsView,options:WebContentsViewConstructorOption
 import {
 	shell ,
 	WebContentsView,
-	WebContentsViewConstructorOptions,
+	dialog,
+	type WebContentsViewConstructorOptions,
 } from 'electron';
 import { mainWindow } from "#main/mainWindow";
 import * as path from "path";
 import { reaxel_ElectronENV } from "#generic/reaxels/runtime-paths";
+import {dev} from 'electron-is';
 
 type AI = "chatgpt"|"grok"|"gemini"|"deepseek";
 type ExtraBrowserWindowOptions = {

@@ -1,0 +1,6 @@
+{
+	"include" : ["./g.d.ts","./*"] ,
+	"extends": [
+		"../../../tsconfig.json"
+	]
+}

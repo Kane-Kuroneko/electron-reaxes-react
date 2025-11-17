@@ -70,6 +70,9 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 				hash : true ,
 				// inject: false,
 			} ) ,
+			new DefinePlugin( {
+				'__REACT_DEVTOOLS_GLOBAL_HOOK__': '({ isDisabled: true })'
+			} )
 		],
 	};
 };
@@ -82,5 +85,5 @@ export const preload = ( repoRootPath: string , subProjectRootPath: string ): Co
 import path,{} from 'path';
 import WatchFilePlugin from 'webpack-watch-files-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import webpack , { Configuration } from 'webpack';
+import webpack , { type Configuration , DefinePlugin } from 'webpack';
 import CopyPlugin from 'copy-webpack-plugin';

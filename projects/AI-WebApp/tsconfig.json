@@ -54,5 +54,12 @@
 			]
 		}
 	},
-	"include" : ["src","scripts" ,"module.d.ts","g.d.ts","../../global.d.ts" ,"../../g.d.ts" ]
+	"include" : [
+		"src" ,
+		"scripts" ,
+		"module.d.ts" ,
+		"g.d.ts" ,
+		"../../global.d.ts" ,
+		"../../g.d.ts" ,
+	]
 }

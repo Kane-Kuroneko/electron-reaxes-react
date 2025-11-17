@@ -1,3 +1,5 @@
+import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
+
 export const Reaxel_View = reaxel( () => {
 	const electronStore = new ElectronStore<{
 		previously_used_ai: AI,
@@ -8,38 +10,36 @@ export const Reaxel_View = reaxel( () => {
 		setState ,
 		mutate,
 	} = createReaxable( {
-		currentViewName : checkAs<AI|"Settings">(previously_used_ai||"chatgpt") ,
+		currentAIViewKey : checkAs<AI>(previously_used_ai||"chatgpt") ,
+		settingsViewOpened : false,
 	} );
 	
 	function fitWindow(target?:AI) {
+		const viewSetBounds = (view:WebContentsView) => view?.setBounds( {
+			x : 0 ,
+			y : 0 ,
+			width : mainWindow.getContentBounds().width ,
+			height : mainWindow.getContentBounds().height ,
+		} );
 		
 		if(target){
-			const {view,} = reaxel_AIViews.store.AIViews.find( ({AIName}) => AIName === target );
-			view.setBounds( {
-				x : 0 ,
-				y : 0 ,
-				width : mainWindow.getContentBounds().width ,
-				height : mainWindow.getContentBounds().height ,
-			} );
+			const {view} = reaxel_AIViews.store.AIViews.find( ({AIName}) => AIName === target );
+			viewSetBounds(view);
 			return;
 		}
 		AIKeys.forEach( name => {
 			const {view} = reaxel_AIViews.store.AIViews.find( ({AIName}) => AIName === name );
 			if( view ) {
-				view.setBounds( {
-					x : 0 ,
-					y : 0 ,
-					width : mainWindow.getContentBounds().width ,
-					height : mainWindow.getContentBounds().height ,
-				} );
+				viewSetBounds( view );
 			}
 		} );
+		viewSetBounds(reaxel_SettingsView.store.settingsView.view);
 	}
 	
 	function onReadyLoadAIView(){
 		const { initAIView } = reaxel_AIViews();
-		if(AIKeys.find(it => it === store.currentViewName)){
-			initAIView(store.currentViewName as  AI);
+		if(AIKeys.find(it => it === store.currentAIViewKey)){
+			initAIView(store.currentAIViewKey as AI);
 		}
 	}
 	
@@ -53,11 +53,27 @@ export const Reaxel_View = reaxel( () => {
 	//当用户切换时重新创建menu并渲染
 	obsReaction( ( first ) => {
 		if( first ) return;
-		if(AIKeys.find(it => it === store.currentViewName)){
+		if(AIKeys.find(it => it === store.currentAIViewKey)){
 			
-			electronStore.set( "previously_used_ai" , store.currentViewName );
+			electronStore.set( "previously_used_ai" , store.currentAIViewKey );
 		}
-	} , () => [ store.currentViewName ] );
+	} , () => [ store.currentAIViewKey ] );
+	
+	obsReaction((first) => {
+		if(first) return;
+		
+		reaxel_SettingsView.store.settingsView.view?.setVisible(store.settingsViewOpened);
+		
+		reaxel_AIViews.store.AIViews.forEach(( { view }) => {
+			if(store.settingsViewOpened){
+				view?.setVisible(false);
+			}else {
+				reaxel_AIViews.store.AIViews.forEach(({view,AIName}) => {
+					view?.setVisible(AIName === store.currentAIViewKey)
+				})
+			}
+		});
+	},() => [store.settingsViewOpened]);
 	
 	const rtn = {};
 	
@@ -70,7 +86,10 @@ export const Reaxel_View = reaxel( () => {
 
 
 
-import { app } from "electron";
+import {
+	app ,
+	WebContentsView,
+} from "electron";
 import {
 	AI ,
 	AIKeys ,
