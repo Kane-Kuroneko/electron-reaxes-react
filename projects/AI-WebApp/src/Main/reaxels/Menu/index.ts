@@ -141,7 +141,6 @@ export const reaxel_Menu = reaxel( () => {
 				
 				const {view} = reaxel_AIViews.store.AIViews.find( ({AIName}) => AIName === _name );
 				const { initAIView} = reaxel_AIViews();
-				
 				if(_name !== name){
 					if(view){
 						view.setVisible( false );
@@ -152,6 +151,7 @@ export const reaxel_Menu = reaxel( () => {
 					}else {
 						var newView = initAIView(_name);
 					}
+					(view??newView).webContents.focus();
 				}
 			} );
 			

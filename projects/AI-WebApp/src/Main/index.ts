@@ -15,7 +15,6 @@ app.whenReady().then( async () => {
 	// 	width : 800 ,
 	// 	height : 600 ,
 	// } );
-	
 	useBeautifulDevtool( win );
 	const proxyRules = 'http=127.0.0.1:7897;https=127.0.0.1:7897';
 	const ses = win.webContents.session;

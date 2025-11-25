@@ -1,4 +1,5 @@
 export default (env : "development"|"production" , host : "browser"|"node"|"pure") => {
+
 	return {
 		cacheDirectory : true , // 启用缓存以加速构建
 		sourceMaps : true,
@@ -37,5 +38,4 @@ export default (env : "development"|"production" , host : "browser"|"node"|"pure
 		].filter( Boolean ) ,
 	} as TransformOptions;
 };
-
 import type { TransformOptions } from '@babel/core';

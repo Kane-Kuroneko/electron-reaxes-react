@@ -40,6 +40,12 @@ export const main = (
 
 export const renderer = (repoRootPath: string, subProjectRootPath: string): Configuration => {
 	return {
+		cache: {
+			type: 'filesystem',  // Webpack 5 缓存，设为 false 测试
+			buildDependencies: {
+				config: [__filename],
+			},
+		},
 		// stats:"verbose",
 		experiments: {
 			topLevelAwait: true,  // 启用顶层 await
@@ -57,8 +63,6 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 				'#main' : path.join(subProjectRootPath,'src/Main'),
 				'#renderer' : path.join(subProjectRootPath,'src/Renderer'),
 				'#src' : path.join(subProjectRootPath,'src'),
-				'#Main-Chat' : path.join(subProjectRootPath,'src/Renderer/WindowFrames/Main-Chat'),
-				'#Float-Channels-Chat' : path.join(subProjectRootPath,'src/Renderer/WindowFrames/Float-Channels-Chat'),
 			},
 		},
 		plugins : [

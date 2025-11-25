@@ -64,13 +64,17 @@ export const Reaxel_View = reaxel( () => {
 		
 		reaxel_SettingsView.store.settingsView.view?.setVisible(store.settingsViewOpened);
 		
-		reaxel_AIViews.store.AIViews.forEach(( { view }) => {
+		reaxel_AIViews.store.AIViews.forEach(( { view,AIName }) => {
 			if(store.settingsViewOpened){
 				view?.setVisible(false);
 			}else {
-				reaxel_AIViews.store.AIViews.forEach(({view,AIName}) => {
-					view?.setVisible(AIName === store.currentAIViewKey)
-				})
+				if(!view) return;
+				const match = AIName === store.currentAIViewKey;
+				view.setVisible( match );
+				if(match){
+					// 退出settings頁面後立刻使当前AI的view获取焦点,否则无法正确触发menu的菜单点击事件
+					view.webContents.focus();
+				}
 			}
 		});
 	},() => [store.settingsViewOpened]);

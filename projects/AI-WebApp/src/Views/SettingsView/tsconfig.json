@@ -1,6 +1,58 @@
 {
-	"include" : ["./g.d.ts","./*"] ,
-	"extends": [
-		"../../../tsconfig.json"
+	"compilerOptions" : {
+		"allowJs" : true ,
+		"allowSyntheticDefaultImports" : true ,
+		"allowUnusedLabels" : true ,
+		"baseUrl" : "." ,
+		"declaration" : false ,
+		"declarationMap" : false ,
+		"esModuleInterop" : true ,
+		"experimentalDecorators" : true ,
+		"jsx" : "react-jsx" ,
+		"resolveJsonModule" : true ,
+		"strictFunctionTypes" : false ,
+		"strict" : false ,
+		"strictBindCallApply" : false ,
+		"module" : "ESNext" ,
+		"target" : "ESNext" ,
+		"moduleResolution" : "bundler" ,
+		"strictNullChecks" : false ,
+		"allowUnreachableCode" : true ,
+		"noEmit" : true ,
+		"noImplicitAny" : false ,
+		"noImplicitReturns" : false ,
+		"noImplicitUseStrict" : false ,
+		"noUnusedLocals" : false ,
+		"noUnusedParameters" : false ,
+		"preserveConstEnums" : true ,
+		"checkJs" : true ,
+		"allowSyntheticDefaultImports" : true ,
+		"skipLibCheck" : true ,
+		"allowUmdGlobalAccess" : true ,
+		"typeRoots" : [
+			"./" ,
+			"./node_modules/@types"
+		] ,
+		"paths" : {
+			"#SharedTypes/*" : [
+				"../../Types/*"
+			] ,
+			"#SettingsView/*" : [
+				"./*"
+			] ,
+			"#src/*" : [
+				"../../*"
+			] ,
+			"#generics/*" : [
+				"../../../../../generic-services/*"
+			]
+		}
+	} ,
+	"include" : [
+		"./g.d.ts" ,
+		"./**/*" ,
+		"../../../global.d.ts" ,
+		"../../../../../global.d.ts"
 	]
+	
 }

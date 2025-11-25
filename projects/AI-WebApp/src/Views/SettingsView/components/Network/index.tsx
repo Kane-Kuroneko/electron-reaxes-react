@@ -2,7 +2,15 @@ export const RCNetworkPanel = reaxper(() => {
 	
 	
 	
-	return <div>
-		
+	return <div
+		style={{
+			display :'flex',
+			flexFlow : 'column nowrap',
+		}}
+	>
+		<RCProxyItem/>
 	</div>
 })
+
+
+import { RCProxyItem } from './Proxy';

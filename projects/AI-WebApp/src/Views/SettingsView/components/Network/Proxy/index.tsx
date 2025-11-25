@@ -3,32 +3,32 @@ export const RCProxyItem = reaxper(() => {
 		store:{UIControls:{global_proxy:store}},
 		setState:{UIControls:{global_proxy:setState}}
 	} = reaxel_SettingsView;
-	const { getSettings } = reaxel_SettingsView();
-	
 	
 	const { Item } = Form;
-	return <div>
+	return <div className={less.globalProxy}>
 		<Item
 			label="Global Proxy"
 		>
 			<Radio.Group
-				value={ store.userinputs.global_proxy.enabled }
+				value={ store.enabled }
 				onChange={ ( e ) => {
-					setState.userinputs.global_proxy( {
+					setState( {
 						enabled : e.target.value ,
 					} );
 				} }
+				style={{userSelect:'none'}}
 			>
 				<Radio.Button value={ false }>No Proxy</Radio.Button>
 				<Radio.Button value={ true }>Modify Proxy</Radio.Button>
 			</Radio.Group>
 			
 			{
-				store.userinputs.global_proxy.enabled && <div>
+				store.enabled && <div>
 					<Form.Item
 						label="Protocol :"
 					>
 						<Segmented
+							style={{userSelect:'none'}}
 							defaultValue="http"
 							options={ [
 								{
@@ -48,15 +48,16 @@ export const RCProxyItem = reaxper(() => {
 					</Form.Item>
 					<Form.Item
 						label="Host name :"
+						layout="vertical"
 					>
 						<Input
-							variant="filled"
-							value={ userInputsStore.proxy }
+							variant="underlined"
+							value={ store.hostname }
 							placeholder="127.0.0.1"
 							onChange={
 								( e ) => {
-									setUserInputs( {
-										proxy : e.target.value ,
+									setState( {
+										hostname : e.target.value ,
 									} );
 								}
 							}
@@ -65,15 +66,14 @@ export const RCProxyItem = reaxper(() => {
 					<Form.Item
 						label="Port number :"
 					>
-						<Input
-							type="number"
-							value={ userInputsStore.proxy }
-							variant="filled"
+						<InputNumber
+							value={ store.port }
+							variant="underlined"
 							placeholder="7890"
 							onChange={
-								( e ) => {
-									setUserInputs( {
-										proxy : e.target.value ,
+								( value ) => {
+									setState( {
+										port : value ,
 									} );
 								}
 							}
@@ -84,16 +84,24 @@ export const RCProxyItem = reaxper(() => {
 					<Form.Item
 						label={ <label>
 							<Space size={ 3 }>
-								<Checkbox />
-								<span>No proxy for :</span>
+								<Checkbox
+									checked={store.no_proxy_for_enabled}
+									onChange={ ( e ) => {
+										setState( {
+											no_proxy_for_enabled : e.target.checked ,
+										} );
+									} }
+								/>
+								<span style={{userSelect:'none'}}>No proxy for :</span>
 							</Space>
 						</label> }
 					>
 						<Select
-							disabled={store.UIControls}
+							disabled={!store.no_proxy_for_enabled}
 							mode="multiple"
 							options={[]}
-							value={ userInputsStore.no_proxy_for }
+							value={ store.no_proxy_for }
+							variant="underlined"
 						/>
 					</Form.Item>
 				</div>
@@ -111,7 +119,8 @@ import {
 	Segmented ,
 	Select ,
 	Space ,
+	InputNumber
 } from 'antd';
 import { reaxper  } from 'reaxes-react';
-import './index.less';
-import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels";
+import less from './index.module.less';
+import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
