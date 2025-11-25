@@ -40,12 +40,6 @@ export const main = (
 
 export const renderer = (repoRootPath: string, subProjectRootPath: string): Configuration => {
 	return {
-		cache: {
-			type: 'filesystem',  // Webpack 5 缓存，设为 false 测试
-			buildDependencies: {
-				config: [__filename],
-			},
-		},
 		// stats:"verbose",
 		experiments: {
 			topLevelAwait: true,  // 启用顶层 await

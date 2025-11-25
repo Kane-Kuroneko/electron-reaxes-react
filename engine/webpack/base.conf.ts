@@ -184,19 +184,6 @@ export const webpackBaseConf:Configuration = {
 			},
 		],
 	},
-	optimization: {
-		minimize: true,
-		minimizer: [
-			new TerserPlugin({
-				extractComments: false,
-				terserOptions: {
-					format: {
-						comments: false,
-					},
-				},
-			})
-		],
-	},
 	performance: {
 		maxEntrypointSize: 10000000,
 		maxAssetSize: 30000000,
@@ -238,16 +225,12 @@ export const webpackBaseConf:Configuration = {
 			xImport: ['reaxes-utils', 'xImport'],
 			checkAs: ['reaxes-utils/type-helpers', 'checkAs'],
 			utils: ['reaxes-utils'],
-			antd: ['antd'],
 			toolkits: ['reaxes-toolkits'],
 			crayon: ['reaxes-utils', 'crayon'],
 			logProxy: ['reaxes-utils', 'logProxy'],
 			decodeQueryString: ['reaxes-utils', 'decodeQueryString'],
 			encodeQueryString: ['reaxes-utils', 'encodeQueryString'],
 			stringify: ['reaxes-utils', 'stringify'],
-			// request: ['@@requester', 'request'],
-			// I18n: ['@@reaxels/i18n', 'I18n'],
-			// i18n: ['@@reaxels/i18n', 'i18n'],
 			
 		}),
 	],

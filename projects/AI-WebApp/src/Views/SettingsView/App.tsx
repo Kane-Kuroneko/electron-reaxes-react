@@ -75,11 +75,6 @@ export const App = reaxper( () => {
 	</div>;
 } );
 
-if (import.meta.hot) {
-	import.meta.hot.accept(() => {
-		// Handle update if necessary
-	});
-}
 import { RCAppearancePanel } from './components/Appearance';
 import { RCManageAIsPanel } from './components/ManageAIs';
 import { RCNetworkPanel } from './components/Network';

@@ -82,28 +82,10 @@ export const electronDevConf_Renderer:WebpackConfiguration = {
 				first_renderer = false;
 			},
 		}),
-		new HotModuleReplacementPlugin(),
 		new ReactRefreshWebpackPlugin(),
+		new HotModuleReplacementPlugin(),
 	],
 	optimization: {
-		minimize:false,
-		usedExports:true,
-		sideEffects:true,
-		minimizer: [
-			new TerserPlugin({
-				extractComments: false,
-				terserOptions: {
-					format: {
-						comments: /webpack.*|!/,
-						beautify: true,
-						semicolons: false,
-					},
-					compress: {
-						passes: 2,
-					},
-				},
-			})
-		],
 	}
 	
 	

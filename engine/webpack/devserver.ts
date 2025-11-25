@@ -5,7 +5,7 @@ export const devServerConf: Configuration = {
 		directory: absolutelyPath_subprojectDist,
 		publicPath : '/',
 	},
-	// hot: true,
+	hot: true,
 	server: {
 		type: "https",
 		options: {
