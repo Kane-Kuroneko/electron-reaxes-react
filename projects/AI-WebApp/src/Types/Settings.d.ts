@@ -5,20 +5,9 @@ export namespace Settings {
 		
 	}
 	
+	//用于IPC传输的settings结构
 	export type IpcSettings = {
-		proxy: {
-			enabled: boolean;
-			address: string;
-			type: string;
-			port: number;
-			hostname: string;
-			no_proxy_for: string[];
-			proxy_auth: {
-				enabled: boolean;
-				username: string;
-				password: string;
-			};
-		},
+		proxy: NetworkProxy.GlobalProxy,
 		appearance:{
 			
 		},
@@ -30,4 +19,13 @@ export namespace Settings {
 			
 		}
 	}
+	
+	//持久化在硬盘上的用户设置,前后端共用
+	export type PersistedSettings = {
+		global_proxy: NetworkProxy.GlobalProxy,
+		AIs : AI.AIItem[],
+	}
 }
+
+import type { NetworkProxy } from './SettingsTypes/NetworkProxy';
+import type { AI } from './SettingsTypes/AI';

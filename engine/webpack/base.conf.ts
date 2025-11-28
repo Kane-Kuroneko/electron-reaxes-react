@@ -224,6 +224,8 @@ export const webpackBaseConf:Configuration = {
 			xPromise: ['reaxes-utils', 'xPromise'],
 			xImport: ['reaxes-utils', 'xImport'],
 			checkAs: ['reaxes-utils/type-helpers', 'checkAs'],
+			notNull: ['reaxes-utils/type-helpers', 'notNull'],
+			notFalse: ['reaxes-utils/type-helpers', 'notFalse'],
 			utils: ['reaxes-utils'],
 			toolkits: ['reaxes-toolkits'],
 			crayon: ['reaxes-utils', 'crayon'],

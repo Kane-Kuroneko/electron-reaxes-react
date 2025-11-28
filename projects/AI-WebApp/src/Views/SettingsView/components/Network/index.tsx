@@ -1,16 +1,18 @@
-export const RCNetworkPanel = reaxper(() => {
-	
+export const RCNetworkPanel = reaxper( () => {
 	
 	
 	return <div
-		style={{
-			display :'flex',
-			flexFlow : 'column nowrap',
-		}}
+		style={ {
+			display : 'flex' ,
+			flexFlow : 'column nowrap' ,
+		} }
 	>
-		<RCProxyItem/>
-	</div>
-})
+		<GlobalProxy />
+		<ProxyServers />
+	</div>;
+} );
 
 
-import { RCProxyItem } from './Proxy';
+import { GlobalProxy } from './GlobalNetProxy';
+import { ProxyServers } from "./ProxyServers";
+

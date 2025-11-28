@@ -67,9 +67,6 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 				minify : false ,
 				hash : true ,
 				// inject: false,
-			} ) ,
-			new DefinePlugin( {
-				'__REACT_DEVTOOLS_GLOBAL_HOOK__': '({ isDisabled: true })'
 			} )
 		],
 	};

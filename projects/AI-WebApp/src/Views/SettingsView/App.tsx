@@ -17,7 +17,7 @@ export const App = reaxper( () => {
 	useEffect( () => {
 		~async function () {
 			const settings = await getSettings();
-			reaxel_SettingsView.setState.UIControls.global_proxy( settings?.global_proxy ?? {} );
+			reaxel_SettingsView.setState.UIControls.networks( settings?.global_proxy ?? {} );
 		}();
 	} , [] );
 	

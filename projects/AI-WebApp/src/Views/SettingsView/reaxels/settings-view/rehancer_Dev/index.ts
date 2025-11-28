@@ -1,6 +1,5 @@
 export const rehancer_Dev = ({store,setState,mutate}:Reaxel_SettingsView) => () => {
-	
-	setState.RootMenu({current:'sys'});
+	setState.RootMenu({current:'net'});
 }
 
 

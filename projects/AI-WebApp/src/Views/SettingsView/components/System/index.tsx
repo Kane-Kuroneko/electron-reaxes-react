@@ -15,11 +15,11 @@ export const RCSystemPanel = reaxper(() => {
 				GPU Acceleration
 			</Checkbox>
 			<Checkbox
-				checked={store.gpu_acceleration}
-				onChange={e=>setState({gpu_acceleration:e.target.checked})}
+				checked={store.tray}
+				onChange={e=>setState({tray : e.target.checked})}
 				style={{userSelect:'none'}}
 			>
-				Exit to Tray 222222
+				Exit to Tray
 			</Checkbox>
 		</Space>
 		<Divider/>

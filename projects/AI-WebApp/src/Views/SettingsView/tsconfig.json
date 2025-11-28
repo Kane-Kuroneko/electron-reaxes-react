@@ -37,9 +37,6 @@
 			"#SharedTypes/*" : [
 				"../../Types/*"
 			] ,
-			"#SettingsView/*" : [
-				"./*"
-			] ,
 			"#src/*" : [
 				"../../*"
 			] ,
