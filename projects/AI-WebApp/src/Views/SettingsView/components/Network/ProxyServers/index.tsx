@@ -38,22 +38,18 @@ export const ProxyServers = reaxper( () => {
 				dataSource={ reaxel_SettingsView.store.UIControls.networks.proxy_server_list.map( it => {
 					return {
 						...it ,
-						key : it.id,
+						key : it.proxy_server_id,
 					};
 				} ) }
 				columns={columns}
 				pagination={false}
 			/>
-			<EditProxyServer/>
+			<EditProxyServerModal/>
 		</Item>
 	</div>;
 } );
 
-const columns:TableColumnType<{
-	id : string ,
-	server_name : string ,
-	proxy_conf : NetworkProxy.ProxyConfFields ,
-}>[] = [
+const columns:TableColumnType<NetworkProxy.ProxyServer.Server>[] = [
 	{
 		title : 'Server Name' ,
 		dataIndex : 'server_name' ,
@@ -71,9 +67,10 @@ const columns:TableColumnType<{
 			return <Button
 				type="link"
 				onClick={ () => {
+					console.log(record);
 					setState.edit_proxy_server_modal( {
 						visible : true ,
-						editing_id : record.id ,
+						editing_id : record.proxy_server_id ,
 						fields : {
 							server_name : record.server_name ,
 							proxy_conf : record.proxy_conf ,
@@ -85,74 +82,152 @@ const columns:TableColumnType<{
 	}
 ];
 
-const EditProxyServer = reaxper( () => {
+const EditProxyServerModal = reaxper( () => {
+	
+	const {
+		store : { UIControls : { networks : {edit_proxy_server_modal:store} } } ,
+		setState : { UIControls : { networks : {edit_proxy_server_modal:setState} } },
+	} = reaxel_SettingsView;
+	
+	const {mode} = store;
+	
+	if(mode === 'edit'){
+		var editing = reaxel_SettingsView.store.UIControls.networks.proxy_server_list.find( it => it.proxy_server_id === store.editing_id );
+	}else {
+		
+	}
+	
+	if(store.fields.proxy_conf.proxy_auth){
+		var ProxyAuth = <>
+			<Divider>Auth</Divider>
+			<Form.Item
+				label="Username :"
+			>
+				<Input
+					value={ notFalse( store.fields.proxy_conf.proxy_auth )?.username }
+					placeholder="Username"
+					onChange={ ( e ) => {
+						setState.fields.proxy_conf( {
+							proxy_auth : {
+								...notFalse( store.fields.proxy_conf.proxy_auth ) ,
+								username : e.target.value ,
+							} ,
+						} );
+					} }
+				/>
+			</Form.Item>
+			<Form.Item
+				label="Password :"
+			>
+				<Input
+					value={ notFalse( store.fields.proxy_conf.proxy_auth )?.password }
+					placeholder="Password"
+					onChange={ ( e ) => {
+						setState.fields.proxy_conf( {
+							proxy_auth : {
+								...notFalse( store.fields.proxy_conf.proxy_auth ) ,
+								password : e.target.value ,
+							} ,
+						} );
+					} }
+				/>
+			</Form.Item>
+		</>;
+	}
+	
 	return <Modal
 		title="Edit Proxy Server"
-		open={ store.edit_proxy_server_modal.visible }
+		open={ store.visible }
 		onCancel={ () => {
-			setState.edit_proxy_server_modal( {
+			setState( {
 				visible : false ,
 			} );
 		} }
+		onOk={() => {
+			api.submitSettings({
+				
+			})
+		}}
 	>
 		<div>
-			<Form.Item
-				label="Protocol :"
+			<Form
+				variant="underlined"
 			>
-				<Segmented
-					value={ store.edit_proxy_server_modal.fields.proxy_conf.protocol }
-					onChange={ ( value: NetworkProxy.Protocol ) => {
-						setState.edit_proxy_server_modal.fields.proxy_conf( {
-							protocol : value ,
-						} );
-					} }
-					style={ { userSelect : 'none' } }
-					options={ [
-						{
-							label : 'HTTP' ,
-							value : 'http' ,
-						} ,
-						{
-							label : 'HTTPS' ,
-							value : 'https' ,
-						} ,
-						{
-							label : 'Socks5' ,
-							value : 'socks5' ,
-						} ,
-					] }
-				/>
-			</Form.Item>
-			<Form.Item
-				label="Host name :"
-			>
-				<Input
-					variant="underlined"
-					value={ store.edit_proxy_server_modal.fields.proxy_conf.hostname }
-					placeholder="127.0.0.1"
-					onChange={ ( e ) => {
-						setState.edit_proxy_server_modal.fields.proxy_conf( {
-							hostname : e.target.value ,
-						} );
-					} }
-				/>
-			</Form.Item>
-			<Form.Item
-				label="Port number :"
-			>
-				<InputNumber
-					min={ 0 }
-					max={ 65535 }
-					value={ store.edit_proxy_server_modal.fields.proxy_conf.port }
-					variant="underlined"
-					placeholder="7890"
-					onChange={ ( value ) => {
-						setState.edit_proxy_server_modal.fields.proxy_conf( {
-							port : value ,
-						} );
-					}}
-				/>
-			</Form.Item>
+				<Form.Item
+					label="Protocol :"
+				>
+					<Segmented
+						value={ store.fields.proxy_conf.protocol }
+						onChange={ ( value: NetworkProxy.Protocol ) => {
+							setState.fields.proxy_conf( {
+								protocol : value ,
+							} );
+						} }
+						style={ { userSelect : 'none' } }
+						options={ [
+							{
+								label : 'HTTP' ,
+								value : 'http' ,
+							} ,
+							{
+								label : 'HTTPS' ,
+								value : 'https' ,
+							} ,
+							{
+								label : 'Socks5' ,
+								value : 'socks5' ,
+							} ,
+						] }
+					/>
+				</Form.Item>
+				<Form.Item
+					label="Host name :"
+				>
+					<Input
+						variant="underlined"
+						value={ store.fields.proxy_conf.hostname }
+						placeholder="127.0.0.1"
+						onChange={ ( e ) => {
+							setState.fields.proxy_conf( {
+								hostname : e.target.value ,
+							} );
+						} }
+					/>
+				</Form.Item>
+				<Form.Item
+					label="Port number :"
+				>
+					<InputNumber
+						min={ 0 }
+						max={ 65535 }
+						value={ store.fields.proxy_conf.port }
+						variant="underlined"
+						placeholder="7890"
+						onChange={ ( value ) => {
+							setState.fields.proxy_conf( {
+								port : value ,
+							} );
+						}}
+					/>
+				</Form.Item>
+				<Form.Item
+					label="Authentication :"
+				>
+					<Checkbox
+						style={{userSelect:'none'}}
+						checked={!!store.fields.proxy_conf.proxy_auth}
+						onChange={(e) => {
+							setState.fields.proxy_conf( {
+								proxy_auth : e.target.checked ? {
+									username : '' ,
+									password : '' ,
+								} : false ,
+							} );
+						}}
+					>Enable</Checkbox>
+				</Form.Item>
+				{ProxyAuth}
+			</Form>
 		</div>
 	</Modal>;
 } );
@@ -170,6 +245,7 @@ import {
 	TableColumnType,
     Button,
     Modal,
+    Divider,
 } from 'antd';
 
 import { reaxper  } from 'reaxes-react';

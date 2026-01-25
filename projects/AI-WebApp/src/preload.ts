@@ -1,60 +1,29 @@
-function createIpc(type: 'rendererInvoke'): <Channel extends keyof IpcRendererInvoke>(
-	channel: Channel
-) => (...payloads: IpcRendererInvoke[Channel]["payloads"]) => Promise<IpcRendererInvoke[Channel]["response"]>;
-function createIpc(type: 'rendererSend'): <Channel extends keyof IpcRendererSend>(
-	channel: Channel
-) => (...payloads: IpcRendererSend[Channel]["payloads"]) => void;
-function createIpc(type: 'mainSend'): <Channel extends keyof IpcMainSend>(
-	channel: Channel
-) => (callback: (event: Electron.IpcRendererEvent, ...args: IpcMainSend[Channel]["response"][]) => void) => void;
-function createIpc(type: 'rendererInvoke' | 'rendererSend' | 'mainSend') {
-	if (type === 'rendererInvoke') {
-		return <Channel extends keyof IpcRendererInvoke>(channel: Channel) =>
-			(...payloads: IpcRendererInvoke[Channel]["payloads"]): Promise<IpcRendererInvoke[Channel]["response"]> =>
-				ipcRenderer.invoke(channel, ...payloads);
-	}
-	else if (type === 'rendererSend') {
-		return <Channel extends keyof IpcRendererSend>(channel: Channel) =>
-			(...payloads: IpcRendererSend[Channel]["payloads"]) =>
-				ipcRenderer.send(channel, ...payloads);
-	}
-	else if (type === 'mainSend') {
-		return <Channel extends keyof IpcMainSend>(channel: Channel) =>
-			(callback: (event: Electron.IpcRendererEvent, ...args: IpcMainSend[Channel]["response"][]) => void) =>
-				ipcRenderer.on(channel, (event: any, ...args: any[]) => {
-					return callback(event, ...args);
-				});
-	}
-	throw new Error(`Unknown type: ${type}`);
-}
+const useRpc = createIpc<IpcRpc>('rpc');
+export const useRtm = createIpc<RendererToMainEvent>('rtmEvent');
+export const useMtr = createIpc<MainToRendererEvent>('mtrEvent');
 
-const getSettings = createIpc('rendererInvoke')('get-settings');
-const submitSettings = createIpc('rendererInvoke')('submit-settings');
 
+const fetchSettings = useRpc( 'fetch-settings' );
+const submitSettings = useRpc( 'submit-settings' );
+
+const testMtr = useMtr('1');
+
+const {dispose,...meta} = testMtr(({},num,str) => {
+	
+})
+
+useMtr('2')((event,args) => {
+	
+})
 
 const api = {
-	getSettings,
-	submitSettings,
-}
+	fetchSettings ,
+	submitSettings ,
+};
 
 export type API = typeof api;
 
 contextBridge.exposeInMainWorld( 'api' , api );
-
-contextBridge.exposeInMainWorld( 'IPC' , {
-	send( channel , ...args ) {
-		ipcRenderer.send( channel , ...args );
-	} ,
-	on( channel , listener ) {
-		return ipcRenderer.on( channel , listener );
-	} ,
-	invoke( channel , ...args ) {
-		return ipcRenderer.invoke( channel , ...args );
-	} ,
-	info : {
-		app_version : version ,
-	},
-} );
 
 contextBridge.exposeInMainWorld( 'versions' , {
 	get node() {
@@ -72,11 +41,11 @@ contextBridge.exposeInMainWorld( 'versions' , {
 import {
 	contextBridge ,
 	ipcRenderer ,
-	IpcRenderer,
 } from "electron";
 import { version } from '#project/package.json';
 import type {
-	IpcMainSend ,
-	IpcRendererSend ,
-	IpcRendererInvoke,
+	IpcRpc ,
+	MainToRendererEvent ,
+	RendererToMainEvent ,
 } from './Types/IPC';
+import { createIpc } from '#generic/toolkit/electron/preload.ipc';

@@ -35,16 +35,16 @@ export const reaxel_SettingsView = reaxel( () => {
 		//UI组件状态和临时数据
 		UIControls : {
 			networks : {
-				proxy_mode : checkAs<'direct'|'use_system'|'user_fill'|'from_proxy_server'>('user_fill') ,
-				proxy_fields : checkAs<NotFalse<Settings.IpcSettings['proxy']> & {no_proxy_for__enabled:boolean;}>({
-					hostname : '127.0.0.1',
-					port : 7897,
-					protocol : 'http',
-					no_proxy_for : checkAs<string[]>([]) ,
+				proxy_mode : checkAs<'direct' | 'use_system' | 'user_fill' | 'from_proxy_server'>( 'user_fill' ) ,
+				proxy_fields : checkAs<NotFalse<Settings.IpcSettings['proxy']> & { no_proxy_for__enabled: boolean; }>( {
+					hostname : '127.0.0.1' ,
+					port : 7897 ,
+					protocol : 'http' ,
+					no_proxy_for : checkAs<string[]>( [] ) ,
 					//是否启用no_proxy_for字段,作用是仅禁用但不清空字段
 					no_proxy_for__enabled : true ,
 					proxy_auth : false ,
-				}),
+				} ) ,
 				check_connection : {
 					modal_visible : false ,
 					address : '' ,
@@ -55,32 +55,45 @@ export const reaxel_SettingsView = reaxel( () => {
 				
 				edit_proxy_server_modal : {
 					visible : false ,
-					mode:checkAs<"edit"|"add">('edit'),
-					editing_id : null,
+					mode : checkAs<"edit" | "add">( 'edit' ) ,
+					editing_id : null ,
 					fields : {
 						server_name : '' ,
-						proxy_conf : checkAs<NetworkProxy.ProxyConfFields>({
-							protocol : 'http',
-							hostname : '127.0.0.1',
-							port : 7897,
-							proxy_auth : false,
-						}),
-					},
+						proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
+							protocol : 'http' ,
+							hostname : '127.0.0.1' ,
+							port : 7897 ,
+							proxy_auth : false ,
+						} ) ,
+					} ,
 				} ,
-				proxy_server_list : checkAs<{
-					id : string ,
-					server_name : string ,
-					proxy_conf : NetworkProxy.ProxyConfFields ,
-				}[]>( [{
-					id : '1',
-					server_name : 'Clash Verge Rev',
-					proxy_conf : checkAs<NetworkProxy.ProxyConfFields>({
-						protocol : 'http',
-						hostname : '127.0.0.1',
-						port : 7897,
-						proxy_auth : false,
-					}),
-				}] ) ,
+				proxy_server_list : checkAs<NetworkProxy.ProxyServer.Server[]>( [
+					{
+						proxy_server_id : '1' ,
+						server_name : 'Clash Verge Rev' ,
+						proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
+							protocol : 'http' ,
+							hostname : '127.0.0.1' ,
+							port : 7897 ,
+							proxy_auth : false ,
+						} ) ,
+						enabled:true,
+					} ,
+					{
+						proxy_server_id : '2' ,
+						server_name : 'Clash For Windows' ,
+						proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
+							protocol : 'http' ,
+							hostname : '127.0.0.1' ,
+							port : 7890 ,
+							proxy_auth : {
+								username : 'kane' ,
+								password : '123456' ,
+							} ,
+						} ) ,
+						enabled:true,
+					} ,
+				] ) ,
 			} ,
 			manage_AIs : {
 				AIs : checkAs<( {
@@ -104,6 +117,7 @@ export const reaxel_SettingsView = reaxel( () => {
 				darkmode : false ,
 				show_quickswitch_tag : true ,
 				show_current_tag : true ,
+				language : checkAs<Appearance.Language>('en-US'),
 			} ,
 			system : {
 				gpu_acceleration : true ,
@@ -208,11 +222,13 @@ type Menus = "net"|"appearance"|"mngeai"|"sys"|"keys";
 export type Reaxel_SettingsView = Pick<typeof reaxel_SettingsView , "mutate"|"store"|"setState">;
 
 type NotFalse<T> = Exclude<T , false|null|undefined>;
-type NotNull<T> = Exclude<T , null|undefined>;
 
+type NotNull<T> = Exclude<T , null|undefined>;
 import {
 	AI ,
 } from "#src/Types/SettingsTypes/AI";
+
 import { rehancer_Dev } from './rehancer_Dev';
 import { Settings, } from '#src/Types/Settings'
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
+import { Appearance } from "#src/Types/SettingsTypes/Appearance";

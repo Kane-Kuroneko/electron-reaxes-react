@@ -1,48 +1,20 @@
-export interface IpcRendererSend {
-	'1' : Tuple<[null] , void>;
-	'2' : Tuple<[{ }], void>
+export interface RendererToMainEvent extends Record<string , IpcStructure.RendererToMainEvent<any[] , any[]>> {
+	'1' : IpcStructure.RendererToMainEvent<[null] , [void]>;
+	'2' : IpcStructure.RendererToMainEvent<[{ }], [void]>
 }
-
-export interface IpcRendererInvoke {
-	'get-settings' : Tuple<[void] , {
-		global_proxy: {
-			enabled: boolean;
-			address: string;
-			type: 'https'|'http'|'socks5';
-			port: number;
-			hostname: string;
-			no_proxy_for: string[];
-			proxy_auth: {
-				enabled: boolean;
-				username: string;
-				password: string;
-			};
-		}
-	}>;
-	'submit-settings' : Tuple<[{
-		proxy: {
-			enabled: boolean;
-			address: string;
-			type: string;
-			port: number;
-			hostname: string;
-			no_proxy_for: string[];
-			proxy_auth: {
-				enabled: boolean;
-				username: string;
-				password: string;
-			};
-		}
-	}], void>;
+export interface MainToRendererEvent extends Record<string , IpcStructure.MainToRendererEvent<any[] , any[]>> {
+	'1' : IpcStructure.MainToRendererEvent<[number,string] , [void]>;
+	'2' : IpcStructure.MainToRendererEvent<[string,number], [ { a:1 }]>
 }
-
-export interface IpcMainSend {
-	
+export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<any[] , any>>{
+	'fetch-settings' : IpcStructure.IpcRpc<[void] , Settings>;
+	'submit-settings' : IpcStructure.IpcRpc<[PatchPath<Settings>, PatchData<PatchPath<Settings>, Settings>], {success: boolean}>;
 }
 
 
-//payloads是元组类型,对应ipcRenderer.send(channel,...payloads);
-type Tuple<P extends any[],R> = {
-	payloads : P,
-	response : R,
-};
+import { type Settings } from "#src/Types/SettingsTypes";
+import { IpcStructure } from "#generic/toolkit/electron/IpcStructure";
+import {
+	PatchData ,
+	PatchPath ,
+} from "#src/Types/SettingsTypes/SettingsPatchPath";

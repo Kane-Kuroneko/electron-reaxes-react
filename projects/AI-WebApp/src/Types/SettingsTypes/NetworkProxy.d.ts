@@ -2,6 +2,8 @@ export namespace NetworkProxy {
 	
 	export type Protocol = 'http'|'https'|'socks5';
 	
+	export type ProxyMode = "direct"|"from_server_list"|"user_fill"|"follow_global_setting";
+	
 	//
 	export type ProxyAuthFields = {
 		username: string;
@@ -21,4 +23,14 @@ export namespace NetworkProxy {
 	export type GlobalProxy = false | null | (ProxyConfFields & {
 		no_proxy_for: string[];
 	});
+	
+	
+	export namespace ProxyServer {
+		export type Server = {
+			proxy_server_id: string;
+			server_name: string;
+			proxy_conf: ProxyConfFields;
+			enabled: boolean;
+		};
+	}
 }

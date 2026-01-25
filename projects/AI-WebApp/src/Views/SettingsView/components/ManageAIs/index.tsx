@@ -282,5 +282,5 @@ import {} from '@ant-design/icons';
 import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { DragIconSvg } from "./DragIcon.svg";
-import { AIFamily } from "#src/shared/AI-family";
+import { AIFamily } from "#src/shared/statics/AI-family";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
