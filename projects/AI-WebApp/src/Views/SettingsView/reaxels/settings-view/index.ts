@@ -1,3 +1,5 @@
+import { fetchSettings } from "#src/Views/SettingsView/services/Settings";
+
 export const reaxel_SettingsView = reaxel( () => {
 	// const electronStore = new ElectronStore<{
 	// 	settings: AI,
@@ -189,7 +191,7 @@ export const reaxel_SettingsView = reaxel( () => {
 	
 	rehancer_Dev({store,setState,mutate})();
 	async function getSettings() {
-		const settings = await api.getSettings();
+		const settings = await fetchSettings();
 		
 		return settings;
 	}

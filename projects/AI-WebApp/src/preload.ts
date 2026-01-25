@@ -1,6 +1,6 @@
 const useRpc = createIpc<IpcRpc>('rpc');
-export const useRtm = createIpc<RendererToMainEvent>('rtmEvent');
-export const useMtr = createIpc<MainToRendererEvent>('mtrEvent');
+const useRtm = createIpc<RendererToMainEvent>('rtmEvent');
+const useMtr = createIpc<MainToRendererEvent>('mtrEvent');
 
 
 const fetchSettings = useRpc( 'fetch-settings' );
