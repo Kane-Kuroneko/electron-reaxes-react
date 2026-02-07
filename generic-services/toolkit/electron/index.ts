@@ -4,9 +4,10 @@
  * 提供类型安全、零硬编码的 IPC 通信系统
  * 同时支持主进程和渲染进程
  */
-
-export { createElectronIPC } from './ipc.main';
-
+export {
+	ReplyFromMtrEvents ,
+	IpcStructure,
+} from './IpcStructure';
 
 /**
  * 使用示例：

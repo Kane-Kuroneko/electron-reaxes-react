@@ -1,9 +1,6 @@
 declare global{
-	export const api:API;
+	export const api : API;
 }
+export {};
 
-export {}
-
-
-import {ipcRenderer,} from 'electron';
-import {type API} from '../../preload';
+import { API } from '../../preload';

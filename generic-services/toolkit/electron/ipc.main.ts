@@ -1,12 +1,3 @@
-import {
-	type IpcMainInvokeEvent,
-	type WebContents,
-	type WebContentsView,
-} from 'electron';
-type Handler = {
-	disposer():void;
-}
-
 /**
  * 在main thread中创建ipc
  * @example
@@ -22,196 +13,167 @@ type Handler = {
  * const useMtrEvent = createIpc<MainToRendererEvent>('mtrEvent');
  * const {disposer} = useMtrEvent('settings-changed').targets([mainWebContentsView]).send({...settings});
  */
-export function createIpc<IpcRpc extends Record<string , IpcStructure.IpcRpc<any[] , any>>>( type: 'rpc' ):
+export function createIpc<IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , unknown>>>( type: 'rpc' ):
 	<Channel extends keyof IpcRpc>( channel: Channel ) => {
-		handle( meta: { event: IpcMainInvokeEvent } , ...payloads: IpcRpc[Channel]["payloads"] ): Promise<IpcRpc[Channel]["response"]>
+		handle(handler:( meta: { event: IpcMainInvokeEvent } , ...payloads: IpcRpc[Channel]["payloads"] )=> IpcRpc[Channel]["response"]|Promise<IpcRpc[Channel]["response"]> ):Handler
 	}
 export function createIpc<
-	RendererToMainEvent extends Record<string , IpcStructure.RendererToMainEvent<any[] , any[]>>,
-	MainToRendererEvent extends Record<string , IpcStructure.MainToRendererEvent<any[] , any[]>> = {} //reply功能需要依赖mtrEvent type,如果初始化时不传则reply函数无法知道send to renderer thread的接口
+	RendererToMainEvents extends Record<string , IpcStructure.RendererToMainEvent<unknown[] , {channel:unknown,args:unknown[]}>>, //reply功能依赖RendererToMainEvent[reply],可以在业务类型中映射到MainToRendererEvent[args]
 >( type: 'rtmEvent' ):
-	<Channel extends keyof RendererToMainEvent>( channel: Channel ) => {
-		on(
+	<Channel extends string&keyof RendererToMainEvents>( channel: Channel ) => {
+		on(handler:(
 			meta: {
-				event: IpcMainEvent, 
-				reply<T extends keyof MainToRendererEvent>( channel: T ): {send( ...args: MainToRendererEvent[T]["reply"] ): void;}
+				event: IpcMainEvent,
+				reply<Reply extends RendererToMainEvents[Channel]["reply"]>( channel: Reply['channel'] ): {send( ...args: Reply['args'] ): void;}
 			} ,
-			...payloads: RendererToMainEvent[Channel]["args"]
-		): void;
+			...args: RendererToMainEvents[Channel]["args"]
+		) => void): {disposer(): void};
 	}
-
-export function createIpc<MainToRendererEvent extends Record<string , IpcStructure.MainToRendererEvent<any[] , any[]>>>( type: 'mtrEvent' ):
+export function createIpc<MainToRendererEvent extends Record<string , IpcStructure.MainToRendererEvent<unknown[]>>>( type: 'mtrEvent' ):
 	<Channel extends keyof MainToRendererEvent>( channel: Channel ) => {
 		targets( targets: WebContents[] ): {
 			send(...args: MainToRendererEvent[Channel]["args"] ): void;
 		}
 	}
-		
 export function createIpc( type: 'rpc' | 'rtmEvent' | 'mtrEvent' ) {
 	switch( type ) {
 		case 'rpc': {
-			
+			return <IpcRpc extends Record<string, IpcStructure.IpcRpc<unknown[], unknown>>, Channel extends string&keyof IpcRpc>(channel: Channel) => {
+				return {
+					handle(handler: ( meta: { event: IpcMainInvokeEvent } , ...payloads: IpcRpc[Channel]["payloads"] )=> IpcRpc[Channel]["response"]|Promise<IpcRpc[Channel]["response"]>){
+						const disposer = useRegisterIpcRpc<IpcRpc,Channel>(channel,handler);
+						return {
+							disposer,
+						}
+					}
+				};
+			};
 		}
-			;
 		case 'rtmEvent': {
-			
+			return <RendererToMainEvents extends Record<string, IpcStructure.RendererToMainEvent<unknown[], {channel:string,args:unknown[]}>>,Channel extends string&keyof RendererToMainEvents>(channel: Channel) => {
+				return {
+					on: (handler:(
+						meta: {
+							event: IpcMainEvent,
+							reply<ReplyChannel extends RendererToMainEvents[Channel]["reply"]['channel']>(channel: ReplyChannel): { send(...args: RendererToMainEvents[Channel]["reply"]['args']): void; }
+						},
+						...args: RendererToMainEvents[Channel]["args"]
+					) => void) => {
+						console.log(11111111);
+						const disposer = useRegisterRtmEvent<RendererToMainEvents,Channel>(channel,handler);
+						return {
+							disposer
+						}
+					},
+				};
+			};
 		}
 		case 'mtrEvent': {
-			
+			return <MainToRendererEvent extends Record<string, IpcStructure.MainToRendererEvent<unknown[]>>,Channel extends string&keyof MainToRendererEvent>(channel: Channel) => {
+				return {
+					targets: (targets: WebContents[]): { send(...args: MainToRendererEvent[Channel]["args"]): void } => {
+						return {
+							send: (...args: MainToRendererEvent[typeof channel]["args"]): void => {
+								targets.forEach(target => {
+									try {
+										target.send('JSON', { channel }, ...args);
+									}catch ( e ) {
+										debugger;
+										throw e;
+									}
+								});
+							},
+						};
+					},
+				};
+			};
 		}
 	}
 }
 
-/**
- * @deprecated below
- */
-/**
- * @template HandleChannels IPC Handle类型定义（request-reply模式）
- * @template OnChannels IPC On类型定义（单向发送模式）
- * @param options 配置选项
- * @returns IPC实例，包含ipcHandle、ipcOn、useIpcSend方法
- */
-export const createElectronIPC = <
-	HandleChannels extends Record<string , IpcStructure.IpcRpc<any[] , any>> = {} ,
-	OnChannels extends Record<string , IpcStructure.RendererToMainEvent<any[] , any[]>> = {}
->( options?: {
-	handleChannelName?: string;
-	onChannelName?: string;
-} ) => {
-	const HANDLE_CHANNEL = options?.handleChannelName ?? 'json::handle';
-	const ON_CHANNEL = options?.onChannelName ?? 'json::on';
+const useRegisterIpcRpc = function(){
+	const registry:{
+		[channel in string]?:<Rpc extends Record<string , IpcStructure.IpcRpc<unknown[] , unknown>>,Channel extends keyof Rpc>(meta:{event:IpcMainInvokeEvent},...payloads:Rpc[Channel]["payloads"]) => Rpc[Channel]["response"] | Promise<Rpc[Channel]["response"]>
+	} = {};
 	
-	/**
-	 * IPC Handle（双向通信）
-	 */
-	const ipcHandle = (
-		() => {
-			type HandleChannelsKey = string & keyof HandleChannels;
-			const registry: {
-				[K in HandleChannelsKey]?: (
-					e: IpcMainInvokeEvent ,
-					...payloads: HandleChannels[K]['payloads']
-				) => HandleChannels[K]['response'] | Promise<HandleChannels[K]['response']>;
-			} = {};
-			
-			const proxifier = <T extends HandleChannelsKey>(
-				e: IpcMainInvokeEvent ,
-				meta: Meta<T> ,
-				...payloads: HandleChannels[T]['response']
-			) => {
-				
-				const cb = registry[meta.type];
-				if( cb ) {
-					return cb( e , ...payloads );
-				} else {
-					console.error( `No handler registered for type: ${ String( meta.type ) }` );
-					return { error : `Handler not found for type: ${ String( meta.type ) }` };
-				}
-			};
-			
-			ipcMain.handle( HANDLE_CHANNEL , proxifier );
-			
-			return <T extends HandleChannelsKey>( type: T ) => (
-				{
-					handle(
-						cb: (
-							e: IpcMainInvokeEvent ,
-							...payloads: HandleChannels[T]['response']
-						) => HandleChannels[T]['response'] | Promise<HandleChannels[T]['response']>,
-					) {
-						registry[type] = cb;
-					} ,
-				}
-			);
+	ipcMain.handle('JSON',async (event,meta:{
+		channel:string;
+	}, ...payloads) => {
+		if( !meta.channel ) {throw new Error('channel is required')};
+		const registered = registry[meta.channel];
+		try {
+			return registered( { event } , ...payloads );
+		} catch ( e ) {
+			debugger;
+			throw e;
+			throwToMain(e);
 		}
-	)();
+	});
 	
-	/**
-	 * IPC On（单向通信）
-	 */
-	type OnChannelsKey = string & keyof OnChannels;
-	const ipcOn = (
-		() => {
-			type Reply = <T extends OnChannelsKey>( type: T ) => { send( ...args: OnChannels[T]['reply'] ): void }
-			
-			const registry: {
-				[K in keyof OnChannels]?: (
-					e: { event: IpcMainEvent, reply: Reply } ,
-					...args: OnChannels[K]['args']
-				) => void;
-			} = {};
-			
-			const proxifier = <T extends OnChannelsKey>(
-				event: IpcMainEvent ,
-				meta: Meta<T> ,
-				...args: OnChannels[T]['args']
-			) => {
-				const reply = <T extends OnChannelsKey>( type: T ) => (
-					{
-						send( ...args ) {event.reply( ON_CHANNEL , { type } , ...args );},
-					}
-				);
-				const cb = registry[meta.type];
-				if( cb ) {
-					return cb( {
-						event ,
-						reply,
-					} , ...args );
-				} else {
-					console.error( `No handler registered for type: ${ String( meta.type ) }` );
-					return { error : `Handler not found for type: ${ String( meta.type ) }` };
-				}
-			};
-			
-			ipcMain.on( ON_CHANNEL , proxifier );
-			
-			return <T extends OnChannelsKey>( type: T ) => (
-				{
-					on( cb: (
-							e: { event: IpcMainEvent, reply: Reply } ,
-							...args: OnChannels[T]['args']
-						) => void,
-					): void {
-						registry[type] = cb as any;
-					} ,
-				}
-			);
+	return <IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , unknown>>,Channel extends string&keyof IpcRpc>(channel:Channel,handler: ( meta: { event: IpcMainInvokeEvent } , ...payloads: IpcRpc[Channel]["payloads"] )=> void) => {
+		const registered = registry[channel];
+		if(registered){
+			throw new Error('channel already registered');
 		}
-	)();
-	
-	/**
-	 * 发送IPC消息到特定窗口
-	 */
-	const useIpcSend = ( window: BrowserWindow ) => {
-		if( !window ) {
-			throw new Error( 'useIpcSend: window不存在' );
+		registry[channel] = handler;
+		return function disposer() {
+			delete registry[channel];
 		}
-		return <T extends OnChannelsKey>( type: T ) => (
-			{
-				send( ...args: OnChannels[T]['args'] ) {
-					window.webContents.send( ON_CHANNEL , { type } , ...args );
-				} ,
-			}
-		);
-	};
-	
-	return {
-		ipcHandle ,
-		ipcOn ,
-		useIpcSend ,
-	};
-};
+	}
+}();
 
-type Meta<Type extends string , > = {
-	type: Type;
+const useRegisterRtmEvent = function(){
+	const registry:{
+		[channel in string]?:Array<<RtmEvent extends {[p:string]:IpcStructure.RendererToMainEvent<unknown[] , {channel:unknown,args:unknown[]}>},Channel extends keyof RtmEvent>(meta:{event:IpcMainEvent,reply:unknown},...payloads:RtmEvent[Channel]["args"]) => void>
+	} = {};
 	
+	ipcMain.on('JSON',async (event,meta:{
+		channel:string;
+	}, ...args) => {
+		if( !meta.channel ) {throw new Error('channel is required')};
+		
+		console.log(`IpcRtm received message from channel<<${meta.channel}>>`);
+		
+		const reply = <RendererToMainEvents extends Record<string , IpcStructure.RendererToMainEvent<unknown[] , {channel:unknown,args:unknown[]}>> ,Channel extends keyof RendererToMainEvents>(channel:Channel) => {
+			return {
+				send(...args: RendererToMainEvents[Channel]["reply"]['args']){
+					event.reply('JSON',{channel},...args);
+				}
+			}
+		}
+		const registered = registry[meta.channel];
+		registered.forEach( ( handler ) => {
+			try {
+				handler( { event,reply } , ...args );
+			} catch ( e ) {
+				debugger;
+				throw e;
+			}
+		} );
+	});
+	
+	return <RendererToMainEvents extends Record<string , IpcStructure.RendererToMainEvent<unknown[] , { channel: unknown, args: unknown[] }>> , Channel extends string & keyof RendererToMainEvents>( channel: Channel , handler: ( meta: { event: IpcMainEvent, reply: ( channel: RendererToMainEvents[Channel]["reply"]['channel'] ) => { send( ...args: RendererToMainEvents[Channel]["reply"]['args'] ): void } } , ...args: RendererToMainEvents[Channel]["args"] ) => void ) => {		
+		const registered = registry[channel];
+		registered ? registered.push( handler ) : registry[channel] = [ handler ];
+		return function disposer() {
+			registry[channel] = registry[channel]!.filter( cb => cb !== handler );
+		};
+	};
+	
+}();
+
+function throwToMain(e:any){
+	throw e;
 }
 
-const {} = createElectronIPC();
+type Handler = {
+	disposer():void;
+}
 
 import {
 	ipcMain ,
 	IpcMainEvent ,
-	BrowserWindow,
+	type IpcMainInvokeEvent ,
+	type WebContents ,
 } from 'electron';
 import { IpcStructure } from './IpcStructure';

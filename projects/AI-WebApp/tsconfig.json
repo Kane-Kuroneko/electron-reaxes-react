@@ -43,7 +43,7 @@
 			"#root-projects/*" : [
 				"../../projects/*"
 			] ,
-			"#generic/*" : [
+			"#generics/*" : [
 				"../../generic-services/*"
 			] ,
 			"#project/*" : [
@@ -53,11 +53,10 @@
 	},
 	"include" : [
 		"src" ,
-		"scripts" ,
-		"module.d.ts" ,
 		"global.d.ts" ,
+		"../../generic-services/*",
 		"../../global.d.ts" ,
 		"../../g.d.ts" ,
 	],
-	"exclude" : ["./src/Views/**/*"]
+	"exclude" : ["./src/Views"]
 }

@@ -58,9 +58,9 @@ preload_configs = [
 	node_env === 'production' ? { watch: false } : {}
 ];
 
-let webpack_conf_for_electron_main = merge(main_configs);
-let webpack_conf_for_electron_renderer;
-let webpack_conf_for_electron_preload;
+let webpack_conf_for_electron_main:WebpackConfiguration = merge(main_configs);
+let webpack_conf_for_electron_renderer:WebpackConfiguration;
+let webpack_conf_for_electron_preload:WebpackConfiguration;
 
 if (!partialWebpackConf_Renderer) {
 	webpack_conf_for_electron_renderer = null;
@@ -73,7 +73,6 @@ if (!partialWebpackConf_Preload) {
 } else {
 	webpack_conf_for_electron_preload = merge(preload_configs);
 }
-
 export {
 	webpack_conf_for_electron_main,
 	webpack_conf_for_electron_renderer,

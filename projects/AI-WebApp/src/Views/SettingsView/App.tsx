@@ -4,7 +4,7 @@ export const App = reaxper( () => {
 	const store = reaxel_SettingsView.store.RootMenu;
 	const setState = reaxel_SettingsView.setState.RootMenu;
 	
-	const { getSettings } = reaxel_SettingsView();
+	const { submitSettings,fetchSettings,exitSettings } = reaxel_SettingsView();
 	
 	const MenuContentComponent = {
 		net : RCNetworkPanel ,
@@ -16,8 +16,8 @@ export const App = reaxper( () => {
 	
 	useEffect( () => {
 		~async function () {
-			const settings = await getSettings();
-			reaxel_SettingsView.setState.UIControls.networks( settings?.global_proxy ?? {} );
+			const settings = await fetchSettings();
+			reaxel_SettingsView.setState.UIControls.networks( settings?.networks ?? {} );
 		}();
 	} , [] );
 	
@@ -51,7 +51,7 @@ export const App = reaxper( () => {
 		<div>
 			<Button
 				onClick={ () => {
-					IPC.send( 'exit-settings' );
+					
 				} }
 				danger
 				type="primary"
@@ -61,16 +61,16 @@ export const App = reaxper( () => {
 				danger
 				type="dashed"
 				onClick={ () => {
-					IPC.send( 'exit-settings' );
+					exitSettings()
 				} }
 			>Discard All Changes</Button>
 			
 			<Button
 				type="primary"
 				onClick={ () => {
-					IPC.send( 'exit-settings' );
+					exitSettings()
 				} }
-			>Save All   3222</Button>
+			>Save All</Button>
 		</div>
 	</div>;
 } );

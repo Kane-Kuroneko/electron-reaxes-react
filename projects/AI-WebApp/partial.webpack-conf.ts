@@ -17,6 +17,7 @@ export const main = (
 				'#main' : path.join(subProjectRootPath,'src/Main'),
 				'#renderer' : path.join(subProjectRootPath,'src/Renderer'),
 				'#src' : path.join(subProjectRootPath,'src'),
+				'#generics' : path.join(repoRootPath,'generic-services'),
 			}
 		},
 		plugins : [
@@ -57,6 +58,7 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 				'#main' : path.join(subProjectRootPath,'src/Main'),
 				'#renderer' : path.join(subProjectRootPath,'src/Renderer'),
 				'#src' : path.join(subProjectRootPath,'src'),
+				'#generics' : path.join(repoRootPath,'generic-services'),
 			},
 		},
 		plugins : [
@@ -75,6 +77,15 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 export const preload = ( repoRootPath: string , subProjectRootPath: string ): Configuration => {
 	return {
 		entry: path.join(subProjectRootPath, "src/preload.ts"),
+		resolve :{
+			alias : {
+				'#main' : path.join(subProjectRootPath,'src/Main'),
+				'#renderer' : path.join(subProjectRootPath,'src/Renderer'),
+				'#src' : path.join(subProjectRootPath,'src'),
+				'#generics' : path.join(repoRootPath,'generic-services'),
+			},
+		},
+		watch:true
 	};
 };
 import path,{} from 'path';

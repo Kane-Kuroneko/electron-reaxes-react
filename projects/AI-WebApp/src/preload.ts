@@ -1,27 +1,19 @@
 const useRpc = createIpc<IpcRpc>('rpc');
-const useRtm = createIpc<RendererToMainEvent>('rtmEvent');
-const useMtr = createIpc<MainToRendererEvent>('mtrEvent');
+const useRtm = createIpc<RendererToMainEvents>('rtmEvent');
+const useMtr = createIpc<MainToRendererEvents>('mtrEvent');
 
 
 const fetchSettings = useRpc( 'fetch-settings' );
 const submitSettings = useRpc( 'submit-settings' );
-
-const testMtr = useMtr('1');
-
-const {dispose,...meta} = testMtr(({},num,str) => {
-	
-})
-
-useMtr('2')((event,args) => {
-	
-})
+const exitSettings = useRtm('exit-settings');
 
 const api = {
 	fetchSettings ,
 	submitSettings ,
+	exitSettings,
 };
-
 export type API = typeof api;
+
 
 contextBridge.exposeInMainWorld( 'api' , api );
 
@@ -42,10 +34,9 @@ import {
 	contextBridge ,
 	ipcRenderer ,
 } from "electron";
-import { version } from '#project/package.json';
 import type {
 	IpcRpc ,
-	MainToRendererEvent ,
-	RendererToMainEvent ,
-} from './Types/IPC';
-import { createIpc } from '#generic/toolkit/electron/preload.ipc';
+	MainToRendererEvents ,
+	RendererToMainEvents ,
+} from './Types/IpcSchema';
+import { createIpc } from '#generics/toolkit/electron/preload.ipc';

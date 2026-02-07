@@ -1,35 +1,89 @@
-
-export const reaxel_SettingsView = reaxel( () => {
-	// const electronStore = new ElectronStore<{
-	// 	settings: AI,
-	// }>( { name : "previously-used-ai" } );
-	const {store,setState,mutate} = createReaxable( {
-		//左侧大类
-		RootMenu : {
-			current : checkAs<Menus>( 'net' ) ,
-			menus : [
-				{
-					label : 'Networks' ,
-					value : checkAs<Menus>( 'net' ) ,
-				} ,
-				{
-					label : 'Appearance(delay for now)' ,
-					value : checkAs<Menus>( 'appearance' ) ,
-				} ,
-				{
-					label : 'Manage AIs' ,
-					value : checkAs<Menus>( 'mngeai' ) ,
-				} ,
-				{
-					label : 'System' ,
-					value : checkAs<Menus>( 'sys' ) ,
-				} ,
-				// {
-				// 	label : 'Hotkeys' ,
-				// 	value : 'keys' ,
-				// },
-			] ,
+/**
+ * 前后端共享一部分settings结构
+ */
+export const sharedSettingsStatus = {
+	networks : {
+		
+		check_connection : {
+			modal_visible : false ,
+			address : '' ,
+			pending : false ,
+			success : false ,
+			error : null ,
 		} ,
+		
+		edit_proxy_server_modal : {
+			visible : false ,
+			mode : checkAs<"edit" | "add">( 'edit' ) ,
+			editing_id : null ,
+			fields : {
+				server_name : '' ,
+				proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
+					protocol : 'http' ,
+					hostname : '127.0.0.1' ,
+					port : 7897 ,
+					proxy_auth : false ,
+				} ) ,
+			} ,
+		} ,
+		proxy_server_list : checkAs<NetworkProxy.ProxyServer.Server[]>( [
+			{
+				proxy_server_id : '1' ,
+				server_name : 'Clash Verge Rev' ,
+				proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
+					protocol : 'http' ,
+					hostname : '127.0.0.1' ,
+					port : 7897 ,
+					proxy_auth : false ,
+				} ) ,
+				enabled : true ,
+			} ,
+			{
+				proxy_server_id : '2' ,
+				server_name : 'Clash For Windows' ,
+				proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
+					protocol : 'http' ,
+					hostname : '127.0.0.1' ,
+					port : 7890 ,
+					proxy_auth : {
+						username : 'kane' ,
+						password : '123456' ,
+					} ,
+				} ) ,
+				enabled : true ,
+			} ,
+		] ) ,
+	}
+}
+
+export namespace Networks {
+	
+	export type UnionType = Direct | UseSystem | UserFill | FromServerList;
+	
+	export type Direct = {
+		proxy_mode : 'direct',
+	}
+	
+	export type UseSystem = {
+		proxy_mode : 'use_system',
+	}
+	
+	export type UserFill = {
+		proxy_mode : 'user_fill',
+		proxy_fields : NetworkProxy.GlobalProxy
+	}
+	
+	export type FromServerList = {
+		proxy_mode : 'from_server_list',
+		using_proxy_server_id : NetworkProxy.ProxyServer.Server['proxy_server_id'],
+		proxy_server_list:NetworkProxy.ProxyServer.Server[],
+	}
+}
+
+
+export const reaxable_Settings = () => {
+	
+	return createReaxable( {
 		//UI组件状态和临时数据
 		UIControls : {
 			networks : {
@@ -123,7 +177,7 @@ export const reaxel_SettingsView = reaxel( () => {
 			} ,
 			hotkeys : {} ,
 		} ,
-		//从后端请求的数据等,不用于控制视图
+		//从后端请求的数据等,不用与控制视图
 		Data : {
 			AIs : checkAs<AI.AIItem[]>( [
 				{
@@ -182,50 +236,15 @@ export const reaxel_SettingsView = reaxel( () => {
 			pending : false ,
 			error : false ,
 		} ,
-	})
-	
-	rehancer_Dev({store,setState,mutate})();
-	
-	const ipcMethods = rehancer_Ipc({ store , setState , mutate })();
-	
-	async function fetchSettings() {
-		const settings = await ipcMethods.fetchSettings();
-		
-		return settings;
-	}
-	
-	async function setSettings( settings ) {
-		if( !settings ) {
-			settings = await fetchSettings();
-		}
-		mutate( ( {
-			Data ,
-			UIControls,
-		} ) => {
-			
-		} );
-	}
-	
-	const rtn = {
-		fetchSettings ,
-		submitSettings:ipcMethods.submitSettings,
-		exitSettings:ipcMethods.exitSettings,
-		test(){
-			
-		}
-	};
-	
-	return Object.assign( () => rtn , {
-		store ,
-		setState ,
-		mutate ,
 	} );
-} );
+};
 
-export type Reaxel_SettingsView = Pick<typeof reaxel_SettingsView , "mutate"|"store"|"setState">;
+type Menus = "net" | "appearance" | "mngeai" | "sys" | "keys";
+type NotFalse<T> = Exclude<T , false | null | undefined>;
+type NotNull<T> = Exclude<T , null | undefined>;
 
 
-
-import { reaxable_Settings } from '#src/shared/reaxables/settings';
-import { rehancer_Dev } from './rehancer_Dev';
-import { rehancer_Ipc } from "#src/Views/SettingsView/reaxels/settings-view/rehancer_Ipc";
+import { Settings } from '#src/Types/Settings';
+import { AI } from "#src/Types/SettingsTypes/AI";
+import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
+import { Appearance } from "#src/Types/SettingsTypes/Appearance";

@@ -30,7 +30,7 @@
 		"skipLibCheck" : true ,
 		"allowUmdGlobalAccess" : true ,
 		"typeRoots" : [
-			"./" ,
+			"." ,
 			"./node_modules/@types"
 		] ,
 		"paths" : {
@@ -46,10 +46,13 @@
 		}
 	} ,
 	"include" : [
-		"./g.d.ts" ,
-		"./**/*" ,
+		".",
+		"../../preload.ts",
+		"../../../../../generic-services/**/*",
+		"../../Types/**/*",
+		"../../shared/**/*",
 		"../../../global.d.ts" ,
-		"../../../../../global.d.ts"
-	]
-	
+		"../../../../../global.d.ts",
+		"#generics/**/*"
+	],
 }
