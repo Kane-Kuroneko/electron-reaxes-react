@@ -70,7 +70,7 @@ import {
 } from 'electron';
 import { mainWindow } from "#main/mainWindow";
 import * as path from "path";
-import { reaxel_ElectronENV } from "#generic/reaxels/runtime-paths";
+import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {dev} from 'electron-is';
 
 type AI = "chatgpt"|"grok"|"gemini"|"deepseek";

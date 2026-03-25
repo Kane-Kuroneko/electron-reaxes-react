@@ -82,7 +82,7 @@ export type UpdateIconProps = {
 import React from 'react';
 import Confetti from './Confetti.json';
 import less from './index.module.less';
-import { Refaxel_Lottie } from '#generic/refaxels/lottie';
+import { Refaxel_Lottie } from '#generics/refaxels/lottie';
 import { NewIcon } from './new.svg';
 import Lottie , {
 	LottieRef ,

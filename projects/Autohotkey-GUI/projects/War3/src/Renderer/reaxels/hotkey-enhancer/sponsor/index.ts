@@ -35,4 +35,4 @@ export const reaxel_Sponsor = reaxel( () => {
 	});
 } );
 
-import { rehance_BrowserPersist } from '#generic/rehancers/browser-persist';
+import { rehance_BrowserPersist } from '#generics/rehancers/browser-persist';

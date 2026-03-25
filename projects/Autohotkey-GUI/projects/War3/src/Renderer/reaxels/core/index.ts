@@ -33,4 +33,4 @@ export const reaxel_GUI_Core = reaxel(() => {
 	});
 });
 
-import { rehance_BrowserPersist } from '#generic/rehancers/browser-persist';
+import { rehance_BrowserPersist } from '#generics/rehancers/browser-persist';

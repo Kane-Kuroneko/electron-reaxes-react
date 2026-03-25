@@ -1,6 +1,3 @@
-import { Networks } from "#src/shared/structs/settings";
-
-
 export const reaxel_Settings = reaxel(() => {
 	
 	const {setState,store,mutate} = createReaxable({
@@ -70,6 +67,7 @@ export const reaxel_Settings = reaxel(() => {
 	})
 })
 
+
 export type Reaxel_Settings = typeof reaxel_Settings;
 
 import {
@@ -77,15 +75,17 @@ import {
 	useIpcRpc ,
 	useIpcRendererToMain,
 } from '#main/services/ipc';
+
 import { reaxel , createReaxable , obsReaction , collectDeps , distinctCallback } from 'reaxes';
 import { Reaxel_View } from "#main/reaxels/Views";
 import { rehancer_ipcReceive } from './rehancer_ipcReceive';
 type Menus = "net" | "appearance" | "mngeai" | "sys" | "keys";
 type NotFalse<T> = Exclude<T , false | null | undefined>;
 type NotNull<T> = Exclude<T , null | undefined>;
-
-
 import { Settings } from '#src/Types/Settings';
+
+
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 import { Appearance } from "#src/Types/SettingsTypes/Appearance";
+import { Networks } from "#src/shared/structs/settings";

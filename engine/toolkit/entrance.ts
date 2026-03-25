@@ -83,6 +83,10 @@ if ( !node_env ) {
 	
 }
 
+if(!project){
+	console.warn('没有传入<project>,可能导致打包失败!');
+}
+
 console.log('entreance: ');
 purdy({
 	inputPort,

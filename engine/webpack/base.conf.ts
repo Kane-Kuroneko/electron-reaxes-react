@@ -28,7 +28,7 @@ export const webpackBaseConf:Configuration = {
 			'#root': absolutelyPath_RepositoryRoot,
 			'#root-projects': absolutelyPath_Projects,
 			'#project': absolutelyPath_subproject,
-			'#generic' : path.join( absolutelyPath_RepositoryRoot , 'generic-services' ),
+			'#generics' : path.join( absolutelyPath_RepositoryRoot , 'generic-services' ),
 			
 		},
 		extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],

@@ -82,8 +82,8 @@ export const reaxel_MainWindowHub = reaxel(() => {
 
 import { grokView } from '#main/WebContentsViews/PresetToolViews/Grok';
 import { chatGPTView } from '#main/WebContentsViews/PresetToolViews/ChatGPT';
-import { useOpenLinkViaChrome } from '#generic/modify-electron/link-handler';
-import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
+import { useOpenLinkViaChrome } from '#generics/modify-electron/link-handler';
+import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import { dev } from 'electron-is';
 import { reaxel_AllocatorController } from '../allocatorView-controller';
 import {app, BrowserWindow ,BrowserWindowConstructorOptions} from 'electron';

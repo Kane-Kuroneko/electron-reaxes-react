@@ -175,10 +175,10 @@ type SetStateWithCallback<T> = (newState: SetStateAction<T>, callback?: (state: 
 
 import { SetStateAction , useEffect , useRef , useState } from 'react';
 
-import { logProxy } from '#generic/utils';
-// import { Refaxel_BrowserPersist } from '#generic/reaxels/browser-persist';
+import { logProxy } from '#generics/utils';
+// import { Refaxel_BrowserPersist } from '#generics/reaxels/browser-persist';
 import { Radio } from 'antd';
-import { Options , Refaxel_Lottie } from '#generic/refaxels/lottie';
+import { Options , Refaxel_Lottie } from '#generics/refaxels/lottie';
 import Lottie , { LottieRef , LottieOptions } from "lottie-react";
 import * as complex from "./dark mode.json";
 import * as simple from "./simple animate.json";

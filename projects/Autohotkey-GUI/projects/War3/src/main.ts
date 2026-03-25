@@ -38,11 +38,12 @@ app.whenReady().then( () => {
 } );
 
 
+import './Main/electronSettings';
 import "#main/index";
 import "#main/reaxels/menu";
 import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
 import { initializeMainWindow } from '#main/initialize-main-window';
-import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
+import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import { app , ipcMain , screen } from 'electron';
 import {dev} from 'electron-is';
 import logger from 'electron-log/main';

@@ -33,6 +33,6 @@ export const _createAllocatorView = ({
 
 import type {reaxel_AllocatorController} from '../';
 import path from 'node:path';
-import { reaxel_ElectronENV } from '#generic/reaxels/runtime-paths';
+import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
 import { WebContentsView } from 'electron';
-import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
+import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';

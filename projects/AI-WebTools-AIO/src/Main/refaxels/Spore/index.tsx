@@ -103,6 +103,6 @@ export type SporeController = {
 	spore_id : number,
 };
 import path from 'path';
-import { reaxel_ElectronENV } from '#generic/reaxels/runtime-paths';
+import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
 import type {BrowserWindow} from 'electron';
 import {WebContentsView} from 'electron';

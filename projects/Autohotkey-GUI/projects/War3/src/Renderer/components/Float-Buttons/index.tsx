@@ -149,7 +149,7 @@ const reaxel_Lottie_Love = Refaxel_Lottie<"play" | "reset" | "revert">( {
 
 import { env , isBrowser,isElectron } from '#renderer/ENV';
 import { IpcRendererSend } from '#renderer/utils/useIPC';
-import { logProxy } from '#generic/utils/src/logProxy.utility';
+import { logProxy } from '#generics/utils/src/logProxy.utility';
 import { FloatResetAllConf } from './left/Reset-All-Conf';
 import { FloatLog } from './Float-Log';
 import { reaxel_Sponsor } from '#renderer/reaxels/hotkey-enhancer/sponsor';
@@ -157,7 +157,7 @@ import { reaxel_I18n } from '#renderer/reaxels/i18n';
 import { GithubFilled , HeartOutlined , RedEnvelopeOutlined , BugOutlined} from '@ant-design/icons';
 import { Button , FloatButton , Tooltip , TooltipProps , Popover } from 'antd';
 
-import { Refaxel_Lottie } from '#generic/refaxels/lottie';
+import { Refaxel_Lottie } from '#generics/refaxels/lottie';
 import Lottie , { LottieRef } from "lottie-react";
 import * as heart from "./love.lottie.json";
 

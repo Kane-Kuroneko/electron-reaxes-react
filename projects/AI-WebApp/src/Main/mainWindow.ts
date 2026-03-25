@@ -1,6 +1,6 @@
 const {absAppRunningPath} = reaxel_ElectronENV()
 
-app.disableHardwareAcceleration();
+
 await app.whenReady();
 /**
  * 
@@ -25,8 +25,10 @@ const eliminateScaleFactor = async (
 const {width,height} = await eliminateScaleFactor(screen.getPrimaryDisplay(),{width:3200,height:1800});
 
 const defaultOptions:BrowserWindowConstructorOptions = {
-	width : dev() ? width :400 ,
-	height : dev() ? height : 300 ,
+	width : dev() ? width :1280 ,
+	height : dev() ? height : 720 ,
+	
+	
 	webPreferences : {
 		nodeIntegration: false,
 		contextIsolation: true,
@@ -40,7 +42,7 @@ import {xPromise} from 'reaxes-utils'
 
 
 import { dev } from 'electron-is';
-import { reaxel_ElectronENV } from "#generic/reaxels/runtime-paths";
+import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {
 	app ,
 	BrowserWindow ,

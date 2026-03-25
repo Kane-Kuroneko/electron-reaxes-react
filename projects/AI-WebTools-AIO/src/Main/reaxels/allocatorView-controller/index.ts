@@ -56,7 +56,7 @@ export const reaxel_AllocatorController = reaxel(() => {
 import type { Refaxel_Spore } from '#main/refaxels/Spore';
 import { _createAllocatorView } from './createAllocatorView';
 import { reaxel_MainWindowHub } from '../main-window-hub';
-import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
+import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import type { WebContentsView , BrowserWindow } from 'electron';
 
 

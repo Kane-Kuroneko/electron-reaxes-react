@@ -45,7 +45,7 @@ import '#main/reaxels/electron-updater';
 import '#main/reaxels/chat';
 import { reaxel_MainProcessHub } from '#main/reaxels/main-process-hub';
 import { initMainchatWindow } from '#main/init-mainchat-window';
-import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
+import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import { app , ipcMain , screen } from 'electron';
 import {dev} from 'electron-is';
 import logger from 'electron-log/main';

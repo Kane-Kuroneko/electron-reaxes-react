@@ -31,7 +31,7 @@
 		"paths" : {
 			"#root/*" : ["../*"],
 			"#root-projects/*" : ["../projects/*"],
-			"#generic/*" : ["../generic-services/*"],
+			"#generics/*" : ["../generic-services/*"],
 			"" : ["./*"],
 			"" : ["./*"],
 			"" : ["./*"],

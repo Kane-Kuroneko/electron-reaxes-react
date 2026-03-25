@@ -73,5 +73,5 @@ const {
 	}
 }();
 
-import { IpcStructure } from "#generic/toolkit/electron/IpcStructure";
+import { IpcStructure } from "#generics/toolkit/electron/IpcStructure";
 import { ipcRenderer } from "electron";

@@ -43,6 +43,6 @@ export const reaxel_Theme = reaxel( () => {
 
 export type Theme = "dark" | "light";
 
-import { rehance_BrowserPersist } from '#generic/rehancers/browser-persist';
-import { Options , Refaxel_Lottie } from '#generic/refaxels/lottie';
+import { rehance_BrowserPersist } from '#generics/rehancers/browser-persist';
+import { Options , Refaxel_Lottie } from '#generics/refaxels/lottie';
 import * as lottieJSON from "./lottie.json";

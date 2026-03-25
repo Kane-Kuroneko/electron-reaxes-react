@@ -43,4 +43,4 @@ import { reaxel_AhkSpawner } from '#main/reaxels/ahk-spawner';
 import { IpcMainHandle , IpcMainOn , useIpcSend } from '#main/utils/useIPC';
 import { reaxel_ProcessMonitor } from '#main/reaxels/process-monitor';
 import { shell , clipboard , ipcRenderer , ipcMain , screen } from 'electron';
-import { useOpenDevtools } from '#generic/modify-electron/open-devtools';
+import { useOpenDevtools } from '#generics/modify-electron/open-devtools';

@@ -9,15 +9,15 @@
 // 	export const reaxper : typeof import('reaxes-react')['reaxper'];
 // 	export const Reaxlass : typeof import('reaxes-react')['Reaxlass'];
 //	
-// 	// export const utils : typeof import('#generic/utils');
+// 	// export const utils : typeof import('#generics/utils');
 // 	export const xPromise : typeof import('reaxes-utils')['xPromise'];
-// 	export const crayon : typeof import('#generic/utils')['crayon'];
-// 	// export const logProxy : typeof import('#generic/utils')['logProxy'];
-// 	// export const makePair : typeof import('#generic/utils')['makePair'];
-// 	// export const assert : typeof import('#generic/utils')['assert'];
-// 	// export const decodeQueryString : typeof import('#generic/utils')['decodeQueryString'];
-// 	// export const encodeQueryString : typeof import('#generic/utils')['encodeQueryString'];
-// 	// export const stringify : typeof import('#generic/utils')['stringify'];
+// 	export const crayon : typeof import('#generics/utils')['crayon'];
+// 	// export const logProxy : typeof import('#generics/utils')['logProxy'];
+// 	// export const makePair : typeof import('#generics/utils')['makePair'];
+// 	// export const assert : typeof import('#generics/utils')['assert'];
+// 	// export const decodeQueryString : typeof import('#generics/utils')['decodeQueryString'];
+// 	// export const encodeQueryString : typeof import('#generics/utils')['encodeQueryString'];
+// 	// export const stringify : typeof import('#generics/utils')['stringify'];
 //	
 // 	// export const useEffect : typeof import('react')['useEffect'];
 // 	// export const useRef : typeof import('react')['useRef'];

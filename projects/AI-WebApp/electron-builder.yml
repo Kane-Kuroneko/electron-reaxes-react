@@ -10,6 +10,6 @@
          to: "statics"
       }
    ],
-   electronVersion: "38.5.0",
+   electronVersion: "41.0.3",
    asar: true,
 }

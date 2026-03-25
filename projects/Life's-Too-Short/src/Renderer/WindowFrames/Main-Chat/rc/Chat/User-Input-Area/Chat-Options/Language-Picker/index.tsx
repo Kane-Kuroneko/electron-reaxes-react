@@ -24,5 +24,5 @@ export const LanguagePicker = reaxper( () => {
 
 
 import { WheeledPicker } from "#renderer/WindowFrames/shared/rc/Wheeled-Picker";
-import { languages } from "#generic/refaxels/i18n";
+import { languages } from "#generics/refaxels/i18n";
 import { reaxel_UserChatInput } from "#Main-Chat/reaxels/user-chat-input";

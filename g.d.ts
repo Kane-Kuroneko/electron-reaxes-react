@@ -169,7 +169,7 @@ declare module '*.raw.tsx' {
 	export default content;
 }
 // declare const orzPromise : typeof import('#utils').orzPromise;
-// declare const crayon : typeof import('#generic/utils').crayon;
+// declare const crayon : typeof import('#generics/utils').crayon;
 // declare const logProxy : typeof import('#utils').logProxy;
 // declare const makePair : typeof import('#utils').makePair;
 // declare const assert : typeof import('#utils').assert;

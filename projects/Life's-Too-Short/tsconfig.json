@@ -49,7 +49,7 @@
 			"#root-projects/*" : [
 				"../../projects/*"
 			] ,
-			"#generic/*" : [
+			"#generics/*" : [
 				"../../generic-services/*"
 			] ,
 			"#Main-Chat/*" : [

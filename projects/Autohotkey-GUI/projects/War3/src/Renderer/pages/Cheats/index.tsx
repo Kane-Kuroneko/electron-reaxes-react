@@ -65,7 +65,7 @@ import { Row } from './Row';
 import { columns } from './columns';
 import { reaxel_CheatCodes } from '#renderer/reaxels/cheats';
 import { MainConententAreaContainer } from '#renderer/pure-components/Main-Content-Area-Container';
-import { useforceUpdate } from '#generic/utils/src/hooks/useForceUpdate';
+import { useforceUpdate } from '#generics/utils/src/hooks/useForceUpdate';
 import { Table , TableColumnType } from 'antd';
 import { DndContext , PointerSensor , useSensor , useSensors } from '@dnd-kit/core';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';

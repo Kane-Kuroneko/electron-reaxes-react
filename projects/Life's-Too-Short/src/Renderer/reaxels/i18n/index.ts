@@ -63,7 +63,7 @@ export let reaxel_I18n = reaxel(() => {
 });
 
 import { isElectron , env } from '../../ENV';
-import { Refaxel_I18n , Languages } from '#generic/refaxels/i18n';
-import { rehance_I18n_Persist } from '#generic/refaxels/i18n/rehancers/storage';
+import { Refaxel_I18n , Languages } from '#generics/refaxels/i18n';
+import { rehance_I18n_Persist } from '#generics/refaxels/i18n/rehancers/storage';
 
 

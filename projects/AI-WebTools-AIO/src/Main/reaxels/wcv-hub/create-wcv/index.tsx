@@ -58,4 +58,4 @@ import script_F12OpenDevtools from '#main/ExcutebleScripts/f12-open-devtools.raw
 import { reaxel_ElectronENV } from '#root-projects/Autohotkey-GUI/projects/War3/src/Main/reaxels/runtime-paths';
 import path from 'node:path';
 import { app , WebContentsView ,ipcMain} from 'electron';
-import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
+import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';

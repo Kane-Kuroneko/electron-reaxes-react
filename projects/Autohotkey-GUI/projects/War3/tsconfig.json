@@ -1,5 +1,6 @@
 {
 	"compilerOptions" : {
+		"target": "ESNext",
 		"allowJs" : true ,
 		"allowSyntheticDefaultImports" : true ,
 		"allowUnusedLabels" : true ,
@@ -33,7 +34,7 @@
 			"#renderer/*" : ["./src/Renderer/*"],
 			"#src/*" : ["./src/*"],
 			"#root-projects/*" : ["../../../../projects/*"],
-			"#generic/*" : ["../../../../generic-services/*"],
+			"#generics/*" : ["../../../../generic-services/*"],
 			"#project/*" : ["./*"]
 		}
 	},

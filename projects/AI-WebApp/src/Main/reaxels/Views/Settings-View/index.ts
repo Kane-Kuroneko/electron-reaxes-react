@@ -39,5 +39,5 @@ export const reaxel_SettingsView = reaxel( () => {
 
 import { WebContentsView } from "electron";
 import { initWebContentsView } from "#main/reaxels/Views/utils/initWebContentsView";
-import { reaxel_ElectronENV } from "#generic/reaxels/runtime-paths";
+import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import * as path from 'node:path';

@@ -196,7 +196,7 @@ export const reaxel_HotkeyEnhancer = reaxel( () => {
 } );
 
 import { IpcRendererSend , IpcRendererOn , IpcRendererInvoke } from '#renderer/utils/useIPC';
-import { rehance_BrowserPersist } from '#generic/rehancers/browser-persist';
+import { rehance_BrowserPersist } from '#generics/rehancers/browser-persist';
 import { isElectron , isBrowser } from '#renderer/ENV';
 
 

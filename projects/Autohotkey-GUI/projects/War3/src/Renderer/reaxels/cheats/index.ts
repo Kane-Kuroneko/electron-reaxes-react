@@ -30,5 +30,5 @@ export interface DataType {
 	children? : DataType[],
 	// _zh_desc?:string,
 }
-import { rehance_BrowserPersist } from '#generic/rehancers/browser-persist';
+import { rehance_BrowserPersist } from '#generics/rehancers/browser-persist';
 import { originalCheatCodesData } from './cheat-data';

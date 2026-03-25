@@ -82,5 +82,5 @@ export type IpcJsonOn = {
 import { Message } from '#src/types/Message';
 import {UpdateCheckResult} from 'electron-updater';
 import type { Display } from 'electron/renderer';
-import type { Languages } from '#generic/refaxels/i18n';
+import type { Languages } from '#generics/refaxels/i18n';
 import { OpenAI } from '#main/services/LLM-requester/openai/type';

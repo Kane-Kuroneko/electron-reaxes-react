@@ -73,8 +73,8 @@ type ExtraOptions = Partial<{
 import { useQuitHook } from './useQuitHook';
 import { reaxel_ScreenAdapter  } from '#main/reaxels/screen-adpater';
 import { reaxel_ElectronENV } from '#main/reaxels/runtime-paths';
-import { useBeautifulDevtool } from '#generic/modify-electron/beautiful-devtool';
-import { useOpenDevtools } from '#generic/modify-electron/open-devtools';
+import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
+import { useOpenDevtools } from '#generics/modify-electron/open-devtools';
 import { dev } from 'electron-is';
 import { BrowserWindow , BrowserWindowConstructorOptions , screen } from 'electron';
 import path from 'path';
