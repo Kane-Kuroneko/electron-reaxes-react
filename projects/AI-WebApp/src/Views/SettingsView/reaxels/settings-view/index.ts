@@ -1,4 +1,5 @@
 
+
 export const reaxel_SettingsView = reaxel( () => {
 	// const electronStore = new ElectronStore<{
 	// 	settings: AI,
@@ -13,7 +14,7 @@ export const reaxel_SettingsView = reaxel( () => {
 					value : checkAs<Menus>( 'net' ) ,
 				} ,
 				{
-					label : 'Appearance(delay for now)' ,
+					label : 'Appearance(feat delayed)' ,
 					value : checkAs<Menus>( 'appearance' ) ,
 				} ,
 				{
@@ -226,6 +227,15 @@ export type Reaxel_SettingsView = Pick<typeof reaxel_SettingsView , "mutate"|"st
 
 
 
-import { reaxable_Settings } from '#src/shared/reaxables/settings';
+import { 
+	reaxable_Settings,
+	sharedSettingsStatus,
+	type Menus,
+	type Networks,
+} from '#src/shared/structs/settings';
+import { Settings } from '#src/Types/Settings';
 import { rehancer_Dev } from './rehancer_Dev';
 import { rehancer_Ipc } from "#src/Views/SettingsView/reaxels/settings-view/rehancer_Ipc";
+import { AI } from "#src/Types/SettingsTypes/AI";
+import { Appearance } from "#src/Types/SettingsTypes/Appearance";
+import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";

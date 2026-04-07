@@ -20,7 +20,7 @@ app.whenReady().then( async () => {
 	reaxel_Settings();
 	reaxel_Menu();
 	
-	// useDevSettingsView();
+	useDevSettingsView();
 	
 	return win;
 } );

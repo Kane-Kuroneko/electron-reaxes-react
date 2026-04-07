@@ -239,9 +239,8 @@ export const reaxable_Settings = () => {
 	} );
 };
 
-type Menus = "net" | "appearance" | "mngeai" | "sys" | "keys";
-type NotFalse<T> = Exclude<T , false | null | undefined>;
-type NotNull<T> = Exclude<T , null | undefined>;
+export type Menus = "net" | "appearance" | "mngeai" | "sys" | "keys";
+
 
 
 import { Settings } from '#src/Types/Settings';

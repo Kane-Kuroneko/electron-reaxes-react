@@ -1,5 +1,3 @@
-
-
 export const reaxel_AIViews = reaxel(() => {
 	
 	const {

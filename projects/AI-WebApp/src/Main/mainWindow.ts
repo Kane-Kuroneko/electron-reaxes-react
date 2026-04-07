@@ -1,28 +1,32 @@
 const {absAppRunningPath} = reaxel_ElectronENV()
-
+import {Rectangle} from 'electron';
 
 await app.whenReady();
+
+
 /**
  * 
- * @param display 哪个显示器,默认为主显示器
- * @param scaleFactorType 要排除的缩放因子类型 win系统上scaleFactor获取到的因子=textScale*displayScale,一个是无障碍中的文本缩放,一个是显示器缩放
  */
-const eliminateScaleFactor = async (
-	display:Display,
-	{width,height}:Record<"width"|"height" , number>,
-	scaleFactorType : 'mixed'|'textFactor'|'displayFactor' = 'mixed'
-) => {
-	if(['textFactor','displayFactor'].includes(scaleFactorType)){
-		throw new Error('暂未实现');
-	}
+const getLogicalResolution = (
+	baseLogicalWidth = 1600,   // 你设计稿的基准尺寸
+	baseLogicalHeight = 900,
+	position?:Rectangle,
 	
+) => {
+	screen.getPrimaryDisplay().bounds
+	const targetDisplay = position
+		? screen.getDisplayNearestPoint(position)
+		: screen.getPrimaryDisplay();
+	const workArea = targetDisplay.workAreaSize;
+	let logicalWidth = Math.min(baseLogicalWidth, Math.floor(workArea.width * 0.75));
+	let logicalHeight = Math.min(baseLogicalHeight, Math.floor(workArea.height * 0.75));
 	return {
-		width : width / display.scaleFactor ,
-		height : height / display.scaleFactor ,
-	};
+		width:Math.max(1024, logicalWidth),
+		height:Math.max(600, logicalHeight),
+	}
 }
 
-const {width,height} = await eliminateScaleFactor(screen.getPrimaryDisplay(),{width:3200,height:1800});
+const {width,height} = await getLogicalResolution();
 
 const defaultOptions:BrowserWindowConstructorOptions = {
 	width : dev() ? width :1280 ,

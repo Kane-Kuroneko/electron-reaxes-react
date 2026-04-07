@@ -79,9 +79,9 @@ import {
 import { reaxel , createReaxable , obsReaction , collectDeps , distinctCallback } from 'reaxes';
 import { Reaxel_View } from "#main/reaxels/Views";
 import { rehancer_ipcReceive } from './rehancer_ipcReceive';
-type Menus = "net" | "appearance" | "mngeai" | "sys" | "keys";
-type NotFalse<T> = Exclude<T , false | null | undefined>;
-type NotNull<T> = Exclude<T , null | undefined>;
+export type Menus = "net" | "appearance" | "mngeai" | "sys" | "keys";
+export type NotFalse<T> = Exclude<T , false | null | undefined>;
+export type NotNull<T> = Exclude<T , null | undefined>;
 import { Settings } from '#src/Types/Settings';
 
 

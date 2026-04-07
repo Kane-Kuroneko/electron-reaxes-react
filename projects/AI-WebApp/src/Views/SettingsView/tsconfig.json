@@ -46,13 +46,14 @@
 		}
 	} ,
 	"include" : [
-		".",
-		"../../preload.ts",
-		"../../../../../generic-services/**/*",
-		"../../Types/**/*",
-		"../../shared/**/*",
+		"." ,
+		"../../preload.ts" ,
+		"../../../../../generic-services/**/*" ,
+		"../../Types/**/*" ,
+		"../../shared/**/*" ,
 		"../../../global.d.ts" ,
-		"../../../../../global.d.ts",
-		"#generics/**/*"
-	],
+		"../../../../../global.d.ts" ,
+		"#generics/**/*" ,
+		"../../../../../g.d.ts"
+	]
 }

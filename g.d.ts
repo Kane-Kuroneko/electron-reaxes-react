@@ -29,6 +29,8 @@ declare const __ENV_CONFIG__: {
 // declare const __NODE_ENV__ : "development"|"production";
 declare const __ENV__ : ORZ.env;
 
+declare type NotFalse<T> = Exclude<T , false | null | undefined>;
+declare type NotNull<T> = Exclude<T , null | undefined>;
 
 /*DOM*/
 declare interface EventTarget {

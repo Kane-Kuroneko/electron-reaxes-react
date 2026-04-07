@@ -112,7 +112,11 @@ export const reaxel_Menu = reaxel( () => {
 					{
 						role : 'resetZoom' ,
 					} ,
-					{ role : 'zoomIn' } ,
+					{
+						label: 'Zoom In',
+						accelerator: 'CmdOrCtrl+=',
+						role : 'zoomIn',
+					}, ,
 					{ role : 'zoomOut' } ,
 					{ type : 'separator' } ,
 					{ role : 'togglefullscreen' },
