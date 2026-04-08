@@ -210,22 +210,20 @@ const EditProxyServerModal = reaxper( () => {
 						}}
 					/>
 				</Form.Item>
-				<Form.Item
-					label="Authentication :"
+				<Checkbox
+					style={{userSelect:'none'}}
+					checked={!!store.fields.proxy_conf.proxy_auth}
+					onChange={(e) => {
+						setState.fields.proxy_conf( {
+							proxy_auth : e.target.checked ? {
+								username : '' ,
+								password : '' ,
+							} : false ,
+						} );
+					}}
 				>
-					<Checkbox
-						style={{userSelect:'none'}}
-						checked={!!store.fields.proxy_conf.proxy_auth}
-						onChange={(e) => {
-							setState.fields.proxy_conf( {
-								proxy_auth : e.target.checked ? {
-									username : '' ,
-									password : '' ,
-								} : false ,
-							} );
-						}}
-					>Enable</Checkbox>
-				</Form.Item>
+					Authentication
+				</Checkbox>
 				{ProxyAuth}
 			</Form>
 		</div>

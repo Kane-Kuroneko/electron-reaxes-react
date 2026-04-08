@@ -34,7 +34,8 @@ export const reaxel_SettingsView = reaxel( () => {
 		//UI组件状态和临时数据
 		UIControls : {
 			networks : {
-				proxy_mode : checkAs<'direct' | 'use_system' | 'user_fill' | 'from_proxy_server'>( 'user_fill' ) ,
+				proxy_mode : checkAs<'direct' | 'use_system' | 'user_fill' | 'from_server_list'>( 'user_fill' ) ,
+				using_proxy_server_id : checkAs<string>( null ) ,
 				proxy_fields : checkAs<NotFalse<Settings.IpcSettings['proxy']> & { no_proxy_for__enabled: boolean; }>( {
 					hostname : '127.0.0.1' ,
 					port : 7897 ,
@@ -148,6 +149,21 @@ export const reaxel_SettingsView = reaxel( () => {
 					disabled : false ,
 					AI_family : checkAs<AI.AIFamily>( 'grok' ) ,
 					url : "https://grok.com" ,
+					proxy_mode : 'user_fill' ,
+					from_server_list_proxy : null ,
+					user_fill_proxy : {
+						hostname : '127.0.0.1' ,
+						port : 7897 ,
+						protocol : 'http' ,
+						proxy_auth : false,
+					},
+				} ,
+				{
+					label : "AI-Web (Proxy Test)" as const ,
+					id : 'a1-web-test-proxy-0001' ,
+					disabled : false ,
+					AI_family : checkAs<AI.AIFamily>( 'dev-proxy-test' ) ,
+					url : "https://whatismyipaddress.com/" ,
 					proxy_mode : 'user_fill' ,
 					from_server_list_proxy : null ,
 					user_fill_proxy : {

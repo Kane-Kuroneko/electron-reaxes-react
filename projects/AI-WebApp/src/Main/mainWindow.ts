@@ -1,5 +1,5 @@
 const {absAppRunningPath} = reaxel_ElectronENV()
-import {Rectangle} from 'electron';
+
 
 await app.whenReady();
 
@@ -56,3 +56,4 @@ import {
 } from 'electron';
 import _ from 'lodash';
 import * as path from 'node:path';
+import {Rectangle} from 'electron';

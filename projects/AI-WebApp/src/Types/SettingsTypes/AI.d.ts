@@ -1,6 +1,6 @@
 export namespace AI {
 	
-	export type AIFamily = "chatgpt"|"grok"|"gemini"|"deepseek";
+	export type AIFamily = "chatgpt"|"grok"|"gemini"|"deepseek"|"dev-proxy-test";
 	
 	
 	export type UserFillProxy = NetworkProxy.ProxyConf;

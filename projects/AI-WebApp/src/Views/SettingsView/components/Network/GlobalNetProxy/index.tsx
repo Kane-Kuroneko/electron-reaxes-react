@@ -21,13 +21,48 @@ export const GlobalProxy = reaxper( () => {
 			>
 				<Radio value="direct">Direct(No Proxy)</Radio>
 				<Radio value="use_system">Follow system proxy settings</Radio>
-				<Radio value="from_proxy_server">Manual proxy configuration</Radio>
+				<Radio value="from_server_list">Select from proxy servers</Radio>
 				<Radio value="user_fill">Manual proxy configuration</Radio>
 			</Radio.Group>
 			
+			<ProxyServerSelector/>
 			<ManualProxy/>
 		</Item>
 		
+	</div>;
+} );
+
+const ProxyServerSelector = reaxper( () => {
+	if(store.proxy_mode !== 'from_server_list'){
+		return null;
+	}
+	return <div style={{ marginTop: 12 }}>
+		<Form.Item
+			label="Proxy Server :"
+			layout="vertical"
+		>
+			<Select
+				value={store.using_proxy_server_id}
+				onChange={(value) => {
+					setState({
+						using_proxy_server_id: value,
+					});
+				}}
+				placeholder="Select a proxy server"
+				variant="underlined"
+			>
+				{store.proxy_server_list
+					.filter(server => server.enabled)
+					.map(server => (
+						<Select.Option
+							key={server.proxy_server_id}
+							value={server.proxy_server_id}
+						>
+							{server.server_name} ({server.proxy_conf.protocol}://{server.proxy_conf.hostname}:{server.proxy_conf.port})
+						</Select.Option>
+					))}
+			</Select>
+		</Form.Item>
 	</div>;
 } );
 

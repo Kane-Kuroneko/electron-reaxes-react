@@ -5,6 +5,7 @@ export const AIKeys:AI[] = [
 	"grok",
 	"gemini",
 	"deepseek",
+	"dev-proxy-test",
 ];
 export const AIData = [
 	{
@@ -31,8 +32,14 @@ export const AIData = [
 		domain : "https://chat.deepseek.com",
 		browser_name : "deepseek_window" as const,
 	},
+	{
+		label : "AI-Web (Proxy Test)" as const,
+		AIName : checkAs<AI>('dev-proxy-test'),
+		domain : "https://whatismyipaddress.com/",
+		browser_name : "ai_web_window" as const,
+	},
 ]
-export type AI = "chatgpt"|"grok"|"gemini"|"deepseek";
+export type AI = "chatgpt"|"grok"|"gemini"|"deepseek"|"dev-proxy-test";
 export type AIView = {
 	AIName : AI ,
 	view : WebContentsView,

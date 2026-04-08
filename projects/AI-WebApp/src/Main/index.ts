@@ -1,66 +1,8 @@
 // Modules to control application life and create native browser window
-install();
+// This file serves as the entry point that orchestrates the startup sequence
 
-logger.initialize();
-process.title = "AI Web App";
+// Before-Launch: Synchronous initialization before app.whenReady()
+import './before-launch';
 
-app.whenReady().then( async () => {
-	
-	const win = mainWindow;
-	// mainWindow.contentView.setBounds( {
-	// 	x : 0 ,
-	// 	y : 0 ,
-	// 	width : 800 ,
-	// 	height : 600 ,
-	// } );
-	useBeautifulDevtool( win );
-	const proxyRules = 'http=127.0.0.1:7897;https=127.0.0.1:7897';
-	const ses = win.webContents.session;
-	await ses.setProxy({ proxyRules });
-	reaxel_Settings();
-	reaxel_Menu();
-	
-	useDevSettingsView();
-	
-	return win;
-} );
-
-
-app.whenReady().then( () => {
-	
-	const primaryDisplay = screen.getPrimaryDisplay();
-	
-	const scaleFactor = primaryDisplay.scaleFactor;
-	
-} );
-
-app.on( 'before-quit' , () => {
-	BrowserWindow.getAllWindows()?.[0]?.destroy();
-} );
-
-
-function useDevSettingsView(){
-	Reaxel_View.setState({settingsViewOpened : true});
-	const settingsView = reaxel_SettingsView().initSettingsView();
-	settingsView.setVisible(true);
-	mainWindow.contentView.addChildView(settingsView);
-	settingsView.webContents.openDevTools();
-}
-
-
-import './electron.conf';
-import { install } from 'source-map-support';
-import { reaxel_Settings } from "#main/reaxels/Settings";
-import { mainWindow } from './mainWindow';
-import { reaxel_Menu } from './reaxels/Menu';
-import logger from 'electron-log/main';
-import {
-	app ,
-	BrowserWindow ,
-	screen ,
-} from 'electron';
-import process from 'node:process';
-import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
-import { Reaxel_View } from "#main/reaxels/Views";
-import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
-import { dev } from "electron-is";
+// When-Ready: Asynchronous initialization after app.whenReady()
+import './when-ready';
