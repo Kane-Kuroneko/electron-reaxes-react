@@ -218,6 +218,61 @@ const AIProxySelector = reaxper( () => {
 					...notFalse(store.proxy_fields),
 					no_proxy_for: value,
 				});
+				
+				// 打印已选项（优化版：分组显示）
+				if (value && value.length > 0) {
+					console.groupCollapsed('%c[No Proxy For] Selection Updated', 'color: #52c41a; font-weight: bold;');
+					
+					// 分类统计
+					const families: string[] = [];
+					const names: Array<{family: string; name: string}> = [];
+					
+					value.forEach((item: string) => {
+						if (item.startsWith('family:')) {
+							const family = item.replace('family:', '');
+							families.push(family);
+						} else if (item.startsWith('name:')) {
+							const parts = item.replace('name:', '').split(':');
+							const family = parts[0];
+							const name = parts.slice(1).join(':');
+							names.push({ family, name });
+						}
+					});
+					
+					// 打印 AI-Family 汇总
+					if (families.length > 0) {
+						console.log(
+							`%c📁 AI-Families (${families.length}):`, 
+							'color: #1890ff; font-weight: bold;',
+							families.join(', ')
+						);
+					}
+					
+					// 打印 AI-Name 汇总（按 family 分组）
+					if (names.length > 0) {
+						const groupedByFamily = names.reduce((acc, { family, name }) => {
+							if (!acc[family]) acc[family] = [];
+							acc[family].push(name);
+							return acc;
+						}, {} as Record<string, string[]>);
+						
+						console.log(
+							`%c🤖 AI-Names (${names.length}):`, 
+							'color: #52c41a; font-weight: bold;'
+						);
+						
+						Object.entries(groupedByFamily).forEach(([family, nameList]) => {
+							console.log(`  • ${family}: ${nameList.join(', ')}`);
+						});
+					}
+					
+					// 打印完整原始值（折叠）
+					console.debug('Raw values:', value);
+					
+					console.groupEnd();
+				} else {
+					crayon.warn['#faad14']('[No Proxy For] All items cleared');
+				}
 			}}
 			placeholder="Select AI family or AI name to bypass proxy"
 			style={{ width: '100%' }}
@@ -244,3 +299,4 @@ import { reaxper  } from 'reaxes-react';
 import less from './index.module.less';
 import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
+import { crayon } from '#generics/utils/src/crayon.utility';
