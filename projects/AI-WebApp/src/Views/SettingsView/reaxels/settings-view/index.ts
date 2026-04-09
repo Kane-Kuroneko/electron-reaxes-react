@@ -129,8 +129,38 @@ export const reaxel_SettingsView = reaxel( () => {
 		Data : {
 			AIs : checkAs<AI.AIItem[]>( [
 				{
-					label : "ChatGPT" as const ,
-					id : '335f54fe-e09c-44e5-a168-783c7a3d5d1f' ,
+					label : "ChatGPT - Mia" as const ,
+					id : 'chatgpt-mia-001' ,
+					disabled : false ,
+					AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
+					url : "https://chatgpt.com" ,
+					proxy_mode : 'user_fill' ,
+					from_server_list_proxy : null ,
+					user_fill_proxy : {
+						hostname : '127.0.0.1' ,
+						port : 7897 ,
+						protocol : 'http' ,
+						proxy_auth : false,
+					},
+				} ,
+				{
+					label : "ChatGPT - John" as const ,
+					id : 'chatgpt-john-002' ,
+					disabled : false ,
+					AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
+					url : "https://chatgpt.com" ,
+					proxy_mode : 'user_fill' ,
+					from_server_list_proxy : null ,
+					user_fill_proxy : {
+						hostname : '127.0.0.1' ,
+						port : 7897 ,
+						protocol : 'http' ,
+						proxy_auth : false,
+					},
+				} ,
+				{
+					label : "ChatGPT - Alex" as const ,
+					id : 'chatgpt-alex-003' ,
 					disabled : false ,
 					AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
 					url : "https://chatgpt.com" ,

@@ -158,17 +158,73 @@ const ManualProxy = reaxper( () => {
 				</Space>
 			</label> }
 		>
-			<Select
-				disabled={ !store.proxy_fields.no_proxy_for__enabled }
-				mode="multiple"
-				options={ [] }
-				value={ store.proxy_fields.no_proxy_for }
-				variant="underlined"
-			/>
+			<AIProxySelector/>
 		</Form.Item>
 	</div>
 } );
 
+
+const AIProxySelector = reaxper( () => {
+	const { AIs } = reaxel_SettingsView.store.Data;
+	
+	// 构建树形结构
+	const treeData = AIs.reduce((acc, ai) => {
+		// 查找是否已存在该family节点
+		let familyNode = acc.find(item => item.value === `family:${ai.AI_family}`);
+		if (!familyNode) {
+			familyNode = {
+				label: (
+					<span style={{ fontWeight: 'bold', fontSize: '14px' }}>
+						<FolderOutlined style={{ marginRight: 4, color: '#1890ff' }} />
+						{ai.AI_family}
+					</span>
+				),
+				value: `family:${ai.AI_family}`,
+				selectable: true,
+				children: [],
+			};
+			acc.push(familyNode);
+		}
+		
+		// 添加AI-name作为子节点
+		familyNode.children.push({
+			label: (
+				<span style={{ paddingLeft: 4 }}>
+					<RobotOutlined style={{ marginRight: 4, color: '#52c41a' }} />
+					{ai.label}
+				</span>
+			),
+			value: `name:${ai.AI_family}:${ai.label}`,
+			selectable: true,
+		});
+		
+		return acc;
+	}, [] as Array<{label: React.ReactNode; value: string; selectable: boolean; children?: any[]}>);
+	
+	// 将存储的值转换为Select需要的格式
+	const selectValue = store.proxy_fields.no_proxy_for || [];
+	
+	return (
+		<TreeSelect
+			disabled={ !store.proxy_fields.no_proxy_for__enabled }
+			treeData={treeData}
+			value={selectValue}
+			variant="underlined"
+			multiple
+			treeCheckable
+			showCheckedStrategy={TreeSelect.SHOW_PARENT}
+			onChange={(value) => {
+				setState.proxy_fields({
+					...notFalse(store.proxy_fields),
+					no_proxy_for: value,
+				});
+			}}
+			placeholder="Select AI family or AI name to bypass proxy"
+			style={{ width: '100%' }}
+			treeDefaultExpandAll
+		/>
+	);
+} );
 
 import {
 	Checkbox ,
@@ -178,9 +234,11 @@ import {
 	Table,
 	Segmented ,
 	Select ,
+	TreeSelect,
 	Space ,
 	InputNumber
 } from 'antd';
+import { FolderOutlined, RobotOutlined } from '@ant-design/icons';
 
 import { reaxper  } from 'reaxes-react';
 import less from './index.module.less';
