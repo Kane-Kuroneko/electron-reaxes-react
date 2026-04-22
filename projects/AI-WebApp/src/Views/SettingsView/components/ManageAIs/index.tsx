@@ -1,3 +1,4 @@
+
 const columns : TableColumnType<AI.AIItem>[] = [
 	{
 		title : 'Drag to sort' ,
@@ -29,21 +30,13 @@ const columns : TableColumnType<AI.AIItem>[] = [
 	{
 		title : 'Operations' ,
 		render : ( text , record , index ) => {
+			const { changeEditAIModalVisible } = reaxel_SettingsView();
 			return <div>
 				<Space>
 					<Button
 						type="link"
 						onClick={() => {
-							reaxel_SettingsView.setState.UIControls.manage_AIs.edit_AI_modal({
-								visible : true,
-								editing_id : record.id,
-								fields : {
-									...record,
-									from_server_list_proxy : null,
-									user_fill_proxy : null,
-									proxy_mode : 'follow_global_setting',
-								},
-							});
+							changeEditAIModalVisible(true,record.id);
 						}}
 					>Edit</Button>
 				</Space>
@@ -61,7 +54,7 @@ export const RCManageAIsPanel = reaxper( () => {
 			dataSource={ reaxel_SettingsView.store.Data.AIs.map( it => (
 				{
 					...it ,
-					key : it.AI_family
+					key : it.id
 				}
 			) ) }
 			pagination={ false }
@@ -71,7 +64,7 @@ export const RCManageAIsPanel = reaxper( () => {
 } );
 
 const EidtAIModal = reaxper( () => {
-
+	const { changeEditAIModalVisible } = reaxel_SettingsView();
 	const {edit_AI_modal:store} = reaxel_SettingsView.store.UIControls.manage_AIs;
 	const {edit_AI_modal:setState} = reaxel_SettingsView.setState.UIControls.manage_AIs;
 	
@@ -82,6 +75,7 @@ const EidtAIModal = reaxper( () => {
 		AI_family:checkAs<AI.AIFamily>(null),
 		url:checkAs<string>(null),
 		proxy:checkAs<NetworkProxy.ProxyConf>(null),
+		preloadOnStartup:checkAs<boolean>(false),
 	};
 
 	useEffect( () => {
@@ -90,14 +84,48 @@ const EidtAIModal = reaxper( () => {
 		}
 	} , [ editing_id ] );
 	
-	const target = reaxel_SettingsView.store.Data.AIs.find( it => it.id === store.editing_id );
 	
 	const ProxyComponent = {
 		'from_server_list' : <SelectProxyServer/>,
 		'user_fill' : <UserFillProxy/>,
-	}[store.fields.proxy_mode];
+	}[fields.proxy_mode] ?? null;
 	
-	console.log(editing_id,target);		
+	// 保存编辑的AI配置
+	const handleSave = () => {
+		const {mutate} = reaxel_SettingsView;
+		
+		mutate((state) => {
+			const aiIndex = state.Data.AIs.findIndex(ai => ai.id === editing_id);
+			if(aiIndex !== -1) {
+				// 更新AI配置
+				state.Data.AIs[aiIndex] = {
+					...state.Data.AIs[aiIndex],
+					label: store.fields.label,
+					AI_family: store.fields.AI_family,
+					url: store.fields.url,
+					preloadOnStartup: store.fields.preloadOnStartup,
+					proxy_mode: store.fields.proxy_mode,
+					from_server_list_proxy: store.fields.from_server_list_proxy,
+					user_fill_proxy: store.fields.user_fill_proxy,
+				};
+				
+				// 收集所有需要预加载的AI family并发送到主进程
+				const preloadAIFamilies = state.Data.AIs
+					.filter(ai => ai.preloadOnStartup === true)
+					.map(ai => ai.AI_family);
+				
+				// 通过IPC发送到主进程保存
+				window.api.updatePreloadAIConfig(preloadAIFamilies);
+			}
+		});
+		
+		// 关闭modal
+		setState({
+			visible: false,
+			editing_id: null,
+		});
+	};
+	
 	return <Modal
 		open={ store.visible && editing_id }
 		onCancel={ () => {
@@ -106,6 +134,9 @@ const EidtAIModal = reaxper( () => {
 				editing_id : null ,
 			} );
 		} }
+		onOk={handleSave}
+		okText="Save"
+		cancelText="Cancel"
 	>
 		<div>
 			<Form
@@ -169,6 +200,21 @@ const EidtAIModal = reaxper( () => {
 						<Radio value="user_fill">Manual</Radio>	
 					</Radio.Group>
 					{ProxyComponent}
+				</Form.Item>
+				<Form.Item
+					label="Preload on Startup"
+					valuePropName="checked"
+				>
+					<Checkbox
+						value={store.fields.preloadOnStartup}
+						checked={store.fields.preloadOnStartup ?? false}
+						onChange={(e) => {
+							setState.fields( {preloadOnStartup : e.target.checked} );
+						}}
+						style={{userSelect:'none'}}
+					>
+						Load this AI immediately when app starts
+					</Checkbox>
 				</Form.Item>
 			</Form>
 		</div>
@@ -261,7 +307,6 @@ export const UserFillProxy = reaxper( () => {
 		</Form.Item>
 	</div>;
 } );
-
 import {
 	Table ,
 	Pagination ,

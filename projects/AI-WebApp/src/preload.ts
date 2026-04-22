@@ -6,11 +6,13 @@ const useMtr = createIpc<MainToRendererEvents>('mtrEvent');
 const fetchSettings = useRpc( 'fetch-settings' );
 const submitSettings = useRpc( 'submit-settings' );
 const exitSettings = useRtm('exit-settings');
+const updatePreloadAIConfig = useRtm('update-preload-ai-config');
 
 const api = {
 	fetchSettings ,
 	submitSettings ,
 	exitSettings,
+	updatePreloadAIConfig,
 };
 export type API = typeof api;
 

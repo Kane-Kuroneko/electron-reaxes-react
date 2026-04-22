@@ -110,6 +110,7 @@ export const reaxel_SettingsView = reaxel( () => {
 						proxy_mode : checkAs<"direct" | "follow_global_setting" | "from_server_list" | "user_fill">( 'follow_global_setting' ) ,
 						from_server_list_proxy : checkAs<string>( null ) ,
 						user_fill_proxy : checkAs<NetworkProxy.ProxyConf>( null ) ,
+						preloadOnStartup:false,
 					} ) ,
 				} ,
 			} ,
@@ -136,6 +137,7 @@ export const reaxel_SettingsView = reaxel( () => {
 					url : "https://chatgpt.com" ,
 					proxy_mode : 'user_fill' ,
 					from_server_list_proxy : null ,
+					preloadOnStartup:false,
 					user_fill_proxy : {
 						hostname : '127.0.0.1' ,
 						port : 7897 ,
@@ -151,6 +153,7 @@ export const reaxel_SettingsView = reaxel( () => {
 					url : "https://chatgpt.com" ,
 					proxy_mode : 'user_fill' ,
 					from_server_list_proxy : null ,
+					preloadOnStartup:false,
 					user_fill_proxy : {
 						hostname : '127.0.0.1' ,
 						port : 7897 ,
@@ -166,6 +169,7 @@ export const reaxel_SettingsView = reaxel( () => {
 					url : "https://chatgpt.com" ,
 					proxy_mode : 'user_fill' ,
 					from_server_list_proxy : null ,
+					preloadOnStartup:false,
 					user_fill_proxy : {
 						hostname : '127.0.0.1' ,
 						port : 7897 ,
@@ -181,6 +185,7 @@ export const reaxel_SettingsView = reaxel( () => {
 					url : "https://grok.com" ,
 					proxy_mode : 'user_fill' ,
 					from_server_list_proxy : null ,
+					preloadOnStartup:false,
 					user_fill_proxy : {
 						hostname : '127.0.0.1' ,
 						port : 7897 ,
@@ -196,6 +201,7 @@ export const reaxel_SettingsView = reaxel( () => {
 					url : "https://whatismyipaddress.com/" ,
 					proxy_mode : 'user_fill' ,
 					from_server_list_proxy : null ,
+					preloadOnStartup:false,
 					user_fill_proxy : {
 						hostname : '127.0.0.1' ,
 						port : 7897 ,
@@ -253,8 +259,19 @@ export const reaxel_SettingsView = reaxel( () => {
 		} );
 	}
 	
+	//通过此方法编辑AI模态框的显示状态,以实现自动操作modal fields
+	const changeEditAIModalVisible = (visible:boolean,AI_id:string) => {
+		const targetFields = store.Data.AIs.find( ( item ) => item.id === AI_id );
+		setState.UIControls.manage_AIs.edit_AI_modal({
+			visible ,
+			editing_id : AI_id ,
+			fields : checkAs<AI.EditAIItem>( targetFields ) ,
+		});
+	}
+	
 	const rtn = {
 		fetchSettings ,
+		changeEditAIModalVisible,
 		submitSettings:ipcMethods.submitSettings,
 		exitSettings:ipcMethods.exitSettings,
 		test(){

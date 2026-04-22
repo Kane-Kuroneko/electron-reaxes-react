@@ -15,7 +15,7 @@ export namespace AI {
 		proxy_mode: NetworkProxy.ProxyMode;
 		from_server_list_proxy: string; //proxy_server_id
 		user_fill_proxy: UserFillProxy;
-		preloadOnStartup?: boolean; // 是否在应用启动时预加载
+		preloadOnStartup: boolean; // 是否在应用启动时预加载
 	}
 	
 	export type EditAIItem = {
@@ -26,6 +26,7 @@ export namespace AI {
 		proxy_mode: NetworkProxy.ProxyMode;
 		from_server_list_proxy: string; //proxy_server_id
 		user_fill_proxy: AIItem['user_fill_proxy'];
+		preloadOnStartup: boolean; // 是否在应用启动时预加载
 	}
 }
 
