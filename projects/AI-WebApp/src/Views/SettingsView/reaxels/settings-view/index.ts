@@ -265,7 +265,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		setState.UIControls.manage_AIs.edit_AI_modal({
 			visible ,
 			editing_id : AI_id ,
-			fields : checkAs<AI.EditAIItem>( targetFields ) ,
+			fields : checkAs<AI.EditAIItem>( _.cloneDeep(targetFields) ) ,
 		});
 	}
 	

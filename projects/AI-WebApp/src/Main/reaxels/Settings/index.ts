@@ -2,14 +2,16 @@ export const reaxel_Settings = reaxel(() => {
 	
 	const {setState,store,mutate} = createReaxable({
 		networks : checkAs<Networks.UnionType & {
-			
+			//fixme
+			using_proxy_server_id:string;
+			proxy_server_list:any[];
 		}>({
 			proxy_mode :  'user_fill' ,
 			proxy_fields : checkAs<NotFalse<Settings.IpcSettings['proxy']> & { no_proxy_for__enabled: boolean; }>( {
 				hostname : '127.0.0.1' ,
 				port : 7897 ,
 				protocol : 'http' ,
-				no_proxy_for : checkAs<string[]>( [] ) ,
+				no_proxy_for : checkAs<NetworkProxy.NoProxyForItem[]>( [] ) ,
 				//是否启用no_proxy_for字段,作用是仅禁用但不清空字段
 				no_proxy_for__enabled : true ,
 				proxy_auth : false ,
@@ -49,6 +51,12 @@ export const reaxel_Settings = reaxel(() => {
 	
 	useIpcRendererToMain('exit-settings').on(({event,reply}) => {
 		Reaxel_View.setState({settingsViewOpened : false});
+	});
+	
+	useIpcRendererToMain('update-preload-ai-config').on(({event}, preloadAIFamilies) => {
+		console.log('Received update-preload-ai-config:', preloadAIFamilies);
+		// TODO: 在这里处理预加载AI配置的保存逻辑
+		// 例如：保存到electron-store或其他持久化存储
 	});
 	
 	useIpcRpc('submit-settings').handle(async ({event},settings) => {

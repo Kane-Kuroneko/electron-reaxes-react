@@ -1,8 +1,8 @@
-import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
 
 export const Reaxel_View = reaxel( () => {
 	const electronStore = new ElectronStore<{
 		previously_used_ai: AI,
+		preload_ai_families: AI[], // 存储需要预加载的AI family列表
 	}>( { name : "previously-used-ai" } );
 	const previously_used_ai = electronStore.get( "previously_used_ai" ) || "chatgpt";
 	const {
@@ -43,11 +43,36 @@ export const Reaxel_View = reaxel( () => {
 		}
 	}
 	
+	// 预加载所有标记为preloadOnStartup的AI Views
+	function preloadStartupAIViews(){
+		const { initAIView } = reaxel_AIViews();
+		
+		// 从electronStore获取需要预加载的AI family列表
+		const preloadAIFamilies = electronStore.get( "preload_ai_families" ) || [];
+		
+		// 为每个需要预加载的AI初始化view
+		preloadAIFamilies.forEach(aiFamily => {
+			// 验证AI family是否有效
+			if(AIKeys.find(key => key === aiFamily)) {
+				initAIView(aiFamily as AI);
+			}
+		});
+	}
+	
 	app.whenReady().then(() => {
 		onReadyLoadAIView();
+		// 延迟预加载,确保所有view都已初始化
+		setTimeout(() => {
+			preloadStartupAIViews(); // 预加载标记为启动加载的AI Views
+		}, 500);
 		mainWindow.on( 'resize' , () => {
 			fitWindow();
 		} );
+		
+		// 监听来自Renderer进程的预加载配置更新
+		useIpcRendererToMain('update-preload-ai-config').on(({event}, preloadAIFamilies: AI[]) => {
+			electronStore.set('preload_ai_families', preloadAIFamilies);
+		});
 	});
 	
 	//当用户切换时重新创建menu并渲染
@@ -89,7 +114,7 @@ export const Reaxel_View = reaxel( () => {
 } );
 
 
-
+import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
 import {
 	app ,
 	WebContentsView,
@@ -101,3 +126,4 @@ import {
 import ElectronStore from "electron-store";
 import { mainWindow } from "#main/mainWindow";
 import { reaxel_AIViews } from "#main/reaxels/Views/AI-Views";
+import { useIpcRendererToMain } from "#main/services/ipc";
