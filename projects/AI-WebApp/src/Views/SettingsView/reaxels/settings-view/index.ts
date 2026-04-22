@@ -40,7 +40,7 @@ export const reaxel_SettingsView = reaxel( () => {
 					hostname : '127.0.0.1' ,
 					port : 7897 ,
 					protocol : 'http' ,
-					no_proxy_for : checkAs<string[]>( [] ) ,
+					no_proxy_for : checkAs<NetworkProxy.NoProxyForItem[]>( [] ) ,
 					//是否启用no_proxy_for字段,作用是仅禁用但不清空字段
 					no_proxy_for__enabled : true ,
 					proxy_auth : false ,
@@ -211,7 +211,7 @@ export const reaxel_SettingsView = reaxel( () => {
 					type: string,
 					port: number,
 					hostname: string,
-					no_proxy_for: string[],
+					no_proxy_for: NetworkProxy.NoProxyForItem[],
 					proxy_auth: {
 						enabled: boolean,
 						username: string,

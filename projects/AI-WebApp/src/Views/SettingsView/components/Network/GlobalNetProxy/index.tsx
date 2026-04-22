@@ -201,8 +201,14 @@ const AIProxySelector = reaxper( () => {
 		return acc;
 	}, [] as Array<{label: React.ReactNode; value: string; selectable: boolean; children?: any[]}>);
 	
-	// 将存储的值转换为Select需要的格式
-	const selectValue = store.proxy_fields.no_proxy_for || [];
+	// 将存储的对象数组转换为TreeSelect需要的字符串数组格式
+	const selectValue = (store.proxy_fields.no_proxy_for || []).map(item => {
+		if (item.type === 'family') {
+			return `family:${item.family}`;
+		} else {
+			return `name:${item.family}:${item.value}`;
+		}
+	});
 	
 	return (
 		<TreeSelect
@@ -214,28 +220,55 @@ const AIProxySelector = reaxper( () => {
 			treeCheckable
 			showCheckedStrategy={TreeSelect.SHOW_PARENT}
 			onChange={(value) => {
+				// 将字符串数组转换为新的对象数组格式
+				const noProxyForItems: NetworkProxy.NoProxyForItem[] = (value || []).map((val: string) => {
+					if (val.startsWith('family:')) {
+						const family = val.replace('family:', '');
+						return {
+							type: 'family' as const,
+							value: family,
+							id: `family_${family}`,
+							family: family,
+						};
+					} else if (val.startsWith('name:')) {
+						const parts = val.replace('name:', '').split(':');
+						const family = parts[0];
+						const name = parts.slice(1).join(':');
+						return {
+							type: 'name' as const,
+							value: name,
+							id: `name_${family}_${name}`,
+							family: family,
+							label: name,
+						};
+					}
+					// 不应该到达这里
+					return {
+						type: 'name' as const,
+						value: val,
+						id: val,
+						family: 'unknown',
+					};
+				});
+				
 				setState.proxy_fields({
 					...notFalse(store.proxy_fields),
-					no_proxy_for: value,
+					no_proxy_for: noProxyForItems,
 				});
 				
 				// 打印已选项（优化版：分组显示）
-				if (value && value.length > 0) {
+				if (noProxyForItems.length > 0) {
 					console.groupCollapsed('%c[No Proxy For] Selection Updated', 'color: #52c41a; font-weight: bold;');
 					
 					// 分类统计
 					const families: string[] = [];
 					const names: Array<{family: string; name: string}> = [];
 					
-					value.forEach((item: string) => {
-						if (item.startsWith('family:')) {
-							const family = item.replace('family:', '');
-							families.push(family);
-						} else if (item.startsWith('name:')) {
-							const parts = item.replace('name:', '').split(':');
-							const family = parts[0];
-							const name = parts.slice(1).join(':');
-							names.push({ family, name });
+					noProxyForItems.forEach((item) => {
+						if (item.type === 'family') {
+							families.push(item.family);
+						} else if (item.type === 'name') {
+							names.push({ family: item.family, name: item.value });
 						}
 					});
 					
@@ -266,8 +299,12 @@ const AIProxySelector = reaxper( () => {
 						});
 					}
 					
-					// 打印完整原始值（折叠）
-					console.debug('Raw values:', value);
+					// 打印 store 中的 no_proxy_for 字段（快照）
+					console.log(
+						`%c📋 Store no_proxy_for:`, 
+						'color: #722ed1; font-weight: bold;',
+						logProxy(store.proxy_fields.no_proxy_for)
+					);
 					
 					console.groupEnd();
 				} else {
@@ -300,3 +337,4 @@ import less from './index.module.less';
 import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 import { crayon } from '#generics/utils/src/crayon.utility';
+import { logProxy } from '#generics/utils/src/logProxy.utility';
