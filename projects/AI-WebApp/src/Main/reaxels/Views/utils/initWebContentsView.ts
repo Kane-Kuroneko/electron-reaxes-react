@@ -7,6 +7,10 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	view.webContents.setVisualZoomLevelLimits(1,5);
 	mainWindow.contentView.addChildView(view);
 	
+	// 初始化崩溃报告器
+	const viewName = options.type === 'AI-View' ? `AI-View-${options.domain || 'unknown'}` : 'Settings-View';
+	new ViewCrashReporter(view, viewName);
+	
 	if(options.type==='Settings-View'){
 		useSettingsView(view, options);
 	}else if(options.type==='AI-View'){
@@ -72,8 +76,9 @@ import { mainWindow } from "#main/mainWindow";
 import * as path from "path";
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {dev} from 'electron-is';
+import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 
-type AI = "chatgpt"|"grok"|"gemini"|"deepseek";
+type AI = "chatgpt"|"grok"|"gemini"|"deepseek"|"perplexity";
 type ExtraBrowserWindowOptions = {
 	domain? : string;
 	type : "AI-View"|"Settings-View";

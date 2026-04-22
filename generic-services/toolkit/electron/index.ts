@@ -4,10 +4,12 @@
  * 提供类型安全、零硬编码的 IPC 通信系统
  * 同时支持主进程和渲染进程
  */
-export {
+export type {
 	ReplyFromMtrEvents ,
 	IpcStructure,
 } from './IpcStructure';
+
+export { createIpc } from './preload.ipc';
 
 /**
  * 使用示例：
