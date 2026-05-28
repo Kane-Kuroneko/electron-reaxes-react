@@ -17,6 +17,7 @@ const cloneData = <T>(data:T):T => JSON.parse( JSON.stringify( data ) );
 const normalizeAI = (ai:AI.AIItem):AI.AIItem => ( {
 	...ai ,
 	disabled : ai.disabled === true ,
+	url_override : ai.url_override || null ,
 	proxy_mode : ai.proxy_mode || 'follow_global_setting' ,
 	from_server_list_proxy : ai.from_server_list_proxy || null ,
 	user_fill_proxy : ai.user_fill_proxy || null ,

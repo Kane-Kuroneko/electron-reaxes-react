@@ -73,7 +73,8 @@ const columns:TableColumnType<AI.AIItem>[] = [
 ];
 
 export const RCManageAIsPanel = reaxper( () => {
-	const { changeEditAIModalVisible } = reaxel_SettingsView();
+	const { changeEditAIModalVisible , reloadSettings } = reaxel_SettingsView();
+	const [resetModalVisible , setResetModalVisible] = React.useState( false );
 	const sensors = useSensors(
 		useSensor( PointerSensor , {
 			activationConstraint : {
@@ -94,6 +95,16 @@ export const RCManageAIsPanel = reaxper( () => {
 			}
 			state.AIs = arrayMove( state.AIs.slice() , activeIndex , overIndex );
 		} );
+	};
+	
+	const handleResetConfirmed = async() => {
+		try {
+			await resetAIsToDefaults();
+			await reloadSettings();
+			setResetModalVisible( false );
+		} catch ( err ) {
+			console.error( '[ManageAIs] Reset failed:' , err );
+		}
 	};
 	
 	return <div className="settings-section">
@@ -128,6 +139,18 @@ export const RCManageAIsPanel = reaxper( () => {
 				/>
 			</SortableContext>
 		</DndContext>
+		<div style={ { marginTop : 16 , display : 'flex' , justifyContent : 'flex-end' } }>
+			<Button
+				danger
+				type="primary"
+				onClick={ () => setResetModalVisible( true ) }
+			>Reset All AI Pages</Button>
+		</div>
+		<ResetConfirmModal
+			visible={ resetModalVisible }
+			onCancel={ () => setResetModalVisible( false ) }
+			onConfirm={ handleResetConfirmed }
+		/>
 		<EditAIModal/>
 	</div>;
 } );
@@ -170,13 +193,29 @@ const EditAIModal = reaxper( () => {
 		user_fill : <UserFillProxy/>,
 	}[fields.proxy_mode] ?? null;
 	
+	const [urlEditing , setUrlEditing] = React.useState( false );
+	const [urlDraft , setUrlDraft] = React.useState( '' );
+	
+	// 当modal开始打开时重置编辑状态
+	React.useEffect( () => {
+		if( store.visible ) {
+			setUrlEditing( false );
+			setUrlDraft( '' );
+		}
+	} , [store.visible] );
+	
+	// 显示的URL: 如果有url_override则显示它，否则显示当前family的默认URL
+	const displayUrl = fields.url_override || defaultURLByFamily( fields.AI_family );
+	
 	const handleSave = () => {
+		const effectiveUrl = fields.url_override || defaultURLByFamily( fields.AI_family );
 		const nextAI:AI.AIItem = {
 			id : store.editing_id || createAIId() ,
 			label : fields.label?.trim() || fields.AI_family ,
 			disabled : false ,
 			AI_family : fields.AI_family ,
-			url : fields.url?.trim() || defaultURLByFamily( fields.AI_family ) ,
+			url : effectiveUrl ,
+			url_override : fields.url_override ,
 			desc : fields.desc ,
 			preloadOnStartup : fields.preloadOnStartup === true ,
 			proxy_mode : fields.proxy_mode ,
@@ -202,6 +241,51 @@ const EditAIModal = reaxper( () => {
 			editing_id : null,
 		} );
 	};
+	
+	// URL尾部按钮组
+	const urlSuffix = urlEditing
+		? <Space size={ 4 }>
+			<Button
+				type="link"
+				size="small"
+				onClick={ () => {
+					// Save: 将draft保存到url_override
+					const trimmed = urlDraft.trim();
+					const defaultUrl = defaultURLByFamily( fields.AI_family );
+					setState.fields( {
+						url_override : trimmed && trimmed !== defaultUrl ? trimmed : null,
+					} );
+					setUrlEditing( false );
+				} }
+			>Save</Button>
+			<Button
+				type="link"
+				size="small"
+				onClick={ () => {
+					setUrlEditing( false );
+					setUrlDraft( '' );
+				} }
+			>Cancel</Button>
+		</Space>
+		: <Space size={ 4 }>
+			<Button
+				type="link"
+				size="small"
+				onClick={ () => {
+					setUrlDraft( displayUrl );
+					setUrlEditing( true );
+				} }
+			>Edit</Button>
+			<Button
+				type="link"
+				size="small"
+				danger
+				onClick={ () => {
+					// Reset: 丢弃override，使用默认URL
+					setState.fields( { url_override : null } );
+				} }
+			>Reset</Button>
+		</Space>;
 	
 	return <Modal
 		open={ store.visible }
@@ -230,10 +314,12 @@ const EditAIModal = reaxper( () => {
 				<Select
 					value={ fields.AI_family }
 					onChange={ value => {
+						// 切换family时，重置url_override并自动切换显示默认URL
 						setState.fields( {
 							AI_family : value ,
-							url : fields.url || defaultURLByFamily( value ),
+							url_override : null,
 						} );
+						setUrlEditing( false );
 					} }
 				>
 					{ AIFamily.map( item => (
@@ -246,10 +332,12 @@ const EditAIModal = reaxper( () => {
 			</Form.Item>
 			<Form.Item label="App url">
 				<Input
-					value={ fields.url }
+					value={ urlEditing ? urlDraft : displayUrl }
+					disabled={ !urlEditing }
 					onChange={ event => {
-						setState.fields( { url : event.target.value } );
+						setUrlDraft( event.target.value );
 					} }
+					suffix={ urlSuffix }
 				/>
 			</Form.Item>
 			<Form.Item label="Proxy">
@@ -459,11 +547,157 @@ interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
 	'data-row-key': string;
 }
 
+/**
+ * 长按确认按钮 - 环形进度条
+ * 用户必须持续按伭按钮直到进度条完成才会触发确认
+ */
+const LONG_PRESS_DURATION = 2000; // ms
+
+const LongPressConfirmButton:React.FC<{ onConfirm:() => void }> = ( { onConfirm } ) => {
+	const [pressing , setPressing] = React.useState( false );
+	const [progress , setProgress] = React.useState( 0 );
+	const timerRef = React.useRef<number | null>( null );
+	const startTimeRef = React.useRef<number>( 0 );
+	
+	const startPress = () => {
+		setPressing( true );
+		setProgress( 0 );
+		startTimeRef.current = Date.now();
+		
+		const animate = () => {
+			const elapsed = Date.now() - startTimeRef.current;
+			const pct = Math.min( elapsed / LONG_PRESS_DURATION , 1 );
+			setProgress( pct );
+			
+			if( pct >= 1 ) {
+				setPressing( false );
+				setProgress( 0 );
+				onConfirm();
+				return;
+			}
+			timerRef.current = requestAnimationFrame( animate );
+		};
+		timerRef.current = requestAnimationFrame( animate );
+	};
+	
+	const endPress = () => {
+		if( timerRef.current ) {
+			cancelAnimationFrame( timerRef.current );
+			timerRef.current = null;
+		}
+		setPressing( false );
+		setProgress( 0 );
+	};
+	
+	React.useEffect( () => {
+		return () => {
+			if( timerRef.current ) {
+				cancelAnimationFrame( timerRef.current );
+			}
+		};
+	} , [] );
+	
+	// SVG 环形进度条参数
+	const size = 56;
+	const strokeWidth = 4;
+	const radius = ( size - strokeWidth ) / 2;
+	const circumference = 2 * Math.PI * radius;
+	const dashOffset = circumference * ( 1 - progress );
+	
+	return <div
+		style={ {
+			display : 'inline-flex' ,
+			alignItems : 'center' ,
+			justifyContent : 'center' ,
+			position : 'relative' ,
+			width : size ,
+			height : size ,
+			cursor : 'pointer' ,
+			userSelect : 'none',
+		} }
+		onMouseDown={ startPress }
+		onMouseUp={ endPress }
+		onMouseLeave={ endPress }
+		onTouchStart={ startPress }
+		onTouchEnd={ endPress }
+	>
+		{/* 环形进度条 SVG */}
+		<svg
+			width={ size }
+			height={ size }
+			style={ { position : 'absolute' , top : 0 , left : 0 , transform : 'rotate(-90deg)' } }
+		>
+			{/* 背景圆环 */}
+			<circle
+				cx={ size / 2 }
+				cy={ size / 2 }
+				r={ radius }
+				fill="none"
+				stroke="#f0f0f0"
+				strokeWidth={ strokeWidth }
+			/>
+			{/* 进度圆环 */}
+			<circle
+				cx={ size / 2 }
+				cy={ size / 2 }
+				r={ radius }
+				fill="none"
+				stroke="#ff4d4f"
+				strokeWidth={ strokeWidth }
+				strokeDasharray={ circumference }
+				strokeDashoffset={ dashOffset }
+				strokeLinecap="round"
+				style={ { transition : pressing ? 'none' : 'stroke-dashoffset 0.2s ease' } }
+			/>
+		</svg>
+		{/* 中心文字 */}
+		<span style={ {
+			fontSize : 11 ,
+			fontWeight : 600 ,
+			color : pressing ? '#ff4d4f' : '#595959' ,
+			zIndex : 1,
+		} }>Confirm</span>
+	</div>;
+};
+
+/**
+ * 重置确认弹窗 - 包含警告和长按确认
+ */
+const ResetConfirmModal:React.FC<{
+	visible:boolean;
+	onCancel:() => void;
+	onConfirm:() => void;
+}> = ( { visible , onCancel , onConfirm } ) => {
+	return <Modal
+		open={ visible }
+		title={ <span style={ { color : '#ff4d4f' } }>Reset All AI Pages</span> }
+		onCancel={ onCancel }
+		footer={ null }
+		width={ 420 }
+	>
+		<div style={ { padding : '12px 0' } }>
+			<p style={ { marginBottom : 16 , fontSize : 14 } }>
+				This will <strong>permanently reset</strong> all AI page configurations to factory defaults.
+				All your custom AI pages, URL overrides, and proxy settings will be lost.
+			</p>
+			<p style={ { marginBottom : 24 , color : '#ff4d4f' , fontWeight : 500 } }>
+				Hold the button below to confirm reset.
+			</p>
+			<div style={ { display : 'flex' , justifyContent : 'center' , alignItems : 'center' , gap : 16 } }>
+				<LongPressConfirmButton onConfirm={ onConfirm }/>
+				<Button onClick={ onCancel }>Cancel</Button>
+			</div>
+		</div>
+	</Modal>;
+};
+
 import { DragIconSvg } from "./DragIcon.svg";
 import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
+import { resetAIsToDefaults } from "#src/Views/SettingsView/services/Settings";
 import { AIFamily } from "#src/shared/statics/AI-family";
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
+import React from 'react';
 import { reaxper } from 'reaxes-react';
 import {
 	Button ,

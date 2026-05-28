@@ -259,6 +259,7 @@ function defaultAIFields():AI.EditAIItem {
 		label : '' ,
 		AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
 		url : 'https://chatgpt.com' ,
+		url_override : null ,
 		desc : '' ,
 		preloadOnStartup : false ,
 		proxy_mode : 'follow_global_setting' ,

@@ -3,11 +3,12 @@
   "description": "Default AI configurations - This file should NEVER be modified by users",
   "ais": [
     {
-      "id": "gpt-mia-001",
-      "label": "GPT-Mia",
+      "id": "default-chatgpt-001",
+      "label": "ChatGPT",
       "disabled": false,
       "AI_family": "chatgpt",
       "url": "https://chatgpt.com",
+      "url_override": null,
       "proxy_mode": "follow_global_setting",
       "from_server_list_proxy": null,
       "preloadOnStartup": false,
@@ -19,75 +20,12 @@
       }
     },
     {
-      "id": "gpt-john-002",
-      "label": "GPT-John",
-      "disabled": false,
-      "AI_family": "chatgpt",
-      "url": "https://chatgpt.com",
-      "proxy_mode": "follow_global_setting",
-      "from_server_list_proxy": null,
-      "preloadOnStartup": false,
-      "user_fill_proxy": {
-        "hostname": "127.0.0.1",
-        "port": 7897,
-        "protocol": "http",
-        "proxy_auth": false
-      }
-    },
-    {
-      "id": "gpt-alex-003",
-      "label": "GPT-Alex",
-      "disabled": false,
-      "AI_family": "chatgpt",
-      "url": "https://chatgpt.com",
-      "proxy_mode": "follow_global_setting",
-      "from_server_list_proxy": null,
-      "preloadOnStartup": false,
-      "user_fill_proxy": {
-        "hostname": "127.0.0.1",
-        "port": 7897,
-        "protocol": "http",
-        "proxy_auth": false
-      }
-    },
-    {
-      "id": "gpt-sophia-004",
-      "label": "GPT-Sophia",
-      "disabled": false,
-      "AI_family": "chatgpt",
-      "url": "https://chatgpt.com",
-      "proxy_mode": "follow_global_setting",
-      "from_server_list_proxy": null,
-      "preloadOnStartup": false,
-      "user_fill_proxy": {
-        "hostname": "127.0.0.1",
-        "port": 7897,
-        "protocol": "http",
-        "proxy_auth": false
-      }
-    },
-    {
-      "id": "gpt-liam-005",
-      "label": "GPT-Liam",
-      "disabled": false,
-      "AI_family": "chatgpt",
-      "url": "https://chatgpt.com",
-      "proxy_mode": "follow_global_setting",
-      "from_server_list_proxy": null,
-      "preloadOnStartup": false,
-      "user_fill_proxy": {
-        "hostname": "127.0.0.1",
-        "port": 7897,
-        "protocol": "http",
-        "proxy_auth": false
-      }
-    },
-    {
-      "id": "f51ff516-99ea-44be-9967-cb86be37a4ad",
+      "id": "default-grok-001",
       "label": "Grok",
       "disabled": false,
       "AI_family": "grok",
       "url": "https://grok.com",
+      "url_override": null,
       "proxy_mode": "follow_global_setting",
       "from_server_list_proxy": null,
       "preloadOnStartup": false,
@@ -99,11 +37,63 @@
       }
     },
     {
-      "id": "a1-web-test-proxy-0001",
+      "id": "default-gemini-001",
+      "label": "Gemini",
+      "disabled": false,
+      "AI_family": "gemini",
+      "url": "https://gemini.google.com",
+      "url_override": null,
+      "proxy_mode": "follow_global_setting",
+      "from_server_list_proxy": null,
+      "preloadOnStartup": false,
+      "user_fill_proxy": {
+        "hostname": "127.0.0.1",
+        "port": 7897,
+        "protocol": "http",
+        "proxy_auth": false
+      }
+    },
+    {
+      "id": "default-deepseek-001",
+      "label": "DeepSeek",
+      "disabled": false,
+      "AI_family": "deepseek",
+      "url": "https://chat.deepseek.com",
+      "url_override": null,
+      "proxy_mode": "follow_global_setting",
+      "from_server_list_proxy": null,
+      "preloadOnStartup": false,
+      "user_fill_proxy": {
+        "hostname": "127.0.0.1",
+        "port": 7897,
+        "protocol": "http",
+        "proxy_auth": false
+      }
+    },
+    {
+      "id": "default-perplexity-001",
+      "label": "Perplexity",
+      "disabled": false,
+      "AI_family": "perplexity",
+      "url": "https://www.perplexity.ai",
+      "url_override": null,
+      "proxy_mode": "follow_global_setting",
+      "from_server_list_proxy": null,
+      "preloadOnStartup": false,
+      "user_fill_proxy": {
+        "hostname": "127.0.0.1",
+        "port": 7897,
+        "protocol": "http",
+        "proxy_auth": false
+      }
+    },
+    {
+      "id": "default-dev-proxy-test-001",
       "label": "AI-Web (Proxy Test)",
       "disabled": false,
       "AI_family": "dev-proxy-test",
       "url": "https://whatismyipaddress.com/",
+      "url_override": null,
       "proxy_mode": "follow_global_setting",
       "from_server_list_proxy": null,
       "preloadOnStartup": false,

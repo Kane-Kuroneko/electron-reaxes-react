@@ -38,6 +38,7 @@ export const reaxel_Settings = reaxel( () => {
 		const normalizedAIs = ( settings.AIs || [] ).map( ai => ( {
 			...ai ,
 			disabled : ai.disabled === true ,
+			url_override : ai.url_override || null ,
 			proxy_mode : ai.proxy_mode || 'follow_global_setting' ,
 			from_server_list_proxy : ai.from_server_list_proxy || null ,
 			user_fill_proxy : ai.user_fill_proxy || null ,

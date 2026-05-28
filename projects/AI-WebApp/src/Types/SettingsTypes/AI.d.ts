@@ -11,6 +11,7 @@ export namespace AI {
 		disabled:boolean,
 		AI_family: AIFamily;
 		url : string;
+		url_override: string | null; // 用户自定义覆盖的URL,null表示使用AI family默认URL
 		desc?: string;
 		proxy_mode: NetworkProxy.AIProxyMode;
 		from_server_list_proxy: string | null; //proxy_server_id
@@ -22,6 +23,7 @@ export namespace AI {
 		label: AIItem['label'];
 		AI_family: AIItem['AI_family'];
 		url : AIItem['url'];
+		url_override: AIItem['url_override'];
 		desc?: string;
 		proxy_mode: NetworkProxy.AIProxyMode;
 		from_server_list_proxy: string | null; //proxy_server_id
