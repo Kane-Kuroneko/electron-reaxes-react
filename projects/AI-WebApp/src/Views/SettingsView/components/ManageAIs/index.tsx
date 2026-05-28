@@ -1,16 +1,16 @@
 const columns:TableColumnType<AI.AIItem>[] = [
 	{
 		title : 'Drag' ,
-		width : 80 ,
+		width : 60 ,
 		render() {
 			return <DragIconSvg
-				style={ { fontSize : 32 , userSelect : 'none' , cursor : 'move' } }
+				style={ { fontSize : 24 , userSelect : 'none' , cursor : 'move' , color : '#bfbfbf' } }
 			/>;
 		},
 	} ,
 	{
 		title : 'Enabled' ,
-		width : 100 ,
+		width : 80 ,
 		render( _value , record ) {
 			return <Checkbox
 				checked={ !record.disabled }
@@ -35,22 +35,25 @@ const columns:TableColumnType<AI.AIItem>[] = [
 	} ,
 	{
 		title : 'Url' ,
-		dataIndex : 'url',
+		dataIndex : 'url' ,
+		ellipsis : true,
 	} ,
 	{
 		title : 'Operations' ,
-		width : 180 ,
+		width : 160 ,
 		render : ( _text , record ) => {
 			const { changeEditAIModalVisible } = reaxel_SettingsView();
-			return <Space>
+			return <Space size={ 4 }>
 				<Button
 					type="link"
+					size="small"
 					onClick={ () => {
 						changeEditAIModalVisible( true , record.id );
 					} }
 				>Edit</Button>
 				<Button
 					type="link"
+					size="small"
 					danger
 					onClick={ () => {
 						Modal.confirm( {
@@ -93,7 +96,8 @@ export const RCManageAIsPanel = reaxper( () => {
 		} );
 	};
 	
-	return <div>
+	return <div className="settings-section">
+		<div className="section-title">Manage AIs</div>
 		<Button
 			type="primary"
 			onClick={ () => {
@@ -120,6 +124,7 @@ export const RCManageAIsPanel = reaxper( () => {
 					columns={ columns }
 					dataSource={ reaxel_SettingsView.store.Data.AIs }
 					pagination={ false }
+					size="small"
 				/>
 			</SortableContext>
 		</DndContext>
@@ -210,11 +215,9 @@ const EditAIModal = reaxper( () => {
 		onOk={ handleSave }
 		okText="Save"
 		cancelText="Cancel"
+		width={ 520 }
 	>
-		<Form
-			variant="underlined"
-			layout="vertical"
-		>
+		<Form layout="vertical" style={ { marginTop : 16 } }>
 			<Form.Item label="App name">
 				<Input
 					value={ fields.label }
@@ -265,10 +268,12 @@ const EditAIModal = reaxper( () => {
 					} }
 					style={ { userSelect : 'none' } }
 				>
-					<Radio value="follow_global_setting">Follow Global Setting</Radio>
-					<Radio value="direct">Direct</Radio>
-					<Radio value="from_server_list">Select From List</Radio>
-					<Radio value="user_fill">Manual</Radio>
+					<Space direction="vertical" size={ 4 }>
+						<Radio value="follow_global_setting">Follow Global Setting</Radio>
+						<Radio value="direct">Direct</Radio>
+						<Radio value="from_server_list">Select From List</Radio>
+						<Radio value="user_fill">Manual</Radio>
+					</Space>
 				</Radio.Group>
 				{ ProxyComponent }
 			</Form.Item>
@@ -296,7 +301,7 @@ export const SelectProxyServer = reaxper( () => {
 	const proxyServers = reaxel_SettingsView.store.UIControls.networks.proxy_server_list.filter( server => server.enabled );
 	
 	return <Select
-		style={ { minWidth : 260 , marginTop : 12 } }
+		style={ { width : '100%' , marginTop : 12 } }
 		value={ store.fields.from_server_list_proxy }
 		placeholder="Select a proxy server"
 		onChange={ value => {
@@ -316,8 +321,8 @@ export const UserFillProxy = reaxper( () => {
 	const { edit_AI_modal:setState } = reaxel_SettingsView.setState.UIControls.manage_AIs;
 	const userFillProxy = notFalse( store.fields.user_fill_proxy || defaultProxyConf() );
 	
-	return <div>
-		<Form.Item label="Protocol :">
+	return <div style={ { marginTop : 12 , padding : '12px 16px' , background : '#fafafa' , borderRadius : 6 } }>
+		<Form.Item label="Protocol">
 			<Segmented
 				style={ { userSelect : 'none' } }
 				value={ userFillProxy.protocol }
@@ -336,7 +341,7 @@ export const UserFillProxy = reaxper( () => {
 				] }
 			/>
 		</Form.Item>
-		<Form.Item label="Host name :">
+		<Form.Item label="Host name">
 			<Input
 				value={ userFillProxy.hostname }
 				placeholder="127.0.0.1"
@@ -350,10 +355,7 @@ export const UserFillProxy = reaxper( () => {
 				} }
 			/>
 		</Form.Item>
-		<Form.Item
-			label="Port number :"
-			layout="horizontal"
-		>
+		<Form.Item label="Port number">
 			<InputNumber
 				min={ 0 }
 				max={ 65535 }
@@ -392,7 +394,7 @@ const ProxyAuthFields = reaxper( ( { proxyConf }:{ proxyConf:NetworkProxy.ProxyC
 	const proxyAuth = notFalse( proxyConf.proxy_auth );
 	
 	return <>
-		<Form.Item label="Username :">
+		<Form.Item label="Username" style={ { marginTop : 12 } }>
 			<Input
 				value={ proxyAuth.username }
 				onChange={ e => {
@@ -408,7 +410,7 @@ const ProxyAuthFields = reaxper( ( { proxyConf }:{ proxyConf:NetworkProxy.ProxyC
 				} }
 			/>
 		</Form.Item>
-		<Form.Item label="Password :">
+		<Form.Item label="Password">
 			<Input.Password
 				value={ proxyAuth.password }
 				onChange={ e => {

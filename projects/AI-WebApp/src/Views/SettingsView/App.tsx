@@ -1,5 +1,3 @@
-const { Item } = Form;
-
 export const App = reaxper( () => {
 	const store = reaxel_SettingsView.store.RootMenu;
 	const setState = reaxel_SettingsView.setState.RootMenu;
@@ -15,33 +13,29 @@ export const App = reaxper( () => {
 	}[store.current];
 	
 	
-	return <div>
-		<div
-			style={ {
-				display : 'flex' ,
-				flexFlow : 'row nowrap' ,
-			} }
-		>
-			<Menu
-				style={ { userSelect : 'none' } }
-				items={ store.menus.map( it => {
-					return {
-						...it ,
-						key : it.value,
-					};
-				} ) }
-				onSelect={ ( { key } ) => {
-					setState( { current : key as any } );
-				} }
-				selectedKeys={ [ store.current ] }
-			/>
-			<Form
-				layout="vertical"
-			>
-				<MenuContentComponent />
-			</Form>
+	return <div className="settings-root">
+		<div className="settings-body">
+			<div className="settings-sider">
+				<Menu
+					items={ store.menus.map( it => {
+						return {
+							...it ,
+							key : it.value,
+						};
+					} ) }
+					onSelect={ ( { key } ) => {
+						setState( { current : key as any } );
+					} }
+					selectedKeys={ [ store.current ] }
+				/>
+			</div>
+			<div className="settings-content">
+				<div className="settings-panel">
+					<MenuContentComponent />
+				</div>
+			</div>
 		</div>
-		<div>
+		<div className="settings-footer">
 			<Button
 				onClick={ () => {
 					exitSettings();
@@ -106,7 +100,6 @@ import { RCNetworkPanel } from './components/Network';
 import { RCSystemPanel } from './components/System';
 import {
 	Button ,
-	Form ,
 	Menu ,
 	message ,
 	Modal,

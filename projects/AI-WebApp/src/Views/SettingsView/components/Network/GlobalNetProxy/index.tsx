@@ -5,30 +5,30 @@ const {
 
 export const GlobalProxy = reaxper( () => {
 	
-	const { Item } = Form;
-	return <div className={ less.globalProxy }>
-		<Item
-			label="Global Proxy"
-		>
-			<Radio.Group
-				value={ store.proxy_mode }
-				onChange={ ( e ) => {
-					setState( {
-						proxy_mode : e.target.value ,
-					} );
-				} }
-				style={ { userSelect : 'none' } }
-			>
-				<Radio value="direct">Direct(No Proxy)</Radio>
-				<Radio value="use_system">Follow system proxy settings</Radio>
-				<Radio value="from_server_list">Select from proxy servers</Radio>
-				<Radio value="user_fill">Manual proxy configuration</Radio>
-			</Radio.Group>
-			
+	return <div className={ `${ less.globalProxy } settings-section` }>
+		<div className="section-title">Global Proxy</div>
+		<Form layout="vertical">
+			<Form.Item>
+				<Radio.Group
+					value={ store.proxy_mode }
+					onChange={ ( e ) => {
+						setState( {
+							proxy_mode : e.target.value ,
+						} );
+					} }
+					style={ { userSelect : 'none' } }
+				>
+					<Space direction="vertical" size={ 8 }>
+						<Radio value="direct">Direct(No Proxy)</Radio>
+						<Radio value="use_system">Follow system proxy settings</Radio>
+						<Radio value="from_server_list">Select from proxy servers</Radio>
+						<Radio value="user_fill">Manual proxy configuration</Radio>
+					</Space>
+				</Radio.Group>
+			</Form.Item>
 			<ProxyServerSelector/>
 			<ManualProxy/>
-		</Item>
-		
+		</Form>
 	</div>;
 } );
 
@@ -36,10 +36,10 @@ const ProxyServerSelector = reaxper( () => {
 	if(store.proxy_mode !== 'from_server_list'){
 		return null;
 	}
-	return <div style={{ marginTop: 12 }}>
+	return <div className={ less.proxySubFields }>
 		<Form.Item
-			label="Proxy Server :"
-			layout="vertical"
+			label="Proxy Server"
+			style={ { marginBottom : 0 } }
 		>
 			<Select
 				value={store.using_proxy_server_id}
@@ -49,7 +49,7 @@ const ProxyServerSelector = reaxper( () => {
 					});
 				}}
 				placeholder="Select a proxy server"
-				variant="underlined"
+				variant="outlined"
 			>
 				{store.proxy_server_list
 					.filter(server => server.enabled)
@@ -70,10 +70,8 @@ const ManualProxy = reaxper( () => {
 	if(store.proxy_mode !== 'user_fill'){
 		return null;
 	}
-	return <div>
-		<Form.Item
-			label="Protocol :"
-		>
+	return <div className={ less.proxySubFields }>
+		<Form.Item label="Protocol">
 			<Segmented
 				value={notFalse(store.proxy_fields).protocol}
 				onChange={ ( value:NetworkProxy.Protocol ) => {
@@ -84,27 +82,14 @@ const ManualProxy = reaxper( () => {
 				}}
 				style={ { userSelect : 'none' } }
 				options={ [
-					{
-						label : 'HTTP' ,
-						value : 'http' ,
-					} ,
-					{
-						label : 'HTTPS' ,
-						value : 'https' ,
-					} ,
-					{
-						label : 'Socks5' ,
-						value : 'socks5' ,
-					} ,
+					{ label : 'HTTP' , value : 'http' } ,
+					{ label : 'HTTPS' , value : 'https' } ,
+					{ label : 'Socks5' , value : 'socks5' } ,
 				] }
 			/>
 		</Form.Item>
-		<Form.Item
-			label="Host name :"
-			layout="vertical"
-		>
+		<Form.Item label="Host name">
 			<Input
-				variant="underlined"
 				value={notFalse(store.proxy_fields).hostname }
 				placeholder="127.0.0.1"
 				onChange={
@@ -119,14 +104,11 @@ const ManualProxy = reaxper( () => {
 				}
 			/>
 		</Form.Item>
-		<Form.Item
-			label="Port number :"
-		>
+		<Form.Item label="Port number">
 			<InputNumber
 				min={0}
 				max={65535}
 				value={ notFalse(store.proxy_fields).port }
-				variant="underlined"
 				placeholder="7890"
 				onChange={
 					( value ) => {
@@ -140,26 +122,21 @@ const ManualProxy = reaxper( () => {
 				}
 			/>
 		</Form.Item>
-		<Form.Item
-			label={ <label>
-				<Space size={ 3 }>
-					<Checkbox
-						checked={ store.proxy_fields.no_proxy_for__enabled }
-						onChange={ ( e ) => {
-							setState( {
-								proxy_fields : {
-									...notFalse( store.proxy_fields ) ,
-									no_proxy_for__enabled : e.target.checked ,
-								} ,
-							} );
-						} }
-					/>
-					<span style={ { userSelect : 'none' } }>No proxy for :</span>
-				</Space>
-			</label> }
-		>
+		<div className={ less.noProxySection }>
+			<Checkbox
+				checked={ store.proxy_fields.no_proxy_for__enabled }
+				onChange={ ( e ) => {
+					setState( {
+						proxy_fields : {
+							...notFalse( store.proxy_fields ) ,
+							no_proxy_for__enabled : e.target.checked ,
+						} ,
+					} );
+				} }
+				style={ { userSelect : 'none' , marginBottom : 8 } }
+			>No proxy for</Checkbox>
 			<AIProxySelector/>
-		</Form.Item>
+		</div>
 	</div>
 } );
 
@@ -322,11 +299,10 @@ import {
 	Form ,
 	Input ,
 	Radio ,
-	Table,
 	Segmented ,
 	Select ,
-	TreeSelect,
 	Space ,
+	TreeSelect,
 	InputNumber
 } from 'antd';
 import { FolderOutlined, RobotOutlined } from '@ant-design/icons';

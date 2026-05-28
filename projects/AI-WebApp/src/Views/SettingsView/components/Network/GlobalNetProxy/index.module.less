@@ -1,9 +1,21 @@
 .global-proxy {
-	display: flex;
-	flex-flow : column nowrap;
-	flex: 1 1  auto;
-	:global{
-		
-		
+	.proxy-mode-group {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.proxy-sub-fields {
+		margin-top: 16px;
+		padding: 16px;
+		background: #fafafa;
+		border-radius: 6px;
+		border: 1px solid #f0f0f0;
+	}
+
+	.no-proxy-section {
+		margin-top: 12px;
+		padding-top: 12px;
+		border-top: 1px dashed #e8e8e8;
 	}
 }

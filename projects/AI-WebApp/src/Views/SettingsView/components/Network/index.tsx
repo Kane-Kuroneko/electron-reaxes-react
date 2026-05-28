@@ -1,12 +1,7 @@
 export const RCNetworkPanel = reaxper( () => {
 	
 	
-	return <div
-		style={ {
-			display : 'flex' ,
-			flexFlow : 'column nowrap' ,
-		} }
-	>
+	return <div className="settings-panel">
 		<GlobalProxy />
 		<ProxyServers />
 	</div>;
@@ -15,4 +10,3 @@ export const RCNetworkPanel = reaxper( () => {
 
 import { GlobalProxy } from './GlobalNetProxy';
 import { ProxyServers } from "./ProxyServers";
-

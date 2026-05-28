@@ -1,6 +1,121 @@
-html,body{
+html, body {
 	height: 100%;
 	width: 100%;
 	margin: 0;
 	padding: 0;
+	background: #f5f7fa;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+#react-app-root {
+	height: 100%;
+}
+
+.settings-root {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	overflow: hidden;
+}
+
+.settings-body {
+	display: flex;
+	flex: 1;
+	overflow: hidden;
+}
+
+.settings-sider {
+	width: 200px;
+	min-width: 200px;
+	background: #fff;
+	border-right: 1px solid #f0f0f0;
+	padding: 16px 0;
+	overflow-y: auto;
+
+	.ant-menu {
+		border-inline-end: none !important;
+		user-select: none;
+	}
+}
+
+.settings-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 24px 32px;
+	background: #f5f7fa;
+}
+
+.settings-footer {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 32px;
+	background: #fff;
+	border-top: 1px solid #f0f0f0;
+	justify-content: flex-end;
+	box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.settings-panel {
+	max-width: 720px;
+	width: 100%;
+}
+
+.settings-section {
+	background: #fff;
+	border-radius: 8px;
+	padding: 20px 24px;
+	margin-bottom: 16px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+	.section-title {
+		font-size: 15px;
+		font-weight: 600;
+		color: #1d2129;
+		margin-bottom: 16px;
+		padding-bottom: 12px;
+		border-bottom: 1px solid #f0f0f0;
+	}
+}
+
+@media (max-width: 768px) {
+	.settings-sider {
+		width: 160px;
+		min-width: 160px;
+	}
+
+	.settings-content {
+		padding: 16px;
+	}
+
+	.settings-footer {
+		padding: 12px 16px;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+}
+
+@media (max-width: 520px) {
+	.settings-body {
+		flex-direction: column;
+	}
+
+	.settings-sider {
+		width: 100%;
+		min-width: unset;
+		border-right: none;
+		border-bottom: 1px solid #f0f0f0;
+		padding: 8px 0;
+		overflow-y: visible;
+
+		.ant-menu {
+			display: flex;
+			flex-wrap: wrap;
+
+			.ant-menu-item {
+				flex: 1;
+				text-align: center;
+			}
+		}
+	}
 }
