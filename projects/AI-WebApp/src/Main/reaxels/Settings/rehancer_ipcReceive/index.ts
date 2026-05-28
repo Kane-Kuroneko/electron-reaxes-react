@@ -20,5 +20,4 @@ export const rehancer_ipcReceive = ({store, setState, mutate}: Pick<Reaxel_Setti
 	
 }
 
-import { ipcMain } from 'electron';
 import type { Reaxel_Settings } from '../index';

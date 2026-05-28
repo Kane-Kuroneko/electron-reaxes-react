@@ -1,304 +1,283 @@
-
-
 export const reaxel_SettingsView = reaxel( () => {
-	// const electronStore = new ElectronStore<{
-	// 	settings: AI,
-	// }>( { name : "previously-used-ai" } );
-	const {store,setState,mutate} = createReaxable( {
-		//左侧大类
+	const { store , setState , mutate } = createReaxable( {
 		RootMenu : {
 			current : checkAs<Menus>( 'net' ) ,
 			menus : [
 				{
 					label : 'Networks' ,
-					value : checkAs<Menus>( 'net' ) ,
+					value : checkAs<Menus>( 'net' ),
 				} ,
 				{
 					label : 'Appearance(feat delayed)' ,
-					value : checkAs<Menus>( 'appearance' ) ,
+					value : checkAs<Menus>( 'appearance' ),
 				} ,
 				{
 					label : 'Manage AIs' ,
-					value : checkAs<Menus>( 'mngeai' ) ,
+					value : checkAs<Menus>( 'mngeai' ),
 				} ,
 				{
 					label : 'System' ,
-					value : checkAs<Menus>( 'sys' ) ,
-				} ,
-				// {
-				// 	label : 'Hotkeys' ,
-				// 	value : 'keys' ,
-				// },
-			] ,
+					value : checkAs<Menus>( 'sys' ),
+				},
+			],
 		} ,
-		//UI组件状态和临时数据
 		UIControls : {
 			networks : {
-				proxy_mode : checkAs<'direct' | 'use_system' | 'user_fill' | 'from_server_list'>( 'user_fill' ) ,
-				using_proxy_server_id : checkAs<string>( null ) ,
-				proxy_fields : checkAs<NotFalse<Settings.IpcSettings['proxy']> & { no_proxy_for__enabled: boolean; }>( {
-					hostname : '127.0.0.1' ,
-					port : 7897 ,
-					protocol : 'http' ,
-					no_proxy_for : checkAs<NetworkProxy.NoProxyForItem[]>( [] ) ,
-					//是否启用no_proxy_for字段,作用是仅禁用但不清空字段
-					no_proxy_for__enabled : true ,
-					proxy_auth : false ,
-				} ) ,
+				proxy_mode : checkAs<NetworkProxy.GlobalProxyMode>( 'user_fill' ) ,
+				using_proxy_server_id : checkAs<string>( '1' ) ,
+				proxy_fields : defaultGlobalProxyFields() ,
 				check_connection : {
 					modal_visible : false ,
 					address : '' ,
 					pending : false ,
 					success : false ,
-					error : null ,
+					error : null,
 				} ,
-				
 				edit_proxy_server_modal : {
 					visible : false ,
 					mode : checkAs<"edit" | "add">( 'edit' ) ,
 					editing_id : null ,
 					fields : {
 						server_name : '' ,
-						proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
-							protocol : 'http' ,
-							hostname : '127.0.0.1' ,
-							port : 7897 ,
-							proxy_auth : false ,
-						} ) ,
-					} ,
+						enabled : true ,
+						proxy_conf : defaultProxyConf(),
+					},
 				} ,
-				proxy_server_list : checkAs<NetworkProxy.ProxyServer.Server[]>( [
-					{
-						proxy_server_id : '1' ,
-						server_name : 'Clash Verge Rev' ,
-						proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
-							protocol : 'http' ,
-							hostname : '127.0.0.1' ,
-							port : 7897 ,
-							proxy_auth : false ,
-						} ) ,
-						enabled : true ,
-					} ,
-					{
-						proxy_server_id : '2' ,
-						server_name : 'Clash For Windows' ,
-						proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
-							protocol : 'http' ,
-							hostname : '127.0.0.1' ,
-							port : 7890 ,
-							proxy_auth : {
-								username : 'kane' ,
-								password : '123456' ,
-							} ,
-						} ) ,
-						enabled : true ,
-					} ,
-				] ) ,
+				proxy_server_list : defaultProxyServers(),
 			} ,
 			manage_AIs : {
-				AIs : checkAs<( {
-					enabled: boolean,
-				} & AI.AIItem )[]>( [] ) ,
 				edit_AI_modal : {
 					visible : false ,
+					mode : checkAs<"edit" | "add">( 'edit' ) ,
 					editing_id : null ,
-					fields : checkAs<AI.EditAIItem>( {
-						label : '' ,
-						AI_family : checkAs<AI.AIFamily>( null ) ,
-						url : '' ,
-						desc : '' ,
-						proxy_mode : checkAs<"direct" | "follow_global_setting" | "from_server_list" | "user_fill">( 'follow_global_setting' ) ,
-						from_server_list_proxy : checkAs<string>( null ) ,
-						user_fill_proxy : checkAs<NetworkProxy.ProxyConf>( null ) ,
-						preloadOnStartup:false,
-					} ) ,
-				} ,
+					fields : defaultAIFields(),
+				},
 			} ,
 			appearance : {
 				darkmode : false ,
 				show_quickswitch_tag : true ,
 				show_current_tag : true ,
-				language : checkAs<Appearance.Language>( 'en-US' ) ,
+				language : checkAs<Appearance.Language>( 'en-US' ),
 			} ,
 			system : {
 				gpu_acceleration : true ,
-				tray : true ,
+				tray : true,
 			} ,
-			hotkeys : {} ,
+			hotkeys : {},
 		} ,
-		//从后端请求的数据等,不用于控制视图
 		Data : {
-			AIs : checkAs<AI.AIItem[]>( [
-				{
-					label : "ChatGPT - Mia" as const ,
-					id : 'chatgpt-mia-001' ,
-					disabled : false ,
-					AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
-					url : "https://chatgpt.com" ,
-					proxy_mode : 'user_fill' ,
-					from_server_list_proxy : null ,
-					preloadOnStartup:false,
-					user_fill_proxy : {
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						protocol : 'http' ,
-						proxy_auth : false,
-					},
-				} ,
-				{
-					label : "ChatGPT - John" as const ,
-					id : 'chatgpt-john-002' ,
-					disabled : false ,
-					AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
-					url : "https://chatgpt.com" ,
-					proxy_mode : 'user_fill' ,
-					from_server_list_proxy : null ,
-					preloadOnStartup:false,
-					user_fill_proxy : {
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						protocol : 'http' ,
-						proxy_auth : false,
-					},
-				} ,
-				{
-					label : "ChatGPT - Alex" as const ,
-					id : 'chatgpt-alex-003' ,
-					disabled : false ,
-					AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
-					url : "https://chatgpt.com" ,
-					proxy_mode : 'user_fill' ,
-					from_server_list_proxy : null ,
-					preloadOnStartup:false,
-					user_fill_proxy : {
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						protocol : 'http' ,
-						proxy_auth : false,
-					},
-				} ,
-				{
-					label : "Grok" as const ,
-					id : 'f51ff516-99ea-44be-9967-cb86be37a4ad' ,
-					disabled : false ,
-					AI_family : checkAs<AI.AIFamily>( 'grok' ) ,
-					url : "https://grok.com" ,
-					proxy_mode : 'user_fill' ,
-					from_server_list_proxy : null ,
-					preloadOnStartup:false,
-					user_fill_proxy : {
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						protocol : 'http' ,
-						proxy_auth : false,
-					},
-				} ,
-				{
-					label : "AI-Web (Proxy Test)" as const ,
-					id : 'a1-web-test-proxy-0001' ,
-					disabled : false ,
-					AI_family : checkAs<AI.AIFamily>( 'dev-proxy-test' ) ,
-					url : "https://whatismyipaddress.com/" ,
-					proxy_mode : 'user_fill' ,
-					from_server_list_proxy : null ,
-					preloadOnStartup:false,
-					user_fill_proxy : {
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						protocol : 'http' ,
-						proxy_auth : false,
-					},
-				} ,
-			] ) ,
-			settings : {
-				global_proxy : checkAs<{
-					enabled: boolean,
-					address: string,
-					type: string,
-					port: number,
-					hostname: string,
-					no_proxy_for: NetworkProxy.NoProxyForItem[],
-					proxy_auth: {
-						enabled: boolean,
-						username: string,
-						password: string,
-					},
-				}>( null ) ,
-			} ,
+			AIs : checkAs<AI.AIItem[]>( [] ),
 		} ,
-		
 		get_settings_status : {
 			pending : false ,
-			error : false ,
+			error : false,
 		} ,
 		submit_settings_status : {
 			pending : false ,
-			error : false ,
-		} ,
-	})
+			error : false,
+		},
+	} );
 	
-	rehancer_Dev({store,setState,mutate})();
+	rehancer_Dev( { store , setState , mutate } )();
 	
-	const ipcMethods = rehancer_Ipc({ store , setState , mutate })();
+	const ipcMethods = rehancer_Ipc( { store , setState , mutate } )();
+	
+	~async function loadSettingsOnStartup() {
+		await reloadSettings();
+	}();
 	
 	async function fetchSettings() {
-		const settings = await ipcMethods.fetchSettings();
-		
-		return settings;
+		return await ipcMethods.fetchSettings();
 	}
 	
-	async function setSettings( settings ) {
-		if( !settings ) {
-			settings = await fetchSettings();
+	async function reloadSettings() {
+		setState.get_settings_status( {
+			pending : true ,
+			error : false,
+		} );
+		try {
+			const settings = await fetchSettings();
+			setSettings( settings );
+			setState.get_settings_status( {
+				pending : false ,
+				error : false,
+			} );
+			return settings;
+		} catch ( error ) {
+			console.error( '[SettingsView] Failed to load settings:' , error );
+			setState.get_settings_status( {
+				pending : false ,
+				error : true,
+			} );
+			throw error;
 		}
-		mutate( ( {
-			Data ,
-			UIControls,
-		} ) => {
-			
+	}
+	
+	function setSettings( settings:SettingsFetchResult | Settings ) {
+		setState.UIControls.networks( {
+			proxy_mode : settings.networks.global_proxy.proxy_mode ,
+			using_proxy_server_id : settings.networks.global_proxy.proxy_server_id || null ,
+			proxy_fields : {
+				...defaultGlobalProxyFields() ,
+				...( settings.networks.global_proxy.user_fill_proxy || {} ),
+			} ,
+			proxy_server_list : settings.networks.proxy_server_list || defaultProxyServers(),
+		} );
+		setState.UIControls.appearance( {
+			darkmode : settings.appearance.darkmode ,
+			language : settings.appearance.language,
+		} );
+		setState.UIControls.system( settings.system );
+		mutate( s => {
+			s.Data.AIs = settings.AIs || [];
 		} );
 	}
 	
-	//通过此方法编辑AI模态框的显示状态,以实现自动操作modal fields
-	const changeEditAIModalVisible = (visible:boolean,AI_id:string) => {
-		const targetFields = store.Data.AIs.find( ( item ) => item.id === AI_id );
-		setState.UIControls.manage_AIs.edit_AI_modal({
-			visible ,
-			editing_id : AI_id ,
-			fields : checkAs<AI.EditAIItem>( _.cloneDeep(targetFields) ) ,
-		});
+	function buildSettingsFromStore():Settings {
+		const networks = store.UIControls.networks;
+		const raw = {
+			networks : {
+				global_proxy : {
+					proxy_mode : networks.proxy_mode ,
+					proxy_server_id : networks.using_proxy_server_id ,
+					user_fill_proxy : {
+						...defaultGlobalProxyFields() ,
+						...networks.proxy_fields ,
+						no_proxy_for : networks.proxy_fields.no_proxy_for || [] ,
+						no_proxy_for__enabled : networks.proxy_fields.no_proxy_for__enabled !== false,
+					},
+				} ,
+				proxy_server_list : networks.proxy_server_list,
+			} ,
+			AIs : store.Data.AIs ,
+			system : store.UIControls.system ,
+			appearance : {
+				darkmode : store.UIControls.appearance.darkmode ,
+				language : store.UIControls.appearance.language,
+			},
+		};
+		// 深拷贝去除 Proxy 包装, 使数据可通过 IPC 结构化克隆传输
+		return JSON.parse( JSON.stringify( raw ) );
 	}
+	
+	async function applySettings() {
+		setState.submit_settings_status( {
+			pending : true ,
+			error : false,
+		} );
+		try {
+			const result = await ipcMethods.applySettings( buildSettingsFromStore() );
+			if( result.success && result.settings ) {
+				setSettings( result.settings );
+			}
+			setState.submit_settings_status( {
+				pending : false ,
+				error : !result.success,
+			} );
+			return result;
+		} catch ( error ) {
+			console.error( '[SettingsView] Failed to apply settings:' , error );
+			setState.submit_settings_status( {
+				pending : false ,
+				error : true,
+			} );
+			throw error;
+		}
+	}
+	
+	const changeEditAIModalVisible = (visible:boolean , AI_id?:string) => {
+		const targetFields = AI_id
+			? store.Data.AIs.find( item => item.id === AI_id )
+			: null;
+		setState.UIControls.manage_AIs.edit_AI_modal( {
+			visible ,
+			mode : AI_id ? 'edit' : 'add' ,
+			editing_id : AI_id || null ,
+			fields : targetFields
+				? checkAs<AI.EditAIItem>( _.cloneDeep( targetFields ) )
+				: defaultAIFields(),
+		} );
+	};
 	
 	const rtn = {
 		fetchSettings ,
-		changeEditAIModalVisible,
-		submitSettings:ipcMethods.submitSettings,
-		exitSettings:ipcMethods.exitSettings,
-		test(){
-			
-		}
+		reloadSettings ,
+		setSettings ,
+		buildSettingsFromStore ,
+		applySettings ,
+		changeEditAIModalVisible ,
+		submitSettings : ipcMethods.submitSettings ,
+		exitSettings : ipcMethods.exitSettings,
 	};
 	
 	return Object.assign( () => rtn , {
 		store ,
 		setState ,
-		mutate ,
+		mutate,
 	} );
 } );
 
+function defaultProxyConf():NetworkProxy.ProxyConfFields {
+	return {
+		protocol : 'http' ,
+		hostname : '127.0.0.1' ,
+		port : 7897 ,
+		proxy_auth : false,
+	};
+}
+
+function defaultGlobalProxyFields():NetworkProxy.GlobalProxyFields {
+	return {
+		...defaultProxyConf() ,
+		no_proxy_for : [] ,
+		no_proxy_for__enabled : true,
+	};
+}
+
+function defaultProxyServers():NetworkProxy.ProxyServer.Server[] {
+	return [
+		{
+			proxy_server_id : '1' ,
+			server_name : 'Clash Verge Rev' ,
+			proxy_conf : defaultProxyConf() ,
+			enabled : true,
+		} ,
+		{
+			proxy_server_id : '2' ,
+			server_name : 'Clash For Windows' ,
+			proxy_conf : {
+				...defaultProxyConf() ,
+				port : 7890,
+			} ,
+			enabled : true,
+		},
+	];
+}
+
+function defaultAIFields():AI.EditAIItem {
+	return {
+		label : '' ,
+		AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
+		url : 'https://chatgpt.com' ,
+		desc : '' ,
+		preloadOnStartup : false ,
+		proxy_mode : 'follow_global_setting' ,
+		from_server_list_proxy : null ,
+		user_fill_proxy : null,
+	};
+}
+
 export type Reaxel_SettingsView = Pick<typeof reaxel_SettingsView , "mutate"|"store"|"setState">;
 
-
-
-import { 
-	reaxable_Settings,
-	sharedSettingsStatus,
-	type Menus,
-	type Networks,
-} from '#src/shared/structs/settings';
-import { Settings } from '#src/Types/Settings';
 import { rehancer_Dev } from './rehancer_Dev';
 import { rehancer_Ipc } from "#src/Views/SettingsView/reaxels/settings-view/rehancer_Ipc";
+import type {
+	Menus,
+} from '#src/shared/structs/settings';
+import type {
+	Settings ,
+	SettingsFetchResult,
+} from '#src/Types/SettingsTypes';
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { Appearance } from "#src/Types/SettingsTypes/Appearance";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";

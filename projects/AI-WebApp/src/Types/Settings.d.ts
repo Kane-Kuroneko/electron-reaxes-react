@@ -22,10 +22,13 @@ export namespace Settings {
 	
 	//持久化在硬盘上的用户设置,前后端共用
 	export type PersistedSettings = {
-		global_proxy: NetworkProxy.GlobalProxy,
+		networks: SharedSettings['networks'],
+		system: SharedSettings['system'],
+		appearance: SharedSettings['appearance'],
 		AIs : AI.AIItem[],
 	}
 }
 
 import type { NetworkProxy } from './SettingsTypes/NetworkProxy';
 import type { AI } from './SettingsTypes/AI';
+import type { Settings as SharedSettings } from './SettingsTypes';

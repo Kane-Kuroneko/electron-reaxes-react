@@ -87,7 +87,7 @@ export const reaxable_Settings = () => {
 		//UI组件状态和临时数据
 		UIControls : {
 			networks : {
-				proxy_mode : checkAs<'direct' | 'use_system' | 'user_fill' | 'from_server_list'>( 'user_fill' ) ,
+				proxy_mode : checkAs<NetworkProxy.GlobalProxyMode>( 'user_fill' ) ,
 				using_proxy_server_id : checkAs<string>( null ) ,
 				proxy_fields : checkAs<NotFalse<Settings.IpcSettings['proxy']> & { no_proxy_for__enabled: boolean; }>( {
 					hostname : '127.0.0.1' ,
@@ -160,7 +160,8 @@ export const reaxable_Settings = () => {
 						AI_family : checkAs<AI.AIFamily>( null ) ,
 						url : '' ,
 						desc : '' ,
-						proxy_mode : checkAs<"direct" | "follow_global_setting" | "from_server_list" | "user_fill">( 'follow_global_setting' ) ,
+						preloadOnStartup:false,
+						proxy_mode : checkAs<NetworkProxy.AIProxyMode>( 'follow_global_setting' ) ,
 						from_server_list_proxy : checkAs<string>( null ) ,
 						user_fill_proxy : checkAs<NetworkProxy.ProxyConf>( null ) ,
 					} ) ,
@@ -180,113 +181,8 @@ export const reaxable_Settings = () => {
 		} ,
 		//从后端请求的数据等,不用与控制视图
 		Data : {
-			AIs : checkAs<AI.AIItem[]>( [
-				{
-					label : "GPT-Mia" as const ,
-					id : 'gpt-mia-001' ,
-					disabled : false ,
-					AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
-					url : "https://chatgpt.com" ,
-					proxy_mode : 'user_fill' ,
-					from_server_list_proxy : null ,
-					user_fill_proxy : {
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						protocol : 'http' ,
-						proxy_auth : false,
-					},
-				} ,
-				{
-					label : "GPT-John" as const ,
-					id : 'gpt-john-002' ,
-					disabled : false ,
-					AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
-					url : "https://chatgpt.com" ,
-					proxy_mode : 'user_fill' ,
-					from_server_list_proxy : null ,
-					user_fill_proxy : {
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						protocol : 'http' ,
-						proxy_auth : false,
-					},
-				} ,
-				{
-					label : "GPT-Alex" as const ,
-					id : 'gpt-alex-003' ,
-					disabled : false ,
-					AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
-					url : "https://chatgpt.com" ,
-					proxy_mode : 'user_fill' ,
-					from_server_list_proxy : null ,
-					user_fill_proxy : {
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						protocol : 'http' ,
-						proxy_auth : false,
-					},
-				} ,
-				{
-					label : "GPT-Sophia" as const ,
-					id : 'gpt-sophia-004' ,
-					disabled : false ,
-					AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
-					url : "https://chatgpt.com" ,
-					proxy_mode : 'user_fill' ,
-					from_server_list_proxy : null ,
-					user_fill_proxy : {
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						protocol : 'http' ,
-						proxy_auth : false,
-					},
-				} ,
-				{
-					label : "GPT-Liam" as const ,
-					id : 'gpt-liam-005' ,
-					disabled : false ,
-					AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
-					url : "https://chatgpt.com" ,
-					proxy_mode : 'user_fill' ,
-					from_server_list_proxy : null ,
-					user_fill_proxy : {
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						protocol : 'http' ,
-						proxy_auth : false,
-					},
-				} ,
-				{
-					label : "Grok" as const ,
-					id : 'f51ff516-99ea-44be-9967-cb86be37a4ad' ,
-					disabled : false ,
-					AI_family : checkAs<AI.AIFamily>( 'grok' ) ,
-					url : "https://grok.com" ,
-					proxy_mode : 'user_fill' ,
-					from_server_list_proxy : null ,
-					user_fill_proxy : {
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						protocol : 'http' ,
-						proxy_auth : false,
-					},
-				} ,
-				{
-					label : "AI-Web (Proxy Test)" as const ,
-					id : 'a1-web-test-proxy-0001' ,
-					disabled : false ,
-					AI_family : checkAs<AI.AIFamily>( 'dev-proxy-test' ) ,
-					url : "https://whatismyipaddress.com/" ,
-					proxy_mode : 'user_fill' ,
-					from_server_list_proxy : null ,
-					user_fill_proxy : {
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						protocol : 'http' ,
-						proxy_auth : false,
-					},
-				} ,
-			] ) ,
+			// AI configurations are now loaded dynamically via IPC from AIConfigService
+			AIs : checkAs<AI.AIItem[]>( [] ) ,
 			settings : {
 				global_proxy : checkAs<{
 					enabled: boolean,

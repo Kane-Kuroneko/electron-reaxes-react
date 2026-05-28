@@ -1,97 +1,86 @@
 export const reaxel_Menu = reaxel( () => {
-	
 	const {
 		store ,
 		setState ,
 		mutate,
-	} = createReaxable( {
-		
-	} );
+	} = createReaxable( {} );
 	
-	function createMenu (){
+	function createMenu() {
+		const settings = getRuntimeSettings();
+		const enabledAIs = settings.AIs.filter( ai => !ai.disabled );
 		const { currentAIViewKey } = Reaxel_View.store;
+		
 		return Menu.buildFromTemplate( [
 			{
 				label : 'Application' ,
 				submenu : [
 					{
-						label : `[${Reaxel_View.store.settingsViewOpened ? '✔️' :''}Settings]`,
-						click(){
-							Reaxel_View.setState({settingsViewOpened : true});
+						label : `[${ Reaxel_View.store.settingsViewOpened ? '✔️' : '' }Settings]` ,
+						click() {
+							Reaxel_View.setState( { settingsViewOpened : true } );
 							const settingsView = reaxel_SettingsView().initSettingsView();
-							settingsView.setVisible(true);
-							mainWindow.contentView.addChildView(settingsView);
-						}
-					},
-					{ type: 'separator' },
+							settingsView.setVisible( true );
+							mainWindow.contentView.addChildView( settingsView );
+						},
+					} ,
+					{ type : 'separator' } ,
 					{
 						label : "Check for Updates" ,
 						click : () => {
 							autoUpdater.checkForUpdates();
-						} ,
+						},
 					} ,
-					{ type: 'separator' },
+					{ type : 'separator' } ,
 					{
-						role : 'quit' ,
-					} ,
-				] ,
-				
+						role : 'quit',
+					},
+				],
 			} ,
 			{
-				label : 'View',
+				label : 'View' ,
 				submenu : [
 					{
 						label : 'Reload' ,
-						accelerator:'ctrl+r',
+						accelerator : 'ctrl+r' ,
 						click : () => {
-							if( Reaxel_View.store.settingsViewOpened ) {
-								var view = reaxel_SettingsView.store.settingsView.view;
-							} else {
-								var view = reaxel_AIViews().currentAIView?.view;
-							}
-							if( !view ) return;
-							view.webContents.reload();
-						} ,
+							const view = Reaxel_View.store.settingsViewOpened
+								? reaxel_SettingsView.store.settingsView.view
+								: reaxel_AIViews().currentAIView?.view;
+							view?.webContents.reload();
+						},
 					} ,
 					{
 						label : 'Force Reload' ,
-						accelerator:'ctrl+shift+r',
+						accelerator : 'ctrl+shift+r' ,
 						click : () => {
 							if( Reaxel_View.store.settingsViewOpened ) {
-								const { view } = reaxel_SettingsView.store.settingsView;
-								view.webContents.reloadIgnoringCache();
-							} else {
-								//还要强行重置域名
-								const {
-									view ,
-									domain,
-								} = reaxel_AIViews().currentAIView ?? {};
-								view?.webContents.loadURL( domain );
+								reaxel_SettingsView.store.settingsView.view?.webContents.reloadIgnoringCache();
+								return;
 							}
-						} ,
+							const currentAIView = reaxel_AIViews().currentAIView;
+							currentAIView?.view.webContents.loadURL( currentAIView.domain );
+						},
 					} ,
 					{
 						label : 'Developer Tools' ,
-						accelerator:'f12',
+						accelerator : 'f12' ,
 						click : () => {
-							if( Reaxel_View.store.settingsViewOpened ) {
-								reaxel_SettingsView.store.settingsView.view.webContents.toggleDevTools();
-							} else {
-								const { currentAIView } = reaxel_AIViews();
-								currentAIView?.view.webContents.toggleDevTools();
-							}
-						} ,
+							const view = Reaxel_View.store.settingsViewOpened
+								? reaxel_SettingsView.store.settingsView.view
+								: reaxel_AIViews().currentAIView?.view;
+							view?.webContents.toggleDevTools();
+						},
 					} ,
 					{
 						label : 'Wipe and Reload This Page' ,
 						click : async() => {
-							const result = await dialog.showMessageBox({
-								type : 'warning',
-								message : 'This operation will clear all authentication data from the current page and reload it. \r\nInclude cookies, local storage, and other data.',
-								buttons : [ 'Yes', 'No' ],
-								cancelId : 1,
+							const result = await dialog.showMessageBox( {
+								type : 'warning' ,
+								message : 'This operation will clear all authentication data from the current page and reload it. \r\nInclude cookies, local storage, and other data.' ,
+								buttons : [ 'Yes' , 'No' ] ,
+								cancelId : 1 ,
 								defaultId : 0,
-							});
+							} );
 							
 							if( result.response !== 0 ) return;
 							
@@ -100,111 +89,104 @@ export const reaxel_Menu = reaxel( () => {
 							const { origin } = new URL( currentAIView.view.webContents.getURL() );
 							
 							await currentAIView.view.webContents.clearHistory();
-							//清除任何Domain和会话数据
 							await currentAIView.view.webContents.session.clearStorageData( { origin } );
 							await currentAIView.view.webContents.session.clearCache();
 							await currentAIView.view.webContents.session.clearData( { origins : [ origin ] } );
 							await currentAIView.view.webContents.session.clearAuthCache();
 							currentAIView.view.webContents.reloadIgnoringCache();
-						} ,
+						},
 					} ,
 					{ type : 'separator' } ,
+					{ role : 'resetZoom' } ,
 					{
-						role : 'resetZoom' ,
-					} ,
-					{
-						label: 'Zoom In',
-						accelerator: 'CmdOrCtrl+=',
+						label : 'Zoom In' ,
+						accelerator : 'CmdOrCtrl+=' ,
 						role : 'zoomIn',
-					}, ,
+					} ,
 					{ role : 'zoomOut' } ,
 					{ type : 'separator' } ,
 					{ role : 'togglefullscreen' },
 				],
-				
-				
-			},
+			} ,
 			{
 				label : "Switch AI" ,
-				submenu : AIKeys.map( name => {
-					const { label } = AIData.find( ({AIName}) => AIName === name);
-					return {
-						label ,
-						type : 'radio' ,
-						checked : currentAIViewKey === name ,
-						click : createClickMenuHandler( name ) ,
-					};
-				} ) ,
-			} ,
+				submenu : enabledAIs.length
+					? enabledAIs.map( ai => ( {
+						label : ai.label ,
+						type : 'radio' as const ,
+						checked : currentAIViewKey === ai.id ,
+						click : createClickMenuHandler( ai.id ),
+					} ) )
+					: [
+						{
+							label : 'No enabled AI pages' ,
+							enabled : false,
+						},
+					],
+			},
 		] );
-	};
+	}
 	
-	function createClickMenuHandler( name: AI ) {
-		return () => {
-			AIKeys.forEach( _name => {
-				
-				const {view} = reaxel_AIViews.store.AIViews.find( ({AIName}) => AIName === _name );
-				const { initAIView} = reaxel_AIViews();
-				if(_name !== name){
-					if(view){
-						view.setVisible( false );
-					}
-				}else {
-					if(view){
-						view.setVisible( true );
-					}else {
-						var newView = initAIView(_name);
-					}
-					(view??newView).webContents.focus();
-				}
-			} );
-			
-			//当设置页面打开时页面不会变化,但是在后台切换AI
-			if(Reaxel_View.store.settingsViewOpened){
-				mainWindow.contentView.addChildView(reaxel_SettingsView.store.settingsView.view);
-			}
-			Reaxel_View.setState({currentAIViewKey : name});
+	function createClickMenuHandler( aiId:string ) {
+		return async() => {
+			await reaxel_AIViews().showAIView( aiId , getRuntimeSettings() );
+			rebuildMenu();
 		};
 	}
 	
-	
+	function rebuildMenu() {
+		mainWindow.setMenu( createMenu() );
+	}
 	
 	const menuReady = app.whenReady().then( async() => {
-		const menu = createMenu();
-		mainWindow.setMenu(menu);
+		rebuildMenu();
 	} );
 	
-	//当用户切换时重新创建menu并渲染
 	obsReaction( ( first ) => {
 		if( first ) return;
-		const menu = createMenu();
-		mainWindow.setMenu(menu);
-	} , () => [ Reaxel_View.store.currentAIViewKey,Reaxel_View.store.settingsViewOpened ] );
-		
+		rebuildMenu();
+	} , () => [
+		Reaxel_View.store.currentAIViewKey ,
+		Reaxel_View.store.settingsViewOpened,
+	] );
+	
 	const rtn = {
-		menuReady,
-		createMenu,
+		menuReady ,
+		createMenu ,
+		rebuildMenu,
 	};
+	
 	return Object.assign( () => rtn , {
 		store ,
 		setState ,
-		mutate ,
+		mutate,
 	} );
 } );
+
+const getRuntimeSettings = ():Settings => {
+	const settingsConfigService = getSettingsConfigService();
+	const aiConfigService = getAIConfigService();
+	return {
+		...settingsConfigService.getEffectiveSettings() ,
+		AIs : aiConfigService.getEffectiveAIs(),
+	};
+};
 
 import { Reaxel_View } from '../Views';
 import {
 	app ,
 	autoUpdater ,
-	Menu ,
-	View,
-	dialog,
+	dialog ,
+	Menu,
 } from 'electron';
 import { mainWindow } from "#main/mainWindow";
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
-import {
-	AI ,
-	AIData ,
-	AIKeys ,
-} from "#main/reaxels/Views/AI-Views/data";
 import { reaxel_AIViews } from "#main/reaxels/Views/AI-Views";
+import { getAIConfigService } from "#main/services/settings/ai-config-service";
+import { getSettingsConfigService } from "#main/services/settings/settings-config-service";
+import type { Settings } from "#src/Types/SettingsTypes";
+import {
+	createReaxable ,
+	obsReaction ,
+	reaxel,
+} from 'reaxes';

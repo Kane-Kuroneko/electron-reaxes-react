@@ -168,7 +168,7 @@ const AIProxySelector = reaxper( () => {
 	const { AIs } = reaxel_SettingsView.store.Data;
 	
 	// 构建树形结构
-	const treeData = AIs.reduce((acc, ai) => {
+	const treeData = AIs.filter( ai => !ai.disabled ).reduce((acc, ai) => {
 		// 查找是否已存在该family节点
 		let familyNode = acc.find(item => item.value === `family:${ai.AI_family}`);
 		if (!familyNode) {
@@ -194,7 +194,7 @@ const AIProxySelector = reaxper( () => {
 					{ai.label}
 				</span>
 			),
-			value: `name:${ai.AI_family}:${ai.label}`,
+			value: `name:${ai.id}`,
 			selectable: true,
 		});
 		
@@ -206,7 +206,7 @@ const AIProxySelector = reaxper( () => {
 		if (item.type === 'family') {
 			return `family:${item.family}`;
 		} else {
-			return `name:${item.family}:${item.value}`;
+			return `name:${item.value}`;
 		}
 	});
 	
@@ -231,15 +231,14 @@ const AIProxySelector = reaxper( () => {
 							family: family,
 						};
 					} else if (val.startsWith('name:')) {
-						const parts = val.replace('name:', '').split(':');
-						const family = parts[0];
-						const name = parts.slice(1).join(':');
+						const aiId = val.replace('name:', '');
+						const ai = AIs.find( item => item.id === aiId );
 						return {
 							type: 'name' as const,
-							value: name,
-							id: `name_${family}_${name}`,
-							family: family,
-							label: name,
+							value: aiId,
+							id: `name_${aiId}`,
+							family: ai?.AI_family || 'unknown',
+							label: ai?.label || aiId,
 						};
 					}
 					// 不应该到达这里

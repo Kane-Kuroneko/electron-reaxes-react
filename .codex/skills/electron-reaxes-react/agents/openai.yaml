@@ -1,0 +1,4 @@
+interface:
+  display_name: "Electron Reaxes React"
+  short_description: "Work in this Electron/Reaxes monorepo."
+  default_prompt: "Use this skill before changing electron-reaxes-react or AI-WebApp code."

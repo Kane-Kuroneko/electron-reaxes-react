@@ -1,0 +1,118 @@
+{
+  "version": "1.0.0",
+  "description": "Default AI configurations - This file should NEVER be modified by users",
+  "ais": [
+    {
+      "id": "gpt-mia-001",
+      "label": "GPT-Mia",
+      "disabled": false,
+      "AI_family": "chatgpt",
+      "url": "https://chatgpt.com",
+      "proxy_mode": "follow_global_setting",
+      "from_server_list_proxy": null,
+      "preloadOnStartup": false,
+      "user_fill_proxy": {
+        "hostname": "127.0.0.1",
+        "port": 7897,
+        "protocol": "http",
+        "proxy_auth": false
+      }
+    },
+    {
+      "id": "gpt-john-002",
+      "label": "GPT-John",
+      "disabled": false,
+      "AI_family": "chatgpt",
+      "url": "https://chatgpt.com",
+      "proxy_mode": "follow_global_setting",
+      "from_server_list_proxy": null,
+      "preloadOnStartup": false,
+      "user_fill_proxy": {
+        "hostname": "127.0.0.1",
+        "port": 7897,
+        "protocol": "http",
+        "proxy_auth": false
+      }
+    },
+    {
+      "id": "gpt-alex-003",
+      "label": "GPT-Alex",
+      "disabled": false,
+      "AI_family": "chatgpt",
+      "url": "https://chatgpt.com",
+      "proxy_mode": "follow_global_setting",
+      "from_server_list_proxy": null,
+      "preloadOnStartup": false,
+      "user_fill_proxy": {
+        "hostname": "127.0.0.1",
+        "port": 7897,
+        "protocol": "http",
+        "proxy_auth": false
+      }
+    },
+    {
+      "id": "gpt-sophia-004",
+      "label": "GPT-Sophia",
+      "disabled": false,
+      "AI_family": "chatgpt",
+      "url": "https://chatgpt.com",
+      "proxy_mode": "follow_global_setting",
+      "from_server_list_proxy": null,
+      "preloadOnStartup": false,
+      "user_fill_proxy": {
+        "hostname": "127.0.0.1",
+        "port": 7897,
+        "protocol": "http",
+        "proxy_auth": false
+      }
+    },
+    {
+      "id": "gpt-liam-005",
+      "label": "GPT-Liam",
+      "disabled": false,
+      "AI_family": "chatgpt",
+      "url": "https://chatgpt.com",
+      "proxy_mode": "follow_global_setting",
+      "from_server_list_proxy": null,
+      "preloadOnStartup": false,
+      "user_fill_proxy": {
+        "hostname": "127.0.0.1",
+        "port": 7897,
+        "protocol": "http",
+        "proxy_auth": false
+      }
+    },
+    {
+      "id": "f51ff516-99ea-44be-9967-cb86be37a4ad",
+      "label": "Grok",
+      "disabled": false,
+      "AI_family": "grok",
+      "url": "https://grok.com",
+      "proxy_mode": "follow_global_setting",
+      "from_server_list_proxy": null,
+      "preloadOnStartup": false,
+      "user_fill_proxy": {
+        "hostname": "127.0.0.1",
+        "port": 7897,
+        "protocol": "http",
+        "proxy_auth": false
+      }
+    },
+    {
+      "id": "a1-web-test-proxy-0001",
+      "label": "AI-Web (Proxy Test)",
+      "disabled": false,
+      "AI_family": "dev-proxy-test",
+      "url": "https://whatismyipaddress.com/",
+      "proxy_mode": "follow_global_setting",
+      "from_server_list_proxy": null,
+      "preloadOnStartup": false,
+      "user_fill_proxy": {
+        "hostname": "127.0.0.1",
+        "port": 7897,
+        "protocol": "http",
+        "proxy_auth": false
+      }
+    }
+  ]
+}

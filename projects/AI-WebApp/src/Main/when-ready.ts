@@ -7,14 +7,23 @@ app.whenReady().then(async () => {
 	// 美化开发工具
 	useBeautifulDevtool(win);
 	
-	// 设置代理
-	const proxyRules = 'http=127.0.0.1:7897;https=127.0.0.1:7897';
-	const ses = win.webContents.session;
-	await ses.setProxy({ proxyRules });
-	
 	// 初始化设置和菜单
 	reaxel_Settings();
 	reaxel_Menu();
+	
+	// 初始化系统托盘
+	const settings = getSettingsConfigService().getEffectiveSettings();
+	if( settings.system.tray ) {
+		initTray();
+	}
+	
+	// 托盘模式：关闭窗口时最小化到托盘而非退出
+	win.on( 'close' , ( event ) => {
+		if( isTrayActive() ) {
+			event.preventDefault();
+			win.hide();
+		}
+	} );
 	
 	// 打开开发设置视图
 	useDevSettingsView();
@@ -46,3 +55,5 @@ import { reaxel_Settings } from "#main/reaxels/Settings";
 import { reaxel_Menu } from './reaxels/Menu';
 import { Reaxel_View } from "#main/reaxels/Views";
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
+import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
+import { initTray , isTrayActive } from '#main/services/tray';

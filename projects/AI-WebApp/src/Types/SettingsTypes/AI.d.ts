@@ -12,8 +12,8 @@ export namespace AI {
 		AI_family: AIFamily;
 		url : string;
 		desc?: string;
-		proxy_mode: NetworkProxy.ProxyMode;
-		from_server_list_proxy: string; //proxy_server_id
+		proxy_mode: NetworkProxy.AIProxyMode;
+		from_server_list_proxy: string | null; //proxy_server_id
 		user_fill_proxy: UserFillProxy;
 		preloadOnStartup: boolean; // 是否在应用启动时预加载
 	}
@@ -23,8 +23,8 @@ export namespace AI {
 		AI_family: AIItem['AI_family'];
 		url : AIItem['url'];
 		desc?: string;
-		proxy_mode: NetworkProxy.ProxyMode;
-		from_server_list_proxy: string; //proxy_server_id
+		proxy_mode: NetworkProxy.AIProxyMode;
+		from_server_list_proxy: string | null; //proxy_server_id
 		user_fill_proxy: AIItem['user_fill_proxy'];
 		preloadOnStartup: boolean; // 是否在应用启动时预加载
 	}

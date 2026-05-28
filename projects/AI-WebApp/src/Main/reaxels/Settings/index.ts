@@ -1,99 +1,225 @@
-export const reaxel_Settings = reaxel(() => {
+export const reaxel_Settings = reaxel( () => {
+	const settingsConfigService = getSettingsConfigService();
+	const aiConfigService = getAIConfigService();
+	const initialSettings = settingsConfigService.getEffectiveSettings();
 	
-	const {setState,store,mutate} = createReaxable({
-		networks : checkAs<Networks.UnionType & {
-			//fixme
-			using_proxy_server_id:string;
-			proxy_server_list:any[];
-		}>({
-			proxy_mode :  'user_fill' ,
-			proxy_fields : checkAs<NotFalse<Settings.IpcSettings['proxy']> & { no_proxy_for__enabled: boolean; }>( {
-				hostname : '127.0.0.1' ,
-				port : 7897 ,
-				protocol : 'http' ,
-				no_proxy_for : checkAs<NetworkProxy.NoProxyForItem[]>( [] ) ,
-				//是否启用no_proxy_for字段,作用是仅禁用但不清空字段
-				no_proxy_for__enabled : true ,
-				proxy_auth : false ,
-			} ) ,
-			using_proxy_server_id: '',
-			proxy_server_list :  [
-				{
-					proxy_server_id : '1' ,
-					server_name : 'Clash Verge Rev' ,
-					proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
-						protocol : 'http' ,
-						hostname : '127.0.0.1' ,
-						port : 7897 ,
-						proxy_auth : false ,
-					} ) ,
-					enabled : true ,
-				} ,
-				{
-					proxy_server_id : '2' ,
-					server_name : 'Clash For Windows' ,
-					proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
-						protocol : 'http' ,
-						hostname : '127.0.0.1' ,
-						port : 7890 ,
-						proxy_auth : {
-							username : 'kane' ,
-							password : '123456' ,
-						} ,
-					} ) ,
-					enabled : true ,
-				} ,
-			]  ,
-		}) ,
-	});
-	
-	rehancer_ipcReceive({store, setState, mutate})();
-	
-	useIpcRendererToMain('exit-settings').on(({event,reply}) => {
-		Reaxel_View.setState({settingsViewOpened : false});
-	});
-	
-	useIpcRendererToMain('update-preload-ai-config').on(({event}, preloadAIFamilies) => {
-		console.log('Received update-preload-ai-config:', preloadAIFamilies);
-		// TODO: 在这里处理预加载AI配置的保存逻辑
-		// 例如：保存到electron-store或其他持久化存储
-	});
-	
-	useIpcRpc('submit-settings').handle(async ({event},settings) => {
-		
-		return { success : true };
-	});
-	
-	useIpcRpc( 'fetch-settings' ).handle( async( { event }  ) => {
-		return {} as any;
+	const { setState , store , mutate } = createReaxable( {
+		networks : initialSettings.networks ,
+		system : initialSettings.system ,
+		appearance : initialSettings.appearance,
 	} );
 	
-	const rtn = {}
+	const getCurrentSettings = ():Settings => ( {
+		networks : cloneData( store.networks ) ,
+		system : cloneData( store.system ) ,
+		appearance : cloneData( store.appearance ) ,
+		AIs : aiConfigService.getEffectiveAIs(),
+	} );
 	
-	return Object.assign(() => rtn , {
-		store,setState,mutate
-	})
-})
+	const getFetchResult = ():SettingsFetchResult => ( {
+		...getCurrentSettings() ,
+		hasUserModifications : settingsConfigService.hasUserModifications() || aiConfigService.hasUserModifications(),
+	} );
+	
+	const syncRuntimeViews = async() => {
+		const settings = getCurrentSettings();
+		await reaxel_AIViews().syncAIViewsWithConfig( settings );
+		reaxel_Menu().rebuildMenu();
+		syncTrayState( settings.system.tray );
+	};
+	
+	const applySettings = async( settings:Settings ):Promise<SettingsApplyResult> => {
+		const previousSettings = getCurrentSettings();
+		const normalizedRuntimeSettings = normalizeRuntimeSettings( {
+			networks : settings.networks ,
+			system : settings.system ,
+			appearance : settings.appearance,
+		} );
+		const normalizedAIs = ( settings.AIs || [] ).map( ai => ( {
+			...ai ,
+			disabled : ai.disabled === true ,
+			proxy_mode : ai.proxy_mode || 'follow_global_setting' ,
+			from_server_list_proxy : ai.from_server_list_proxy || null ,
+			user_fill_proxy : ai.user_fill_proxy || null ,
+			preloadOnStartup : ai.preloadOnStartup === true,
+		} ) );
+		
+		settingsConfigService.saveSettings( normalizedRuntimeSettings );
+		aiConfigService.replaceAllAIs( normalizedAIs );
+		
+		mutate( s => {
+			s.networks = normalizedRuntimeSettings.networks;
+			s.system = normalizedRuntimeSettings.system;
+			s.appearance = normalizedRuntimeSettings.appearance;
+		} );
+		
+		await syncRuntimeViews();
+		
+		const restartReasons = detectRestartReasons( previousSettings , getCurrentSettings() );
+		return {
+			success : true ,
+			restartRequired : restartReasons.length > 0 ,
+			restartReasons ,
+			applied : {
+				settingsPersisted : true ,
+				aiViewsSynced : true ,
+				menuRebuilt : true ,
+				proxyUpdated : JSON.stringify( previousSettings.networks ) !== JSON.stringify( normalizedRuntimeSettings.networks ),
+			} ,
+			settings : getCurrentSettings(),
+		};
+	};
+	
+	rehancer_ipcReceive( { store , setState , mutate } )();
+	
+	useIpcRendererToMain( 'exit-settings' ).on( () => {
+		Reaxel_View.setState( { settingsViewOpened : false } );
+	} );
+	
+	useIpcRendererToMain( 'update-preload-ai-config' ).on( async() => {
+		await syncRuntimeViews();
+	} );
+	
+	useIpcRpc( 'fetch-settings' ).handle( async() => {
+		return getFetchResult();
+	} );
+	
+	useIpcRpc( 'apply-settings' ).handle( async( { event } , settings ) => {
+		try {
+			return await applySettings( settings );
+		} catch ( error ) {
+			console.error( '[Settings] Failed to apply settings:' , error );
+			return {
+				success : false ,
+				restartRequired : false ,
+				restartReasons : [] ,
+				applied : {
+					settingsPersisted : false ,
+					aiViewsSynced : false ,
+					menuRebuilt : false ,
+					proxyUpdated : false,
+				} ,
+				error : error?.message || String( error ),
+			};
+		}
+	} );
+	
+	useIpcRpc( 'submit-settings' ).handle( async( { event } , path , data ) => {
+		try {
+			const patchedSettings = applyPatchByPath( getCurrentSettings() , path , data );
+			const result = await applySettings( patchedSettings );
+			return {
+				success : result.success ,
+				error : result.error,
+			};
+		} catch ( error ) {
+			console.error( '[Settings] Failed to submit settings:' , error );
+			return {
+				success : false ,
+				error : error?.message || String( error ),
+			};
+		}
+	} );
+	
+	useIpcRpc( 'get-ais' ).handle( async() => {
+		return aiConfigService.getEffectiveAIs();
+	} );
+	
+	useIpcRpc( 'get-default-ais' ).handle( async() => {
+		return aiConfigService.getDefaultAIs();
+	} );
+	
+	useIpcRpc( 'update-ai' ).handle( async( { event } , id , updates ) => {
+		const updatedAI = aiConfigService.updateAI( id , updates );
+		await syncRuntimeViews();
+		return updatedAI;
+	} );
+	
+	useIpcRpc( 'add-ai' ).handle( async( { event } , ai ) => {
+		const newAI = aiConfigService.addAI( ai );
+		await syncRuntimeViews();
+		return newAI;
+	} );
+	
+	useIpcRpc( 'delete-ai' ).handle( async( { event } , id ) => {
+		const deleted = aiConfigService.deleteAI( id );
+		await syncRuntimeViews();
+		return deleted;
+	} );
+	
+	useIpcRpc( 'reset-ais-to-defaults' ).handle( async() => {
+		aiConfigService.resetToDefaults();
+		await syncRuntimeViews();
+		return { success : true };
+	} );
+	
+	useIpcRpc( 'get-preload-ai-families' ).handle( async() => {
+		return aiConfigService.getPreloadAIFamilies();
+	} );
+	
+	const rtn = {
+		getCurrentSettings ,
+		applySettings,
+	};
+	
+	return Object.assign( () => rtn , {
+		store ,
+		setState ,
+		mutate,
+	} );
+} );
 
+const cloneData = <T>(data:T):T => JSON.parse( JSON.stringify( data ) );
+
+const applyPatchByPath = <T extends object>(settings:T , path:string , data:any):T => {
+	const patchedSettings = cloneData( settings );
+	const keys = path.split( '/' ).filter( Boolean );
+	let target:any = patchedSettings;
+	
+	for( let i = 0 ; i < keys.length - 1 ; i++ ) {
+		const key = keys[i];
+		if( !target[key] || typeof target[key] !== 'object' ) {
+			target[key] = {};
+		}
+		target = target[key];
+	}
+	
+	target[keys[keys.length - 1]] = data;
+	return patchedSettings;
+};
+
+const detectRestartReasons = (previousSettings:Settings , nextSettings:Settings):string[] => {
+	const restartReasons:string[] = [];
+	
+	if( previousSettings.system.gpu_acceleration !== nextSettings.system.gpu_acceleration ) {
+		restartReasons.push( 'GPU acceleration is applied before Electron creates browser processes.' );
+	}
+	
+	return restartReasons;
+};
 
 export type Reaxel_Settings = typeof reaxel_Settings;
 
 import {
-	useIpcMainToRenderer ,
 	useIpcRpc ,
 	useIpcRendererToMain,
 } from '#main/services/ipc';
-
-import { reaxel , createReaxable , obsReaction , collectDeps , distinctCallback } from 'reaxes';
-import { Reaxel_View } from "#main/reaxels/Views";
+import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
+import { reaxel_Menu } from '#main/reaxels/Menu';
+import { Reaxel_View } from '#main/reaxels/Views';
 import { rehancer_ipcReceive } from './rehancer_ipcReceive';
-export type Menus = "net" | "appearance" | "mngeai" | "sys" | "keys";
-export type NotFalse<T> = Exclude<T , false | null | undefined>;
-export type NotNull<T> = Exclude<T , null | undefined>;
-import { Settings } from '#src/Types/Settings';
-
-
-import { AI } from "#src/Types/SettingsTypes/AI";
-import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
-import { Appearance } from "#src/Types/SettingsTypes/Appearance";
-import { Networks } from "#src/shared/structs/settings";
+import {
+	getSettingsConfigService ,
+	normalizeRuntimeSettings,
+} from '#main/services/settings/settings-config-service';
+import { getAIConfigService } from '#main/services/settings/ai-config-service';
+import { syncTrayState } from '#main/services/tray';
+import {
+	reaxel ,
+	createReaxable,
+} from 'reaxes';
+import type {
+	Settings ,
+	SettingsApplyResult ,
+	SettingsFetchResult,
+} from '#src/Types/SettingsTypes';

@@ -14,17 +14,16 @@ export const ProxyServers = reaxper( () => {
 				onClick={() => {
 					setState.edit_proxy_server_modal({
 						visible : true,
+						mode : 'add',
 						editing_id : uuid(),
 						fields : {
 							server_name : '',
+							enabled : true,
 							proxy_conf : {
 								protocol : 'http',
 								hostname : '127.0.0.1',
 								port : 7890,
-								proxy_auth : {
-									username : '',
-									password : '',
-								},
+								proxy_auth : false,
 							},
 						},
 					})
@@ -56,6 +55,22 @@ const columns:TableColumnType<NetworkProxy.ProxyServer.Server>[] = [
 		key : 'server_name' ,
 	} ,
 	{
+		title : 'Enabled' ,
+		render(value,record){
+			return <Checkbox
+				checked={ record.enabled }
+				onChange={ ( e ) => {
+					reaxel_SettingsView.mutate.UIControls.networks( state => {
+						const target = state.proxy_server_list.find( server => server.proxy_server_id === record.proxy_server_id );
+						if( target ) {
+							target.enabled = e.target.checked;
+						}
+					} );
+				} }
+			/>;
+		},
+	} ,
+	{
 		title : 'Address' ,
 		render(value,{proxy_conf:{protocol,hostname,port}},index){
 			return <span>{protocol}://{hostname}:{port}</span>
@@ -70,15 +85,34 @@ const columns:TableColumnType<NetworkProxy.ProxyServer.Server>[] = [
 					console.log(record);
 					setState.edit_proxy_server_modal( {
 						visible : true ,
+						mode : 'edit' ,
 						editing_id : record.proxy_server_id ,
 						fields : {
 							server_name : record.server_name ,
+							enabled : record.enabled ,
 							proxy_conf : record.proxy_conf ,
 						} ,
 					} );
 				} }
 			>Edit</Button>;
 		}
+	} ,
+	{
+		title : 'Delete',
+		render(value,record){
+			return <Button
+				type="link"
+				danger
+				onClick={ () => {
+					reaxel_SettingsView.mutate.UIControls.networks( state => {
+						state.proxy_server_list = state.proxy_server_list.filter( server => server.proxy_server_id !== record.proxy_server_id );
+						if( state.using_proxy_server_id === record.proxy_server_id ) {
+							state.using_proxy_server_id = null;
+						}
+					} );
+				} }
+			>Delete</Button>;
+		},
 	}
 ];
 
@@ -144,15 +178,58 @@ const EditProxyServerModal = reaxper( () => {
 			} );
 		} }
 		onOk={() => {
-			api.submitSettings({
-				
-			})
+			reaxel_SettingsView.mutate.UIControls.networks( state => {
+				const nextServer:NetworkProxy.ProxyServer.Server = {
+					proxy_server_id : store.editing_id ,
+					server_name : store.fields.server_name ,
+					enabled : store.fields.enabled ,
+					proxy_conf : store.fields.proxy_conf,
+				};
+				const index = state.proxy_server_list.findIndex( server => server.proxy_server_id === store.editing_id );
+				if( index === -1 ) {
+					state.proxy_server_list.push( nextServer );
+				} else {
+					state.proxy_server_list[index] = nextServer;
+				}
+				if( !state.using_proxy_server_id ) {
+					state.using_proxy_server_id = nextServer.proxy_server_id;
+				}
+			} );
+			setState( {
+				visible : false ,
+				editing_id : null,
+			} );
 		}}
 	>
 		<div>
 			<Form
 				variant="underlined"
 			>
+				<Form.Item
+					label="Server name :"
+				>
+					<Input
+						variant="underlined"
+						value={ store.fields.server_name }
+						placeholder="Proxy server name"
+						onChange={ ( e ) => {
+							setState.fields( {
+								server_name : e.target.value,
+							} );
+						} }
+					/>
+				</Form.Item>
+				<Checkbox
+					style={{userSelect:'none'}}
+					checked={store.fields.enabled}
+					onChange={(e) => {
+						setState.fields( {
+							enabled : e.target.checked,
+						} );
+					}}
+				>
+					Enabled
+				</Checkbox>
 				<Form.Item
 					label="Protocol :"
 				>

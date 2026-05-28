@@ -60,10 +60,27 @@ const useSettingsView = (view:WebContentsView,options:WebContentsViewConstructor
 }
 const useAIView = (view:WebContentsView,options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
 	view.webContents.setWindowOpenHandler(({ url }) => {
+		if( shouldOpenInCurrentView( view.webContents.getURL() || options.domain , url ) ) {
+			view.webContents.loadURL( url );
+			return { action : 'deny' };
+		}
 		shell.openExternal(url);
 		return { action: 'deny' };
 	});
-	view.webContents.loadURL( options.domain || "https://chatgpt.com" );
+	~async function loadAIView() {
+		if( options.aiConfig && options.settings ) {
+			await applyAIProxyToView( view , options.aiConfig , options.settings );
+		}
+		await view.webContents.loadURL( options.domain || "https://chatgpt.com" );
+	}();
+};
+
+const shouldOpenInCurrentView = (currentURL:string , nextURL:string) => {
+	try {
+		return new URL( currentURL ).origin === new URL( nextURL ).origin;
+	} catch ( error ) {
+		return false;
+	}
 };
 
 import {
@@ -77,9 +94,14 @@ import * as path from "path";
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {dev} from 'electron-is';
 import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
+import { applyAIProxyToView } from "#main/services/settings/proxy-service";
+import type { Settings } from "#src/Types/SettingsTypes";
+import type { AI as AISettings } from "#src/Types/SettingsTypes/AI";
 
 type AI = "chatgpt"|"grok"|"gemini"|"deepseek"|"perplexity";
 type ExtraBrowserWindowOptions = {
 	domain? : string;
 	type : "AI-View"|"Settings-View";
+	aiConfig?: AISettings.AIItem;
+	settings?: Settings;
 }

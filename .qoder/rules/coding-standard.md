@@ -1,5 +1,5 @@
 ---
-trigger: model_decision
+trigger: always_on
 description: 编码规范 - 缩进、命名、导入等通用编码标准
 ---
 

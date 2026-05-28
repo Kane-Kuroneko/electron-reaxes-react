@@ -4,7 +4,7 @@ export const App = reaxper( () => {
 	const store = reaxel_SettingsView.store.RootMenu;
 	const setState = reaxel_SettingsView.setState.RootMenu;
 	
-	const { submitSettings,fetchSettings,exitSettings } = reaxel_SettingsView();
+	const { applySettings , exitSettings , reloadSettings } = reaxel_SettingsView();
 	
 	const MenuContentComponent = {
 		net : RCNetworkPanel ,
@@ -13,13 +13,6 @@ export const App = reaxper( () => {
 		sys : RCSystemPanel ,
 		// hk : RCHotkeysPanel,
 	}[store.current];
-	
-	useEffect( () => {
-		~async function () {
-			const settings = await fetchSettings();
-			reaxel_SettingsView.setState.UIControls.networks( settings?.networks ?? {} );
-		}();
-	} , [] );
 	
 	
 	return <div>
@@ -51,7 +44,7 @@ export const App = reaxper( () => {
 		<div>
 			<Button
 				onClick={ () => {
-					
+					exitSettings();
 				} }
 				danger
 				type="primary"
@@ -60,20 +53,52 @@ export const App = reaxper( () => {
 			<Button
 				danger
 				type="dashed"
-				onClick={ () => {
-					exitSettings()
+				onClick={ async() => {
+					await reloadSettings();
+					exitSettings();
 				} }
 			>Discard All Changes</Button>
 			
 			<Button
+				onClick={ async() => {
+					const result = await applySettings();
+					showApplyResult( result );
+				} }
+			>Apply</Button>
+			
+			<Button
 				type="primary"
-				onClick={ () => {
-					exitSettings()
+				onClick={ async() => {
+					const result = await applySettings();
+					showApplyResult( result );
+					if( result.success ) {
+						exitSettings();
+					}
 				} }
 			>Save All</Button>
 		</div>
 	</div>;
 } );
+
+const showApplyResult = (result:SettingsApplyResult) => {
+	if( !result.success ) {
+		message.error( result.error || 'Failed to apply settings' );
+		return;
+	}
+	if( result.restartRequired ) {
+		Modal.warning( {
+			title : 'Restart required' ,
+			content : <div>
+				<div>Settings were saved. These changes require restarting the app:</div>
+				<ul>
+					{ result.restartReasons.map( reason => <li key={ reason }>{ reason }</li> ) }
+				</ul>
+			</div>,
+		} );
+		return;
+	}
+	message.success( 'Settings applied' );
+};
 
 import { RCAppearancePanel } from './components/Appearance';
 import { RCManageAIsPanel } from './components/ManageAIs';
@@ -83,9 +108,10 @@ import {
 	Button ,
 	Form ,
 	Menu ,
+	message ,
+	Modal,
 } from 'antd';
 import { reaxper  } from 'reaxes-react';
 import './index.less';
 import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
-
-import './index.less';
+import type { SettingsApplyResult } from "#src/Types/SettingsTypes";

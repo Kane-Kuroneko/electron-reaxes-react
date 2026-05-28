@@ -1,14 +1,9 @@
 export type Settings = {
 	networks: {
 		global_proxy : {
-			proxy_mode : NetworkProxy.ProxyMode;
+			proxy_mode : NetworkProxy.GlobalProxyMode;
 			proxy_server_id? : string; //当proxy_mode为from_server_list时使用此字段
-			user_fill_proxy? : { //当proxy_mode为user_fill时使用此字段
-				hostname : string;
-				port : number;
-				protocol : NetworkProxy.Protocol;
-				proxy_auth : NetworkProxy.ProxyAuth;
-			}
+			user_fill_proxy? : NetworkProxy.GlobalProxy; //当proxy_mode为user_fill时使用此字段
 		},
 		proxy_server_list:NetworkProxy.ProxyServer.Server[],
 		
@@ -20,6 +15,25 @@ export type Settings = {
 		language : Appearance.Language,
 	},
 }
+
+export type SettingsFetchResult = Settings & {
+	hasUserModifications: boolean;
+}
+
+export type SettingsApplyResult = {
+	success: boolean;
+	restartRequired: boolean;
+	restartReasons: string[];
+	applied: {
+		settingsPersisted: boolean;
+		aiViewsSynced: boolean;
+		menuRebuilt: boolean;
+		proxyUpdated: boolean;
+	};
+	settings?: Settings;
+	error?: string;
+}
+
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { SystemSettings } from "#src/Types/SettingsTypes/System";

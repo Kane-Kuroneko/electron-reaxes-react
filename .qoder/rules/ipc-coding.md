@@ -44,11 +44,11 @@ ipcRenderer.invoke('fetch-settings');
 
 位于 `src/preload.ts`,通过 `contextBridge.exposeInMainWorld('api', api)` 暴露:
 
-| API 方法 | 类型 | 说明 |
-|---------|------|------|
-| `window.api.fetchSettings()` | RPC | 获取设置 |
-| `window.api.submitSettings()` | RPC | 提交设置 |
-| `window.api.exitSettings()` | Event | 退出设置页面 |
+| API 方法                               | 类型    | 说明      |
+|--------------------------------------|-------|---------|
+| `window.api.fetchSettings()`         | RPC   | 获取设置    |
+| `window.api.submitSettings()`        | RPC   | 提交设置    |
+| `window.api.exitSettings()`          | Event | 退出设置页面  |
 | `window.api.updatePreloadAIConfig()` | Event | 更新预加载配置 |
 
 ---
@@ -65,7 +65,7 @@ export interface RendererToMainEvents extends Record<string, IpcStructure.Render
 
 export interface IpcRpc extends Record<string, IpcStructure.IpcRpc<unknown[], unknown>> {
   'fetch-settings': IpcStructure.IpcRpc<[void], Settings>;
-  'submit-settings': IpcStructure.IpcRpc<[PatchPath<Settings>, PatchData<...>], {success: boolean}>;
+  'submit-settings': IpcStructure.IpcRpc<[PatchPath<Settings>, PatchData<Data>], {success: boolean}>;
 }
 ```
 
@@ -76,9 +76,9 @@ export interface IpcRpc extends Record<string, IpcStructure.IpcRpc<unknown[], un
 在 Code Review 时,请检查:
 
 - [ ] 主进程是否使用了 `useIpcRpc`/`useIpcRendererToMain`/`useIpcMainToRenderer`
-- [ ] 主进程是否**没有**直接使用 `ipcMain.on`/`ipcMain.handle`/`webContents.send`
+- [ ] 主进程是否应该**没有**直接使用 `ipcMain.on`/`ipcMain.handle`/`webContents.send`
 - [ ] 渲染进程是否使用了 `window.api.xxx`
-- [ ] 渲染进程是否**没有**导入 `createIpc` 或 `ipcRenderer`
+- [ ] 渲染进程是否应该**没有**导入 `createIpc` 或 `ipcRenderer`
 - [ ] 新增的 IPC 通道是否已在 `IpcSchema.d.ts` 中定义类型
 
 ---
@@ -106,15 +106,40 @@ useIpcRendererToMain('update-preload-ai-config').on(({event}, data) => {});
 ```
 
 ### 错误 2: 渲染进程导入 createIpc
-
 ```typescript
 // ❌ 错误
 import { createIpc } from '#generics/toolkit/electron/preload.ipc';
 const api = { update: useRtm('update-preload-ai-config') };
 api.update(data);
+```
 
-// ✅ 正确
-window.api.updatePreloadAIConfig(data);
+**✅ 正确完整用例：必须先在 `preload.ts` 中创建并暴露 API，渲染进程才能通过 `window.api` 调用**
+
+**步骤 1: 在 `src/preload.ts` 中创建 API**
+
+```typescript
+import { createIpc } from '#generics/toolkit/electron/preload.ipc';
+
+const useRtm = createIpc<RendererToMainEvents>('rtmEvent');
+const useRpc = createIpc<IpcRpc>('rpcEvent');
+
+const api = {
+   // Event 类型：渲染进程 → 主进程（单向）
+   exitSettings: useRtm('exit-settings'),
+   updatePreloadAIConfig: useRtm('update-preload-ai-config'),
+   // RPC 类型：渲染进程 ↔ 主进程（双向，自动返回 Promise）
+   fetchSettings: useRpc('fetch-settings'),
+   submitSettings: useRpc('submit-settings'),
+};
+
+contextBridge.exposeInMainWorld('api', api);
+```
+
+**步骤 2: 在渲染进程 (React) 中使用 `window.api`**
+
+```typescript
+const settings = await window.api.fetchSettings();
+window.api.updatePreloadAIConfig(preloadAIFamilies);
 ```
 
 ### 错误 3: 在渲染进程使用 ipcRenderer

@@ -17,8 +17,33 @@ export const rehancer_Ipc = ( { store , setState , mutate }: Reaxel_SettingsView
 		async fetchSettings(){
 			return await fetchSettings();
 		},
+		async applySettings(settings: Settings) {
+			return await applySettingsRpc(settings);
+		},
 		exitSettings(){
 			api.exitSettings();
+		},
+		// AI Configuration Management
+		async getAIs() {
+			return await getAIs();
+		},
+		async getDefaultAIs() {
+			return await getDefaultAIs();
+		},
+		async updateAI(id: string, updates: any) {
+			return await updateAI(id, updates);
+		},
+		async addAI(ai: any) {
+			return await addAI(ai);
+		},
+		async deleteAI(id: string) {
+			return await deleteAI(id);
+		},
+		async resetAIsToDefaults() {
+			return await resetAIsToDefaults();
+		},
+		async getPreloadAIFamilies() {
+			return await getPreloadAIFamilies();
 		}
 	}
 }
@@ -28,7 +53,18 @@ import {
 	PatchPath ,
 	PatchData ,
 } from "#src/Types/SettingsTypes/SettingsPatchPath";
-import { submitSettings,fetchSettings } from '#src/Views/SettingsView/services/Settings';
+import { 
+	submitSettings,
+	fetchSettings,
+	applySettings as applySettingsRpc,
+	getAIs,
+	getDefaultAIs,
+	updateAI,
+	addAI,
+	deleteAI,
+	resetAIsToDefaults,
+	getPreloadAIFamilies,
+} from '#src/Views/SettingsView/services/Settings';
 import { Settings } from '#src/Types/SettingsTypes';
 import type {
 	Reaxel_SettingsView,
