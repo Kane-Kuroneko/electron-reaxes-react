@@ -7,8 +7,7 @@ export const env = (() => {
 	
 	const hasPreloadFlag =
 		typeof window !== 'undefined' &&
-		typeof window.IPC === 'object' &&
-		typeof window.versions?.electron === 'string';
+		typeof window.api === 'object';
 	
 	if (isElectron || hasPreloadFlag) {
 		return 'electron';
