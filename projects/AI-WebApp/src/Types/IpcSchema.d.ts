@@ -2,6 +2,7 @@ export interface RendererToMainEvents extends Record<string , IpcStructure.Rende
 	'1' : IpcStructure.RendererToMainEvent<[null] , MainToRendererReply<'1'>>;
 	'exit-settings' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
 	'update-preload-ai-config' : IpcStructure.RendererToMainEvent<[string[]] , {channel:void,args:void[]}>;
+	'language-change' : IpcStructure.RendererToMainEvent<[language: string] , {channel:void,args:void[]}>;
 }
 
 export interface MainToRendererEvents extends Record<string , IpcStructure.MainToRendererEvent<unknown[]>> {

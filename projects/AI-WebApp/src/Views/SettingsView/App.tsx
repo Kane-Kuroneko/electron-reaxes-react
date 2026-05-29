@@ -21,6 +21,7 @@ export const App = reaxper( () => {
 						return {
 							...it ,
 							key : it.value,
+							label: <I18n>{it.label}</I18n>,
 						};
 					} ) }
 					onSelect={ ( { key } ) => {
@@ -42,8 +43,8 @@ export const App = reaxper( () => {
 				} }
 				danger
 				type="primary"
-			>Exit Without Sumbit</Button>
-			
+			><I18n>Exit Without Sumbit</I18n></Button>
+						
 			<Button
 				danger
 				type="dashed"
@@ -51,15 +52,15 @@ export const App = reaxper( () => {
 					await reloadSettings();
 					exitSettings();
 				} }
-			>Discard All Changes</Button>
-			
+			><I18n>Discard All Changes</I18n></Button>
+						
 			<Button
 				onClick={ async() => {
 					const result = await applySettings();
 					showApplyResult( result );
 				} }
-			>Apply</Button>
-			
+			><I18n>Apply</I18n></Button>
+						
 			<Button
 				type="primary"
 				onClick={ async() => {
@@ -69,7 +70,7 @@ export const App = reaxper( () => {
 						exitSettings();
 					}
 				} }
-			>Save All</Button>
+			><I18n>Save All</I18n></Button>
 		</div>
 	</div>;
 } );
@@ -81,11 +82,11 @@ const showApplyResult = (result:SettingsApplyResult) => {
 	}
 	if( result.restartRequired ) {
 		Modal.warning( {
-			title : 'Restart required' ,
+			title : <I18n>Restart required</I18n> ,
 			content : <div>
-				<div>Settings were saved. These changes require restarting the app:</div>
+				<div><I18n>Settings were saved. These changes require restarting the app:</I18n></div>
 				<ul>
-					{ result.restartReasons.map( reason => <li key={ reason }>{ reason }</li> ) }
+					{ result.restartReasons.map( reason => <li key={ reason }><I18n>{ reason }</I18n></li> ) }
 				</ul>
 			</div>,
 		} );

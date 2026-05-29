@@ -4,6 +4,15 @@
  */
 
 let trayInstance: Tray | null = null;
+let i18nInstance: (() => { i18n: (text: string) => string }) | null = null;
+
+export function setI18nInstance(i18n: () => { i18n: (text: string) => string }) {
+	i18nInstance = i18n;
+}
+
+const t = (text: string) => {
+	return i18nInstance ? i18nInstance().i18n(text) : text;
+};
 
 export function initTray(): Tray | null {
 	if( trayInstance ) return trayInstance;
@@ -18,27 +27,7 @@ export function initTray(): Tray | null {
 	trayInstance = new Tray( iconPath );
 	trayInstance.setToolTip( 'AI Web App' );
 	
-	const contextMenu = Menu.buildFromTemplate( [
-		{
-			label : 'Show Window' ,
-			click : () => {
-				const win = BrowserWindow.getAllWindows()[0];
-				if( win ) {
-					win.show();
-					win.focus();
-				}
-			},
-		} ,
-		{ type : 'separator' } ,
-		{
-			label : 'Quit' ,
-			click : () => {
-				app.quit();
-			},
-		},
-	] );
-	
-	trayInstance.setContextMenu( contextMenu );
+	updateTrayMenu();
 	
 	trayInstance.on( 'double-click' , () => {
 		const win = BrowserWindow.getAllWindows()[0];
@@ -49,6 +38,32 @@ export function initTray(): Tray | null {
 	} );
 	
 	return trayInstance;
+}
+
+export function updateTrayMenu() {
+	if( !trayInstance || trayInstance.isDestroyed() ) return;
+	
+	const contextMenu = Menu.buildFromTemplate( [
+		{
+			label : t('Show Window') ,
+			click : () => {
+				const win = BrowserWindow.getAllWindows()[0];
+				if( win ) {
+					win.show();
+					win.focus();
+				}
+			},
+		} ,
+		{ type : 'separator' } ,
+		{
+			label : t('Quit') ,
+			click : () => {
+				app.quit();
+			},
+		},
+	] );
+	
+	trayInstance.setContextMenu( contextMenu );
 }
 
 export function destroyTray() {

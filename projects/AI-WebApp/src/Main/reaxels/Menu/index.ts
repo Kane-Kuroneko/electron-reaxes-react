@@ -5,6 +5,16 @@ export const reaxel_Menu = reaxel( () => {
 		mutate,
 	} = createReaxable( {} );
 	
+	let i18nInstance: (() => { i18n: (text: string) => string }) | null = null;
+	
+	const t = (text: string) => {
+		return i18nInstance ? i18nInstance().i18n(text) : text;
+	};
+	
+	function setI18nInstance(i18n: () => { i18n: (text: string) => string }) {
+		i18nInstance = i18n;
+	}
+	
 	function createMenu() {
 		const settings = getRuntimeSettings();
 		const enabledAIs = settings.AIs.filter( ai => !ai.disabled );
@@ -12,10 +22,10 @@ export const reaxel_Menu = reaxel( () => {
 		
 		return Menu.buildFromTemplate( [
 			{
-				label : 'Application' ,
+				label : t('Application') ,
 				submenu : [
 					{
-						label : `[${ Reaxel_View.store.settingsViewOpened ? '✔️' : '' }Settings]` ,
+						label : `[${ Reaxel_View.store.settingsViewOpened ? '✔️' : '' }${t('Settings')}]` ,
 						click() {
 							Reaxel_View.setState( { settingsViewOpened : true } );
 							const settingsView = reaxel_SettingsView().initSettingsView();
@@ -25,10 +35,10 @@ export const reaxel_Menu = reaxel( () => {
 					} ,
 					{ type : 'separator' } ,
 					{
-						label : "Check for Updates" ,
+						label : t("Check for Updates") ,
 						click : () => {
 							autoUpdater.checkForUpdates();
-						},
+						} ,
 					} ,
 					{ type : 'separator' } ,
 					{
@@ -37,20 +47,20 @@ export const reaxel_Menu = reaxel( () => {
 				],
 			} ,
 			{
-				label : 'View' ,
+				label : t('View') ,
 				submenu : [
 					{
-						label : 'Reload' ,
+						label : t('Reload') ,
 						accelerator : 'ctrl+r' ,
 						click : () => {
 							const view = Reaxel_View.store.settingsViewOpened
 								? reaxel_SettingsView.store.settingsView.view
 								: reaxel_AIViews().currentAIView?.view;
 							view?.webContents.reload();
-						},
+						} ,
 					} ,
 					{
-						label : 'Force Reload' ,
+						label : t('Force Reload') ,
 						accelerator : 'ctrl+shift+r' ,
 						click : () => {
 							if( Reaxel_View.store.settingsViewOpened ) {
@@ -59,47 +69,47 @@ export const reaxel_Menu = reaxel( () => {
 							}
 							const currentAIView = reaxel_AIViews().currentAIView;
 							currentAIView?.view.webContents.loadURL( currentAIView.domain );
-						},
+						} ,
 					} ,
 					{
-						label : 'Developer Tools' ,
+						label : t('Developer Tools') ,
 						accelerator : 'f12' ,
 						click : () => {
 							const view = Reaxel_View.store.settingsViewOpened
 								? reaxel_SettingsView.store.settingsView.view
 								: reaxel_AIViews().currentAIView?.view;
 							view?.webContents.toggleDevTools();
-						},
+						} ,
 					} ,
 					{
-						label : 'Wipe and Reload This Page' ,
+						label : t('Wipe and Reload This Page') ,
 						click : async() => {
 							const result = await dialog.showMessageBox( {
 								type : 'warning' ,
-								message : 'This operation will clear all authentication data from the current page and reload it. \r\nInclude cookies, local storage, and other data.' ,
-								buttons : [ 'Yes' , 'No' ] ,
+								message : t('This operation will clear all authentication data from the current page and reload it. \r\nInclude cookies, local storage, and other data.') ,
+								buttons : [ t('Yes') , t('No') ] ,
 								cancelId : 1 ,
 								defaultId : 0,
 							} );
-							
+									
 							if( result.response !== 0 ) return;
-							
+									
 							const { currentAIView } = reaxel_AIViews();
 							if( !currentAIView ) return;
 							const { origin } = new URL( currentAIView.view.webContents.getURL() );
-							
+									
 							await currentAIView.view.webContents.clearHistory();
 							await currentAIView.view.webContents.session.clearStorageData( { origin } );
 							await currentAIView.view.webContents.session.clearCache();
 							await currentAIView.view.webContents.session.clearData( { origins : [ origin ] } );
 							await currentAIView.view.webContents.session.clearAuthCache();
 							currentAIView.view.webContents.reloadIgnoringCache();
-						},
+						} ,
 					} ,
 					{ type : 'separator' } ,
 					{ role : 'resetZoom' } ,
 					{
-						label : 'Zoom In' ,
+						label : t('Zoom In') ,
 						accelerator : 'CmdOrCtrl+=' ,
 						role : 'zoomIn',
 					} ,
@@ -109,7 +119,7 @@ export const reaxel_Menu = reaxel( () => {
 				],
 			} ,
 			{
-				label : "Switch AI" ,
+				label : t("Switch AI") ,
 				submenu : enabledAIs.length
 					? enabledAIs.map( ai => ( {
 						label : ai.label ,
@@ -119,7 +129,7 @@ export const reaxel_Menu = reaxel( () => {
 					} ) )
 					: [
 						{
-							label : 'No enabled AI pages' ,
+							label : t('No enabled AI pages') ,
 							enabled : false,
 						},
 					],
@@ -154,6 +164,7 @@ export const reaxel_Menu = reaxel( () => {
 		menuReady ,
 		createMenu ,
 		rebuildMenu,
+		setI18nInstance,
 	};
 	
 	return Object.assign( () => rtn , {

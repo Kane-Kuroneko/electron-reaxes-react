@@ -131,6 +131,12 @@ export const reaxel_SettingsView = reaxel( () => {
 		mutate( s => {
 			s.Data.AIs = settings.AIs || [];
 		} );
+		
+		// 同步 i18n 语言到渲染进程的 i18n 模块
+		// 以持久化配置 (user-settings.json) 为单一数据源
+		if (settings.appearance.language) {
+			reaxel_I18n().setLanguage(settings.appearance.language as any);
+		}
 	}
 	
 	function buildSettingsFromStore():Settings {
@@ -272,6 +278,7 @@ export type Reaxel_SettingsView = Pick<typeof reaxel_SettingsView , "mutate"|"st
 
 import { rehancer_Dev } from './rehancer_Dev';
 import { rehancer_Ipc } from "#src/Views/SettingsView/reaxels/settings-view/rehancer_Ipc";
+import { reaxel_I18n } from "#src/Views/SettingsView/reaxels/i18n";
 import type {
 	Menus,
 } from '#src/shared/structs/settings';

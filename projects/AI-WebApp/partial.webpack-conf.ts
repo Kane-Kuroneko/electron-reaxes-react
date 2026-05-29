@@ -69,7 +69,12 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 				minify : false ,
 				hash : true ,
 				// inject: false,
-			} )
+			} ) ,
+			new ProvidePlugin( {
+				
+				'I18n' : [ '#src/Views/SettingsView/reaxels/exports' , 'I18n' ] ,
+				'i18n' : [ '#src/Views/SettingsView/reaxels/exports' , 'i18n' ] ,
+			} ),
 		],
 	};
 };

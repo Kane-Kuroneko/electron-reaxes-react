@@ -7,9 +7,27 @@ app.whenReady().then(async () => {
 	// 美化开发工具
 	useBeautifulDevtool(win);
 	
-	// 初始化设置和菜单
+	// 初始化设置、菜单、国际化
 	reaxel_Settings();
 	reaxel_Menu();
+	reaxel_I18n();
+	
+	// 设置 Menu 和 Tray 的 i18n 实例
+	// 注意: 传递 reaxel_I18n (可调用的 reaxel 引用, 即 () => rtn)
+	// 因为 t() 函数内部通过 i18nInstance().i18n(text) 调用
+	reaxel_Menu().setI18nInstance(reaxel_I18n);
+	setTrayI18nInstance(reaxel_I18n);
+	
+	// 监听渲染进程语言变更
+	useIpcRendererToMain('language-change').on((e, language) => {
+		reaxel_I18n().setLanguage(language as any);
+		// 重建菜单以应用新语言
+		reaxel_Menu().rebuildMenu();
+		// 更新托盘菜单
+		if( isTrayActive() ) {
+			updateTrayMenu();
+		}
+	});
 	
 	// 初始化系统托盘
 	const settings = getSettingsConfigService().getEffectiveSettings();
@@ -53,7 +71,9 @@ import { mainWindow } from './mainWindow';
 import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import { reaxel_Settings } from "#main/reaxels/Settings";
 import { reaxel_Menu } from './reaxels/Menu';
+import { reaxel_I18n } from '#main/reaxels/I18n';
 import { Reaxel_View } from "#main/reaxels/Views";
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
-import { initTray , isTrayActive } from '#main/services/tray';
+import { initTray , isTrayActive , updateTrayMenu , setI18nInstance as setTrayI18nInstance } from '#main/services/tray';
+import { useIpcRendererToMain } from '#main/services/ipc';

@@ -8,6 +8,7 @@ const applySettings = useRpc( 'apply-settings' );
 const submitSettings = useRpc( 'submit-settings' );
 const exitSettings = useRtm('exit-settings');
 const updatePreloadAIConfig = useRtm('update-preload-ai-config');
+const languageChange = useRtm('language-change');
 
 // AI Configuration Management APIs
 const getAIs = useRpc('get-ais');
@@ -24,6 +25,7 @@ const api = {
 	submitSettings ,
 	exitSettings,
 	updatePreloadAIConfig,
+	languageChange,
 	// AI Configuration Management
 	getAIs,
 	getDefaultAIs,

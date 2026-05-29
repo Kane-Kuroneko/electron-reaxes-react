@@ -54,6 +54,9 @@ export const reaxel_Settings = reaxel( () => {
 			s.appearance = normalizedRuntimeSettings.appearance;
 		} );
 		
+		// 同步主进程 i18n 语言（防御性，确保与持久化配置一致）
+		reaxel_I18n().setLanguage(normalizedRuntimeSettings.appearance.language as any);
+		
 		await syncRuntimeViews();
 		
 		const restartReasons = detectRestartReasons( previousSettings , getCurrentSettings() );
@@ -211,6 +214,7 @@ import {
 } from '#main/services/ipc';
 import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
 import { reaxel_Menu } from '#main/reaxels/Menu';
+import { reaxel_I18n } from '#main/reaxels/I18n';
 import { Reaxel_View } from '#main/reaxels/Views';
 import { rehancer_ipcReceive } from './rehancer_ipcReceive';
 import {
