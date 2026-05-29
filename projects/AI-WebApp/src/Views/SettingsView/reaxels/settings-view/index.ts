@@ -82,6 +82,18 @@ export const reaxel_SettingsView = reaxel( () => {
 	
 	const ipcMethods = rehancer_Ipc( { store , setState , mutate } )();
 	
+	// dirty 状态追踪: 存储上次加载/应用成功后的设置快照
+	let _lastSavedSnapshot = '';
+	
+	function updateSnapshot() {
+		_lastSavedSnapshot = JSON.stringify( buildSettingsFromStore() );
+	}
+	
+	function isDirty(): boolean {
+		if( !_lastSavedSnapshot ) return false;
+		return JSON.stringify( buildSettingsFromStore() ) !== _lastSavedSnapshot;
+	}
+	
 	~async function loadSettingsOnStartup() {
 		await reloadSettings();
 	}();
@@ -137,6 +149,9 @@ export const reaxel_SettingsView = reaxel( () => {
 		if (settings.appearance.language) {
 			reaxel_I18n().setLanguage(settings.appearance.language as any);
 		}
+		
+		// 更新快照，用于 dirty 状态检测
+		updateSnapshot();
 	}
 	
 	function buildSettingsFromStore():Settings {
@@ -211,6 +226,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		setSettings ,
 		buildSettingsFromStore ,
 		applySettings ,
+		isDirty ,
 		changeEditAIModalVisible ,
 		submitSettings : ipcMethods.submitSettings ,
 		exitSettings : ipcMethods.exitSettings,

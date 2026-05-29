@@ -10,7 +10,11 @@ export default {
 	"Force Reload" : "強制重新載入" ,
 	"Developer Tools" : "開發者工具" ,
 	"Wipe and Reload This Page" : "清除並重新載入此頁面" ,
+	"Actual Size" : "實際大小" ,
 	"Zoom In" : "放大" ,
+	"Zoom Out" : "縮小" ,
+	"Toggle Fullscreen" : "切換全螢幕" ,
+	"Exit" : "結束" ,
 	
 	// Menu - Switch AI
 	"Switch AI" : "切換 AI" ,
@@ -27,10 +31,10 @@ export default {
 	"System" : "系統" ,
 	
 	// Settings View - Buttons
-	"Exit Without Sumbit" : "不儲存離開" ,
-	"Discard All Changes" : "放棄所有變更" ,
+	"Discard Changes" : "放棄變更" ,
+	"Exit Without Save" : "不儲存離開" ,
 	"Apply" : "套用" ,
-	"Save All" : "全部儲存" ,
+	"Save & Exit" : "儲存並離開" ,
 	
 	// Dialogs
 	"Restart required" : "需要重新啟動" ,

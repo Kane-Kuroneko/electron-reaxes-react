@@ -8,6 +8,7 @@
 export const reaxel_I18n = reaxel(() => {
 	// 从持久化配置读取初始语言
 	const persistedLanguage = getSettingsConfigService().getEffectiveSettings().appearance.language || 'en-US';
+	console.log('[I18n] Init: persisted language from settings =', persistedLanguage);
 	
 	const { store, setState, mutate } = createReaxable({
 		language: persistedLanguage as Languages,
@@ -47,6 +48,7 @@ export const reaxel_I18n = reaxel(() => {
 	
 	// 设置语言
 	const setLanguage = (lang: Languages) => {
+		console.log('[I18n] setLanguage called:', lang);
 		loadLanguage(lang);
 	};
 	
@@ -61,7 +63,8 @@ export const reaxel_I18n = reaxel(() => {
 			return store.languageMaps[langText];
 		}
 		
-		return `ERR_I18N_MISS_${lang}(${langText})`;
+		console.warn(`[I18n] Missing translation for lang=${lang}: "${langText}"`);
+		return langText;
 	};
 	
 	const rtn = {

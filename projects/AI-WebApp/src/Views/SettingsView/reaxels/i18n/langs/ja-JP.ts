@@ -10,7 +10,11 @@ export default {
 	"Force Reload" : "強制再読み込み" ,
 	"Developer Tools" : "開発者ツール" ,
 	"Wipe and Reload This Page" : "このページを消去して再読み込み" ,
+	"Actual Size" : "実際のサイズ" ,
 	"Zoom In" : "拡大" ,
+	"Zoom Out" : "縮小" ,
+	"Toggle Fullscreen" : "フルスクリーン切替" ,
+	"Exit" : "終了" ,
 	
 	// Menu - Switch AI
 	"Switch AI" : "AI を切り替え" ,
@@ -27,10 +31,10 @@ export default {
 	"System" : "システム" ,
 	
 	// Settings View - Buttons
-	"Exit Without Sumbit" : "保存せずに終了" ,
-	"Discard All Changes" : "すべての変更を破棄" ,
+	"Discard Changes" : "変更を破棄" ,
+	"Exit Without Save" : "保存せずに終了" ,
 	"Apply" : "適用" ,
-	"Save All" : "すべて保存" ,
+	"Save & Exit" : "保存して終了" ,
 	
 	// Dialogs
 	"Restart required" : "再起動が必要です" ,

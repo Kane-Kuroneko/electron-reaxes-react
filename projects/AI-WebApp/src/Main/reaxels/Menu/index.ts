@@ -8,10 +8,15 @@ export const reaxel_Menu = reaxel( () => {
 	let i18nInstance: (() => { i18n: (text: string) => string }) | null = null;
 	
 	const t = (text: string) => {
-		return i18nInstance ? i18nInstance().i18n(text) : text;
+		if (!i18nInstance) {
+			console.warn('[Menu] t() called but i18nInstance is null, returning raw text:', text);
+			return text;
+		}
+		return i18nInstance().i18n(text);
 	};
 	
 	function setI18nInstance(i18n: () => { i18n: (text: string) => string }) {
+		console.log('[Menu] setI18nInstance called, i18n =', typeof i18n);
 		i18nInstance = i18n;
 	}
 	
@@ -42,6 +47,7 @@ export const reaxel_Menu = reaxel( () => {
 					} ,
 					{ type : 'separator' } ,
 					{
+						label : t('Exit') ,
 						role : 'quit',
 					},
 				],
@@ -107,15 +113,15 @@ export const reaxel_Menu = reaxel( () => {
 						} ,
 					} ,
 					{ type : 'separator' } ,
-					{ role : 'resetZoom' } ,
+					{ label : t('Actual Size') , role : 'resetZoom' } ,
 					{
 						label : t('Zoom In') ,
 						accelerator : 'CmdOrCtrl+=' ,
 						role : 'zoomIn',
 					} ,
-					{ role : 'zoomOut' } ,
+					{ label : t('Zoom Out') , role : 'zoomOut' } ,
 					{ type : 'separator' } ,
-					{ role : 'togglefullscreen' },
+					{ label : t('Toggle Fullscreen') , role : 'togglefullscreen' },
 				],
 			} ,
 			{
@@ -145,6 +151,7 @@ export const reaxel_Menu = reaxel( () => {
 	}
 	
 	function rebuildMenu() {
+		console.log('[Menu] rebuildMenu called, i18nInstance =', i18nInstance ? 'SET' : 'NULL');
 		mainWindow.setMenu( createMenu() );
 	}
 	

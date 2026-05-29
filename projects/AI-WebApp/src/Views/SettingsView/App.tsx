@@ -2,7 +2,7 @@ export const App = reaxper( () => {
 	const store = reaxel_SettingsView.store.RootMenu;
 	const setState = reaxel_SettingsView.setState.RootMenu;
 	
-	const { applySettings , exitSettings , reloadSettings } = reaxel_SettingsView();
+	const { applySettings , exitSettings , reloadSettings , isDirty } = reaxel_SettingsView();
 	
 	const MenuContentComponent = {
 		net : RCNetworkPanel ,
@@ -12,6 +12,8 @@ export const App = reaxper( () => {
 		// hk : RCHotkeysPanel,
 	}[store.current];
 	
+	// 触发响应式依赖收集 - 让按钮状态随 UIControls 变化而更新
+	const dirty = isDirty();
 	
 	return <div className="settings-root">
 		<div className="settings-body">
@@ -38,31 +40,31 @@ export const App = reaxper( () => {
 		</div>
 		<div className="settings-footer">
 			<Button
+				type="dashed"
+				disabled={ !dirty }
+				onClick={ async() => {
+					await reloadSettings();
+				} }
+			><I18n>Discard Changes</I18n></Button>
+			
+			<Button
+				danger
 				onClick={ () => {
 					exitSettings();
 				} }
-				danger
-				type="primary"
-			><I18n>Exit Without Sumbit</I18n></Button>
-						
+			><I18n>Exit Without Save</I18n></Button>
+			
 			<Button
-				danger
-				type="dashed"
-				onClick={ async() => {
-					await reloadSettings();
-					exitSettings();
-				} }
-			><I18n>Discard All Changes</I18n></Button>
-						
-			<Button
+				disabled={ !dirty }
 				onClick={ async() => {
 					const result = await applySettings();
 					showApplyResult( result );
 				} }
 			><I18n>Apply</I18n></Button>
-						
+			
 			<Button
 				type="primary"
+				disabled={ !dirty }
 				onClick={ async() => {
 					const result = await applySettings();
 					showApplyResult( result );
@@ -70,7 +72,7 @@ export const App = reaxper( () => {
 						exitSettings();
 					}
 				} }
-			><I18n>Save All</I18n></Button>
+			><I18n>Save & Exit</I18n></Button>
 		</div>
 	</div>;
 } );

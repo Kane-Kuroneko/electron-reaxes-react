@@ -9,18 +9,31 @@ app.whenReady().then(async () => {
 	
 	// 初始化设置、菜单、国际化
 	reaxel_Settings();
-	reaxel_Menu();
 	reaxel_I18n();
 	
+	console.log('[when-ready] Setting i18n instance on Menu and Tray...');
 	// 设置 Menu 和 Tray 的 i18n 实例
 	// 注意: 传递 reaxel_I18n (可调用的 reaxel 引用, 即 () => rtn)
 	// 因为 t() 函数内部通过 i18nInstance().i18n(text) 调用
 	reaxel_Menu().setI18nInstance(reaxel_I18n);
 	setTrayI18nInstance(reaxel_I18n);
 	
+	// 重建菜单以应用正确的语言
+	// 因为 Menu factory 的 app.whenReady().then(rebuildMenu) 先于此处执行，
+	// 那时 i18nInstance 还是 null，所以菜单是英文的。
+	// 现在 i18n 已设置，需要重建一次。
+	console.log('[when-ready] Rebuilding menu with i18n...');
+	reaxel_Menu().rebuildMenu();
+	
 	// 监听渲染进程语言变更
 	useIpcRendererToMain('language-change').on((e, language) => {
+		console.log('[when-ready] language-change IPC received:', language);
 		reaxel_I18n().setLanguage(language as any);
+		// 立即持久化语言设置，确保重启后生效
+		const svc = getSettingsConfigService();
+		const current = svc.getEffectiveSettings();
+		console.log('[when-ready] Persisting language to settings:', language);
+		svc.saveSettings({ ...current, appearance: { ...current.appearance, language } });
 		// 重建菜单以应用新语言
 		reaxel_Menu().rebuildMenu();
 		// 更新托盘菜单

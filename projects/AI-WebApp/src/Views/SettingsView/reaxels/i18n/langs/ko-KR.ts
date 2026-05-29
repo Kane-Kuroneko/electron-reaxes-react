@@ -10,7 +10,11 @@ export default {
 	"Force Reload" : "강제 새로고침" ,
 	"Developer Tools" : "개발자 도구" ,
 	"Wipe and Reload This Page" : "이 페이지를 지우고 새로고침" ,
+	"Actual Size" : "실제 크기" ,
 	"Zoom In" : "확대" ,
+	"Zoom Out" : "축소" ,
+	"Toggle Fullscreen" : "전체 화면 전환" ,
+	"Exit" : "종료" ,
 	
 	// Menu - Switch AI
 	"Switch AI" : "AI 전환" ,
@@ -27,10 +31,10 @@ export default {
 	"System" : "시스템" ,
 	
 	// Settings View - Buttons
-	"Exit Without Sumbit" : "저장 없이 종료" ,
-	"Discard All Changes" : "모든 변경 내용 삭제" ,
+	"Discard Changes" : "변경 사항 취소" ,
+	"Exit Without Save" : "저장 없이 종료" ,
 	"Apply" : "적용" ,
-	"Save All" : "모두 저장" ,
+	"Save & Exit" : "저장 후 종료" ,
 	
 	// Dialogs
 	"Restart required" : "재시작 필요" ,
