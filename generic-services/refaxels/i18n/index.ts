@@ -17,15 +17,16 @@ export const Refaxel_I18n = function (
 	let languageChangeCount = 0;
 	
 	const setLanguage = ( lang: Languages ) => {
+		languageChangeCount ++;
+		const currentCount = languageChangeCount;
 		
 		const change = () => {
-			const _languageChangeCount = languageChangeCount;
+			if( currentCount !== languageChangeCount ) return;
 			loadLanguage( lang );
 			if( store.loading ) {
 				store.loading.then( lang => {
-					if(_languageChangeCount === languageChangeCount){
+					if( currentCount === languageChangeCount ){
 						setState( { language : lang } );
-						languageChangeCount ++;
 					}
 				} );
 			}
@@ -41,15 +42,12 @@ export const Refaxel_I18n = function (
 			}
 		} else {
 			setState( { language : lang } );
-			languageChangeCount ++;
 		}
-		
-		document.documentElement.lang = lang;
 	};
 	
 	const loadLanguage = ( language: Languages ) => {
 		const target = config.find( conf => conf.language === language );
-		if( !target ) throw new Error( 'd4a5d45as4d5as' );
+		if( !target ) throw new Error( '[d4a5d45as4d5as] Language "' + language + '" not found in i18n config' );
 		if( target.resourceMap ) {
 			languageMaps[language] = target.resourceMap;
 		} else if( target.resourceLoader ) {
@@ -88,7 +86,11 @@ export const Refaxel_I18n = function (
 			if(languageMaps[lang] && languageMaps[lang][langText]){
 				return languageMaps[lang][langText];
 			} else {
-				return `ERR_I18N_MISS_${lang}(${langText})`
+				const langConfig = config.find( c => c.language === lang );
+				if( langConfig?.fallbackToOriginalText ) {
+					return langText;
+				}
+				return `ERR_I18N_MISS_${lang}(${langText})`;
 			}
 		};
 	}()
@@ -139,7 +141,6 @@ type LanguageMap = {
 // 		} ,
 // 	] ,
 // );
-// export type Languages = typeof enum_languages[keyof typeof enum_languages];
 export type Config = /*common keys*/{
 	//此项配置的语言的名字
 	language: Languages,
@@ -172,70 +173,8 @@ export type Config = /*common keys*/{
 });
 
 
-export const enum_languages = {
-	'en_US' : 'en-US' , // 英语（美国）
-	'en_GB' : 'en-GB' , // 英语（英国）
-	'zh_CN' : 'zh-CN' , // 中文（简体）
-	'zh_TW' : 'zh-TW' , // 中文（繁体，台湾）
-	'zh_HK' : 'zh-HK' , // 中文（繁体，香港）
-	'es_ES' : 'es-ES' , // 西班牙语（西班牙）
-	'es_MX' : 'es-MX' , // 西班牙语（墨西哥）
-	'fr_FR' : 'fr-FR' , // 法语（法国）
-	'de_DE' : 'de-DE' , // 德语（德国）
-	'it_IT' : 'it-IT' , // 意大利语（意大利）
-	'pt_PT' : 'pt-PT' , // 葡萄牙语（葡萄牙）
-	'pt_BR' : 'pt-BR' , // 葡萄牙语（巴西）
-	'ja_JP' : 'ja-JP' , // 日语（日本）
-	'ko_KR' : 'ko-KR' , // 韩语（韩国）
-	'ru_RU' : 'ru-RU' , // 俄语（俄罗斯）
-	'ar_SA' : 'ar-SA' , // 阿拉伯语（沙特阿拉伯）
-	'tr_TR' : 'tr-TR' , // 土耳其语（土耳其）
-	'hi_IN' : 'hi-IN' , // 印地语（印度）
-	'nl_NL' : 'nl-NL' , // 荷兰语（荷兰）
-	'sv_SE' : 'sv-SE' , // 瑞典语（瑞典）
-	'pl_PL' : 'pl-PL' , // 波兰语（波兰）
-	'da_DK' : 'da-DK' , // 丹麦语（丹麦）
-	'no_NO' : 'no-NO' , // 挪威语（挪威）
-	'fi_FI' : 'fi-FI' , // 芬兰语（芬兰）
-	'cs_CZ' : 'cs-CZ' , // 捷克语（捷克）
-	'sk_SK' : 'sk-SK' , // 斯洛伐克语（斯洛伐克）
-	'ro_RO' : 'ro-RO' , // 罗马尼亚语（罗马尼亚）
-	'hu_HU' : 'hu-HU' , // 匈牙利语（匈牙利）
-	'el_GR' : 'el-GR' , // 希腊语（希腊）
-	'he_IL' : 'he-IL' , // 希伯来语（以色列）
-	'th_TH' : 'th-TH' , // 泰语（泰国）
-	'id_ID' : 'id-ID' , // 印度尼西亚语（印度尼西亚）
-	'ms_MY' : 'ms-MY' , // 马来语（马来西亚）
-	'vi_VN' : 'vi-VN' , // 越南语（越南）
-	'tl_PH' : 'tl-PH' , // 菲律宾语（菲律宾）
-	'bn_IN' : 'bn-IN' , // 孟加拉语（印度）
-	'pa_IN' : 'pa-IN' , // 旁遮普语（印度）
-	'kn_IN' : 'kn-IN' , // 卡纳达语（印度）
-	'ml_IN' : 'ml-IN' , // 马拉雅拉姆语（印度）
-	'te_IN' : 'te-IN' , // 泰卢固语（印度）
-	'mr_IN' : 'mr-IN' , // 马拉地语（印度）
-	'gu_IN' : 'gu-IN' , // 古吉拉特语（印度）
-	'ta_IN' : 'ta-IN' , // 泰米尔语（印度）
-	'ne_NP' : 'ne-NP' , // 尼泊尔语（尼泊尔）
-	'si_LK' : 'si-LK' , // 斯里兰卡僧伽罗语（斯里兰卡）
-	'km_KH' : 'km-KH' , // 高棉语（柬埔寨）
-	'lo_LA' : 'lo-LA' , // 老挝语（老挝）
-	'my_MM' : 'my-MM' , // 缅甸语（缅甸）
-	'bo_CN' : 'bo-CN' , // 藏语（中国）
-	'hr_HR' : 'hr-HR' , // 克罗地亚语（克罗地亚）
-	'sr_RS' : 'sr-RS' , // 塞尔维亚语（塞尔维亚）
-	'bs_BA' : 'bs-BA' , // 波斯尼亚语（波斯尼亚和黑塞哥维那）
-	'mk_MK' : 'mk-MK' , // 马其顿语（马其顿）
-	'sq_AL' : 'sq-AL' , // 阿尔巴尼亚语（阿尔巴尼亚）
-	'is_IS' : 'is-IS' , // 冰岛语（冰岛）
-	'lv_LV' : 'lv-LV' , // 拉脱维亚语（拉脱维亚）
-	'et_EE' : 'et-EE' , // 爱沙尼亚语（爱沙尼亚）
-	'lt_LT' : 'lt-LT' , // 立陶宛语（立陶宛）
-	'bs_CY' : 'bs-CY' , // 塞浦路斯语（塞浦路斯）
-} as const;
-
 export const languages = {
-	"en_US": {
+	"en-US": {
 		code: "en-US",
 		locale: "en-us",
 		legacyCode: "en_US",
@@ -243,7 +182,7 @@ export const languages = {
 		genericName: "English",
 		nativeName: "English (US)"
 	},
-	"en_GB": {
+	"en-GB": {
 		code: "en-GB",
 		locale: "en-gb",
 		legacyCode: "en_GB",
@@ -251,7 +190,7 @@ export const languages = {
 		genericName: "English",
 		nativeName: "English (UK)"
 	},
-	"zh_CN": {
+	"zh-CN": {
 		code: "zh-CN",
 		locale: "zh-cn",
 		legacyCode: "zh_CN",
@@ -259,7 +198,7 @@ export const languages = {
 		genericName: "Chinese",
 		nativeName: "简体中文"
 	},
-	"zh_TW": {
+	"zh-TW": {
 		code: "zh-TW",
 		locale: "zh-tw",
 		legacyCode: "zh_TW",
@@ -267,7 +206,7 @@ export const languages = {
 		genericName: "Chinese",
 		nativeName: "繁體中文（台灣）"
 	},
-	"zh_HK": {
+	"zh-HK": {
 		code: "zh-HK",
 		locale: "zh-hk",
 		legacyCode: "zh_HK",
@@ -275,7 +214,7 @@ export const languages = {
 		genericName: "Chinese",
 		nativeName: "繁體中文（香港）"
 	},
-	"es_ES": {
+	"es-ES": {
 		code: "es-ES",
 		locale: "es-es",
 		legacyCode: "es_ES",
@@ -283,7 +222,7 @@ export const languages = {
 		genericName: "Spanish",
 		nativeName: "Español (España)"
 	},
-	"es_MX": {
+	"es-MX": {
 		code: "es-MX",
 		locale: "es-mx",
 		legacyCode: "es_MX",
@@ -291,7 +230,7 @@ export const languages = {
 		genericName: "Spanish",
 		nativeName: "Español (México)"
 	},
-	"fr_FR": {
+	"fr-FR": {
 		code: "fr-FR",
 		locale: "fr-fr",
 		legacyCode: "fr_FR",
@@ -299,7 +238,7 @@ export const languages = {
 		genericName: "French",
 		nativeName: "Français"
 	},
-	"de_DE": {
+	"de-DE": {
 		code: "de-DE",
 		locale: "de-de",
 		legacyCode: "de_DE",
@@ -307,7 +246,7 @@ export const languages = {
 		genericName: "German",
 		nativeName: "Deutsch"
 	},
-	"it_IT": {
+	"it-IT": {
 		code: "it-IT",
 		locale: "it-it",
 		legacyCode: "it_IT",
@@ -315,7 +254,7 @@ export const languages = {
 		genericName: "Italian",
 		nativeName: "Italiano"
 	},
-	"pt_PT": {
+	"pt-PT": {
 		code: "pt-PT",
 		locale: "pt-pt",
 		legacyCode: "pt_PT",
@@ -323,7 +262,7 @@ export const languages = {
 		genericName: "Portuguese",
 		nativeName: "Português (Portugal)"
 	},
-	"pt_BR": {
+	"pt-BR": {
 		code: "pt-BR",
 		locale: "pt-br",
 		legacyCode: "pt_BR",
@@ -331,7 +270,7 @@ export const languages = {
 		genericName: "Portuguese",
 		nativeName: "Português (Brasil)"
 	},
-	"ja_JP": {
+	"ja-JP": {
 		code: "ja-JP",
 		locale: "ja-jp",
 		legacyCode: "ja_JP",
@@ -339,7 +278,7 @@ export const languages = {
 		genericName: "Japanese",
 		nativeName: "日本語"
 	},
-	"ko_KR": {
+	"ko-KR": {
 		code: "ko-KR",
 		locale: "ko-kr",
 		legacyCode: "ko_KR",
@@ -347,7 +286,7 @@ export const languages = {
 		genericName: "Korean",
 		nativeName: "한국어"
 	},
-	"ru_RU": {
+	"ru-RU": {
 		code: "ru-RU",
 		locale: "ru-ru",
 		legacyCode: "ru_RU",
@@ -355,7 +294,7 @@ export const languages = {
 		genericName: "Russian",
 		nativeName: "Русский"
 	},
-	"ar_SA": {
+	"ar-SA": {
 		code: "ar-SA",
 		locale: "ar-sa",
 		legacyCode: "ar_SA",
@@ -363,7 +302,7 @@ export const languages = {
 		genericName: "Arabic",
 		nativeName: "العربية"
 	},
-	"tr_TR": {
+	"tr-TR": {
 		code: "tr-TR",
 		locale: "tr-tr",
 		legacyCode: "tr_TR",
@@ -371,7 +310,7 @@ export const languages = {
 		genericName: "Turkish",
 		nativeName: "Türkçe"
 	},
-	"hi_IN": {
+	"hi-IN": {
 		code: "hi-IN",
 		locale: "hi-in",
 		legacyCode: "hi_IN",
@@ -379,7 +318,7 @@ export const languages = {
 		genericName: "Hindi",
 		nativeName: "हिन्दी"
 	},
-	"nl_NL": {
+	"nl-NL": {
 		code: "nl-NL",
 		locale: "nl-nl",
 		legacyCode: "nl_NL",
@@ -387,7 +326,7 @@ export const languages = {
 		genericName: "Dutch",
 		nativeName: "Nederlands"
 	},
-	"sv_SE": {
+	"sv-SE": {
 		code: "sv-SE",
 		locale: "sv-se",
 		legacyCode: "sv_SE",
@@ -395,7 +334,7 @@ export const languages = {
 		genericName: "Swedish",
 		nativeName: "Svenska"
 	},
-	"pl_PL": {
+	"pl-PL": {
 		code: "pl-PL",
 		locale: "pl-pl",
 		legacyCode: "pl_PL",
@@ -403,7 +342,7 @@ export const languages = {
 		genericName: "Polish",
 		nativeName: "Polski"
 	},
-	"da_DK": {
+	"da-DK": {
 		code: "da-DK",
 		locale: "da-dk",
 		legacyCode: "da_DK",
@@ -411,7 +350,7 @@ export const languages = {
 		genericName: "Danish",
 		nativeName: "Dansk"
 	},
-	"nb_NO": {
+	"nb-NO": {
 		code: "nb-NO",
 		locale: "nb-no",
 		legacyCode: "nb_NO",
@@ -419,7 +358,7 @@ export const languages = {
 		genericName: "Norwegian",
 		nativeName: "Norsk bokmål"
 	},
-	"fi_FI": {
+	"fi-FI": {
 		code: "fi-FI",
 		locale: "fi-fi",
 		legacyCode: "fi_FI",
@@ -427,7 +366,7 @@ export const languages = {
 		genericName: "Finnish",
 		nativeName: "Suomi"
 	},
-	"cs_CZ": {
+	"cs-CZ": {
 		code: "cs-CZ",
 		locale: "cs-cz",
 		legacyCode: "cs_CZ",
@@ -435,7 +374,7 @@ export const languages = {
 		genericName: "Czech",
 		nativeName: "Čeština"
 	},
-	"sk_SK": {
+	"sk-SK": {
 		code: "sk-SK",
 		locale: "sk-sk",
 		legacyCode: "sk_SK",
@@ -443,7 +382,7 @@ export const languages = {
 		genericName: "Slovak",
 		nativeName: "Slovenčina"
 	},
-	"ro_RO": {
+	"ro-RO": {
 		code: "ro-RO",
 		locale: "ro-ro",
 		legacyCode: "ro_RO",
@@ -451,7 +390,7 @@ export const languages = {
 		genericName: "Romanian",
 		nativeName: "Română"
 	},
-	"hu_HU": {
+	"hu-HU": {
 		code: "hu-HU",
 		locale: "hu-hu",
 		legacyCode: "hu_HU",
@@ -459,7 +398,7 @@ export const languages = {
 		genericName: "Hungarian",
 		nativeName: "Magyar"
 	},
-	"el_GR": {
+	"el-GR": {
 		code: "el-GR",
 		locale: "el-gr",
 		legacyCode: "el_GR",
@@ -467,7 +406,7 @@ export const languages = {
 		genericName: "Greek",
 		nativeName: "Ελληνικά"
 	},
-	"he_IL": {
+	"he-IL": {
 		code: "he-IL",
 		locale: "he-il",
 		legacyCode: "he_IL",
@@ -475,7 +414,7 @@ export const languages = {
 		genericName: "Hebrew",
 		nativeName: "עברית"
 	},
-	"th_TH": {
+	"th-TH": {
 		code: "th-TH",
 		locale: "th-th",
 		legacyCode: "th_TH",
@@ -483,7 +422,7 @@ export const languages = {
 		genericName: "Thai",
 		nativeName: "ไทย"
 	},
-	"id_ID": {
+	"id-ID": {
 		code: "id-ID",
 		locale: "id-id",
 		legacyCode: "id_ID",
@@ -491,7 +430,7 @@ export const languages = {
 		genericName: "Indonesian",
 		nativeName: "Bahasa Indonesia"
 	},
-	"ms_MY": {
+	"ms-MY": {
 		code: "ms-MY",
 		locale: "ms-my",
 		legacyCode: "ms_MY",
@@ -499,7 +438,7 @@ export const languages = {
 		genericName: "Malay",
 		nativeName: "Bahasa Melayu"
 	},
-	"vi_VN": {
+	"vi-VN": {
 		code: "vi-VN",
 		locale: "vi-vn",
 		legacyCode: "vi_VN",
@@ -507,7 +446,7 @@ export const languages = {
 		genericName: "Vietnamese",
 		nativeName: "Tiếng Việt"
 	},
-	"fil_PH": {
+	"fil-PH": {
 		code: "fil-PH",
 		locale: "fil-ph",
 		legacyCode: "fil_PH",
@@ -515,7 +454,7 @@ export const languages = {
 		genericName: "Filipino",
 		nativeName: "Wikang Filipino"
 	},
-	"bn_IN": {
+	"bn-IN": {
 		code: "bn-IN",
 		locale: "bn-in",
 		legacyCode: "bn_IN",
@@ -523,7 +462,7 @@ export const languages = {
 		genericName: "Bengali",
 		nativeName: "বাংলা"
 	},
-	"pa_IN": {
+	"pa-IN": {
 		code: "pa-IN",
 		locale: "pa-in",
 		legacyCode: "pa_IN",
@@ -531,7 +470,7 @@ export const languages = {
 		genericName: "Punjabi",
 		nativeName: "ਪੰਜਾਬੀ"
 	},
-	"kn_IN": {
+	"kn-IN": {
 		code: "kn-IN",
 		locale: "kn-in",
 		legacyCode: "kn_IN",
@@ -539,7 +478,7 @@ export const languages = {
 		genericName: "Kannada",
 		nativeName: "ಕನ್ನಡ"
 	},
-	"ml_IN": {
+	"ml-IN": {
 		code: "ml-IN",
 		locale: "ml-in",
 		legacyCode: "ml_IN",
@@ -547,7 +486,7 @@ export const languages = {
 		genericName: "Malayalam",
 		nativeName: "മലയാളം"
 	},
-	"te_IN": {
+	"te-IN": {
 		code: "te-IN",
 		locale: "te-in",
 		legacyCode: "te_IN",
@@ -555,7 +494,7 @@ export const languages = {
 		genericName: "Telugu",
 		nativeName: "తెలుగు"
 	},
-	"mr_IN": {
+	"mr-IN": {
 		code: "mr-IN",
 		locale: "mr-in",
 		legacyCode: "mr_IN",
@@ -563,7 +502,7 @@ export const languages = {
 		genericName: "Marathi",
 		nativeName: "मराठी"
 	},
-	"gu_IN": {
+	"gu-IN": {
 		code: "gu-IN",
 		locale: "gu-in",
 		legacyCode: "gu_IN",
@@ -571,7 +510,7 @@ export const languages = {
 		genericName: "Gujarati",
 		nativeName: "ગુજરાતી"
 	},
-	"ta_IN": {
+	"ta-IN": {
 		code: "ta-IN",
 		locale: "ta-in",
 		legacyCode: "ta_IN",
@@ -579,7 +518,7 @@ export const languages = {
 		genericName: "Tamil",
 		nativeName: "தமிழ்"
 	},
-	"ne_NP": {
+	"ne-NP": {
 		code: "ne-NP",
 		locale: "ne-np",
 		legacyCode: "ne_NP",
@@ -587,7 +526,7 @@ export const languages = {
 		genericName: "Nepali",
 		nativeName: "नेपाली"
 	},
-	"si_LK": {
+	"si-LK": {
 		code: "si-LK",
 		locale: "si-lk",
 		legacyCode: "si_LK",
@@ -595,7 +534,7 @@ export const languages = {
 		genericName: "Sinhala",
 		nativeName: "සිංහල"
 	},
-	"km_KH": {
+	"km-KH": {
 		code: "km-KH",
 		locale: "km-kh",
 		legacyCode: "km_KH",
@@ -603,7 +542,7 @@ export const languages = {
 		genericName: "Khmer",
 		nativeName: "ភាសាខ្មែរ"
 	},
-	"lo_LA": {
+	"lo-LA": {
 		code: "lo-LA",
 		locale: "lo-la",
 		legacyCode: "lo_LA",
@@ -611,7 +550,7 @@ export const languages = {
 		genericName: "Lao",
 		nativeName: "ລາວ"
 	},
-	"my_MM": {
+	"my-MM": {
 		code: "my-MM",
 		locale: "my-mm",
 		legacyCode: "my_MM",
@@ -619,7 +558,7 @@ export const languages = {
 		genericName: "Burmese",
 		nativeName: "မြန်မာဘာသာ"
 	},
-	"bo_CN": {
+	"bo-CN": {
 		code: "bo-CN",
 		locale: "bo-cn",
 		legacyCode: "bo_CN",
@@ -627,7 +566,7 @@ export const languages = {
 		genericName: "Tibetan",
 		nativeName: "བོད་ཡིག"
 	},
-	"hr_HR": {
+	"hr-HR": {
 		code: "hr-HR",
 		locale: "hr-hr",
 		legacyCode: "hr_HR",
@@ -635,7 +574,7 @@ export const languages = {
 		genericName: "Croatian",
 		nativeName: "Hrvatski"
 	},
-	"sr_RS": {
+	"sr-RS": {
 		code: "sr-RS",
 		locale: "sr-rs",
 		legacyCode: "sr_RS",
@@ -643,7 +582,7 @@ export const languages = {
 		genericName: "Serbian",
 		nativeName: "Српски"
 	},
-	"bs_BA": {
+	"bs-BA": {
 		code: "bs-BA",
 		locale: "bs-ba",
 		legacyCode: "bs_BA",
@@ -651,7 +590,7 @@ export const languages = {
 		genericName: "Bosnian",
 		nativeName: "Bosanski"
 	},
-	"mk_MK": {
+	"mk-MK": {
 		code: "mk-MK",
 		locale: "mk-mk",
 		legacyCode: "mk_MK",
@@ -659,7 +598,7 @@ export const languages = {
 		genericName: "Macedonian",
 		nativeName: "Македонски"
 	},
-	"sq_AL": {
+	"sq-AL": {
 		code: "sq-AL",
 		locale: "sq-al",
 		legacyCode: "sq_AL",
@@ -667,7 +606,7 @@ export const languages = {
 		genericName: "Albanian",
 		nativeName: "Shqip"
 	},
-	"is_IS": {
+	"is-IS": {
 		code: "is-IS",
 		locale: "is-is",
 		legacyCode: "is_IS",
@@ -675,7 +614,7 @@ export const languages = {
 		genericName: "Icelandic",
 		nativeName: "Íslenska"
 	},
-	"lv_LV": {
+	"lv-LV": {
 		code: "lv-LV",
 		locale: "lv-lv",
 		legacyCode: "lv_LV",
@@ -683,7 +622,7 @@ export const languages = {
 		genericName: "Latvian",
 		nativeName: "Latviešu"
 	},
-	"et_EE": {
+	"et-EE": {
 		code: "et-EE",
 		locale: "et-ee",
 		legacyCode: "et_EE",
@@ -691,7 +630,7 @@ export const languages = {
 		genericName: "Estonian",
 		nativeName: "Eesti"
 	},
-	"lt_LT": {
+	"lt-LT": {
 		code: "lt-LT",
 		locale: "lt-lt",
 		legacyCode: "lt_LT",
@@ -699,7 +638,7 @@ export const languages = {
 		genericName: "Lithuanian",
 		nativeName: "Lietuvių"
 	},
-	"el_CY": {
+	"el-CY": {
 		code: "el-CY",
 		locale: "el-cy",
 		legacyCode: "el_CY",
