@@ -149,7 +149,11 @@ export const reaxel_Settings = reaxel( () => {
 	} );
 	
 	useIpcRpc( 'reset-ais-to-defaults' ).handle( async() => {
+		// 销毁所有AI Views并清除session/storage
+		await reaxel_AIViews().destroyAllAndClearData();
+		// 重置配置到默认
 		aiConfigService.resetToDefaults();
+		// 重新同步视图(重建菜单+重新初始化AI Views)
 		await syncRuntimeViews();
 		return { success : true };
 	} );

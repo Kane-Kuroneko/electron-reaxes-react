@@ -88,6 +88,23 @@
       }
     },
     {
+      "id": "default-claude-001",
+      "label": "Claude",
+      "disabled": false,
+      "AI_family": "claude",
+      "url": "https://claude.ai",
+      "url_override": null,
+      "proxy_mode": "follow_global_setting",
+      "from_server_list_proxy": null,
+      "preloadOnStartup": false,
+      "user_fill_proxy": {
+        "hostname": "127.0.0.1",
+        "port": 7897,
+        "protocol": "http",
+        "proxy_auth": false
+      }
+    },
+    {
       "id": "default-dev-proxy-test-001",
       "label": "AI-Web (Proxy Test)",
       "disabled": false,

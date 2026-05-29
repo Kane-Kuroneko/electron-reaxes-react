@@ -56,6 +56,42 @@ export const reaxel_AIViews = reaxel( () => {
 		} );
 	};
 	
+	/**
+	 * 销毁所有AI Views并清除其session/storage数据
+	 * 用于 Reset All AI Pages
+	 */
+	const destroyAllAndClearData = async() => {
+		const viewsCopy = store.AIViews.slice();
+		
+		// 收集所有partition名
+		const partitions = viewsCopy.map( rv => rv.partition );
+		
+		// 销毁所有view
+		viewsCopy.forEach( rv => {
+			try {
+				mainWindow.contentView.removeChildView( rv.view );
+				rv.view.webContents.close();
+			} catch ( error ) {
+				console.warn( '[AIViews] Failed to destroy view during reset:' , rv.id , error );
+			}
+		} );
+		
+		mutate( s => {
+			s.AIViews = [];
+		} );
+		
+		// 清除每个partition的session数据(cookies, localStorage, cache等)
+		for( const partition of partitions ) {
+			try {
+				const ses = session.fromPartition( partition );
+				await ses.clearStorageData();
+				await ses.clearCache();
+			} catch ( error ) {
+				console.warn( '[AIViews] Failed to clear session data for partition:' , partition , error );
+			}
+		}
+	};
+	
 	const syncAIViewsWithConfig = async( settings:Settings ) => {
 		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
 		const activeIds = new Set( activeAIs.map( ai => ai.id ) );
@@ -119,6 +155,7 @@ export const reaxel_AIViews = reaxel( () => {
 		} ,
 		initAIView ,
 		destroyAIView ,
+		destroyAllAndClearData ,
 		syncAIViewsWithConfig ,
 		showAIView ,
 		applyVisibility,
@@ -192,4 +229,5 @@ import {
 	createReaxable ,
 	reaxel,
 } from 'reaxes';
+import { session } from 'electron';
 import type { WebContentsView } from 'electron';

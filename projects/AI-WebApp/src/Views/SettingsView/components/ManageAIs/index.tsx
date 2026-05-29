@@ -3,9 +3,7 @@ const columns:TableColumnType<AI.AIItem>[] = [
 		title : 'Drag' ,
 		width : 60 ,
 		render() {
-			return <DragIconSvg
-				style={ { fontSize : 24 , userSelect : 'none' , cursor : 'move' , color : '#bfbfbf' } }
-			/>;
+			return <DragHandle/>;
 		},
 	} ,
 	{
@@ -155,6 +153,27 @@ export const RCManageAIsPanel = reaxper( () => {
 	</div>;
 } );
 
+/**
+ * 拖拽监听器上下文 - 仅传递给DragHandle单元格
+ */
+const DragHandleContext = React.createContext<{
+	listeners?: ReturnType<typeof useSortable>['listeners'];
+	attributes?: ReturnType<typeof useSortable>['attributes'];
+}>( {} );
+
+const DragHandle:React.FC = () => {
+	const { listeners , attributes } = React.useContext( DragHandleContext );
+	return <span
+		style={ { display : 'inline-flex' , alignItems : 'center' , cursor : 'move' } }
+		{ ...attributes }
+		{ ...listeners }
+	>
+		<DragIconSvg
+			style={ { fontSize : 24 , userSelect : 'none' , cursor : 'move' , color : '#bfbfbf' } }
+		/>
+	</span>;
+};
+
 const SortableRow:React.FC<Readonly<RowProps>> = reaxper( props => {
 	const {
 		attributes ,
@@ -174,13 +193,13 @@ const SortableRow:React.FC<Readonly<RowProps>> = reaxper( props => {
 		...( isDragging ? { position : 'relative' , zIndex : 9999 } : {} ),
 	};
 	
-	return <tr
-		{ ...props }
-		ref={ setNodeRef }
-		style={ style }
-		{ ...attributes }
-		{ ...listeners }
-	/>;
+	return <DragHandleContext.Provider value={ { listeners , attributes } }>
+		<tr
+			{ ...props }
+			ref={ setNodeRef }
+			style={ style }
+		/>
+	</DragHandleContext.Provider>;
 } );
 
 const EditAIModal = reaxper( () => {
@@ -276,7 +295,7 @@ const EditAIModal = reaxper( () => {
 					setUrlEditing( true );
 				} }
 			>Edit</Button>
-			<Button
+			{ fields.url_override ? <Button
 				type="link"
 				size="small"
 				danger
@@ -284,7 +303,7 @@ const EditAIModal = reaxper( () => {
 					// Reset: 丢弃override，使用默认URL
 					setState.fields( { url_override : null } );
 				} }
-			>Reset</Button>
+			>Reset</Button> : null }
 		</Space>;
 	
 	return <Modal
