@@ -6,26 +6,24 @@ export const RCAppearancePanel = reaxper(() => {
 	
 	const handleLanguageChange = (value: string) => {
 		setState({ language: value });
-		// 立即通知主进程语言变更，使Menu/Tray实时响应
-		api.languageChange(value);
-		// 更新渲染进程的 i18n
+		// 仅更新渲染进程 i18n（即时预览），主进程 Menu/Tray 在 Apply/Save 时才变更
 		reaxel_I18n().setLanguage(value as any);
 	};
 	
 	return <div className="settings-section">
-		<div className="section-title">Appearance</div>
+		<div className="section-title"><I18n>Appearance</I18n></div>
 		<Form layout="vertical">
-			<Form.Item label="Dark Mode">
+			<Form.Item label={<I18n>Dark Mode</I18n>}>
 				<Radio.Group
 					value={ store.darkmode }
 					onChange={ e => setState( { darkmode : e.target.value } ) }
 					style={ { userSelect : 'none' } }
 				>
-					<Radio value={false}>Light</Radio>
-					<Radio value={true}>Dark</Radio>
+					<Radio value={false}><I18n>Light</I18n></Radio>
+					<Radio value={true}><I18n>Dark</I18n></Radio>
 				</Radio.Group>
 			</Form.Item>
-			<Form.Item label="Language">
+			<Form.Item label={<I18n>Language</I18n>}>
 				<Select
 					value={ store.language }
 					onChange={ handleLanguageChange }

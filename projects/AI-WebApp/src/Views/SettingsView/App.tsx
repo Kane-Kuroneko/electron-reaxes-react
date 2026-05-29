@@ -94,7 +94,7 @@ const showApplyResult = (result:SettingsApplyResult) => {
 		} );
 		return;
 	}
-	message.success( 'Settings applied' );
+	message.success( i18n('Settings applied') );
 };
 
 import { RCAppearancePanel } from './components/Appearance';

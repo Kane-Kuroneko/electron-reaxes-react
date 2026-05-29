@@ -25,15 +25,10 @@ app.whenReady().then(async () => {
 	console.log('[when-ready] Rebuilding menu with i18n...');
 	reaxel_Menu().rebuildMenu();
 	
-	// 监听渲染进程语言变更
+	// 监听渲染进程语言变更（由 Apply/Save 触发时的防御性补充）
 	useIpcRendererToMain('language-change').on((e, language) => {
 		console.log('[when-ready] language-change IPC received:', language);
 		reaxel_I18n().setLanguage(language as any);
-		// 立即持久化语言设置，确保重启后生效
-		const svc = getSettingsConfigService();
-		const current = svc.getEffectiveSettings();
-		console.log('[when-ready] Persisting language to settings:', language);
-		svc.saveSettings({ ...current, appearance: { ...current.appearance, language } });
 		// 重建菜单以应用新语言
 		reaxel_Menu().rebuildMenu();
 		// 更新托盘菜单

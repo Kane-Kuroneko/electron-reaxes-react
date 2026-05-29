@@ -6,7 +6,7 @@ const {
 export const GlobalProxy = reaxper( () => {
 	
 	return <div className={ `${ less.globalProxy } settings-section` }>
-		<div className="section-title">Global Proxy</div>
+		<div className="section-title"><I18n>Global Proxy</I18n></div>
 		<Form layout="vertical">
 			<Form.Item>
 				<Radio.Group
@@ -19,10 +19,10 @@ export const GlobalProxy = reaxper( () => {
 					style={ { userSelect : 'none' } }
 				>
 					<Space direction="vertical" size={ 8 }>
-						<Radio value="direct">Direct(No Proxy)</Radio>
-						<Radio value="use_system">Follow system proxy settings</Radio>
-						<Radio value="from_server_list">Select from proxy servers</Radio>
-						<Radio value="user_fill">Manual proxy configuration</Radio>
+						<Radio value="direct"><I18n>Direct(No Proxy)</I18n></Radio>
+						<Radio value="use_system"><I18n>Follow system proxy settings</I18n></Radio>
+						<Radio value="from_server_list"><I18n>Select from proxy servers</I18n></Radio>
+						<Radio value="user_fill"><I18n>Manual proxy configuration</I18n></Radio>
 					</Space>
 				</Radio.Group>
 			</Form.Item>
@@ -38,7 +38,7 @@ const ProxyServerSelector = reaxper( () => {
 	}
 	return <div className={ less.proxySubFields }>
 		<Form.Item
-			label="Proxy Server"
+			label={<I18n>Proxy Server</I18n>}
 			style={ { marginBottom : 0 } }
 		>
 			<Select
@@ -48,7 +48,7 @@ const ProxyServerSelector = reaxper( () => {
 						using_proxy_server_id: value,
 					});
 				}}
-				placeholder="Select a proxy server"
+				placeholder={i18n('Select a proxy server')}
 				variant="outlined"
 			>
 				{store.proxy_server_list
@@ -71,7 +71,7 @@ const ManualProxy = reaxper( () => {
 		return null;
 	}
 	return <div className={ less.proxySubFields }>
-		<Form.Item label="Protocol">
+		<Form.Item label={<I18n>Protocol</I18n>}>
 			<Segmented
 				value={notFalse(store.proxy_fields).protocol}
 				onChange={ ( value:NetworkProxy.Protocol ) => {
@@ -88,7 +88,7 @@ const ManualProxy = reaxper( () => {
 				] }
 			/>
 		</Form.Item>
-		<Form.Item label="Host name">
+		<Form.Item label={<I18n>Host name</I18n>}>
 			<Input
 				value={notFalse(store.proxy_fields).hostname }
 				placeholder="127.0.0.1"
@@ -104,7 +104,7 @@ const ManualProxy = reaxper( () => {
 				}
 			/>
 		</Form.Item>
-		<Form.Item label="Port number">
+		<Form.Item label={<I18n>Port number</I18n>}>
 			<InputNumber
 				min={0}
 				max={65535}
@@ -134,7 +134,7 @@ const ManualProxy = reaxper( () => {
 					} );
 				} }
 				style={ { userSelect : 'none' , marginBottom : 8 } }
-			>No proxy for</Checkbox>
+			><I18n>No proxy for</I18n></Checkbox>
 			<AIProxySelector/>
 		</div>
 	</div>
@@ -287,7 +287,7 @@ const AIProxySelector = reaxper( () => {
 					crayon.warn['#faad14']('[No Proxy For] All items cleared');
 				}
 			}}
-			placeholder="Select AI family or AI name to bypass proxy"
+			placeholder={i18n('Select AI family or AI name to bypass proxy')}
 			style={{ width: '100%' }}
 			treeDefaultExpandAll
 		/>

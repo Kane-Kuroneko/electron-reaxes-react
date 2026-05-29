@@ -1,13 +1,13 @@
 const columns:TableColumnType<AI.AIItem>[] = [
 	{
-		title : 'Drag' ,
+		title : <I18n>Drag</I18n> ,
 		width : 60 ,
 		render() {
 			return <DragHandle/>;
 		},
 	} ,
 	{
-		title : 'Enabled' ,
+		title : <I18n>Enabled</I18n> ,
 		width : 80 ,
 		render( _value , record ) {
 			return <Checkbox
@@ -24,20 +24,20 @@ const columns:TableColumnType<AI.AIItem>[] = [
 		},
 	} ,
 	{
-		title : 'App name' ,
+		title : <I18n>App name</I18n> ,
 		dataIndex : 'label',
 	} ,
 	{
-		title : 'Family' ,
+		title : <I18n>Family</I18n> ,
 		dataIndex : 'AI_family',
 	} ,
 	{
-		title : 'Url' ,
+		title : <I18n>Url</I18n> ,
 		dataIndex : 'url' ,
 		ellipsis : true,
 	} ,
 	{
-		title : 'Operations' ,
+		title : <I18n>Operations</I18n> ,
 		width : 160 ,
 		render : ( _text , record ) => {
 			const { changeEditAIModalVisible } = reaxel_SettingsView();
@@ -48,14 +48,14 @@ const columns:TableColumnType<AI.AIItem>[] = [
 					onClick={ () => {
 						changeEditAIModalVisible( true , record.id );
 					} }
-				>Edit</Button>
+				><I18n>Edit</I18n></Button>
 				<Button
 					type="link"
 					size="small"
 					danger
 					onClick={ () => {
 						Modal.confirm( {
-							title : 'Delete AI page' ,
+							title : <I18n>Delete AI page</I18n> ,
 							content : `Delete ${ record.label } from Switch AI menu and settings.`,
 							onOk() {
 								reaxel_SettingsView.mutate.Data( state => {
@@ -64,7 +64,7 @@ const columns:TableColumnType<AI.AIItem>[] = [
 							},
 						} );
 					} }
-				>Delete</Button>
+				><I18n>Delete</I18n></Button>
 			</Space>;
 		},
 	},
@@ -106,14 +106,14 @@ export const RCManageAIsPanel = reaxper( () => {
 	};
 	
 	return <div className="settings-section">
-		<div className="section-title">Manage AIs</div>
+		<div className="section-title"><I18n>Manage AIs</I18n></div>
 		<Button
 			type="primary"
 			onClick={ () => {
 				changeEditAIModalVisible( true );
 			} }
 			style={ { marginBottom : 16 } }
-		>Add AI Page</Button>
+		><I18n>Add AI Page</I18n></Button>
 		<DndContext
 			sensors={ sensors }
 			modifiers={ [ restrictToVerticalAxis ] }
@@ -142,7 +142,7 @@ export const RCManageAIsPanel = reaxper( () => {
 				danger
 				type="primary"
 				onClick={ () => setResetModalVisible( true ) }
-			>Reset All AI Pages</Button>
+			><I18n>Reset All AI Pages</I18n></Button>
 		</div>
 		<ResetConfirmModal
 			visible={ resetModalVisible }
@@ -308,7 +308,7 @@ const EditAIModal = reaxper( () => {
 	
 	return <Modal
 		open={ store.visible }
-		title={ store.mode === 'add' ? 'Add AI Page' : 'Edit AI Page' }
+		title={ store.mode === 'add' ? <I18n>Add AI Page</I18n> : <I18n>Edit AI Page</I18n> }
 		onCancel={ () => {
 			setState( {
 				visible : false ,
@@ -316,12 +316,12 @@ const EditAIModal = reaxper( () => {
 			} );
 		} }
 		onOk={ handleSave }
-		okText="Save"
-		cancelText="Cancel"
+		okText={i18n('Save')}
+		cancelText={i18n('Cancel')}
 		width={ 520 }
 	>
 		<Form layout="vertical" style={ { marginTop : 16 } }>
-			<Form.Item label="App name">
+			<Form.Item label={<I18n>App name</I18n>}>
 				<Input
 					value={ fields.label }
 					onChange={ event => {
@@ -329,7 +329,7 @@ const EditAIModal = reaxper( () => {
 					} }
 				/>
 			</Form.Item>
-			<Form.Item label="App family">
+			<Form.Item label={<I18n>App family</I18n>}>
 				<Select
 					value={ fields.AI_family }
 					onChange={ value => {
@@ -349,7 +349,7 @@ const EditAIModal = reaxper( () => {
 					) ) }
 				</Select>
 			</Form.Item>
-			<Form.Item label="App url">
+			<Form.Item label={<I18n>App url</I18n>}>
 				<Input
 					value={ urlEditing ? urlDraft : displayUrl }
 					disabled={ !urlEditing }
@@ -359,7 +359,7 @@ const EditAIModal = reaxper( () => {
 					suffix={ urlSuffix }
 				/>
 			</Form.Item>
-			<Form.Item label="Proxy">
+			<Form.Item label={<I18n>Proxy</I18n>}>
 				<Radio.Group
 					value={ fields.proxy_mode }
 					onChange={ event => {
@@ -376,16 +376,16 @@ const EditAIModal = reaxper( () => {
 					style={ { userSelect : 'none' } }
 				>
 					<Space direction="vertical" size={ 4 }>
-						<Radio value="follow_global_setting">Follow Global Setting</Radio>
-						<Radio value="direct">Direct</Radio>
-						<Radio value="from_server_list">Select From List</Radio>
-						<Radio value="user_fill">Manual</Radio>
+						<Radio value="follow_global_setting"><I18n>Follow Global Setting</I18n></Radio>
+						<Radio value="direct"><I18n>Direct</I18n></Radio>
+						<Radio value="from_server_list"><I18n>Select From List</I18n></Radio>
+						<Radio value="user_fill"><I18n>Manual</I18n></Radio>
 					</Space>
 				</Radio.Group>
 				{ ProxyComponent }
 			</Form.Item>
 			<Form.Item
-				label="Preload on Startup"
+				label={<I18n>Preload on Startup</I18n>}
 				valuePropName="checked"
 			>
 				<Checkbox
@@ -395,7 +395,7 @@ const EditAIModal = reaxper( () => {
 					} }
 					style={ { userSelect : 'none' } }
 				>
-					Load this AI immediately when app starts
+					<I18n>Load this AI immediately when app starts</I18n>
 				</Checkbox>
 			</Form.Item>
 		</Form>
@@ -410,7 +410,7 @@ export const SelectProxyServer = reaxper( () => {
 	return <Select
 		style={ { width : '100%' , marginTop : 12 } }
 		value={ store.fields.from_server_list_proxy }
-		placeholder="Select a proxy server"
+		placeholder={i18n('Select a proxy server')}
 		onChange={ value => {
 			setState.fields( {
 				from_server_list_proxy : value,
@@ -429,7 +429,7 @@ export const UserFillProxy = reaxper( () => {
 	const userFillProxy = notFalse( store.fields.user_fill_proxy || defaultProxyConf() );
 	
 	return <div style={ { marginTop : 12 , padding : '12px 16px' , background : '#fafafa' , borderRadius : 6 } }>
-		<Form.Item label="Protocol">
+		<Form.Item label={<I18n>Protocol</I18n>}>
 			<Segmented
 				style={ { userSelect : 'none' } }
 				value={ userFillProxy.protocol }
@@ -448,7 +448,7 @@ export const UserFillProxy = reaxper( () => {
 				] }
 			/>
 		</Form.Item>
-		<Form.Item label="Host name">
+		<Form.Item label={<I18n>Host name</I18n>}>
 			<Input
 				value={ userFillProxy.hostname }
 				placeholder="127.0.0.1"
@@ -462,7 +462,7 @@ export const UserFillProxy = reaxper( () => {
 				} }
 			/>
 		</Form.Item>
-		<Form.Item label="Port number">
+		<Form.Item label={<I18n>Port number</I18n>}>
 			<InputNumber
 				min={ 0 }
 				max={ 65535 }
@@ -491,7 +491,7 @@ export const UserFillProxy = reaxper( () => {
 				} );
 			} }
 			style={ { userSelect : 'none' } }
-		>Authentication</Checkbox>
+		><I18n>Authentication</I18n></Checkbox>
 		{ userFillProxy.proxy_auth ? <ProxyAuthFields proxyConf={ userFillProxy }/> : null }
 	</div>;
 } );
@@ -501,7 +501,7 @@ const ProxyAuthFields = reaxper( ( { proxyConf }:{ proxyConf:NetworkProxy.ProxyC
 	const proxyAuth = notFalse( proxyConf.proxy_auth );
 	
 	return <>
-		<Form.Item label="Username" style={ { marginTop : 12 } }>
+		<Form.Item label={<I18n>Username</I18n>} style={ { marginTop : 12 } }>
 			<Input
 				value={ proxyAuth.username }
 				onChange={ e => {
@@ -517,7 +517,7 @@ const ProxyAuthFields = reaxper( ( { proxyConf }:{ proxyConf:NetworkProxy.ProxyC
 				} }
 			/>
 		</Form.Item>
-		<Form.Item label="Password">
+		<Form.Item label={<I18n>Password</I18n>}>
 			<Input.Password
 				value={ proxyAuth.password }
 				onChange={ e => {
@@ -689,22 +689,21 @@ const ResetConfirmModal:React.FC<{
 }> = ( { visible , onCancel , onConfirm } ) => {
 	return <Modal
 		open={ visible }
-		title={ <span style={ { color : '#ff4d4f' } }>Reset All AI Pages</span> }
+		title={ <span style={ { color : '#ff4d4f' } }><I18n>Reset All AI Pages</I18n></span> }
 		onCancel={ onCancel }
 		footer={ null }
 		width={ 420 }
 	>
 		<div style={ { padding : '12px 0' } }>
 			<p style={ { marginBottom : 16 , fontSize : 14 } }>
-				This will <strong>permanently reset</strong> all AI page configurations to factory defaults.
-				All your custom AI pages, URL overrides, and proxy settings will be lost.
+				<I18n>This will permanently reset all AI page configurations to factory defaults. All your custom AI pages, URL overrides, and proxy settings will be lost.</I18n>
 			</p>
 			<p style={ { marginBottom : 24 , color : '#ff4d4f' , fontWeight : 500 } }>
-				Hold the button below to confirm reset.
+				<I18n>Hold the button below to confirm reset.</I18n>
 			</p>
 			<div style={ { display : 'flex' , justifyContent : 'center' , alignItems : 'center' , gap : 16 } }>
 				<LongPressConfirmButton onConfirm={ onConfirm }/>
-				<Button onClick={ onCancel }>Cancel</Button>
+				<Button onClick={ onCancel }><I18n>Cancel</I18n></Button>
 			</div>
 		</div>
 	</Modal>;

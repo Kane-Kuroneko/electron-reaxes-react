@@ -5,21 +5,21 @@ export const RCSystemPanel = reaxper(() => {
 	} = reaxel_SettingsView;
 	
 	return <div className="settings-section">
-		<div className="section-title">System</div>
+		<div className="section-title"><I18n>System</I18n></div>
 		<Space direction="vertical" size={ 12 }>
 			<Checkbox
 				checked={store.gpu_acceleration}
 				onChange={e=>setState({gpu_acceleration:e.target.checked})}
 				style={{userSelect:'none'}}
 			>
-				GPU Acceleration
+				<I18n>GPU Acceleration</I18n>
 			</Checkbox>
 			<Checkbox
 				checked={store.tray}
 				onChange={e=>setState({tray : e.target.checked})}
 				style={{userSelect:'none'}}
 			>
-				Exit to Tray
+				<I18n>Exit to Tray</I18n>
 			</Checkbox>
 		</Space>
 	</div>;

@@ -6,7 +6,7 @@ const {
 export const ProxyServers = reaxper( () => {
 	
 	return <div className="settings-section">
-		<div className="section-title">Proxy Servers</div>
+		<div className="section-title"><I18n>Proxy Servers</I18n></div>
 		<Button
 			onClick={() => {
 				setState.edit_proxy_server_modal({
@@ -28,7 +28,7 @@ export const ProxyServers = reaxper( () => {
 			type="primary"
 			style={{ marginBottom: 16 }}
 		>
-			Add Server
+			<I18n>Add Server</I18n>
 		</Button>
 		<Table
 			dataSource={ reaxel_SettingsView.store.UIControls.networks.proxy_server_list.map( it => {
@@ -47,12 +47,12 @@ export const ProxyServers = reaxper( () => {
 
 const columns:TableColumnType<NetworkProxy.ProxyServer.Server>[] = [
 	{
-		title : 'Server Name' ,
+		title : <I18n>Server Name</I18n> ,
 		dataIndex : 'server_name' ,
 		key : 'server_name' ,
 	} ,
 	{
-		title : 'Enabled' ,
+		title : <I18n>Enabled</I18n> ,
 		render(value,record){
 			return <Checkbox
 				checked={ record.enabled }
@@ -68,13 +68,13 @@ const columns:TableColumnType<NetworkProxy.ProxyServer.Server>[] = [
 		},
 	} ,
 	{
-		title : 'Address' ,
+		title : <I18n>Address</I18n> ,
 		render(value,{proxy_conf:{protocol,hostname,port}},index){
 			return <span>{protocol}://{hostname}:{port}</span>
 		}
 	} ,
 	{
-		title : 'Operations',
+		title : <I18n>Operations</I18n>,
 		render(value,record,index){
 			return <Button
 				type="link"
@@ -91,11 +91,11 @@ const columns:TableColumnType<NetworkProxy.ProxyServer.Server>[] = [
 						} ,
 					} );
 				} }
-			>Edit</Button>;
+			><I18n>Edit</I18n></Button>;
 		}
 	} ,
 	{
-		title : 'Delete',
+		title : <I18n>Delete</I18n>,
 		render(value,record){
 			return <Button
 				type="link"
@@ -108,7 +108,7 @@ const columns:TableColumnType<NetworkProxy.ProxyServer.Server>[] = [
 						}
 					} );
 				} }
-			>Delete</Button>;
+			><I18n>Delete</I18n></Button>;
 		},
 	}
 ];
@@ -130,11 +130,11 @@ const EditProxyServerModal = reaxper( () => {
 	
 	if(store.fields.proxy_conf.proxy_auth){
 		var ProxyAuth = <>
-			<Divider style={ { margin : '12px 0' } }>Auth</Divider>
-			<Form.Item label="Username">
+			<Divider style={ { margin : '12px 0' } }><I18n>Auth</I18n></Divider>
+			<Form.Item label={<I18n>Username</I18n>}>
 				<Input
 					value={ notFalse( store.fields.proxy_conf.proxy_auth )?.username }
-					placeholder="Username"
+					placeholder={i18n('Username')}
 					onChange={ ( e ) => {
 						setState.fields.proxy_conf( {
 							proxy_auth : {
@@ -145,10 +145,10 @@ const EditProxyServerModal = reaxper( () => {
 					} }
 				/>
 			</Form.Item>
-			<Form.Item label="Password">
+			<Form.Item label={<I18n>Password</I18n>}>
 				<Input
 					value={ notFalse( store.fields.proxy_conf.proxy_auth )?.password }
-					placeholder="Password"
+					placeholder={i18n('Password')}
 					onChange={ ( e ) => {
 						setState.fields.proxy_conf( {
 							proxy_auth : {
@@ -163,7 +163,7 @@ const EditProxyServerModal = reaxper( () => {
 	}
 	
 	return <Modal
-		title={ mode === 'add' ? 'Add Proxy Server' : 'Edit Proxy Server' }
+		title={ mode === 'add' ? <I18n>Add Proxy Server</I18n> : <I18n>Edit Proxy Server</I18n> }
 		open={ store.visible }
 		onCancel={ () => {
 			setState( {
@@ -193,14 +193,14 @@ const EditProxyServerModal = reaxper( () => {
 				editing_id : null,
 			} );
 		}}
-		okText="Save"
-		cancelText="Cancel"
+		okText={i18n('Save')}
+		cancelText={i18n('Cancel')}
 	>
 		<Form layout="vertical">
-			<Form.Item label="Server name">
+			<Form.Item label={<I18n>Server name</I18n>}>
 				<Input
 					value={ store.fields.server_name }
-					placeholder="Proxy server name"
+					placeholder={i18n('Proxy server name')}
 					onChange={ ( e ) => {
 						setState.fields( {
 							server_name : e.target.value,
@@ -217,9 +217,9 @@ const EditProxyServerModal = reaxper( () => {
 					} );
 				}}
 			>
-				Enabled
+				<I18n>Enabled</I18n>
 			</Checkbox>
-			<Form.Item label="Protocol">
+			<Form.Item label={<I18n>Protocol</I18n>}>
 				<Segmented
 					value={ store.fields.proxy_conf.protocol }
 					onChange={ ( value: NetworkProxy.Protocol ) => {
@@ -235,7 +235,7 @@ const EditProxyServerModal = reaxper( () => {
 					] }
 				/>
 			</Form.Item>
-			<Form.Item label="Host name">
+			<Form.Item label={<I18n>Host name</I18n>}>
 				<Input
 					value={ store.fields.proxy_conf.hostname }
 					placeholder="127.0.0.1"
@@ -246,7 +246,7 @@ const EditProxyServerModal = reaxper( () => {
 					} }
 				/>
 			</Form.Item>
-			<Form.Item label="Port number">
+			<Form.Item label={<I18n>Port number</I18n>}>
 				<InputNumber
 					min={ 0 }
 					max={ 65535 }
@@ -271,7 +271,7 @@ const EditProxyServerModal = reaxper( () => {
 					} );
 				}}
 			>
-				Authentication
+				<I18n>Authentication</I18n>
 			</Checkbox>
 			{ProxyAuth}
 		</Form>
