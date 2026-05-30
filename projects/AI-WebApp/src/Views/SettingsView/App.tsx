@@ -5,11 +5,9 @@ export const App = reaxper( () => {
 	const { applySettings , exitSettings , reloadSettings , isDirty } = reaxel_SettingsView();
 	
 	const MenuContentComponent = {
+		general : RCGeneralPanel ,
 		net : RCNetworkPanel ,
-		appearance : RCAppearancePanel ,
 		mngeai : RCManageAIsPanel ,
-		sys : RCSystemPanel ,
-		// hk : RCHotkeysPanel,
 	}[store.current];
 	
 	// 触发响应式依赖收集 - 让按钮状态随 UIControls 变化而更新
@@ -97,10 +95,9 @@ const showApplyResult = (result:SettingsApplyResult) => {
 	message.success( i18n('Settings applied') );
 };
 
-import { RCAppearancePanel } from './components/Appearance';
+import { RCGeneralPanel } from './components/General';
 import { RCManageAIsPanel } from './components/ManageAIs';
 import { RCNetworkPanel } from './components/Network';
-import { RCSystemPanel } from './components/System';
 import {
 	Button ,
 	Menu ,

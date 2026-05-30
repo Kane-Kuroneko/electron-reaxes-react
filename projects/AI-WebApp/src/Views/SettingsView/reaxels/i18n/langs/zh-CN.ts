@@ -25,10 +25,9 @@ export default {
 	"Quit" : "退出" ,
 	
 	// Settings View - Menu
+	"General" : "通用" ,
 	"Networks" : "网络" ,
-	"Appearance(feat delayed)" : "外观（功能延迟）" ,
 	"Manage AIs" : "管理 AI" ,
-	"System" : "系统" ,
 	
 	// Settings View - Buttons
 	"Discard Changes" : "放弃更改" ,
@@ -52,8 +51,10 @@ export default {
 	"Language" : "语言" ,
 	
 	// System Panel
+	"System" : "系统" ,
 	"GPU Acceleration" : "GPU 加速" ,
-	"Exit to Tray" : "退出到托盘" ,
+	"Show Tray" : "显示托盘图标" ,
+	"Close to Tray" : "关闭窗口时最小化到托盘" ,
 	
 	// Network - Global Proxy
 	"Global Proxy" : "全局代理" ,

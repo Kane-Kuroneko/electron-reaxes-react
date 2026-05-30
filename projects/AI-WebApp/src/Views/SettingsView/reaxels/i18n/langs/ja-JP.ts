@@ -25,10 +25,9 @@ export default {
 	"Quit" : "終了" ,
 	
 	// Settings View - Menu
+	"General" : "一般" ,
 	"Networks" : "ネットワーク" ,
-	"Appearance(feat delayed)" : "外観（機能遅延）" ,
 	"Manage AIs" : "AI の管理" ,
-	"System" : "システム" ,
 	
 	// Settings View - Buttons
 	"Discard Changes" : "変更を破棄" ,
@@ -52,8 +51,10 @@ export default {
 	"Language" : "言語" ,
 	
 	// System Panel
+	"System" : "システム" ,
 	"GPU Acceleration" : "GPU アクセラレーション" ,
-	"Exit to Tray" : "トレイに最小化" ,
+	"Show Tray" : "トレイアイコンを表示" ,
+	"Close to Tray" : "ウィンドウを閉じたらトレイに最小化" ,
 	
 	// Network - Global Proxy
 	"Global Proxy" : "グローバルプロキシ" ,

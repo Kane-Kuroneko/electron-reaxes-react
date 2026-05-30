@@ -1,23 +1,19 @@
 export const reaxel_SettingsView = reaxel( () => {
 	const { store , setState , mutate } = createReaxable( {
 		RootMenu : {
-			current : checkAs<Menus>( 'net' ) ,
+			current : checkAs<Menus>( 'general' ) ,
 			menus : [
+				{
+					label : 'General' ,
+					value : checkAs<Menus>( 'general' ),
+				} ,
 				{
 					label : 'Networks' ,
 					value : checkAs<Menus>( 'net' ),
 				} ,
 				{
-					label : 'Appearance(feat delayed)' ,
-					value : checkAs<Menus>( 'appearance' ),
-				} ,
-				{
 					label : 'Manage AIs' ,
 					value : checkAs<Menus>( 'mngeai' ),
-				} ,
-				{
-					label : 'System' ,
-					value : checkAs<Menus>( 'sys' ),
 				},
 			],
 		} ,
@@ -61,7 +57,8 @@ export const reaxel_SettingsView = reaxel( () => {
 			} ,
 			system : {
 				gpu_acceleration : true ,
-				tray : true,
+				show_tray : true ,
+				close_to_tray : true,
 			} ,
 			hotkeys : {},
 		} ,

@@ -25,10 +25,9 @@ export default {
 	"Quit" : "종료" ,
 	
 	// Settings View - Menu
+	"General" : "일반" ,
 	"Networks" : "네트워크" ,
-	"Appearance(feat delayed)" : "모양(기능 지연)" ,
 	"Manage AIs" : "AI 관리" ,
-	"System" : "시스템" ,
 	
 	// Settings View - Buttons
 	"Discard Changes" : "변경 사항 취소" ,
@@ -52,8 +51,10 @@ export default {
 	"Language" : "언어" ,
 	
 	// System Panel
+	"System" : "시스템" ,
 	"GPU Acceleration" : "GPU 가속" ,
-	"Exit to Tray" : "트레이로 최소화" ,
+	"Show Tray" : "트레이 아이콘 표시" ,
+	"Close to Tray" : "창을 닫으면 트레이로 최소화" ,
 	
 	// Network - Global Proxy
 	"Global Proxy" : "글로벌 프록시" ,

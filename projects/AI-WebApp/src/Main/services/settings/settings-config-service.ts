@@ -52,7 +52,8 @@ export const createDefaultRuntimeSettings = ():RuntimeSettings => ( {
 	} ,
 	system : {
 		gpu_acceleration : true ,
-		tray : true,
+		show_tray : true ,
+		close_to_tray : true,
 	} ,
 	appearance : {
 		darkmode : false ,

@@ -175,7 +175,8 @@ export const reaxable_Settings = () => {
 			} ,
 			system : {
 				gpu_acceleration : true ,
-				tray : true ,
+				show_tray : true ,
+				close_to_tray : true ,
 			} ,
 			hotkeys : {} ,
 		} ,
@@ -211,7 +212,7 @@ export const reaxable_Settings = () => {
 	} );
 };
 
-export type Menus = "net" | "appearance" | "mngeai" | "sys" | "keys";
+export type Menus = "general" | "net" | "mngeai" | "keys";
 
 
 

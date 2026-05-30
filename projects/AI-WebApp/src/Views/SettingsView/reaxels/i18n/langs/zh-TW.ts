@@ -25,10 +25,9 @@ export default {
 	"Quit" : "結束" ,
 	
 	// Settings View - Menu
+	"General" : "通用" ,
 	"Networks" : "網路" ,
-	"Appearance(feat delayed)" : "外觀（功能延遲）" ,
 	"Manage AIs" : "管理 AI" ,
-	"System" : "系統" ,
 	
 	// Settings View - Buttons
 	"Discard Changes" : "放棄變更" ,
@@ -52,8 +51,10 @@ export default {
 	"Language" : "語言" ,
 	
 	// System Panel
+	"System" : "系統" ,
 	"GPU Acceleration" : "GPU 加速" ,
-	"Exit to Tray" : "縮小到系統列" ,
+	"Show Tray" : "顯示系統列圖示" ,
+	"Close to Tray" : "關閉視窗時縮小至系統列" ,
 	
 	// Network - Global Proxy
 	"Global Proxy" : "全域代理" ,

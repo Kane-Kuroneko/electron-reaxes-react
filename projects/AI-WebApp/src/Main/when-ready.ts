@@ -39,13 +39,14 @@ app.whenReady().then(async () => {
 	
 	// 初始化系统托盘
 	const settings = getSettingsConfigService().getEffectiveSettings();
-	if( settings.system.tray ) {
+	if( settings.system.show_tray ) {
 		initTray();
 	}
 	
-	// 托盘模式：关闭窗口时最小化到托盘而非退出
+	// 托盘模式：关闭窗口时根据 close_to_tray 设置决定行为
 	win.on( 'close' , ( event ) => {
-		if( isTrayActive() ) {
+		const currentSettings = getSettingsConfigService().getEffectiveSettings();
+		if( currentSettings.system.show_tray && currentSettings.system.close_to_tray ) {
 			event.preventDefault();
 			win.hide();
 		}

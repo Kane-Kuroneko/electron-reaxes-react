@@ -23,7 +23,7 @@ export namespace AI {
 		label: AIItem['label'];
 		AI_family: AIItem['AI_family'];
 		url : AIItem['url'];
-		url_override: AIItem['url_override'];
+		url_override?: AIItem['url_override'];
 		desc?: string;
 		proxy_mode: NetworkProxy.AIProxyMode;
 		from_server_list_proxy: string | null; //proxy_server_id

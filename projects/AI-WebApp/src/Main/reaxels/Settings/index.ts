@@ -25,7 +25,8 @@ export const reaxel_Settings = reaxel( () => {
 		const settings = getCurrentSettings();
 		await reaxel_AIViews().syncAIViewsWithConfig( settings );
 		reaxel_Menu().rebuildMenu();
-		syncTrayState( settings.system.tray );
+		syncTrayState( settings.system.show_tray );
+		updateTrayMenu();
 	};
 	
 	const applySettings = async( settings:Settings ):Promise<SettingsApplyResult> => {
@@ -222,7 +223,7 @@ import {
 	normalizeRuntimeSettings,
 } from '#main/services/settings/settings-config-service';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';
-import { syncTrayState } from '#main/services/tray';
+import { syncTrayState , updateTrayMenu } from '#main/services/tray';
 import {
 	reaxel ,
 	createReaxable,

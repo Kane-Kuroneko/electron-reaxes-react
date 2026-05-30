@@ -17,11 +17,11 @@ const t = (text: string) => {
 export function initTray(): Tray | null {
 	if( trayInstance ) return trayInstance;
 	
+	const staticsDir = app.isPackaged
+		? path.join( process.resourcesPath , 'statics' )
+		: path.join( app.getAppPath() , 'statics' );
 	const iconPath = nativeImage.createFromPath(
-		path.join( app.isPackaged
-			? path.dirname( app.getPath( 'exe' ) )
-			: path.resolve( __dirname , '../../statics' ) ,
-		'gpt.ico' ),
+		path.join( staticsDir , 'gpt.ico' ),
 	);
 	
 	trayInstance = new Tray( iconPath );
