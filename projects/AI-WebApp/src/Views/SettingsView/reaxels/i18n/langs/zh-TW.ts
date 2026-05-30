@@ -53,6 +53,7 @@ export default {
 	// System Panel
 	"System" : "系統" ,
 	"GPU Acceleration" : "GPU 加速" ,
+	"GPU acceleration is applied before Electron creates browser processes." : "GPU 加速設置在 Electron 建立瀏覽器程序前生效。" ,
 	"Show Tray" : "顯示系統列圖示" ,
 	"Close to Tray" : "關閉視窗時縮小至系統列" ,
 	

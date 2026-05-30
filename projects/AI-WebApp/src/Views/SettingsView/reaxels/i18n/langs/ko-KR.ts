@@ -53,6 +53,7 @@ export default {
 	// System Panel
 	"System" : "시스템" ,
 	"GPU Acceleration" : "GPU 가속" ,
+	"GPU acceleration is applied before Electron creates browser processes." : "GPU 가속 설정은 Electron이 브라우저 프로세스를 생성하기 전에 적용됩니다." ,
 	"Show Tray" : "트레이 아이콘 표시" ,
 	"Close to Tray" : "창을 닫으면 트레이로 최소화" ,
 	

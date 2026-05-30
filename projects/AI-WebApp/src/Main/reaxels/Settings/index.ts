@@ -201,7 +201,7 @@ const detectRestartReasons = (previousSettings:Settings , nextSettings:Settings)
 	const restartReasons:string[] = [];
 	
 	if( previousSettings.system.gpu_acceleration !== nextSettings.system.gpu_acceleration ) {
-		restartReasons.push( 'GPU acceleration is applied before Electron creates browser processes.' );
+		restartReasons.push( reaxel_I18n().i18n( 'GPU acceleration is applied before Electron creates browser processes.' ) );
 	}
 	
 	return restartReasons;
