@@ -77,6 +77,31 @@ html, body {
 	}
 }
 
+// ManageAIs Table 未保存状态行高亮
+.ai-row--new {
+	background-color: #f6ffed !important;
+	
+	&:hover > td {
+		background-color: #d9f7be !important;
+	}
+	
+	> td {
+		background-color: #f6ffed !important;
+	}
+}
+
+.ai-row--modified {
+	background-color: #fff7e6 !important;
+	
+	&:hover > td {
+		background-color: #ffe7ba !important;
+	}
+	
+	> td {
+		background-color: #fff7e6 !important;
+	}
+}
+
 @media (max-width: 768px) {
 	.settings-sider {
 		width: 160px;

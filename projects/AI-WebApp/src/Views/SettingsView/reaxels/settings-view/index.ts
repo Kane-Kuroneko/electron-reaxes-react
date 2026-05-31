@@ -81,9 +81,18 @@ export const reaxel_SettingsView = reaxel( () => {
 	
 	// dirty 状态追踪: 存储上次加载/应用成功后的设置快照
 	let _lastSavedSnapshot = '';
+	// 已提交(已生效)的 AI IDs 集合，用于前端判断哪些 AI 是新增未保存的
+	let _committedAIIds = new Set<string>();
+	// 已提交的 AI 快照，用于判断是否已修改
+	let _committedAISnapshot = new Map<string , string>();
 	
 	function updateSnapshot() {
 		_lastSavedSnapshot = JSON.stringify( buildSettingsFromStore() );
+		// 同步更新 committed AI 状态
+		_committedAIIds = new Set( store.Data.AIs.map( ai => ai.id ) );
+		_committedAISnapshot = new Map(
+			store.Data.AIs.map( ai => [ ai.id , JSON.stringify( ai ) ] ),
+		);
 	}
 	
 	function isDirty(): boolean {
@@ -226,7 +235,22 @@ export const reaxel_SettingsView = reaxel( () => {
 		isDirty ,
 		changeEditAIModalVisible ,
 		submitSettings : ipcMethods.submitSettings ,
-		exitSettings : ipcMethods.exitSettings,
+		exitSettings : ipcMethods.exitSettings ,
+		/**
+		 * 判断某个 AI 是否为新增未保存的
+		 */
+		isNewAI( id: string ): boolean {
+			return !_committedAIIds.has( id );
+		},
+		/**
+		 * 判断某个 AI 是否已修改但未保存
+		 */
+		isModifiedAI( id: string ): boolean {
+			if( !_committedAIIds.has( id ) ) return false;
+			const current = store.Data.AIs.find( ai => ai.id === id );
+			if( !current ) return false;
+			return JSON.stringify( current ) !== _committedAISnapshot.get( id );
+		},
 	};
 	
 	return Object.assign( () => rtn , {

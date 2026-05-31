@@ -25,7 +25,21 @@ const columns:TableColumnType<AI.AIItem>[] = [
 	} ,
 	{
 		title : <I18n>App name</I18n> ,
-		dataIndex : 'label',
+		dataIndex : 'label' ,
+		render( _value , record ) {
+			const { isNewAI , isModifiedAI } = reaxel_SettingsView();
+			const isNew = isNewAI( record.id );
+			const isModified = isModifiedAI( record.id );
+			return <span style={ { display : 'inline-flex' , alignItems : 'center' , gap : 6 } }>
+				{ record.label }
+				{ isNew && <Tag color="green" style={ { marginLeft : 4 , fontSize : 11 , lineHeight : '18px' , padding : '0 5px' } }>
+					<I18n>New</I18n>
+				</Tag> }
+				{ isModified && <Tag color="orange" style={ { marginLeft : 4 , fontSize : 11 , lineHeight : '18px' , padding : '0 5px' } }>
+					<I18n>Modified</I18n>
+				</Tag> }
+			</span>;
+		},
 	} ,
 	{
 		title : <I18n>Family</I18n> ,
@@ -134,6 +148,12 @@ export const RCManageAIsPanel = reaxper( () => {
 					dataSource={ reaxel_SettingsView.store.Data.AIs }
 					pagination={ false }
 					size="small"
+					rowClassName={ record => {
+						const { isNewAI , isModifiedAI } = reaxel_SettingsView();
+						if( isNewAI( record.id ) ) return 'ai-row--new';
+						if( isModifiedAI( record.id ) ) return 'ai-row--modified';
+						return '';
+					} }
 				/>
 			</SortableContext>
 		</DndContext>
@@ -245,13 +265,13 @@ const EditAIModal = reaxper( () => {
 		reaxel_SettingsView.mutate.Data( state => {
 			const index = state.AIs.findIndex( ai => ai.id === nextAI.id );
 			if( index === -1 ) {
-				state.AIs.push( nextAI );
+				state.AIs = [ ...state.AIs , nextAI ];
 			} else {
-				state.AIs[index] = {
-					...state.AIs[index] ,
-					...nextAI ,
-					disabled : state.AIs[index].disabled,
-				};
+				state.AIs = state.AIs.map( ( ai , i ) =>
+					i === index
+						? { ...ai , ...nextAI , disabled : ai.disabled }
+						: ai,
+				);
 			}
 		} );
 		
@@ -729,7 +749,8 @@ import {
 	Select ,
 	Space ,
 	Table ,
-	TableColumnType,
+	TableColumnType ,
+	Tag,
 } from 'antd';
 import { DndContext , PointerSensor , useSensor , useSensors } from '@dnd-kit/core';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';

@@ -86,7 +86,7 @@ const showApplyResult = (result:SettingsApplyResult) => {
 			content : <div>
 				<div><I18n>Settings were saved. These changes require restarting the app:</I18n></div>
 				<ul>
-					{ result.restartReasons.map( reason => <li key={ reason }><I18n>{ reason }</I18n></li> ) }
+					{ result.restartReasons.map( reason => <li key={ reason }>{ reason }</li> ) }
 				</ul>
 			</div>,
 		} );

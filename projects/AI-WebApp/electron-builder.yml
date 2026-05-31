@@ -6,7 +6,7 @@
    files: ["dist/"],
    extraResources: [
       {
-         from: "dist/statics",
+         from: "statics",
          to: "statics"
       }
    ],
