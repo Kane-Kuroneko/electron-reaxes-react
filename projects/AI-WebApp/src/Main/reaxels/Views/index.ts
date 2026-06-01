@@ -78,10 +78,13 @@ export const Reaxel_View = reaxel( () => {
 		};
 	};
 
-	const turnToAiPageByOffset = async(
+	const turnToAiPageByOffset = (
 		offset:number ,
 		direction:FloatingLayer.SwitchAiBarDirection,
 	) => {
+		if( shouldIgnoreDuplicateSwitch( direction ) ) {
+			return null;
+		}
 		const settings = getRuntimeSettings();
 		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
 		if( activeAIs.length === 0 ) {
@@ -95,7 +98,7 @@ export const Reaxel_View = reaxel( () => {
 			: currentIndex;
 		const nextIndex = getWrappedIndex( baseIndex + offset , activeAIs.length );
 		const nextAI = activeAIs[nextIndex];
-		const view = await reaxel_AIViews().showAIView( nextAI.id , settings );
+		const view = reaxel_AIViews().showAIView( nextAI.id , settings );
 
 		reaxel_FloatingLayer().api.showSwitchAiBar(
 			createSwitchAiBarPayload( activeAIs , nextIndex , direction ),
@@ -112,16 +115,43 @@ export const Reaxel_View = reaxel( () => {
 		return turnToAiPageByOffset( -1 , 'previous' );
 	};
 
+	let lastSwitchAt = 0;
+	let lastSwitchDirection:FloatingLayer.SwitchAiBarDirection | null = null;
+
+	const shouldIgnoreDuplicateSwitch = (direction:FloatingLayer.SwitchAiBarDirection) => {
+		const now = Date.now();
+		const duplicate = direction === lastSwitchDirection && now - lastSwitchAt < 40;
+		lastSwitchAt = now;
+		lastSwitchDirection = direction;
+		return duplicate;
+	};
+
 	let runtimeViewsInitialized = false;
 
 	const initRuntimeViews = async() => {
 		if( runtimeViewsInitialized ) return;
 		runtimeViewsInitialized = true;
+		setAISwitchShortcutHandlers( {
+			next : () => {
+				turnToNextAiPage();
+			} ,
+			previous : () => {
+				turnToPreviousAiPage();
+			},
+		} );
+		registerAISwitchGlobalShortcuts();
 		reaxel_FloatingLayer().initFloatingLayer();
 		await onReadyLoadAIView();
 		mainWindow.on( 'resize' , () => {
 			fitWindow();
 		} );
+		mainWindow.on( 'focus' , registerAISwitchGlobalShortcuts );
+		mainWindow.on( 'show' , registerAISwitchGlobalShortcuts );
+		mainWindow.on( 'restore' , registerAISwitchGlobalShortcuts );
+		mainWindow.on( 'blur' , unregisterAISwitchGlobalShortcuts );
+		mainWindow.on( 'hide' , unregisterAISwitchGlobalShortcuts );
+		mainWindow.on( 'minimize' , unregisterAISwitchGlobalShortcuts );
+		mainWindow.on( 'closed' , unregisterAISwitchGlobalShortcuts );
 
 		useIpcRendererToMain( 'update-preload-ai-config' ).on( async() => {
 			await reaxel_AIViews().syncAIViewsWithConfig( getRuntimeSettings() );
@@ -185,6 +215,11 @@ import { mainWindow } from "#main/mainWindow";
 import { reaxel_AIViews } from "#main/reaxels/Views/AI-Views";
 import { reaxel_FloatingLayer } from "#main/reaxels/Views/Floating-Layer";
 import { useIpcRendererToMain } from "#main/services/ipc";
+import {
+	registerAISwitchGlobalShortcuts ,
+	setAISwitchShortcutHandlers ,
+	unregisterAISwitchGlobalShortcuts,
+} from '#main/services/shortcuts/ai-switch';
 import { getAIConfigService } from "#main/services/settings/ai-config-service";
 import { getSettingsConfigService } from "#main/services/settings/settings-config-service";
 import type { FloatingLayer } from "#src/Types/FloatingLayer";

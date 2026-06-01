@@ -140,6 +140,7 @@ export const reaxel_Menu = reaxel( () => {
 						{
 							label : t('Previous AI Page') ,
 							accelerator : 'CmdOrCtrl+[' ,
+							registerAccelerator : false ,
 							enabled : enabledAIs.length > 1 ,
 							click : () => {
 								void Reaxel_View().turnToPreviousAiPage();
@@ -148,6 +149,7 @@ export const reaxel_Menu = reaxel( () => {
 						{
 							label : t('Next AI Page') ,
 							accelerator : 'CmdOrCtrl+]' ,
+							registerAccelerator : false ,
 							enabled : enabledAIs.length > 1 ,
 							click : () => {
 								void Reaxel_View().turnToNextAiPage();
@@ -165,8 +167,8 @@ export const reaxel_Menu = reaxel( () => {
 	}
 	
 	function createClickMenuHandler( aiId:string ) {
-		return async() => {
-			await reaxel_AIViews().showAIView( aiId , getRuntimeSettings() );
+		return () => {
+			reaxel_AIViews().showAIView( aiId , getRuntimeSettings() );
 			rebuildMenu();
 		};
 	}

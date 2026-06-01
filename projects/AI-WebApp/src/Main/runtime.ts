@@ -6,15 +6,14 @@ export const isMainRuntimeStarted = () => mainRuntimeStarted;
 export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) => {
 	console.log( '[Runtime] startMainRuntime:' , options );
 	const win = await createMainWindow();
-	const settings = getSettingsConfigService().getEffectiveSettings();
+	const settingsRuntime = reaxel_Settings();
+	const settings = settingsRuntime.reloadFromDisk();
 	
 	if( !mainRuntimeStarted ) {
 		mainRuntimeStarted = true;
 		useBeautifulDevtool( win );
-		applyElectronAppearance( settings.appearance );
-		
-		reaxel_Settings();
-		reaxel_I18n();
+		const resolvedAppearance = applyElectronAppearance( settings.appearance );
+		reaxel_I18n().setLanguage( resolvedAppearance.language as any );
 		
 		reaxel_Menu().setI18nInstance( reaxel_I18n );
 		setTrayI18nInstance( reaxel_I18n );

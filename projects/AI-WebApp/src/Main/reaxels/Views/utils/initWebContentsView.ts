@@ -40,6 +40,9 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	
 	//当用户ctrl+r时reload当前view;f12 devtools
 	view.webContents.on('before-input-event', (event, input) => {
+		if( handleAISwitchShortcutInput( event , input ) ) {
+			return;
+		}
 		// if (input.control && input.key.toLowerCase() === 'r') {
 		// 	if (input.shift) {
 		// 		// Ctrl+Shift+R 强制重置域名
@@ -156,6 +159,7 @@ import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {dev} from 'electron-is';
 import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 import { applyAIProxyToView } from "#main/services/settings/proxy-service";
+import { handleAISwitchShortcutInput } from '#main/services/shortcuts/ai-switch';
 import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import {
 	applyAIPageAppearanceToView ,

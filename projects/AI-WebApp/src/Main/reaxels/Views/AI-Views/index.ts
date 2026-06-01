@@ -7,12 +7,12 @@ export const reaxel_AIViews = reaxel( () => {
 		AIViews : checkAs<RuntimeAIView[]>( [] ),
 	} );
 	
-	const initAIView = async( ai:AI.AIItem , settings:Settings ) => {
+	const initAIView = ( ai:AI.AIItem , settings:Settings ) => {
 		console.log( '[AIViews] initAIView start:' , ai.id , ai.url || getAIDomainByFamily( ai.AI_family ) );
-		let runtimeView = store.AIViews.find( item => item.id === ai.id );
-		if( runtimeView?.view ) {
-			await updateRuntimeAIView( runtimeView , ai , settings );
-			return runtimeView.view;
+		const existingRuntimeView = store.AIViews.find( item => item.id === ai.id );
+		if( existingRuntimeView?.view ) {
+			void updateRuntimeAIView( existingRuntimeView , ai , settings );
+			return existingRuntimeView.view;
 		}
 		
 		const view = initWebContentsView( {
@@ -25,19 +25,32 @@ export const reaxel_AIViews = reaxel( () => {
 			},
 		} );
 		const appearanceKey = applyAIPageAppearanceToView( view , settings.appearance );
+		const nextRuntimeView:RuntimeAIView = {
+			id : ai.id ,
+			label : ai.label ,
+			AIName : ai.AI_family ,
+			view ,
+			domain : ai.url || getAIDomainByFamily( ai.AI_family ) ,
+			partition : getAIPartition( ai.id ) ,
+			config : ai ,
+			proxyKey : '' ,
+			appearanceKey ,
+			ready : false,
+		};
+		const markViewReady = () => {
+			mutate( s => {
+				const target = s.AIViews.find( item => item.id === ai.id );
+				if( target ) {
+					target.ready = true;
+				}
+			} );
+			focusAIViewIfCurrent( ai.id , view );
+		};
+		view.webContents.on( 'did-stop-loading' , markViewReady );
+		view.webContents.on( 'did-fail-load' , markViewReady );
 		
 		mutate( s => {
-			s.AIViews.push( {
-				id : ai.id ,
-				label : ai.label ,
-				AIName : ai.AI_family ,
-				view ,
-				domain : ai.url || getAIDomainByFamily( ai.AI_family ) ,
-				partition : getAIPartition( ai.id ) ,
-				config : ai ,
-				proxyKey : '',
-				appearanceKey,
-			} );
+			s.AIViews.push( nextRuntimeView );
 		} );
 		
 		return view;
@@ -115,27 +128,27 @@ export const reaxel_AIViews = reaxel( () => {
 			const runtimeView = store.AIViews.find( item => item.id === ai.id );
 			if( runtimeView ) {
 				await updateRuntimeAIView( runtimeView , ai , settings );
+				continue;
 			}
 			if( ai.preloadOnStartup || ai.id === Reaxel_View.store.currentAIViewKey ) {
-				await initAIView( ai , settings );
+				initAIView( ai , settings );
 			}
 		}
 		
 		applyVisibility();
 	};
 	
-	const showAIView = async( aiId:string , settings:Settings ) => {
+	const showAIView = ( aiId:string , settings:Settings ) => {
 		const ai = settings.AIs.find( item => item.id === aiId && !item.disabled );
 		if( !ai ) {
 			return null;
 		}
-		const view = await initAIView( ai , settings );
 		Reaxel_View.setState( {
 			currentAIViewKey : ai.id ,
 			settingsViewOpened : false,
 		} );
+		const view = initAIView( ai , settings );
 		applyVisibility();
-		view.webContents.focus();
 		return view;
 	};
 	
@@ -148,7 +161,7 @@ export const reaxel_AIViews = reaxel( () => {
 			const visible = !Reaxel_View.store.settingsViewOpened && runtimeView.id === currentAIViewKey;
 			runtimeView.view.setVisible( visible );
 			if( visible ) {
-				runtimeView.view.webContents.focus();
+				focusRuntimeAIViewIfReady( runtimeView );
 			}
 		} );
 	};
@@ -193,8 +206,10 @@ const updateRuntimeAIView = async(
 	runtimeView.appearanceKey = nextAppearanceKey;
 	
 	if( domainChanged ) {
-		await safeLoadAIURL( runtimeView.view , nextDomain , `domainChanged:${ runtimeView.id }` );
+		runtimeView.ready = false;
+		void safeLoadAIURL( runtimeView.view , nextDomain , `domainChanged:${ runtimeView.id }` );
 	} else if( proxyChanged || appearanceChanged ) {
+		runtimeView.ready = false;
 		runtimeView.view.webContents.reloadIgnoringCache();
 	}
 };
@@ -226,6 +241,31 @@ const getAIPartition = (aiId:string) => {
 	return `persist:ai-webapp-ai-${ aiId.replace( /[^a-zA-Z0-9_-]/g , '_' ) }`;
 };
 
+const focusRuntimeAIViewIfReady = (runtimeView:RuntimeAIView) => {
+	if( !runtimeView.ready ) {
+		return;
+	}
+	focusAIViewIfReady( runtimeView.view );
+};
+
+const focusAIViewIfReady = (view:WebContentsView) => {
+	if( view.webContents.isDestroyed() || view.webContents.isLoading() ) {
+		return;
+	}
+	view.webContents.focus();
+};
+
+const focusAIViewIfCurrent = (aiId:string , view:WebContentsView) => {
+	if(
+		Reaxel_View.store.currentAIViewKey !== aiId
+		|| Reaxel_View.store.settingsViewOpened
+		|| !mainWindow.isFocused()
+	) {
+		return;
+	}
+	focusAIViewIfReady( view );
+};
+
 export type RuntimeAIView = {
 	id: string;
 	label: string;
@@ -236,6 +276,7 @@ export type RuntimeAIView = {
 	config: AI.AIItem;
 	proxyKey: string;
 	appearanceKey: string;
+	ready: boolean;
 };
 
 import { getAIDomainByFamily } from './data';

@@ -14,15 +14,44 @@ export interface AIConfigFile {
 
 const cloneData = <T>(data:T):T => JSON.parse( JSON.stringify( data ) );
 
-const normalizeAI = (ai:AI.AIItem):AI.AIItem => ( {
-	...ai ,
-	disabled : ai.disabled === true ,
-	url_override : ai.url_override || null ,
-	proxy_mode : ai.proxy_mode || 'follow_global_setting' ,
-	from_server_list_proxy : ai.from_server_list_proxy || null ,
-	user_fill_proxy : ai.user_fill_proxy || null ,
-	preloadOnStartup : ai.preloadOnStartup === true,
-} );
+const AI_FAMILY_DEFAULT_URLS:Record<AI.AIFamily , string> = {
+	chatgpt : 'https://chatgpt.com' ,
+	grok : 'https://grok.com' ,
+	gemini : 'https://gemini.google.com' ,
+	deepseek : 'https://chat.deepseek.com' ,
+	perplexity : 'https://www.perplexity.ai' ,
+	claude : 'https://claude.ai' ,
+	custom : '' ,
+	'dev-proxy-test' : 'https://whatismyipaddress.com/',
+};
+
+const normalizeAIFamily = (ai:AI.AIItem):AI.AIFamily => {
+	const family = ai.AI_family;
+	if( family && Object.prototype.hasOwnProperty.call( AI_FAMILY_DEFAULT_URLS , family ) ) {
+		const defaultUrl = AI_FAMILY_DEFAULT_URLS[family];
+		if( family !== 'custom' && ai.id?.startsWith( 'custom-' ) && ai.url && ai.url !== defaultUrl ) {
+			return 'custom';
+		}
+		return family;
+	}
+	return 'custom';
+};
+
+const normalizeAI = (ai:AI.AIItem):AI.AIItem => {
+	const family = normalizeAIFamily( ai );
+	return {
+		...ai ,
+		label : ai.label || ( family === 'custom' ? 'Custom AI' : family ) ,
+		AI_family : family ,
+		url : ai.url || AI_FAMILY_DEFAULT_URLS[family] ,
+		disabled : ai.disabled === true ,
+		url_override : family === 'custom' ? null : ai.url_override || null ,
+		proxy_mode : ai.proxy_mode || 'follow_global_setting' ,
+		from_server_list_proxy : ai.from_server_list_proxy || null ,
+		user_fill_proxy : ai.user_fill_proxy || null ,
+		preloadOnStartup : ai.preloadOnStartup === true,
+	};
+};
 
 class AIConfigService {
 	private userConfigPath:string;

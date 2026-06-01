@@ -88,6 +88,8 @@ export const reaxel_FloatingLayer = reaxel( () => {
 		mainWindow.on( 'unmaximize' , syncBounds );
 		mainWindow.on( 'restore' , showLayerWindow );
 		mainWindow.on( 'show' , showLayerWindow );
+		mainWindow.on( 'focus' , showLayerWindow );
+		mainWindow.on( 'blur' , hideLayerWindow );
 		mainWindow.on( 'hide' , hideLayerWindow );
 		mainWindow.on( 'minimize' , hideLayerWindow );
 		mainWindow.on( 'closed' , () => {

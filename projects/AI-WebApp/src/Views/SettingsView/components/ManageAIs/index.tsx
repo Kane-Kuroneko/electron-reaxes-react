@@ -24,7 +24,7 @@ const columns:TableColumnType<AI.AIItem>[] = [
 		},
 	} ,
 	{
-		title : <I18n>App name</I18n> ,
+		title : <I18n>AI name</I18n> ,
 		dataIndex : 'label' ,
 		render( _value , record ) {
 			const { isNewAI , isModifiedAI } = reaxel_SettingsView();
@@ -42,11 +42,11 @@ const columns:TableColumnType<AI.AIItem>[] = [
 		},
 	} ,
 	{
-		title : <I18n>Family</I18n> ,
+		title : <I18n>AI family</I18n> ,
 		dataIndex : 'AI_family',
 	} ,
 	{
-		title : <I18n>Url</I18n> ,
+		title : <I18n>AI URL</I18n> ,
 		dataIndex : 'url' ,
 		ellipsis : true,
 	} ,
@@ -243,18 +243,23 @@ const EditAIModal = reaxper( () => {
 		}
 	} , [store.visible] );
 	
-	// 显示的URL: 如果有url_override则显示它，否则显示当前family的默认URL
-	const displayUrl = fields.url_override || defaultURLByFamily( fields.AI_family );
+	const isCustomFamily = fields.AI_family === 'custom';
+	// 内置 family 的 URL 可选择覆盖; custom family 的 URL 直接属于当前 AI 实例.
+	const displayUrl = isCustomFamily ? fields.url : fields.url_override || defaultURLByFamily( fields.AI_family );
 	
 	const handleSave = () => {
-		const effectiveUrl = fields.url_override || defaultURLByFamily( fields.AI_family );
+		const effectiveUrl = ( isCustomFamily ? fields.url : fields.url_override || defaultURLByFamily( fields.AI_family ) ).trim();
+		if( !effectiveUrl ) {
+			message.error( i18n( 'URL is required for custom AI' ) );
+			return;
+		}
 		const nextAI:AI.AIItem = {
 			id : store.editing_id || createAIId() ,
-			label : fields.label?.trim() || fields.AI_family ,
+			label : fields.label?.trim() || ( isCustomFamily ? 'Custom AI' : fields.AI_family ) ,
 			disabled : false ,
 			AI_family : fields.AI_family ,
 			url : effectiveUrl ,
-			url_override : fields.url_override ,
+			url_override : isCustomFamily ? null : fields.url_override ,
 			desc : fields.desc ,
 			preloadOnStartup : fields.preloadOnStartup === true ,
 			proxy_mode : fields.proxy_mode ,
@@ -282,7 +287,9 @@ const EditAIModal = reaxper( () => {
 	};
 	
 	// URL尾部按钮组
-	const urlSuffix = urlEditing
+	const urlSuffix = isCustomFamily
+		? null
+		: urlEditing
 		? <Space size={ 4 }>
 			<Button
 				type="link"
@@ -341,7 +348,7 @@ const EditAIModal = reaxper( () => {
 		width={ 520 }
 	>
 		<Form layout="vertical" style={ { marginTop : 16 } }>
-			<Form.Item label={<I18n>App name</I18n>}>
+			<Form.Item label={<I18n>AI name</I18n>}>
 				<Input
 					value={ fields.label }
 					onChange={ event => {
@@ -349,13 +356,14 @@ const EditAIModal = reaxper( () => {
 					} }
 				/>
 			</Form.Item>
-			<Form.Item label={<I18n>App family</I18n>}>
+			<Form.Item label={<I18n>AI family</I18n>}>
 				<Select
 					value={ fields.AI_family }
 					onChange={ value => {
-						// 切换family时，重置url_override并自动切换显示默认URL
+						const defaultUrl = defaultURLByFamily( value );
 						setState.fields( {
 							AI_family : value ,
+							url : defaultUrl ,
 							url_override : null,
 						} );
 						setUrlEditing( false );
@@ -369,11 +377,18 @@ const EditAIModal = reaxper( () => {
 					) ) }
 				</Select>
 			</Form.Item>
-			<Form.Item label={<I18n>App url</I18n>}>
+			<Form.Item label={<I18n>AI URL</I18n>}>
 				<Input
 					value={ urlEditing ? urlDraft : displayUrl }
-					disabled={ !urlEditing }
+					disabled={ !isCustomFamily && !urlEditing }
 					onChange={ event => {
+						if( isCustomFamily ) {
+							setState.fields( {
+								url : event.target.value ,
+								url_override : null,
+							} );
+							return;
+						}
 						setUrlDraft( event.target.value );
 					} }
 					suffix={ urlSuffix }
@@ -578,8 +593,10 @@ const defaultURLByFamily = (family:AI.AIFamily) => {
 		gemini : 'https://gemini.google.com' ,
 		deepseek : 'https://chat.deepseek.com' ,
 		perplexity : 'https://www.perplexity.ai' ,
+		claude : 'https://claude.ai' ,
+		custom : '' ,
 		'dev-proxy-test' : 'https://whatismyipaddress.com/',
-	}[family] || 'https://chatgpt.com';
+	}[family] ?? 'https://chatgpt.com';
 };
 
 interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
@@ -743,6 +760,7 @@ import {
 	Form ,
 	Input ,
 	InputNumber ,
+	message ,
 	Modal ,
 	Radio ,
 	Segmented ,

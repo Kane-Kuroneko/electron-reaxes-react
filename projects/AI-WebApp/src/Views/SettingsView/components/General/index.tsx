@@ -26,25 +26,10 @@ export const RCGeneralPanel = reaxper(() => {
 		<div className="section-title"><I18n>Language</I18n></div>
 		<Form layout="vertical">
 			<Form.Item>
-				<Select
+				<RCLanguageSelect
 					value={ appearanceStore.language }
 					onChange={ handleLanguageChange }
-					options={[
-						{
-							value : 'follow-system' ,
-							label : <span>
-								<I18n>Follow System</I18n>
-								<br />
-								<span className="select-option-subtitle">{ getLanguageDisplayName( environmentStore.systemLanguage ) }</span>
-							</span>,
-						} ,
-						{ value : 'en-US' , label : 'English' },
-						{ value : 'zh-CN' , label : '简体中文' },
-						{ value : 'zh-TW' , label : '正體中文' },
-						{ value : 'ja-JP' , label : '日本語' },
-						{ value : 'ko-KR' , label : '한국어' },
-					]}
-					style={{minWidth : '200px'}}
+					systemLanguage={ environmentStore.systemLanguage }
 				/>
 			</Form.Item>
 		</Form>
@@ -111,8 +96,8 @@ export const RCGeneralPanel = reaxper(() => {
 
 import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
 import { reaxel_I18n } from "#src/Views/SettingsView/reaxels/i18n";
+import { RCLanguageSelect } from '../LanguageSelect';
 import {
-	getLanguageDisplayName ,
 	resolveLanguagePreference ,
 	resolveThemePreference,
 } from '#src/shared/appearance';
@@ -120,7 +105,6 @@ import {
 	Checkbox ,
 	Form ,
 	Radio ,
-	Select ,
 	Space ,
 } from 'antd';
 import { reaxper } from 'reaxes-react';

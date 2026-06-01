@@ -149,19 +149,22 @@ const saveGuidingProgress = (progress:Guiding.Progress) => {
 
 const sanitizeGuidingAIs = (ais:AI.AIItem[]) => {
 	const fallbackProxy = createDefaultProxyConf();
-	return ais.map( ai => ( {
-		id : ai.id || `guiding-ai-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 , 8 ) }` ,
-		label : ai.label || 'Custom AI' ,
-		disabled : ai.disabled === true ,
-		AI_family : ai.AI_family || 'chatgpt' ,
-		url : ai.url || 'https://chatgpt.com' ,
-		url_override : ai.url_override || null ,
-		desc : ai.desc || '' ,
-		proxy_mode : ai.proxy_mode || 'follow_global_setting' ,
-		from_server_list_proxy : ai.from_server_list_proxy || null ,
-		user_fill_proxy : ai.user_fill_proxy || fallbackProxy ,
-		preloadOnStartup : ai.preloadOnStartup === true,
-	} ) );
+	return ais.map( ai => {
+		const family = ai.AI_family || 'custom';
+		return {
+			id : ai.id || `guiding-ai-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 , 8 ) }` ,
+			label : ai.label || 'Custom AI' ,
+			disabled : ai.disabled === true ,
+			AI_family : family ,
+			url : ai.url || getAIDomainByFamily( family ) ,
+			url_override : ai.url_override || null ,
+			desc : ai.desc || '' ,
+			proxy_mode : ai.proxy_mode || 'follow_global_setting' ,
+			from_server_list_proxy : ai.from_server_list_proxy || null ,
+			user_fill_proxy : ai.user_fill_proxy || fallbackProxy ,
+			preloadOnStartup : ai.preloadOnStartup === true,
+		};
+	} );
 };
 
 const connectivityTargets = [
@@ -235,6 +238,7 @@ import {
 	normalizeRuntimeSettings,
 } from '#main/services/settings/settings-config-service';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';
+import { getAIDomainByFamily } from '#main/reaxels/Views/AI-Views/data';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
 import type { Guiding } from '#src/Types/Guiding';
 import { AI } from '#src/Types/SettingsTypes/AI';

@@ -4,6 +4,7 @@
 install();
 
 setAppProfilePath();
+applyPendingDevCleanStart();
 
 export const isFirstLaunchWithoutUserData = !fs.existsSync( app.getPath( 'userData' ) );
 
@@ -63,6 +64,7 @@ import process from 'node:process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { setAppProfilePath } from "#main/foundation/debug/app-data-path";
+import { applyPendingDevCleanStart } from '#main/services/dev/clean-start';
 import {
 	normalizeConcreteLanguage ,
 	normalizeLanguagePreference ,

@@ -32,25 +32,10 @@ export const RCAppearancePanel = reaxper(() => {
 				</Radio.Group>
 			</Form.Item>
 			<Form.Item label={<I18n>Language</I18n>}>
-				<Select
+				<RCLanguageSelect
 					value={ store.language }
 					onChange={ handleLanguageChange }
-					options={[
-						{
-							value : 'follow-system' ,
-							label : <span>
-								<I18n>Follow System</I18n>
-								<br />
-								<span className="select-option-subtitle">{ getLanguageDisplayName( environmentStore.systemLanguage ) }</span>
-							</span>,
-						} ,
-						{ value : 'en-US' , label : 'English' },
-						{ value : 'zh-CN' , label : '简体中文' },
-						{ value : 'zh-TW' , label : '正體中文' },
-						{ value : 'ja-JP' , label : '日本語' },
-						{ value : 'ko-KR' , label : '한국어' },
-					]}
-					style={{minWidth : '200px'}}
+					systemLanguage={ environmentStore.systemLanguage }
 				/>
 			</Form.Item>
 		</Form>
@@ -59,15 +44,14 @@ export const RCAppearancePanel = reaxper(() => {
 
 import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
 import { reaxel_I18n } from "#src/Views/SettingsView/reaxels/i18n";
+import { RCLanguageSelect } from '../LanguageSelect';
 import {
-	getLanguageDisplayName ,
 	resolveLanguagePreference ,
 	resolveThemePreference,
 } from '#src/shared/appearance';
 import {
 	Form ,
 	Radio ,
-	Select ,
 } from 'antd';
 import { reaxper } from 'reaxes-react';
 import { Appearance } from "#src/Types/SettingsTypes/Appearance";

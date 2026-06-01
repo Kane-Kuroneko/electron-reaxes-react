@@ -21,6 +21,16 @@ export const reaxel_Settings = reaxel( () => {
 		hasUserModifications : settingsConfigService.hasUserModifications() || aiConfigService.hasUserModifications(),
 	} );
 	
+	const reloadFromDisk = ():Settings => {
+		const persistedSettings = settingsConfigService.getEffectiveSettings();
+		mutate( s => {
+			s.networks = cloneData( persistedSettings.networks );
+			s.system = cloneData( persistedSettings.system );
+			s.appearance = cloneData( persistedSettings.appearance );
+		} );
+		return getCurrentSettings();
+	};
+
 	const syncRuntimeViews = async() => {
 		const settings = getCurrentSettings();
 		await reaxel_AIViews().syncAIViewsWithConfig( settings );
@@ -173,7 +183,8 @@ export const reaxel_Settings = reaxel( () => {
 
 	const rtn = {
 		getCurrentSettings ,
-		applySettings,
+		applySettings ,
+		reloadFromDisk,
 	};
 	
 	return Object.assign( () => rtn , {

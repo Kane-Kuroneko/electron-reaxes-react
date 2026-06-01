@@ -344,8 +344,8 @@ function defaultProxyServers():NetworkProxy.ProxyServer.Server[] {
 function defaultAIFields():AI.EditAIItem {
 	return {
 		label : '' ,
-		AI_family : checkAs<AI.AIFamily>( 'chatgpt' ) ,
-		url : 'https://chatgpt.com' ,
+		AI_family : checkAs<AI.AIFamily>( 'custom' ) ,
+		url : '' ,
 		url_override : null ,
 		desc : '' ,
 		preloadOnStartup : false ,

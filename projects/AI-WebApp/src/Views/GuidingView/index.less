@@ -5,7 +5,8 @@
 	--guide-muted: #5d6b7c;
 	--guide-border: #dce3eb;
 	--guide-soft: #eef4fa;
-	--guide-custom-card: rgba(244, 247, 251, 0.86);
+	--guide-custom-card: rgba(246, 247, 249, 0.96);
+	--guide-custom-card-hover: rgba(250, 251, 253, 0.98);
 	--guide-shadow: rgba(24, 33, 45, 0.12);
 	--guide-hover-shadow: rgba(24, 33, 45, 0.18);
 	color-scheme: light;
@@ -18,7 +19,8 @@
 	--guide-muted: #a6b2c0;
 	--guide-border: #303946;
 	--guide-soft: #222b35;
-	--guide-custom-card: rgba(33, 40, 49, 0.88);
+	--guide-custom-card: rgba(33, 40, 49, 0.9);
+	--guide-custom-card-hover: rgba(39, 48, 59, 0.96);
 	--guide-shadow: rgba(0, 0, 0, 0.34);
 	--guide-hover-shadow: rgba(0, 0, 0, 0.42);
 	color-scheme: dark;
@@ -53,11 +55,13 @@ body {
 
 .guiding-shell {
 	width: min(100%, 1080px);
+	height: 100vh;
 	min-height: 100vh;
 	background: var(--guide-shell);
 	box-shadow: 0 12px 32px var(--guide-shadow);
 	display: grid;
 	grid-template-rows: auto 1fr auto;
+	overflow: hidden;
 }
 
 .guiding-header {
@@ -87,6 +91,7 @@ body {
 .guiding-content {
 	padding: 28px 36px;
 	overflow: auto;
+	min-height: 0;
 }
 
 .guiding-page {
@@ -214,6 +219,7 @@ body {
 
 .custom-ai-card:hover {
 	border-color: rgba(64, 120, 192, 0.42);
+	background: var(--guide-custom-card-hover);
 	box-shadow: 0 12px 28px var(--guide-hover-shadow);
 	backdrop-filter: blur(10px);
 	transform: translateY(-1px);
@@ -242,6 +248,8 @@ body {
 	display: flex;
 	align-items: center;
 	gap: 12px;
+	flex-shrink: 0;
+	flex-wrap: wrap;
 }
 
 .footer-spacer {

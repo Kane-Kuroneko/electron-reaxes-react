@@ -5,6 +5,8 @@ export const AIKeys: AI.AIFamily[] = [
 	"gemini",
 	"deepseek",
 	"perplexity",
+	"claude",
+	"custom",
 	"dev-proxy-test",
 ];
 
@@ -40,6 +42,18 @@ export const AIData = [
 		AIName : checkAs<AI.AIFamily>('perplexity'),
 		domain : "https://www.perplexity.ai",
 		browser_name : "perplexity_window" as const,
+	},
+	{
+		label : "Claude" as const,
+		AIName : checkAs<AI.AIFamily>('claude'),
+		domain : "https://claude.ai",
+		browser_name : "claude_window" as const,
+	},
+	{
+		label : "Custom AI" as const,
+		AIName : checkAs<AI.AIFamily>('custom'),
+		domain : "",
+		browser_name : "custom_window" as const,
 	},
 	{
 		label : "AI-Web (Proxy Test)" as const,
