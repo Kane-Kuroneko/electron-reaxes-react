@@ -74,7 +74,9 @@ export const reaxel_Menu = reaxel( () => {
 								return;
 							}
 							const currentAIView = reaxel_AIViews().currentAIView;
-							currentAIView?.view.webContents.loadURL( currentAIView.domain );
+							currentAIView?.view.webContents.loadURL( currentAIView.domain ).catch( error => {
+								console.warn( '[Menu] Force reload loadURL failed:' , currentAIView.domain , error );
+							} );
 						} ,
 					} ,
 					{

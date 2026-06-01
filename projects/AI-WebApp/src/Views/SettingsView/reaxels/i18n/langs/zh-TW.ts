@@ -36,6 +36,7 @@ export default {
 	"Exit Without Save" : "不儲存離開" ,
 	"Apply" : "套用" ,
 	"Save & Exit" : "儲存並離開" ,
+	"Clean Start" : "乾淨啟動" ,
 	
 	// Dialogs
 	"Restart required" : "需要重新啟動" ,

@@ -36,6 +36,7 @@ export default {
 	"Exit Without Save" : "不保存退出" ,
 	"Apply" : "应用" ,
 	"Save & Exit" : "保存并退出" ,
+	"Clean Start" : "干净启动" ,
 	
 	// Dialogs
 	"Restart required" : "需要重启" ,

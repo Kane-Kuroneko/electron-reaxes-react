@@ -36,6 +36,7 @@ export default {
 	"Exit Without Save" : "保存せずに終了" ,
 	"Apply" : "適用" ,
 	"Save & Exit" : "保存して終了" ,
+	"Clean Start" : "クリーン起動" ,
 	
 	// Dialogs
 	"Restart required" : "再起動が必要です" ,

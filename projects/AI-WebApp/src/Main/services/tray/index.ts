@@ -58,7 +58,14 @@ export function updateTrayMenu() {
 		{
 			label : t('Quit') ,
 			click : () => {
-				app.quit();
+				( app as any ).__aiWebAppQuitting = true;
+				destroyTray();
+				BrowserWindow.getAllWindows().forEach( win => {
+					if( !win.isDestroyed() ) {
+						win.destroy();
+					}
+				} );
+				app.exit( 0 );
 			},
 		},
 	] );

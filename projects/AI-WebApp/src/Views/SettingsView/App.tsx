@@ -46,6 +46,15 @@ export const App = reaxper( () => {
 				</div>
 			</div>
 			<div className="settings-footer">
+				{ __DEV__ && <LongPressButton
+					danger
+					onConfirm={ async() => {
+						const result = await devCleanStart();
+						if( !result.success ) {
+							message.error( result.error || 'Clean start failed' );
+						}
+					} }
+				><I18n>Clean Start</I18n></LongPressButton> }
 				<Button
 					type="dashed"
 					disabled={ !dirty }
@@ -85,6 +94,55 @@ export const App = reaxper( () => {
 	</ConfigProvider>;
 } );
 
+const LongPressButton = (props:any) => {
+	const {
+		onConfirm ,
+		...buttonProps
+	} = props;
+	const [ holding , setHolding ] = useState( false );
+	const [ progress , setProgress ] = useState( 0 );
+	const timerRef = useRef<ReturnType<typeof setInterval>>( null );
+	const startedAt = useRef( 0 );
+	const holdMs = 900;
+
+	const stop = () => {
+		if( timerRef.current ) {
+			clearInterval( timerRef.current );
+			timerRef.current = null;
+		}
+		setHolding( false );
+		setProgress( 0 );
+	};
+
+	const start = () => {
+		if( buttonProps.loading || timerRef.current ) return;
+		startedAt.current = Date.now();
+		setHolding( true );
+		timerRef.current = setInterval( () => {
+			const nextProgress = Math.min( 1 , ( Date.now() - startedAt.current ) / holdMs );
+			setProgress( nextProgress );
+			if( nextProgress >= 1 ) {
+				stop();
+				onConfirm?.();
+			}
+		} , 16 );
+	};
+
+	return <Button
+		{ ...buttonProps }
+		onMouseDown={ start }
+		onMouseUp={ stop }
+		onMouseLeave={ stop }
+		onTouchStart={ start }
+		onTouchEnd={ stop }
+		className={ `${ buttonProps.className || '' } long-press-button ${ holding ? 'is-holding' : '' }` }
+		style={ {
+			...buttonProps.style ,
+			'--hold-progress' : progress,
+		} as any }
+	/>;
+};
+
 const showApplyResult = (result:SettingsApplyResult) => {
 	if( !result.success ) {
 		message.error( result.error || 'Failed to apply settings' );
@@ -108,6 +166,7 @@ const showApplyResult = (result:SettingsApplyResult) => {
 import { RCGeneralPanel } from './components/General';
 import { RCManageAIsPanel } from './components/ManageAIs';
 import { RCNetworkPanel } from './components/Network';
+import { devCleanStart } from './services/Settings';
 import { resolveThemePreference } from '#src/shared/appearance';
 import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
 import type { SettingsApplyResult } from "#src/Types/SettingsTypes";

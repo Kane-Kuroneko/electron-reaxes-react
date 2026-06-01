@@ -4,6 +4,7 @@ let closeHandlerBound = false;
 export const isMainRuntimeStarted = () => mainRuntimeStarted;
 
 export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) => {
+	console.log( '[Runtime] startMainRuntime:' , options );
 	const win = await createMainWindow();
 	const settings = getSettingsConfigService().getEffectiveSettings();
 	
@@ -39,6 +40,9 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 		if( !closeHandlerBound ) {
 			closeHandlerBound = true;
 			win.on( 'close' , event => {
+				if( ( app as any ).__aiWebAppQuitting ) {
+					return;
+				}
 				const currentSettings = getSettingsConfigService().getEffectiveSettings();
 				if( currentSettings.system.show_tray && currentSettings.system.close_to_tray ) {
 					event.preventDefault();
@@ -48,9 +52,10 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 		}
 		
 		await Reaxel_View().initRuntimeViews();
+		console.log( '[Runtime] runtime views initialized.' );
 	}
 	
-	if( options.openSettings || dev() ) {
+	if( options.openSettings ) {
 		openSettingsView( options.openDevTools ?? dev() );
 	}
 	
@@ -97,3 +102,4 @@ import {
 	resolveLanguagePreference,
 } from '#src/shared/appearance';
 import { dev } from 'electron-is';
+import { app } from 'electron';

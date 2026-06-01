@@ -30,6 +30,7 @@ const getGuidingDefaults = useRpc('get-guiding-defaults');
 const guidingSaveProgress = useRpc('guiding-save-progress');
 const guidingTestConnectivity = useRpc('guiding-test-connectivity');
 const guidingFinish = useRpc('guiding-finish');
+const devCleanStart = useRpc('dev-clean-start');
 
 const api = {
 	fetchSettings ,
@@ -54,6 +55,7 @@ const api = {
 	guidingSaveProgress,
 	guidingTestConnectivity,
 	guidingFinish,
+	devCleanStart,
 };
 export type API = typeof api;
 

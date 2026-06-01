@@ -30,12 +30,18 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	'guiding-save-progress': IpcStructure.IpcRpc<[progress: Guiding.Progress], { success: boolean }>;
 	'guiding-test-connectivity': IpcStructure.IpcRpc<[void], Guiding.ConnectivityResult>;
 	'guiding-finish': IpcStructure.IpcRpc<[options: Guiding.FinishOptions], { success: boolean }>;
+	'dev-clean-start': IpcStructure.IpcRpc<[void], DevCleanStartResult>;
 }
 type MainToRendererReply<K extends keyof MainToRendererEvents> = ReplyFromMtrEvents<MainToRendererEvents , K>;
 type AppearanceEnvironment = {
 	systemLanguage: Languages;
 	systemTheme: 'light' | 'dark';
 	systemLanguageName: string;
+};
+type DevCleanStartResult = {
+	success: boolean;
+	userDataPath: string;
+	error?: string;
 };
 
 import {

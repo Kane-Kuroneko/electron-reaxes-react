@@ -51,6 +51,10 @@ export const getAppearanceEnvironment = () => {
 	return api.getAppearanceEnvironment();
 }
 
+export const devCleanStart = () => {
+	return api.devCleanStart();
+}
+
 export const createSettingsIpcService = () => {
 	return {
 		async submitSettings ( path: PatchPath<Settings> , partialSettings: PatchData<PatchPath<Settings> , Settings> ){
@@ -71,6 +75,7 @@ export const createSettingsIpcService = () => {
 		turnToNextAiPage,
 		turnToPreviousAiPage,
 		getAppearanceEnvironment,
+		devCleanStart,
 	};
 };
 

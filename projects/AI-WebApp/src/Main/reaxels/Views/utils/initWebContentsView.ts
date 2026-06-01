@@ -5,6 +5,9 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	
 	const viewOptions = normalizeViewOptions( options );
 	const view = new WebContentsView(viewOptions);
+	if( dev() ) {
+		useBeautifulDevtool( view );
+	}
 	view.webContents.setVisualZoomLevelLimits(1,5);
 	mainWindow.contentView.addChildView(view);
 	
@@ -53,28 +56,66 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 
 const useSettingsView = (view:WebContentsView,options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
 	if(dev()){
-		view.webContents.loadURL(`https://localhost:${__DEV_PORT__}/SettingsView`)
+		~async function loadDevSettingsView() {
+			const loaded = await safeLoadURL( view , `https://localhost:${__DEV_PORT__}/SettingsView` , 'Settings-View' );
+			if( !loaded ) {
+				await safeLoadFile( view , path.join( absAppRunningPath , './renderer/SettingsView/index.html' ) , 'Settings-View fallback' );
+			}
+		}();
 	}else {
-		view.webContents.loadFile(path.join(absAppRunningPath,`./renderer/SettingsView/index.html`))
+		void safeLoadFile( view , path.join(absAppRunningPath,`./renderer/SettingsView/index.html`) , 'Settings-View' );
 	}
 	
 }
 const useAIView = (view:WebContentsView,options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
 	view.webContents.setWindowOpenHandler(({ url }) => {
 		if( shouldOpenInCurrentView( view.webContents.getURL() || options.domain , url ) ) {
-			view.webContents.loadURL( url );
+			void safeLoadURL( view , url , `AI-View popup:${ options.aiConfig?.id || 'unknown' }` );
 			return { action : 'deny' };
 		}
 		shell.openExternal(url);
 		return { action: 'deny' };
 	});
 	~async function loadAIView() {
-		if( options.aiConfig && options.settings ) {
-			await applyAIProxyToView( view , options.aiConfig , options.settings );
-			applyAIPageAppearanceToView( view , options.settings.appearance );
+		try {
+			console.log( '[Views] Loading AI view:' , options.aiConfig?.id , options.domain );
+			if( options.aiConfig && options.settings ) {
+				await applyAIProxyToView( view , options.aiConfig , options.settings );
+				applyAIPageAppearanceToView( view , options.settings.appearance );
+			}
+			await safeLoadURL( view , options.domain || "https://chatgpt.com" , `AI-View:${ options.aiConfig?.id || 'unknown' }` );
+		} catch ( error ) {
+			console.warn( '[Views] AI view load pipeline failed:' , options.aiConfig?.id , error );
 		}
-		await view.webContents.loadURL( options.domain || "https://chatgpt.com" );
 	}();
+};
+
+const safeLoadURL = async(
+	view:WebContentsView ,
+	url:string ,
+	context:string,
+) => {
+	try {
+		await view.webContents.loadURL( url );
+		return true;
+	} catch ( error ) {
+		console.warn( `[Views] ${ context } loadURL failed:` , url , error );
+		return false;
+	}
+};
+
+const safeLoadFile = async(
+	view:WebContentsView ,
+	filePath:string ,
+	context:string,
+) => {
+	try {
+		await view.webContents.loadFile( filePath );
+		return true;
+	} catch ( error ) {
+		console.warn( `[Views] ${ context } loadFile failed:` , filePath , error );
+		return false;
+	}
 };
 
 const normalizeViewOptions = (options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
@@ -115,6 +156,7 @@ import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {dev} from 'electron-is';
 import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 import { applyAIProxyToView } from "#main/services/settings/proxy-service";
+import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import {
 	applyAIPageAppearanceToView ,
 	getAIPagePreloadArguments,

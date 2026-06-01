@@ -5,7 +5,9 @@
 	--guide-muted: #5d6b7c;
 	--guide-border: #dce3eb;
 	--guide-soft: #eef4fa;
+	--guide-custom-card: rgba(244, 247, 251, 0.86);
 	--guide-shadow: rgba(24, 33, 45, 0.12);
+	--guide-hover-shadow: rgba(24, 33, 45, 0.18);
 	color-scheme: light;
 }
 
@@ -16,7 +18,9 @@
 	--guide-muted: #a6b2c0;
 	--guide-border: #303946;
 	--guide-soft: #222b35;
+	--guide-custom-card: rgba(33, 40, 49, 0.88);
 	--guide-shadow: rgba(0, 0, 0, 0.34);
+	--guide-hover-shadow: rgba(0, 0, 0, 0.42);
 	color-scheme: dark;
 }
 
@@ -188,10 +192,48 @@ body {
 	gap: 10px;
 }
 
-.custom-ai-list {
-	display: flex;
-	gap: 8px;
-	flex-wrap: wrap;
+.custom-ai-cards {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.custom-ai-card {
+	border: 1px dashed var(--guide-border);
+	border-radius: 8px;
+	padding: 12px;
+	background: var(--guide-custom-card);
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 12px;
+	align-items: center;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+	backdrop-filter: blur(4px);
+	transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease, backdrop-filter 160ms ease;
+}
+
+.custom-ai-card:hover {
+	border-color: rgba(64, 120, 192, 0.42);
+	box-shadow: 0 12px 28px var(--guide-hover-shadow);
+	backdrop-filter: blur(10px);
+	transform: translateY(-1px);
+}
+
+.custom-ai-card__body {
+	min-width: 0;
+}
+
+.custom-ai-card__body span {
+	display: block;
+	font-weight: 600;
+	color: var(--guide-text);
+}
+
+.custom-ai-card__body small {
+	display: block;
+	color: var(--guide-muted);
+	margin-top: 4px;
+	overflow-wrap: anywhere;
 }
 
 .guiding-footer {
@@ -232,7 +274,8 @@ body {
 	.guiding-controls,
 	.intro-grid,
 	.ai-grid,
-	.custom-ai {
+	.custom-ai,
+	.custom-ai-cards {
 		grid-template-columns: 1fr;
 	}
 	

@@ -18,7 +18,12 @@ applyPreLaunchSettings();
 
 // 监听应用退出前事件
 app.on('before-quit', () => {
-	BrowserWindow.getAllWindows()?.[0]?.destroy();
+	( app as any ).__aiWebAppQuitting = true;
+	BrowserWindow.getAllWindows().forEach( win => {
+		if( !win.isDestroyed() ) {
+			win.destroy();
+		}
+	} );
 });
 
 function applyPreLaunchSettings() {

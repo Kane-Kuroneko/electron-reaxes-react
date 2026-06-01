@@ -8,6 +8,7 @@ export const reaxel_AIViews = reaxel( () => {
 	} );
 	
 	const initAIView = async( ai:AI.AIItem , settings:Settings ) => {
+		console.log( '[AIViews] initAIView start:' , ai.id , ai.url || getAIDomainByFamily( ai.AI_family ) );
 		let runtimeView = store.AIViews.find( item => item.id === ai.id );
 		if( runtimeView?.view ) {
 			await updateRuntimeAIView( runtimeView , ai , settings );
@@ -95,6 +96,7 @@ export const reaxel_AIViews = reaxel( () => {
 	};
 	
 	const syncAIViewsWithConfig = async( settings:Settings ) => {
+		console.log( '[AIViews] syncAIViewsWithConfig start. AI count:' , settings.AIs.length );
 		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
 		const activeIds = new Set( activeAIs.map( ai => ai.id ) );
 		
@@ -191,9 +193,21 @@ const updateRuntimeAIView = async(
 	runtimeView.appearanceKey = nextAppearanceKey;
 	
 	if( domainChanged ) {
-		await runtimeView.view.webContents.loadURL( nextDomain );
+		await safeLoadAIURL( runtimeView.view , nextDomain , `domainChanged:${ runtimeView.id }` );
 	} else if( proxyChanged || appearanceChanged ) {
 		runtimeView.view.webContents.reloadIgnoringCache();
+	}
+};
+
+const safeLoadAIURL = async(
+	view:WebContentsView ,
+	url:string ,
+	context:string,
+) => {
+	try {
+		await view.webContents.loadURL( url );
+	} catch ( error ) {
+		console.warn( '[AIViews] loadURL failed:' , context , url , error );
 	}
 };
 

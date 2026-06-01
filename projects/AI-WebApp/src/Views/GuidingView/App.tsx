@@ -73,12 +73,10 @@ export const App = reaxper( () => {
 		}
 		if( page === 1 ) {
 			await saveProgress( progress );
-			setPage( 2 );
+			if( canDirectConnect ) {
+				setPage( 2 );
+			}
 			return;
-		}
-		if( page === 2 && canDirectConnect ) {
-			await saveProgress( progress );
-			setPage( 3 );
 		}
 	};
 	
@@ -221,19 +219,6 @@ export const App = reaxper( () => {
 						</div> }
 					</section> }
 					
-					{ page === 2 && canDirectConnect === false && <section className="guiding-page">
-						<div className="section-heading">
-							<h2>{ copy.proxyTitle }</h2>
-							<p>{ copy.proxyBody }</p>
-						</div>
-						<Button
-							type="primary"
-							size="large"
-							loading={ finishing }
-							onClick={ () => finish( { openSettings : true } ) }
-						>{ copy.openSettings }</Button>
-					</section> }
-					
 					{ page === 2 && canDirectConnect && <section className="guiding-page">
 						<div className="section-heading">
 							<h2>{ copy.aiTitle }</h2>
@@ -266,26 +251,21 @@ export const App = reaxper( () => {
 							/>
 							<Button onClick={ addCustomAI }>{ copy.addCustom }</Button>
 						</div>
-						{ customAIs.length > 0 && <div className="custom-ai-list">
-							{ customAIs.map( ai => <Tag
+						{ customAIs.length > 0 && <div className="custom-ai-cards">
+							{ customAIs.map( ai => <div
 								key={ ai.id }
-								closable
-								onClose={ () => setCustomAIs( customAIs.filter( item => item.id !== ai.id ) ) }
-							>{ ai.label }</Tag> ) }
+								className="custom-ai-card"
+							>
+								<div className="custom-ai-card__body">
+									<span>{ ai.label }</span>
+									<small>{ ai.url }</small>
+								</div>
+								<Button
+									size="small"
+									onClick={ () => setCustomAIs( customAIs.filter( item => item.id !== ai.id ) ) }
+								>{ copy.remove }</Button>
+							</div> ) }
 						</div> }
-					</section> }
-					
-					{ page === 3 && <section className="guiding-page">
-						<div className="section-heading">
-							<h2>{ copy.doneTitle }</h2>
-							<p>{ copy.doneBody }</p>
-						</div>
-						<LongPressButton
-							type="primary"
-							size="large"
-							loading={ finishing }
-							onConfirm={ () => finish() }
-						>{ copy.holdFinish }</LongPressButton>
 					</section> }
 				</main>
 				
@@ -294,12 +274,22 @@ export const App = reaxper( () => {
 						onConfirm={ () => finish( { skip : true } ) }
 					>{ copy.holdSkip }</LongPressButton> }
 					<div className="footer-spacer" />
-					{ page > 0 && page < 3 && <Button onClick={ () => setPage( page - 1 ) }>{ copy.back }</Button> }
-					{ ( page < 2 || ( page === 2 && canDirectConnect ) ) && <Button
+					{ page > 0 && <Button onClick={ () => setPage( page - 1 ) }>{ copy.back }</Button> }
+					{ page === 1 && canDirectConnect === false && <LongPressButton
+						type="primary"
+						loading={ finishing }
+						onConfirm={ () => finish( { openSettings : true } ) }
+					>{ copy.openSettings }</LongPressButton> }
+					{ page < 2 && canDirectConnect !== false && <Button
 						type="primary"
 						disabled={ page === 1 && networkStatus === 'unknown' }
 						onClick={ goNext }
 					>{ copy.next }</Button> }
+					{ page === 2 && <LongPressButton
+						type="primary"
+						loading={ finishing }
+						onConfirm={ () => finish() }
+					>{ copy.holdFinish }</LongPressButton> }
 				</footer>
 			</div>
 		</div>
@@ -363,7 +353,7 @@ const applyThemeToDocument = (theme:'light' | 'dark') => {
 const languageOptions = (systemLanguageName:string) => [
 	{
 		value : 'follow-system' ,
-		label : <span>Follow System<br /><span className="select-option-subtitle">{ systemLanguageName }</span></span>,
+		label : `Follow System (${ systemLanguageName })`,
 	} ,
 	{ value : 'en-US' , label : 'English' } ,
 	{ value : 'zh-CN' , label : '简体中文' } ,
@@ -409,7 +399,7 @@ const getCopy = (language:Languages) => {
 	if( language === 'zh-CN' || language === 'zh-TW' ) {
 		return {
 			title : '初始化你的 AI 工作空间' ,
-			steps : [ '偏好' , '网络' , 'AI 页面' , '完成' ] ,
+			steps : [ '偏好' , '网络' , 'AI 页面' ] ,
 			language : '语言' ,
 			theme : '主题' ,
 			followSystem : '跟随系统' ,
@@ -433,17 +423,16 @@ const getCopy = (language:Languages) => {
 			aiBody : '未勾选的内置 AI 会保留在配置中但默认隐藏，后续可在设置里重新启用。' ,
 			customLabel : '自定义名称' ,
 			addCustom : '添加自定义 AI' ,
-			doneTitle : '配置完成' ,
-			doneBody : '确认后会保存当前选择并进入主窗口。' ,
 			holdFinish : '长按确认完成' ,
 			holdSkip : '长按跳过' ,
 			back : '上一步' ,
 			next : '下一步',
+			remove : '移除',
 		};
 	}
 	return {
 		title : 'Initialize your AI workspace' ,
-		steps : [ 'Preferences' , 'Network' , 'AI Pages' , 'Finish' ] ,
+		steps : [ 'Preferences' , 'Network' , 'AI Pages' ] ,
 		language : 'Language' ,
 		theme : 'Theme' ,
 		followSystem : 'Follow System' ,
@@ -467,12 +456,11 @@ const getCopy = (language:Languages) => {
 		aiBody : 'Unchecked built-in pages stay in configuration but remain hidden until you enable them later.' ,
 		customLabel : 'Custom name' ,
 		addCustom : 'Add custom AI' ,
-		doneTitle : 'Ready' ,
-		doneBody : 'Confirm to save your choices and enter the main window.' ,
 		holdFinish : 'Hold to finish' ,
 		holdSkip : 'Hold to skip' ,
 		back : 'Back' ,
 		next : 'Next',
+		remove : 'Remove',
 	};
 };
 
@@ -493,7 +481,6 @@ import {
 	Radio ,
 	Select ,
 	Steps ,
-	Tag ,
 	theme as antdTheme,
 } from 'antd';
 import { reaxper } from 'reaxes-react';

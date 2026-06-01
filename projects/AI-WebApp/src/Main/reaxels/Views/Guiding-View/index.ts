@@ -40,14 +40,21 @@ export const reaxel_GuidingView = reaxel( () => {
 		} );
 		
 		useIpcRpc( 'guiding-finish' ).handle( async( { event } , options ) => {
-			saveGuidingProgress( options?.progress || {} );
-			destroyingForFinish = true;
-			destroyGuidingView();
-			await startMainRuntime( {
-				openSettings : options?.openSettings === true,
-			} );
-			destroyingForFinish = false;
-			return { success : true };
+			try {
+				console.log( '[GuidingView] finish requested:' , options );
+				saveGuidingProgress( options?.progress || {} );
+				destroyingForFinish = true;
+				await startMainRuntime( {
+					openSettings : options?.openSettings === true,
+				} );
+				destroyGuidingView();
+				destroyingForFinish = false;
+				return { success : true };
+			} catch ( error ) {
+				destroyingForFinish = false;
+				console.error( '[GuidingView] finish failed:' , error );
+				throw error;
+			}
 		} );
 	};
 	

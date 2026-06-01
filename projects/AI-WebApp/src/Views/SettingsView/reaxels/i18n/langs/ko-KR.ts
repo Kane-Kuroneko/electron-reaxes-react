@@ -36,6 +36,7 @@ export default {
 	"Exit Without Save" : "저장 없이 종료" ,
 	"Apply" : "적용" ,
 	"Save & Exit" : "저장 후 종료" ,
+	"Clean Start" : "클린 시작" ,
 	
 	// Dialogs
 	"Restart required" : "재시작 필요" ,

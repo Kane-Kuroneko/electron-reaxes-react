@@ -108,6 +108,22 @@ html, body {
 	opacity: 0.68;
 }
 
+.long-press-button {
+	position: relative;
+	overflow: hidden;
+}
+
+.long-press-button::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	height: 2px;
+	width: calc(var(--hold-progress, 0) * 100%);
+	background: currentColor;
+	opacity: 0.45;
+}
+
 // ManageAIs Table 未保存状态行高亮
 .ai-row--new {
 	background-color: var(--settings-row-new) !important;
