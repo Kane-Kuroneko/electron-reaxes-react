@@ -40,6 +40,8 @@ export const reaxel_GuidingView = reaxel( () => {
 	
 	const ipcMethods = createGuidingIpcService();
 	let initialized = false;
+
+	syncI18nLanguage();
 	
 	if( typeof window !== 'undefined' && window.matchMedia ) {
 		const darkSchemeQuery = window.matchMedia( '(prefers-color-scheme: dark)' );
@@ -78,6 +80,7 @@ export const reaxel_GuidingView = reaxel( () => {
 				language : defaults.appearance.language ,
 				theme : defaults.appearance.theme,
 			} );
+			syncI18nLanguage( defaults.appearance.language , systemLanguage );
 			setState.UIControls.ai( {
 				selectedAIIds : defaults.defaultAIs
 					.filter( ai => !ai.disabled )
@@ -115,7 +118,17 @@ export const reaxel_GuidingView = reaxel( () => {
 	}
 	
 	function getCopy() {
-		return reaxel_GuidingI18n().getCopy( getResolvedLanguage() );
+		return reaxel_GuidingI18n().getCopy();
+	}
+
+	function syncI18nLanguage(
+		language = store.UIControls.appearance.language ,
+		systemLanguage = store.Environment.systemLanguage,
+	) {
+		reaxel_GuidingI18n().setLanguage( resolveLanguagePreference(
+			language ,
+			systemLanguage,
+		) as any );
 	}
 	
 	function getCanDirectConnect() {
@@ -143,6 +156,7 @@ export const reaxel_GuidingView = reaxel( () => {
 	
 	function setLanguage( language:Appearance.Language ) {
 		setState.UIControls.appearance( { language } );
+		syncI18nLanguage( language );
 	}
 	
 	function setTheme( theme:Appearance.Theme ) {
@@ -224,11 +238,11 @@ export const reaxel_GuidingView = reaxel( () => {
 				...store.Data.customAIs,
 			];
 		}
-		return progress;
+		return normalizeGuidingProgress( progress );
 	}
 	
 	async function saveProgress( progress = buildProgress() ) {
-		await ipcMethods.saveProgress( progress );
+		await ipcMethods.saveProgress( normalizeGuidingProgress( progress ) );
 	}
 	
 	async function goNext() {
@@ -321,9 +335,15 @@ function applyThemeToDocument( theme:'light' | 'dark' ) {
 	document.documentElement.style.colorScheme = theme;
 }
 
+function normalizeGuidingProgress(progress:Guiding.Progress):Guiding.Progress {
+	return JSON.parse( JSON.stringify( progress ) );
+}
+
 function createCustomAIId() {
 	return globalThis.crypto?.randomUUID?.() || `custom-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 , 8 ) }`;
 }
+
+export type Reaxel_GuidingView = Pick<typeof reaxel_GuidingView , "mutate"|"store"|"setState">;
 
 import { createGuidingIpcService } from '#src/Views/GuidingView/services/Guiding';
 import { reaxel_GuidingI18n } from '#src/Views/GuidingView/reaxels/i18n';
