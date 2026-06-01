@@ -17,6 +17,8 @@ export const RCPreferencesPage = reaxper( () => {
 						value={ store.UIControls.appearance.language }
 						onChange={ setLanguage }
 						options={ getLanguageOptions() }
+						optionRender={ option => renderLanguageOption( option , copy.followSystem , store.Environment.systemLanguageName ) }
+						labelRender={ item => renderLanguageSelectedLabel( item , copy.followSystem , store.Environment.systemLanguageName ) }
 					/>
 				</Form.Item>
 			</Form>
@@ -44,6 +46,32 @@ export const RCPreferencesPage = reaxper( () => {
 		</div>
 	</section>;
 } );
+
+const renderLanguageOption = (
+	option:any ,
+	followSystem:string ,
+	systemLanguageName:string,
+) => {
+	if( option.data.value === 'follow-system' ) {
+		return <span>
+			{ followSystem }
+			<br />
+			<span className="select-option-subtitle">{ systemLanguageName }</span>
+		</span>;
+	}
+	return option.data.label;
+};
+
+const renderLanguageSelectedLabel = (
+	item:any ,
+	followSystem:string ,
+	systemLanguageName:string,
+) => {
+	if( item.value === 'follow-system' ) {
+		return <span>{ followSystem } ({ systemLanguageName })</span>;
+	}
+	return item.label ?? String( item.value );
+};
 
 import { reaxel_GuidingView } from '#src/Views/GuidingView/reaxels/guiding-view';
 import {

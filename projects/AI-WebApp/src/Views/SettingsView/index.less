@@ -4,6 +4,9 @@
 	--settings-border: #f0f0f0;
 	--settings-title: #1d2129;
 	--settings-shadow: rgba(0, 0, 0, 0.04);
+	--settings-subfield-bg: #fafafa;
+	--settings-subfield-border: #f0f0f0;
+	--settings-subfield-divider: #e8e8e8;
 	--settings-row-new: #f6ffed;
 	--settings-row-new-hover: #d9f7be;
 	--settings-row-modified: #fff7e6;
@@ -17,6 +20,9 @@
 	--settings-border: #303843;
 	--settings-title: #e7edf5;
 	--settings-shadow: rgba(0, 0, 0, 0.22);
+	--settings-subfield-bg: #222832;
+	--settings-subfield-border: #303843;
+	--settings-subfield-divider: #3b4552;
 	--settings-row-new: #1f3322;
 	--settings-row-new-hover: #29452d;
 	--settings-row-modified: #392d1a;
@@ -106,6 +112,16 @@ html, body {
 .select-option-subtitle {
 	font-size: 12px;
 	opacity: 0.68;
+}
+
+.settings-theme-radio-group {
+	.ant-radio-wrapper {
+		align-items: flex-start;
+	}
+
+	.ant-radio {
+		margin-top: 2px;
+	}
 }
 
 .settings-language-select {

@@ -24,9 +24,14 @@ export const RCAppearancePanel = reaxper(() => {
 				<Radio.Group
 					value={ store.theme }
 					onChange={ e => handleThemeChange( e.target.value ) }
+					className="settings-theme-radio-group"
 					style={ { userSelect : 'none' } }
 				>
-					<Radio value="system"><I18n>Follow System</I18n></Radio>
+					<Radio value="system">
+						<I18n>Follow System</I18n>
+						<br />
+						<span className="select-option-subtitle"><I18n>{ environmentStore.systemTheme === 'dark' ? 'Dark' : 'Light' }</I18n></span>
+					</Radio>
 					<Radio value="light"><I18n>Light</I18n></Radio>
 					<Radio value="dark"><I18n>Dark</I18n></Radio>
 				</Radio.Group>

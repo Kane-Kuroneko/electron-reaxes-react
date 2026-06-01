@@ -41,6 +41,7 @@ export const RCGeneralPanel = reaxper(() => {
 				<Radio.Group
 					value={ appearanceStore.theme }
 					onChange={ e => handleThemeChange( e.target.value ) }
+					className="settings-theme-radio-group"
 					style={ { userSelect : 'none' } }
 				>
 					<Radio value="system">
