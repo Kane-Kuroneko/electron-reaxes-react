@@ -236,6 +236,8 @@ export const reaxel_SettingsView = reaxel( () => {
 		changeEditAIModalVisible ,
 		submitSettings : ipcMethods.submitSettings ,
 		exitSettings : ipcMethods.exitSettings ,
+		turnToNextAiPage : ipcMethods.turnToNextAiPage ,
+		turnToPreviousAiPage : ipcMethods.turnToPreviousAiPage ,
 		/**
 		 * 判断某个 AI 是否为新增未保存的
 		 */

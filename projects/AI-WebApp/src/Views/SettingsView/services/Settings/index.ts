@@ -39,6 +39,14 @@ export const getPreloadAIFamilies = () => {
 	return api.getPreloadAIFamilies();
 }
 
+export const turnToNextAiPage = () => {
+	return api.turnToNextAiPage();
+}
+
+export const turnToPreviousAiPage = () => {
+	return api.turnToPreviousAiPage();
+}
+
 
 import { Settings } from '#src/Types/SettingsTypes';
 import { AI } from '#src/Types/SettingsTypes/AI';

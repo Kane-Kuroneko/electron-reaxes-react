@@ -18,6 +18,8 @@ export default {
 	
 	// Menu - Switch AI
 	"Switch AI" : "切換 AI" ,
+	"Previous AI Page" : "上一個 AI 頁面" ,
+	"Next AI Page" : "下一個 AI 頁面" ,
 	"No enabled AI pages" : "沒有啟用的 AI 頁面" ,
 	
 	// Tray

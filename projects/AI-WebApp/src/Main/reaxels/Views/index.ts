@@ -44,15 +44,91 @@ export const Reaxel_View = reaxel( () => {
 			await reaxel_AIViews().syncAIViewsWithConfig( settings );
 		}
 	}
-	
+
+	const getWrappedIndex = (index:number , length:number) => {
+		return ( index + length ) % length;
+	};
+
+	const createSwitchAiBarPayload = (
+		activeAIs:AI.AIItem[] ,
+		currentIndex:number ,
+		direction:FloatingLayer.SwitchAiBarDirection,
+	):FloatingLayer.SwitchAiBarPayload => {
+		const total = activeAIs.length;
+		const createItem = (offset:number , position:FloatingLayer.SwitchAiBarItemPosition) => {
+			const ai = activeAIs[getWrappedIndex( currentIndex + offset , total )];
+			return {
+				id : ai.id ,
+				label : ai.label ,
+				family : ai.AI_family ,
+				position,
+			};
+		};
+
+		return {
+			direction ,
+			items : [
+				createItem( -1 , 'prev' ) ,
+				createItem( 0 , 'current' ) ,
+				createItem( 1 , 'next' ),
+			] ,
+			currentId : activeAIs[currentIndex].id ,
+			sequence : Date.now() ,
+			total,
+		};
+	};
+
+	const turnToAiPageByOffset = async(
+		offset:number ,
+		direction:FloatingLayer.SwitchAiBarDirection,
+	) => {
+		const settings = getRuntimeSettings();
+		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
+		if( activeAIs.length === 0 ) {
+			reaxel_FloatingLayer().api.hideSwitchAiBar();
+			return null;
+		}
+
+		const currentIndex = activeAIs.findIndex( ai => ai.id === store.currentAIViewKey );
+		const baseIndex = currentIndex === -1
+			? offset > 0 ? -1 : 0
+			: currentIndex;
+		const nextIndex = getWrappedIndex( baseIndex + offset , activeAIs.length );
+		const nextAI = activeAIs[nextIndex];
+		const view = await reaxel_AIViews().showAIView( nextAI.id , settings );
+
+		reaxel_FloatingLayer().api.showSwitchAiBar(
+			createSwitchAiBarPayload( activeAIs , nextIndex , direction ),
+		);
+
+		return view;
+	};
+
+	const turnToNextAiPage = () => {
+		return turnToAiPageByOffset( 1 , 'next' );
+	};
+
+	const turnToPreviousAiPage = () => {
+		return turnToAiPageByOffset( -1 , 'previous' );
+	};
+
 	app.whenReady().then( async() => {
+		reaxel_FloatingLayer().initFloatingLayer();
 		await onReadyLoadAIView();
 		mainWindow.on( 'resize' , () => {
 			fitWindow();
 		} );
-		
+
 		useIpcRendererToMain( 'update-preload-ai-config' ).on( async() => {
 			await reaxel_AIViews().syncAIViewsWithConfig( getRuntimeSettings() );
+		} );
+
+		useIpcRendererToMain( 'turn-to-next-ai-page' ).on( () => {
+			void turnToNextAiPage();
+		} );
+
+		useIpcRendererToMain( 'turn-to-previous-ai-page' ).on( () => {
+			void turnToPreviousAiPage();
 		} );
 	} );
 	
@@ -75,6 +151,8 @@ export const Reaxel_View = reaxel( () => {
 	
 	const rtn = {
 		fitWindow,
+		turnToNextAiPage ,
+		turnToPreviousAiPage,
 	};
 	
 	return Object.assign( () => rtn , {
@@ -101,9 +179,12 @@ import {
 import ElectronStore from "electron-store";
 import { mainWindow } from "#main/mainWindow";
 import { reaxel_AIViews } from "#main/reaxels/Views/AI-Views";
+import { reaxel_FloatingLayer } from "#main/reaxels/Views/Floating-Layer";
 import { useIpcRendererToMain } from "#main/services/ipc";
 import { getAIConfigService } from "#main/services/settings/ai-config-service";
 import { getSettingsConfigService } from "#main/services/settings/settings-config-service";
+import type { FloatingLayer } from "#src/Types/FloatingLayer";
+import type { AI } from "#src/Types/SettingsTypes/AI";
 import type { Settings } from "#src/Types/SettingsTypes";
 import {
 	createReaxable ,

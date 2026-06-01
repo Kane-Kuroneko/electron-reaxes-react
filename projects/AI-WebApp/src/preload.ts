@@ -9,6 +9,13 @@ const submitSettings = useRpc( 'submit-settings' );
 const exitSettings = useRtm('exit-settings');
 const updatePreloadAIConfig = useRtm('update-preload-ai-config');
 const languageChange = useRtm('language-change');
+const turnToNextAiPage = useRtm('turn-to-next-ai-page');
+const turnToPreviousAiPage = useRtm('turn-to-previous-ai-page');
+const onFloatingLayerCommand = (callback:(command:FloatingLayer.Command) => void) => {
+	return useMtr( 'floating-layer-command' )( ( _ , command ) => {
+		callback( command );
+	} );
+};
 
 // AI Configuration Management APIs
 const getAIs = useRpc('get-ais');
@@ -26,6 +33,9 @@ const api = {
 	exitSettings,
 	updatePreloadAIConfig,
 	languageChange,
+	turnToNextAiPage,
+	turnToPreviousAiPage,
+	onFloatingLayerCommand,
 	// AI Configuration Management
 	getAIs,
 	getDefaultAIs,
@@ -63,3 +73,4 @@ import type {
 	RendererToMainEvents ,
 } from './Types/IpcSchema';
 import { createIpc } from '#generics/toolkit/electron/preload.ipc';
+import type { FloatingLayer } from './Types/FloatingLayer';

@@ -3,11 +3,14 @@ export interface RendererToMainEvents extends Record<string , IpcStructure.Rende
 	'exit-settings' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
 	'update-preload-ai-config' : IpcStructure.RendererToMainEvent<[string[]] , {channel:void,args:void[]}>;
 	'language-change' : IpcStructure.RendererToMainEvent<[language: string] , {channel:void,args:void[]}>;
+	'turn-to-next-ai-page' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
+	'turn-to-previous-ai-page' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
 }
 
 export interface MainToRendererEvents extends Record<string , IpcStructure.MainToRendererEvent<unknown[]>> {
 	'1' : IpcStructure.MainToRendererEvent<[number,string]>;
-	'2' : IpcStructure.MainToRendererEvent<[string,number]>
+	'2' : IpcStructure.MainToRendererEvent<[string,number]>;
+	'floating-layer-command' : IpcStructure.MainToRendererEvent<[FloatingLayer.Command]>;
 }
 export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , unknown>>{
 	'fetch-settings' : IpcStructure.IpcRpc<[void] , SettingsFetchResult>;
@@ -37,3 +40,4 @@ import {
 	PatchPath ,
 } from "#src/Types/SettingsTypes/SettingsPatchPath";
 import { AI } from "#src/Types/SettingsTypes/AI";
+import type { FloatingLayer } from "#src/Types/FloatingLayer";

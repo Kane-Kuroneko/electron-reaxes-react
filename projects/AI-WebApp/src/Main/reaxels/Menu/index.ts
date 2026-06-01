@@ -127,12 +127,31 @@ export const reaxel_Menu = reaxel( () => {
 			{
 				label : t("Switch AI") ,
 				submenu : enabledAIs.length
-					? enabledAIs.map( ai => ( {
-						label : ai.label ,
-						type : 'radio' as const ,
-						checked : currentAIViewKey === ai.id ,
-						click : createClickMenuHandler( ai.id ),
-					} ) )
+					? [
+						{
+							label : t('Previous AI Page') ,
+							accelerator : 'CmdOrCtrl+[' ,
+							enabled : enabledAIs.length > 1 ,
+							click : () => {
+								void Reaxel_View().turnToPreviousAiPage();
+							},
+						} ,
+						{
+							label : t('Next AI Page') ,
+							accelerator : 'CmdOrCtrl+]' ,
+							enabled : enabledAIs.length > 1 ,
+							click : () => {
+								void Reaxel_View().turnToNextAiPage();
+							},
+						} ,
+						{ type : 'separator' as const } ,
+						...enabledAIs.map( ai => ( {
+							label : ai.label ,
+							type : 'radio' as const ,
+							checked : currentAIViewKey === ai.id ,
+							click : createClickMenuHandler( ai.id ),
+						} ) ),
+					]
 					: [
 						{
 							label : t('No enabled AI pages') ,

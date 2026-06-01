@@ -44,6 +44,12 @@ export const rehancer_Ipc = ( { store , setState , mutate }: Reaxel_SettingsView
 		},
 		async getPreloadAIFamilies() {
 			return await getPreloadAIFamilies();
+		},
+		turnToNextAiPage() {
+			return turnToNextAiPage();
+		},
+		turnToPreviousAiPage() {
+			return turnToPreviousAiPage();
 		}
 	}
 }
@@ -64,6 +70,8 @@ import {
 	deleteAI,
 	resetAIsToDefaults,
 	getPreloadAIFamilies,
+	turnToNextAiPage,
+	turnToPreviousAiPage,
 } from '#src/Views/SettingsView/services/Settings';
 import { Settings } from '#src/Types/SettingsTypes';
 import type {
