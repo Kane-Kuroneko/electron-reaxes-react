@@ -47,7 +47,9 @@ export default {
 	
 	// Appearance Panel
 	"Appearance" : "모양" ,
+	"Theme" : "테마" ,
 	"Dark Mode" : "다크 모드" ,
+	"Follow System" : "시스템 따르기" ,
 	"Light" : "라이트" ,
 	"Dark" : "다크" ,
 	"Language" : "언어" ,

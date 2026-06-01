@@ -51,9 +51,10 @@ export const reaxel_SettingsView = reaxel( () => {
 			} ,
 			appearance : {
 				darkmode : false ,
+				theme : checkAs<Appearance.Theme>( 'system' ) ,
 				show_quickswitch_tag : true ,
 				show_current_tag : true ,
-				language : checkAs<Appearance.Language>( 'en-US' ),
+				language : checkAs<Appearance.Language>( 'follow-system' ),
 			} ,
 			system : {
 				gpu_acceleration : true ,
@@ -64,6 +65,10 @@ export const reaxel_SettingsView = reaxel( () => {
 		} ,
 		Data : {
 			AIs : checkAs<AI.AIItem[]>( [] ),
+		} ,
+		Environment : {
+			systemLanguage : checkAs<Languages>( normalizeConcreteLanguage( navigator.language ) ) ,
+			systemTheme : checkAs<'light' | 'dark'>( getBrowserSystemTheme() ),
 		} ,
 		get_settings_status : {
 			pending : false ,
@@ -77,7 +82,7 @@ export const reaxel_SettingsView = reaxel( () => {
 	
 	rehancer_Dev( { store , setState , mutate } )();
 	
-	const ipcMethods = rehancer_Ipc( { store , setState , mutate } )();
+	const ipcMethods = createSettingsIpcService();
 	
 	// dirty 状态追踪: 存储上次加载/应用成功后的设置快照
 	let _lastSavedSnapshot = '';
@@ -104,6 +109,17 @@ export const reaxel_SettingsView = reaxel( () => {
 		await reloadSettings();
 	}();
 	
+	if( typeof window !== 'undefined' && window.matchMedia ) {
+		const darkSchemeQuery = window.matchMedia( '(prefers-color-scheme: dark)' );
+		darkSchemeQuery.addEventListener?.( 'change' , event => {
+			const systemTheme = event.matches ? 'dark' : 'light';
+			setState.Environment( { systemTheme } );
+			if( store.UIControls.appearance.theme === 'system' ) {
+				applyThemePreferenceToDocument( 'system' , systemTheme );
+			}
+		} );
+	}
+
 	async function fetchSettings() {
 		return await ipcMethods.fetchSettings();
 	}
@@ -114,7 +130,11 @@ export const reaxel_SettingsView = reaxel( () => {
 			error : false,
 		} );
 		try {
-			const settings = await fetchSettings();
+			const [ environment , settings ] = await Promise.all( [
+				ipcMethods.getAppearanceEnvironment() ,
+				fetchSettings(),
+			] );
+			setState.Environment( environment );
 			setSettings( settings );
 			setState.get_settings_status( {
 				pending : false ,
@@ -143,6 +163,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		} );
 		setState.UIControls.appearance( {
 			darkmode : settings.appearance.darkmode ,
+			theme : settings.appearance.theme || normalizeThemePreference( undefined , settings.appearance.darkmode ) ,
 			language : settings.appearance.language,
 		} );
 		setState.UIControls.system( settings.system );
@@ -153,8 +174,12 @@ export const reaxel_SettingsView = reaxel( () => {
 		// 同步 i18n 语言到渲染进程的 i18n 模块
 		// 以持久化配置 (user-settings.json) 为单一数据源
 		if (settings.appearance.language) {
-			reaxel_I18n().setLanguage(settings.appearance.language as any);
+			reaxel_I18n().setLanguage(resolveLanguagePreference(
+				settings.appearance.language ,
+				store.Environment.systemLanguage,
+			) as any);
 		}
+		applyThemePreferenceToDocument( settings.appearance.theme , store.Environment.systemTheme );
 		
 		// 更新快照，用于 dirty 状态检测
 		updateSnapshot();
@@ -180,6 +205,7 @@ export const reaxel_SettingsView = reaxel( () => {
 			system : store.UIControls.system ,
 			appearance : {
 				darkmode : store.UIControls.appearance.darkmode ,
+				theme : store.UIControls.appearance.theme ,
 				language : store.UIControls.appearance.language,
 			},
 		};
@@ -271,6 +297,22 @@ function defaultProxyConf():NetworkProxy.ProxyConfFields {
 	};
 }
 
+function getBrowserSystemTheme():'light' | 'dark' {
+	if( typeof window === 'undefined' || !window.matchMedia ) {
+		return 'light';
+	}
+	return window.matchMedia( '(prefers-color-scheme: dark)' ).matches ? 'dark' : 'light';
+}
+
+function applyThemePreferenceToDocument(
+	theme:Appearance.Theme = 'system' ,
+	systemTheme:'light' | 'dark' = getBrowserSystemTheme(),
+) {
+	const resolvedTheme = resolveThemePreference( theme , systemTheme );
+	document.documentElement.dataset.aiWebappThemeSource = theme;
+	document.documentElement.dataset.aiWebappTheme = resolvedTheme;
+}
+
 function defaultGlobalProxyFields():NetworkProxy.GlobalProxyFields {
 	return {
 		...defaultProxyConf() ,
@@ -316,8 +358,15 @@ function defaultAIFields():AI.EditAIItem {
 export type Reaxel_SettingsView = Pick<typeof reaxel_SettingsView , "mutate"|"store"|"setState">;
 
 import { rehancer_Dev } from './rehancer_Dev';
-import { rehancer_Ipc } from "#src/Views/SettingsView/reaxels/settings-view/rehancer_Ipc";
 import { reaxel_I18n } from "#src/Views/SettingsView/reaxels/i18n";
+import { createSettingsIpcService } from '#src/Views/SettingsView/services/Settings';
+import {
+	normalizeConcreteLanguage ,
+	normalizeThemePreference ,
+	resolveLanguagePreference ,
+	resolveThemePreference,
+} from '#src/shared/appearance';
+import type { Languages } from '#src/Types/Languages';
 import type {
 	Menus,
 } from '#src/shared/structs/settings';

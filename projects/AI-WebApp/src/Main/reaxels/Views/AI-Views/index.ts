@@ -23,6 +23,7 @@ export const reaxel_AIViews = reaxel( () => {
 				partition : getAIPartition( ai.id ),
 			},
 		} );
+		const appearanceKey = applyAIPageAppearanceToView( view , settings.appearance );
 		
 		mutate( s => {
 			s.AIViews.push( {
@@ -34,6 +35,7 @@ export const reaxel_AIViews = reaxel( () => {
 				partition : getAIPartition( ai.id ) ,
 				config : ai ,
 				proxyKey : '',
+				appearanceKey,
 			} );
 		} );
 		
@@ -175,19 +177,22 @@ const updateRuntimeAIView = async(
 ) => {
 	const nextDomain = ai.url || getAIDomainByFamily( ai.AI_family );
 	const resolvedProxy = await applyAIProxyToView( runtimeView.view , ai , settings );
+	const nextAppearanceKey = applyAIPageAppearanceToView( runtimeView.view , settings.appearance );
 	const nextProxyKey = JSON.stringify( resolvedProxy );
 	const domainChanged = runtimeView.domain !== nextDomain;
 	const proxyChanged = runtimeView.proxyKey !== '' && runtimeView.proxyKey !== nextProxyKey;
+	const appearanceChanged = runtimeView.appearanceKey !== '' && runtimeView.appearanceKey !== nextAppearanceKey;
 	
 	runtimeView.label = ai.label;
 	runtimeView.AIName = ai.AI_family;
 	runtimeView.domain = nextDomain;
 	runtimeView.config = ai;
 	runtimeView.proxyKey = nextProxyKey;
+	runtimeView.appearanceKey = nextAppearanceKey;
 	
 	if( domainChanged ) {
 		await runtimeView.view.webContents.loadURL( nextDomain );
-	} else if( proxyChanged ) {
+	} else if( proxyChanged || appearanceChanged ) {
 		runtimeView.view.webContents.reloadIgnoringCache();
 	}
 };
@@ -216,6 +221,7 @@ export type RuntimeAIView = {
 	partition: string;
 	config: AI.AIItem;
 	proxyKey: string;
+	appearanceKey: string;
 };
 
 import { getAIDomainByFamily } from './data';
@@ -223,6 +229,7 @@ import type { AI } from '#src/Types/SettingsTypes/AI';
 import type { Settings } from '#src/Types/SettingsTypes';
 import { initWebContentsView } from '#main/reaxels/Views/utils/initWebContentsView';
 import { applyAIProxyToView } from '#main/services/settings/proxy-service';
+import { applyAIPageAppearanceToView } from '#main/services/appearance';
 import { mainWindow } from '#main/mainWindow';
 import { Reaxel_View } from '../';
 import {

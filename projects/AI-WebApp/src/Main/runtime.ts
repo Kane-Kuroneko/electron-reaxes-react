@@ -1,0 +1,99 @@
+let mainRuntimeStarted = false;
+let closeHandlerBound = false;
+
+export const isMainRuntimeStarted = () => mainRuntimeStarted;
+
+export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) => {
+	const win = await createMainWindow();
+	const settings = getSettingsConfigService().getEffectiveSettings();
+	
+	if( !mainRuntimeStarted ) {
+		mainRuntimeStarted = true;
+		useBeautifulDevtool( win );
+		applyElectronAppearance( settings.appearance );
+		
+		reaxel_Settings();
+		reaxel_I18n();
+		
+		reaxel_Menu().setI18nInstance( reaxel_I18n );
+		setTrayI18nInstance( reaxel_I18n );
+		reaxel_Menu().rebuildMenu();
+		
+		useIpcRendererToMain( 'language-change' ).on( ( e , language ) => {
+			const environment = getAppearanceEnvironment();
+			const resolvedLanguage = resolveLanguagePreference(
+				normalizeLanguagePreference( language ) ,
+				environment.systemLanguage,
+			);
+			reaxel_I18n().setLanguage( resolvedLanguage as any );
+			reaxel_Menu().rebuildMenu();
+			if( isTrayActive() ) {
+				updateTrayMenu();
+			}
+		} );
+		
+		if( settings.system.show_tray ) {
+			initTray();
+		}
+		
+		if( !closeHandlerBound ) {
+			closeHandlerBound = true;
+			win.on( 'close' , event => {
+				const currentSettings = getSettingsConfigService().getEffectiveSettings();
+				if( currentSettings.system.show_tray && currentSettings.system.close_to_tray ) {
+					event.preventDefault();
+					win.hide();
+				}
+			} );
+		}
+		
+		await Reaxel_View().initRuntimeViews();
+	}
+	
+	if( options.openSettings || dev() ) {
+		openSettingsView( options.openDevTools ?? dev() );
+	}
+	
+	return win;
+};
+
+export const openSettingsView = (openDevTools = false) => {
+	Reaxel_View.setState( { settingsViewOpened : true } );
+	const settingsView = reaxel_SettingsView().initSettingsView();
+	settingsView.setVisible( true );
+	mainWindow.contentView.addChildView( settingsView );
+	if( openDevTools ) {
+		settingsView.webContents.openDevTools();
+	}
+	return settingsView;
+};
+
+export type StartMainRuntimeOptions = {
+	openSettings?: boolean;
+	openDevTools?: boolean;
+};
+
+import { createMainWindow , mainWindow } from './mainWindow';
+import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
+import { reaxel_Settings } from "#main/reaxels/Settings";
+import { reaxel_Menu } from './reaxels/Menu';
+import { reaxel_I18n } from '#main/reaxels/I18n';
+import { Reaxel_View } from "#main/reaxels/Views";
+import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
+import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
+import {
+	applyElectronAppearance ,
+	getAppearanceEnvironment,
+} from '#main/services/appearance';
+import {
+	initTray ,
+	isTrayActive ,
+	updateTrayMenu ,
+	setI18nInstance as setTrayI18nInstance,
+} from '#main/services/tray';
+import { useIpcRendererToMain } from '#main/services/ipc';
+import {
+	normalizeLanguagePreference ,
+	resolveLanguagePreference,
+} from '#src/shared/appearance';
+import { dev } from 'electron-is';

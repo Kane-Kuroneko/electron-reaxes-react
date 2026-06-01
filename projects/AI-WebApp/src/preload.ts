@@ -25,6 +25,11 @@ const addAI = useRpc('add-ai');
 const deleteAI = useRpc('delete-ai');
 const resetAIsToDefaults = useRpc('reset-ais-to-defaults');
 const getPreloadAIFamilies = useRpc('get-preload-ai-families');
+const getAppearanceEnvironment = useRpc('get-appearance-environment');
+const getGuidingDefaults = useRpc('get-guiding-defaults');
+const guidingSaveProgress = useRpc('guiding-save-progress');
+const guidingTestConnectivity = useRpc('guiding-test-connectivity');
+const guidingFinish = useRpc('guiding-finish');
 
 const api = {
 	fetchSettings ,
@@ -44,6 +49,11 @@ const api = {
 	deleteAI,
 	resetAIsToDefaults,
 	getPreloadAIFamilies,
+	getAppearanceEnvironment,
+	getGuidingDefaults,
+	guidingSaveProgress,
+	guidingTestConnectivity,
+	guidingFinish,
 };
 export type API = typeof api;
 

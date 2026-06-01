@@ -47,7 +47,9 @@ export default {
 	
 	// Appearance Panel
 	"Appearance" : "外观" ,
+	"Theme" : "主题" ,
 	"Dark Mode" : "深色模式" ,
+	"Follow System" : "跟随系统" ,
 	"Light" : "浅色" ,
 	"Dark" : "深色" ,
 	"Language" : "语言" ,

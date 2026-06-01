@@ -12,6 +12,7 @@ export type Settings = {
 	system : SystemSettings.Conf,
 	appearance : {
 		darkmode : Appearance.Darkmode,
+		theme : Appearance.Theme,
 		language : Appearance.Language,
 	},
 }

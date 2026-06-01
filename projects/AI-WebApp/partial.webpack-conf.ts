@@ -48,6 +48,7 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 		entry: {
 			"SettingsView" : path.resolve(subProjectRootPath, "src/Views/SettingsView/index.tsx"),
 			"Floating-Layer" : path.resolve(subProjectRootPath, "src/Views/Floating-Layer/index.tsx"),
+			"GuidingView" : path.resolve(subProjectRootPath, "src/Views/GuidingView/index.tsx"),
 		},
 		
 		output: {
@@ -78,6 +79,13 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 				minify : false ,
 				hash : true,
 			} ) ,
+			new HtmlWebpackPlugin( {
+				chunks:["GuidingView"],
+				filename : 'GuidingView/index.html' ,
+				template : path.join( subProjectRootPath , "engine/index.template.html" ) ,
+				minify : false ,
+				hash : true,
+			} ) ,
 			new ProvidePlugin( {
 				
 				'I18n' : [ '#src/Views/SettingsView/reaxels/exports' , 'I18n' ] ,
@@ -89,7 +97,13 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 
 export const preload = ( repoRootPath: string , subProjectRootPath: string ): Configuration => {
 	return {
-		entry: path.join(subProjectRootPath, "src/preload.ts"),
+		entry: {
+			preload : path.join(subProjectRootPath, "src/preload.ts"),
+			"ai-page-preload" : path.join(subProjectRootPath, "src/ai-page-preload.ts"),
+		},
+		output : {
+			filename : '[name].js',
+		},
 		resolve :{
 			alias : {
 				'#main' : path.join(subProjectRootPath,'src/Main'),

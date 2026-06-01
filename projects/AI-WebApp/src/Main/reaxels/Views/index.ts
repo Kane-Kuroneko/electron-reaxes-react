@@ -112,7 +112,11 @@ export const Reaxel_View = reaxel( () => {
 		return turnToAiPageByOffset( -1 , 'previous' );
 	};
 
-	app.whenReady().then( async() => {
+	let runtimeViewsInitialized = false;
+
+	const initRuntimeViews = async() => {
+		if( runtimeViewsInitialized ) return;
+		runtimeViewsInitialized = true;
 		reaxel_FloatingLayer().initFloatingLayer();
 		await onReadyLoadAIView();
 		mainWindow.on( 'resize' , () => {
@@ -130,7 +134,7 @@ export const Reaxel_View = reaxel( () => {
 		useIpcRendererToMain( 'turn-to-previous-ai-page' ).on( () => {
 			void turnToPreviousAiPage();
 		} );
-	} );
+	};
 	
 	obsReaction( ( first ) => {
 		if( first ) return;
@@ -150,6 +154,7 @@ export const Reaxel_View = reaxel( () => {
 	] );
 	
 	const rtn = {
+		initRuntimeViews ,
 		fitWindow,
 		turnToNextAiPage ,
 		turnToPreviousAiPage,
@@ -173,7 +178,6 @@ const getRuntimeSettings = ():Settings => {
 
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
 import {
-	app ,
 	WebContentsView,
 } from "electron";
 import ElectronStore from "electron-store";

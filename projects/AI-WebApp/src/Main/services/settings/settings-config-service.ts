@@ -57,7 +57,8 @@ export const createDefaultRuntimeSettings = ():RuntimeSettings => ( {
 	} ,
 	appearance : {
 		darkmode : false ,
-		language : 'en-US',
+		theme : 'system' ,
+		language : 'follow-system',
 	},
 } );
 
@@ -90,6 +91,8 @@ export const normalizeRuntimeSettings = (settings?:Partial<RuntimeSettings>):Run
 	const defaults = createDefaultRuntimeSettings();
 	const networks = settings?.networks;
 	const globalProxy = networks?.global_proxy;
+	const appearance = settings?.appearance;
+	const theme = normalizeThemePreference( appearance?.theme , appearance?.darkmode );
 	
 	return {
 		networks : {
@@ -113,7 +116,10 @@ export const normalizeRuntimeSettings = (settings?:Partial<RuntimeSettings>):Run
 		} ,
 		appearance : {
 			...defaults.appearance ,
-			...settings?.appearance,
+			...appearance ,
+			theme ,
+			darkmode : theme === 'dark' ,
+			language : normalizeLanguagePreference( appearance?.language ?? defaults.appearance.language ),
 		},
 	};
 };
@@ -179,5 +185,9 @@ export default SettingsConfigService;
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { app } from 'electron';
+import {
+	normalizeLanguagePreference ,
+	normalizeThemePreference,
+} from '#src/shared/appearance';
 import type { Settings } from '#src/Types/SettingsTypes';
 import { NetworkProxy } from '#src/Types/SettingsTypes/NetworkProxy';

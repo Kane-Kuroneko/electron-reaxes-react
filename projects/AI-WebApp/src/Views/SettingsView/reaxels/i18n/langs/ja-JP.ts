@@ -47,7 +47,9 @@ export default {
 	
 	// Appearance Panel
 	"Appearance" : "外観" ,
+	"Theme" : "テーマ" ,
 	"Dark Mode" : "ダークモード" ,
+	"Follow System" : "システムに従う" ,
 	"Light" : "ライト" ,
 	"Dark" : "ダーク" ,
 	"Language" : "言語" ,

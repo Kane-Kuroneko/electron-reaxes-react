@@ -169,9 +169,10 @@ export const reaxable_Settings = () => {
 			} ,
 			appearance : {
 				darkmode : false ,
+				theme : checkAs<Appearance.Theme>( 'system' ) ,
 				show_quickswitch_tag : true ,
 				show_current_tag : true ,
-				language : checkAs<Appearance.Language>( 'en-US' ) ,
+				language : checkAs<Appearance.Language>( 'follow-system' ) ,
 			} ,
 			system : {
 				gpu_acceleration : true ,

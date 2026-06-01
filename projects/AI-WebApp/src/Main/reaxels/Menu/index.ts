@@ -128,6 +128,13 @@ export const reaxel_Menu = reaxel( () => {
 				label : t("Switch AI") ,
 				submenu : enabledAIs.length
 					? [
+						...enabledAIs.map( ai => ( {
+							label : ai.label ,
+							type : 'radio' as const ,
+							checked : currentAIViewKey === ai.id ,
+							click : createClickMenuHandler( ai.id ),
+						} ) ),
+						{ type : 'separator' as const } ,
 						{
 							label : t('Previous AI Page') ,
 							accelerator : 'CmdOrCtrl+[' ,
@@ -144,13 +151,6 @@ export const reaxel_Menu = reaxel( () => {
 								void Reaxel_View().turnToNextAiPage();
 							},
 						} ,
-						{ type : 'separator' as const } ,
-						...enabledAIs.map( ai => ( {
-							label : ai.label ,
-							type : 'radio' as const ,
-							checked : currentAIViewKey === ai.id ,
-							click : createClickMenuHandler( ai.id ),
-						} ) ),
 					]
 					: [
 						{
@@ -171,12 +171,11 @@ export const reaxel_Menu = reaxel( () => {
 	
 	function rebuildMenu() {
 		console.log('[Menu] rebuildMenu called, i18nInstance =', i18nInstance ? 'SET' : 'NULL');
+		if( !mainWindow || mainWindow.isDestroyed() ) return;
 		mainWindow.setMenu( createMenu() );
 	}
 	
-	const menuReady = app.whenReady().then( async() => {
-		rebuildMenu();
-	} );
+	const menuReady = Promise.resolve();
 	
 	obsReaction( ( first ) => {
 		if( first ) return;
@@ -211,7 +210,6 @@ const getRuntimeSettings = ():Settings => {
 
 import { Reaxel_View } from '../Views';
 import {
-	app ,
 	autoUpdater ,
 	dialog ,
 	Menu,

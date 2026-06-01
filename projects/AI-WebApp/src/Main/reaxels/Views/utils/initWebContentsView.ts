@@ -3,7 +3,8 @@ const { absAppRunningPath } = reaxel_ElectronENV();
 
 export const initWebContentsView = (options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
 	
-	const view = new WebContentsView(options);
+	const viewOptions = normalizeViewOptions( options );
+	const view = new WebContentsView(viewOptions);
 	view.webContents.setVisualZoomLevelLimits(1,5);
 	mainWindow.contentView.addChildView(view);
 	
@@ -11,10 +12,10 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	const viewName = options.type === 'AI-View' ? `AI-View-${options.domain || 'unknown'}` : 'Settings-View';
 	new ViewCrashReporter(view, viewName);
 	
-	if(options.type==='Settings-View'){
+	if(viewOptions.type==='Settings-View'){
 		useSettingsView(view, options);
-	}else if(options.type==='AI-View'){
-		useAIView(view, options);
+	}else if(viewOptions.type==='AI-View'){
+		useAIView(view, viewOptions);
 	}
 	
 	//让View跟随主窗口大小
@@ -70,9 +71,28 @@ const useAIView = (view:WebContentsView,options:WebContentsViewConstructorOption
 	~async function loadAIView() {
 		if( options.aiConfig && options.settings ) {
 			await applyAIProxyToView( view , options.aiConfig , options.settings );
+			applyAIPageAppearanceToView( view , options.settings.appearance );
 		}
 		await view.webContents.loadURL( options.domain || "https://chatgpt.com" );
 	}();
+};
+
+const normalizeViewOptions = (options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
+	if( options.type !== 'AI-View' ) {
+		return options;
+	}
+	return {
+		...options ,
+		webPreferences : {
+			nodeIntegration : false ,
+			contextIsolation : true ,
+			...( options.webPreferences || {} ) ,
+			preload : path.join( absAppRunningPath , 'ai-page-preload.js' ) ,
+			additionalArguments : options.settings
+				? getAIPagePreloadArguments( options.settings.appearance )
+				: [],
+		},
+	};
 };
 
 const shouldOpenInCurrentView = (currentURL:string , nextURL:string) => {
@@ -95,6 +115,10 @@ import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {dev} from 'electron-is';
 import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 import { applyAIProxyToView } from "#main/services/settings/proxy-service";
+import {
+	applyAIPageAppearanceToView ,
+	getAIPagePreloadArguments,
+} from '#main/services/appearance';
 import type { Settings } from "#src/Types/SettingsTypes";
 import type { AI as AISettings } from "#src/Types/SettingsTypes/AI";
 

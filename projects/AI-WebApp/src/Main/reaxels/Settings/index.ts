@@ -55,8 +55,9 @@ export const reaxel_Settings = reaxel( () => {
 			s.appearance = normalizedRuntimeSettings.appearance;
 		} );
 		
+		const resolvedAppearance = applyElectronAppearance( normalizedRuntimeSettings.appearance );
 		// 同步主进程 i18n 语言（防御性，确保与持久化配置一致）
-		reaxel_I18n().setLanguage(normalizedRuntimeSettings.appearance.language as any);
+		reaxel_I18n().setLanguage(resolvedAppearance.language as any);
 		
 		await syncRuntimeViews();
 		
@@ -218,6 +219,7 @@ import { reaxel_Menu } from '#main/reaxels/Menu';
 import { reaxel_I18n } from '#main/reaxels/I18n';
 import { Reaxel_View } from '#main/reaxels/Views';
 import { rehancer_ipcReceive } from './rehancer_ipcReceive';
+import { applyElectronAppearance } from '#main/services/appearance';
 import {
 	getSettingsConfigService ,
 	normalizeRuntimeSettings,

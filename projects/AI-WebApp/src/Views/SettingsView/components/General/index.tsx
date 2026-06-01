@@ -1,13 +1,24 @@
 export const RCGeneralPanel = reaxper(() => {
 	const {
-		store:{UIControls:{appearance:appearanceStore, system:systemStore}},
+		store:{UIControls:{appearance:appearanceStore, system:systemStore}, Environment:environmentStore},
 		setState:{UIControls:{appearance:setAppearance, system:setSystem}}
 	} = reaxel_SettingsView;
-	
+
 	const handleLanguageChange = (value: Appearance.Language) => {
 		setAppearance({ language: value });
 		// 仅更新渲染进程 i18n（即时预览），主进程 Menu/Tray 在 Apply/Save 时才变更
-		reaxel_I18n().setLanguage(value as any);
+		reaxel_I18n().setLanguage(
+			resolveLanguagePreference( value , environmentStore.systemLanguage ) as any,
+		);
+	};
+
+	const handleThemeChange = (value: Appearance.Theme) => {
+		setAppearance( {
+			theme : value ,
+			darkmode : resolveThemePreference( value , environmentStore.systemTheme ) === 'dark',
+		} );
+		document.documentElement.dataset.aiWebappThemeSource = value;
+		document.documentElement.dataset.aiWebappTheme = resolveThemePreference( value , environmentStore.systemTheme );
 	};
 	
 	return <div className="settings-section">
@@ -19,6 +30,14 @@ export const RCGeneralPanel = reaxper(() => {
 					value={ appearanceStore.language }
 					onChange={ handleLanguageChange }
 					options={[
+						{
+							value : 'follow-system' ,
+							label : <span>
+								<I18n>Follow System</I18n>
+								<br />
+								<span className="select-option-subtitle">{ getLanguageDisplayName( environmentStore.systemLanguage ) }</span>
+							</span>,
+						} ,
 						{ value : 'en-US' , label : 'English' },
 						{ value : 'zh-CN' , label : '简体中文' },
 						{ value : 'zh-TW' , label : '正體中文' },
@@ -33,14 +52,19 @@ export const RCGeneralPanel = reaxper(() => {
 		{/* Appearance */}
 		<div className="section-title"><I18n>Appearance</I18n></div>
 		<Form layout="vertical">
-			<Form.Item label={<I18n>Dark Mode</I18n>}>
+			<Form.Item label={<I18n>Theme</I18n>}>
 				<Radio.Group
-					value={ appearanceStore.darkmode }
-					onChange={ e => setAppearance( { darkmode : e.target.value } ) }
+					value={ appearanceStore.theme }
+					onChange={ e => handleThemeChange( e.target.value ) }
 					style={ { userSelect : 'none' } }
 				>
-					<Radio value={false}><I18n>Light</I18n></Radio>
-					<Radio value={true}><I18n>Dark</I18n></Radio>
+					<Radio value="system">
+						<I18n>Follow System</I18n>
+						<br />
+						<span className="select-option-subtitle"><I18n>{ environmentStore.systemTheme === 'dark' ? 'Dark' : 'Light' }</I18n></span>
+					</Radio>
+					<Radio value="light"><I18n>Light</I18n></Radio>
+					<Radio value="dark"><I18n>Dark</I18n></Radio>
 				</Radio.Group>
 			</Form.Item>
 		</Form>
@@ -87,6 +111,11 @@ export const RCGeneralPanel = reaxper(() => {
 
 import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
 import { reaxel_I18n } from "#src/Views/SettingsView/reaxels/i18n";
+import {
+	getLanguageDisplayName ,
+	resolveLanguagePreference ,
+	resolveThemePreference,
+} from '#src/shared/appearance';
 import {
 	Checkbox ,
 	Form ,

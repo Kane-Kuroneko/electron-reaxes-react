@@ -7,7 +7,10 @@
  */
 export const reaxel_I18n = reaxel(() => {
 	// 从持久化配置读取初始语言
-	const persistedLanguage = getSettingsConfigService().getEffectiveSettings().appearance.language || 'en-US';
+	const persistedLanguage = resolveLanguagePreference(
+		getSettingsConfigService().getEffectiveSettings().appearance.language ,
+		getAppearanceEnvironment().systemLanguage,
+	);
 	console.log('[I18n] Init: persisted language from settings =', persistedLanguage);
 	
 	const { store, setState, mutate } = createReaxable({
@@ -86,5 +89,7 @@ import zhTW from '#src/Views/SettingsView/reaxels/i18n/langs/zh-TW';
 import jaJP from '#src/Views/SettingsView/reaxels/i18n/langs/ja-JP';
 import koKR from '#src/Views/SettingsView/reaxels/i18n/langs/ko-KR';
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
+import { getAppearanceEnvironment } from '#main/services/appearance';
+import { resolveLanguagePreference } from '#src/shared/appearance';
 import { createReaxable, reaxel } from 'reaxes';
 import type { Languages } from '#src/Types/Languages';

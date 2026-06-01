@@ -25,8 +25,18 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	'delete-ai': IpcStructure.IpcRpc<[id: string], boolean>;
 	'reset-ais-to-defaults': IpcStructure.IpcRpc<[void], { success: boolean }>;
 	'get-preload-ai-families': IpcStructure.IpcRpc<[void], AI.AIFamily[]>;
+	'get-appearance-environment': IpcStructure.IpcRpc<[void], AppearanceEnvironment>;
+	'get-guiding-defaults': IpcStructure.IpcRpc<[void], Guiding.Defaults>;
+	'guiding-save-progress': IpcStructure.IpcRpc<[progress: Guiding.Progress], { success: boolean }>;
+	'guiding-test-connectivity': IpcStructure.IpcRpc<[void], Guiding.ConnectivityResult>;
+	'guiding-finish': IpcStructure.IpcRpc<[options: Guiding.FinishOptions], { success: boolean }>;
 }
 type MainToRendererReply<K extends keyof MainToRendererEvents> = ReplyFromMtrEvents<MainToRendererEvents , K>;
+type AppearanceEnvironment = {
+	systemLanguage: Languages;
+	systemTheme: 'light' | 'dark';
+	systemLanguageName: string;
+};
 
 import {
 	type Settings ,
@@ -41,3 +51,5 @@ import {
 } from "#src/Types/SettingsTypes/SettingsPatchPath";
 import { AI } from "#src/Types/SettingsTypes/AI";
 import type { FloatingLayer } from "#src/Types/FloatingLayer";
+import type { Languages } from '#src/Types/Languages';
+import type { Guiding } from '#src/Types/Guiding';
