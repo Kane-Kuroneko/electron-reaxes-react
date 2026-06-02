@@ -19,8 +19,8 @@ export const reaxel_SettingsView = reaxel( () => {
 		} ,
 		UIControls : {
 			networks : {
-				proxy_mode : checkAs<NetworkProxy.GlobalProxyMode>( 'user_fill' ) ,
-				using_proxy_server_id : checkAs<string>( '1' ) ,
+				proxy_mode : checkAs<NetworkProxy.GlobalProxyMode>( 'direct' ) ,
+				using_proxy_server_id : checkAs<string>( null ) ,
 				proxy_fields : defaultGlobalProxyFields() ,
 				check_connection : {
 					modal_visible : false ,
@@ -305,15 +305,6 @@ export const reaxel_SettingsView = reaxel( () => {
 	} );
 } );
 
-function defaultProxyConf():NetworkProxy.ProxyConfFields {
-	return {
-		protocol : 'http' ,
-		hostname : '127.0.0.1' ,
-		port : 7897 ,
-		proxy_auth : false,
-	};
-}
-
 function getBrowserSystemTheme():'light' | 'dark' {
 	if( typeof window === 'undefined' || !window.matchMedia ) {
 		return 'light';
@@ -328,34 +319,6 @@ function applyThemePreferenceToDocument(
 	const resolvedTheme = resolveThemePreference( theme , systemTheme );
 	document.documentElement.dataset.aiWebappThemeSource = theme;
 	document.documentElement.dataset.aiWebappTheme = resolvedTheme;
-}
-
-function defaultGlobalProxyFields():NetworkProxy.GlobalProxyFields {
-	return {
-		...defaultProxyConf() ,
-		no_proxy_for : [] ,
-		no_proxy_for__enabled : true,
-	};
-}
-
-function defaultProxyServers():NetworkProxy.ProxyServer.Server[] {
-	return [
-		{
-			proxy_server_id : '1' ,
-			server_name : 'Clash Verge Rev' ,
-			proxy_conf : defaultProxyConf() ,
-			enabled : true,
-		} ,
-		{
-			proxy_server_id : '2' ,
-			server_name : 'Clash For Windows' ,
-			proxy_conf : {
-				...defaultProxyConf() ,
-				port : 7890,
-			} ,
-			enabled : true,
-		},
-	];
 }
 
 function defaultAIFields():AI.EditAIItem {
@@ -437,6 +400,11 @@ import {
 	resolveLanguagePreference ,
 	resolveThemePreference,
 } from '#src/shared/appearance';
+import {
+	createDefaultGlobalProxy as defaultGlobalProxyFields ,
+	createDefaultProxyConf as defaultProxyConf ,
+	createDefaultProxyServers as defaultProxyServers,
+} from '#src/shared/statics/default-proxy';
 import type { Languages } from '#src/Types/Languages';
 import type {
 	Menus,

@@ -12,12 +12,7 @@
       "proxy_mode": "follow_global_setting",
       "from_server_list_proxy": null,
       "preloadOnStartup": false,
-      "user_fill_proxy": {
-        "hostname": "127.0.0.1",
-        "port": 7897,
-        "protocol": "http",
-        "proxy_auth": false
-      }
+      "user_fill_proxy": null
     },
     {
       "id": "default-grok-001",
@@ -29,12 +24,7 @@
       "proxy_mode": "follow_global_setting",
       "from_server_list_proxy": null,
       "preloadOnStartup": false,
-      "user_fill_proxy": {
-        "hostname": "127.0.0.1",
-        "port": 7897,
-        "protocol": "http",
-        "proxy_auth": false
-      }
+      "user_fill_proxy": null
     },
     {
       "id": "default-gemini-001",
@@ -46,12 +36,7 @@
       "proxy_mode": "follow_global_setting",
       "from_server_list_proxy": null,
       "preloadOnStartup": false,
-      "user_fill_proxy": {
-        "hostname": "127.0.0.1",
-        "port": 7897,
-        "protocol": "http",
-        "proxy_auth": false
-      }
+      "user_fill_proxy": null
     },
     {
       "id": "default-deepseek-001",
@@ -63,12 +48,7 @@
       "proxy_mode": "follow_global_setting",
       "from_server_list_proxy": null,
       "preloadOnStartup": false,
-      "user_fill_proxy": {
-        "hostname": "127.0.0.1",
-        "port": 7897,
-        "protocol": "http",
-        "proxy_auth": false
-      }
+      "user_fill_proxy": null
     },
     {
       "id": "default-perplexity-001",
@@ -80,12 +60,7 @@
       "proxy_mode": "follow_global_setting",
       "from_server_list_proxy": null,
       "preloadOnStartup": false,
-      "user_fill_proxy": {
-        "hostname": "127.0.0.1",
-        "port": 7897,
-        "protocol": "http",
-        "proxy_auth": false
-      }
+      "user_fill_proxy": null
     },
     {
       "id": "default-claude-001",
@@ -97,12 +72,7 @@
       "proxy_mode": "follow_global_setting",
       "from_server_list_proxy": null,
       "preloadOnStartup": false,
-      "user_fill_proxy": {
-        "hostname": "127.0.0.1",
-        "port": 7897,
-        "protocol": "http",
-        "proxy_auth": false
-      }
+      "user_fill_proxy": null
     },
     {
       "id": "default-dev-proxy-test-001",
@@ -114,12 +84,7 @@
       "proxy_mode": "follow_global_setting",
       "from_server_list_proxy": null,
       "preloadOnStartup": false,
-      "user_fill_proxy": {
-        "hostname": "127.0.0.1",
-        "port": 7897,
-        "protocol": "http",
-        "proxy_auth": false
-      }
+      "user_fill_proxy": null
     }
   ]
 }

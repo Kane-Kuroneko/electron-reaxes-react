@@ -18,41 +18,13 @@ export const sharedSettingsStatus = {
 			editing_id : null ,
 			fields : {
 				server_name : '' ,
+				enabled : true ,
 				proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
-					protocol : 'http' ,
-					hostname : '127.0.0.1' ,
-					port : 7897 ,
-					proxy_auth : false ,
+					...createDefaultProxyConf(),
 				} ) ,
 			} ,
 		} ,
-		proxy_server_list : checkAs<NetworkProxy.ProxyServer.Server[]>( [
-			{
-				proxy_server_id : '1' ,
-				server_name : 'Clash Verge Rev' ,
-				proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
-					protocol : 'http' ,
-					hostname : '127.0.0.1' ,
-					port : 7897 ,
-					proxy_auth : false ,
-				} ) ,
-				enabled : true ,
-			} ,
-			{
-				proxy_server_id : '2' ,
-				server_name : 'Clash For Windows' ,
-				proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
-					protocol : 'http' ,
-					hostname : '127.0.0.1' ,
-					port : 7890 ,
-					proxy_auth : {
-						username : 'kane' ,
-						password : '123456' ,
-					} ,
-				} ) ,
-				enabled : true ,
-			} ,
-		] ) ,
+		proxy_server_list : checkAs<NetworkProxy.ProxyServer.Server[]>( createDefaultProxyServers() ) ,
 	}
 }
 
@@ -87,16 +59,13 @@ export const reaxable_Settings = () => {
 		//UI组件状态和临时数据
 		UIControls : {
 			networks : {
-				proxy_mode : checkAs<NetworkProxy.GlobalProxyMode>( 'user_fill' ) ,
+				proxy_mode : checkAs<NetworkProxy.GlobalProxyMode>( 'direct' ) ,
 				using_proxy_server_id : checkAs<string>( null ) ,
 				proxy_fields : checkAs<NotFalse<Settings.IpcSettings['proxy']> & { no_proxy_for__enabled: boolean; }>( {
-					hostname : '127.0.0.1' ,
-					port : 7897 ,
-					protocol : 'http' ,
+					...createDefaultGlobalProxy() ,
 					no_proxy_for : checkAs<NetworkProxy.NoProxyForItem[]>( [] ) ,
 					//是否启用no_proxy_for字段,作用是仅禁用但不清空字段
 					no_proxy_for__enabled : true ,
-					proxy_auth : false ,
 				} ) ,
 				check_connection : {
 					modal_visible : false ,
@@ -112,41 +81,13 @@ export const reaxable_Settings = () => {
 					editing_id : null ,
 					fields : {
 						server_name : '' ,
+						enabled : true ,
 						proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
-							protocol : 'http' ,
-							hostname : '127.0.0.1' ,
-							port : 7897 ,
-							proxy_auth : false ,
+							...createDefaultProxyConf(),
 						} ) ,
 					} ,
 				} ,
-				proxy_server_list : checkAs<NetworkProxy.ProxyServer.Server[]>( [
-					{
-						proxy_server_id : '1' ,
-						server_name : 'Clash Verge Rev' ,
-						proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
-							protocol : 'http' ,
-							hostname : '127.0.0.1' ,
-							port : 7897 ,
-							proxy_auth : false ,
-						} ) ,
-						enabled : true ,
-					} ,
-					{
-						proxy_server_id : '2' ,
-						server_name : 'Clash For Windows' ,
-						proxy_conf : checkAs<NetworkProxy.ProxyConfFields>( {
-							protocol : 'http' ,
-							hostname : '127.0.0.1' ,
-							port : 7890 ,
-							proxy_auth : {
-								username : 'kane' ,
-								password : '123456' ,
-							} ,
-						} ) ,
-						enabled : true ,
-					} ,
-				] ) ,
+				proxy_server_list : checkAs<NetworkProxy.ProxyServer.Server[]>( createDefaultProxyServers() ) ,
 			} ,
 			manage_AIs : {
 				AIs : checkAs<( {
@@ -218,6 +159,11 @@ export type Menus = "general" | "net" | "mngeai" | "keys";
 
 
 import { Settings } from '#src/Types/Settings';
+import {
+	createDefaultGlobalProxy ,
+	createDefaultProxyConf ,
+	createDefaultProxyServers,
+} from '#src/shared/statics/default-proxy';
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 import { Appearance } from "#src/Types/SettingsTypes/Appearance";

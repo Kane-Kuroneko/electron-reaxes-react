@@ -580,13 +580,6 @@ const ProxyAuthFields = reaxper( ( { proxyConf }:{ proxyConf:NetworkProxy.ProxyC
 	</>;
 } );
 
-const defaultProxyConf = ():NetworkProxy.ProxyConfFields => ( {
-	protocol : 'http' ,
-	hostname : '127.0.0.1' ,
-	port : 7897 ,
-	proxy_auth : false,
-} );
-
 const firstEnabledProxyServerId = () => {
 	return reaxel_SettingsView.store.UIControls.networks.proxy_server_list.find( server => server.enabled )?.proxy_server_id || null;
 };
@@ -759,6 +752,7 @@ import { DragIconSvg } from "./DragIcon.svg";
 import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
 import { resetAIsToDefaults } from "#src/Views/SettingsView/services/Settings";
 import { AIFamily } from "#src/shared/statics/AI-family";
+import { createDefaultProxyConf as defaultProxyConf } from "#src/shared/statics/default-proxy";
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 import React from 'react';

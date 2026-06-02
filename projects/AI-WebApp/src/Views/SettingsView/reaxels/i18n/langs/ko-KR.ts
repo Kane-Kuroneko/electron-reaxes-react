@@ -18,6 +18,8 @@ export default {
 	
 	// Menu - Switch AI
 	"Switch AI" : "AI 전환" ,
+	"Previous AI" : "이전 AI" ,
+	"Next AI" : "다음 AI" ,
 	"Previous AI Page" : "이전 AI 페이지" ,
 	"Next AI Page" : "다음 AI 페이지" ,
 	"No enabled AI pages" : "활성화된 AI 페이지가 없습니다" ,

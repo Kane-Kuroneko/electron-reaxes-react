@@ -24,6 +24,8 @@ export const reaxel_Menu = reaxel( () => {
 		const settings = getRuntimeSettings();
 		const enabledAIs = settings.AIs.filter( ai => !ai.disabled );
 		const { currentAIViewKey } = Reaxel_View.store;
+		const nextAI = resolveAdjacentMenuAI( enabledAIs , currentAIViewKey , 1 );
+		const previousAI = resolveAdjacentMenuAI( enabledAIs , currentAIViewKey , -1 );
 		
 		return Menu.buildFromTemplate( [
 			{
@@ -163,6 +165,24 @@ export const reaxel_Menu = reaxel( () => {
 						},
 					],
 			},
+			{
+				label : createAdjacentAIMenuLabel( t( 'Next AI' ) , nextAI ) ,
+				accelerator : 'CmdOrCtrl+]' ,
+				registerAccelerator : false ,
+				enabled : enabledAIs.length > 1 ,
+				click : () => {
+					void Reaxel_View().turnToNextAiPage();
+				},
+			} ,
+			{
+				label : createAdjacentAIMenuLabel( t( 'Previous AI' ) , previousAI ) ,
+				accelerator : 'CmdOrCtrl+[' ,
+				registerAccelerator : false ,
+				enabled : enabledAIs.length > 1 ,
+				click : () => {
+					void Reaxel_View().turnToPreviousAiPage();
+				},
+			},
 		] );
 	}
 	
@@ -210,6 +230,35 @@ const getRuntimeSettings = ():Settings => {
 		...settingsConfigService.getEffectiveSettings() ,
 		AIs : aiConfigService.getEffectiveAIs(),
 	};
+};
+
+const resolveAdjacentMenuAI = (
+	enabledAIs:Settings['AIs'] ,
+	currentAIViewKey:string ,
+	offset:number,
+) => {
+	if( enabledAIs.length === 0 ) {
+		return null;
+	}
+	const currentIndex = enabledAIs.findIndex( ai => ai.id === currentAIViewKey );
+	const baseIndex = currentIndex === -1
+		? offset > 0 ? -1 : 0
+		: currentIndex;
+	return enabledAIs[getWrappedIndex( baseIndex + offset , enabledAIs.length )];
+};
+
+const getWrappedIndex = (index:number , length:number) => {
+	return ( index + length ) % length;
+};
+
+const createAdjacentAIMenuLabel = (
+	label:string ,
+	ai:Settings['AIs'][number] | null,
+) => {
+	if( !ai ) {
+		return label;
+	}
+	return `${ label }(${ ai.label || ai.id })`;
 };
 
 import { Reaxel_View } from '../Views';

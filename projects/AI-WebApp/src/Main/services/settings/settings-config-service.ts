@@ -10,42 +10,15 @@ export type SettingsConfigFile = {
 
 const cloneData = <T>(data:T):T => JSON.parse( JSON.stringify( data ) );
 
-export const createDefaultProxyConf = ():NetworkProxy.ProxyConfFields => ( {
-	protocol : 'http' ,
-	hostname : '127.0.0.1' ,
-	port : 7897 ,
-	proxy_auth : false,
-} );
-
-export const createDefaultGlobalProxy = ():NetworkProxy.GlobalProxyFields => ( {
-	...createDefaultProxyConf() ,
-	no_proxy_for : [] ,
-	no_proxy_for__enabled : true,
-} );
-
-export const createDefaultProxyServers = ():NetworkProxy.ProxyServer.Server[] => [
-	{
-		proxy_server_id : '1' ,
-		server_name : 'Clash Verge Rev' ,
-		proxy_conf : createDefaultProxyConf() ,
-		enabled : true,
-	} ,
-	{
-		proxy_server_id : '2' ,
-		server_name : 'Clash For Windows' ,
-		proxy_conf : {
-			...createDefaultProxyConf() ,
-			port : 7890,
-		} ,
-		enabled : true,
-	},
-];
+export const createDefaultProxyConf = sharedCreateDefaultProxyConf;
+export const createDefaultGlobalProxy = sharedCreateDefaultGlobalProxy;
+export const createDefaultProxyServers = sharedCreateDefaultProxyServers;
 
 export const createDefaultRuntimeSettings = ():RuntimeSettings => ( {
 	networks : {
 		global_proxy : {
-			proxy_mode : 'user_fill' ,
-			proxy_server_id : '1' ,
+			proxy_mode : 'direct' ,
+			proxy_server_id : null ,
 			user_fill_proxy : createDefaultGlobalProxy(),
 		} ,
 		proxy_server_list : createDefaultProxyServers(),
@@ -189,5 +162,10 @@ import {
 	normalizeLanguagePreference ,
 	normalizeThemePreference,
 } from '#src/shared/appearance';
+import {
+	createDefaultGlobalProxy as sharedCreateDefaultGlobalProxy ,
+	createDefaultProxyConf as sharedCreateDefaultProxyConf ,
+	createDefaultProxyServers as sharedCreateDefaultProxyServers,
+} from '#src/shared/statics/default-proxy';
 import type { Settings } from '#src/Types/SettingsTypes';
 import { NetworkProxy } from '#src/Types/SettingsTypes/NetworkProxy';
