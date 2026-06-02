@@ -252,6 +252,21 @@ export const reaxel_SettingsView = reaxel( () => {
 		} );
 	};
 	
+	const setAIEnabled = (id:string , enabled:boolean) => {
+		mutate.Data( state => {
+			state.AIs = state.AIs.map( ai => ai.id === id
+				? {
+					...ai ,
+					disabled : !enabled,
+				}
+				: ai );
+		} );
+	};
+
+	const createDefaultAIName = (family:AI.AIFamily , excludeId?:string | null) => {
+		return buildDefaultAIName( family , store.Data.AIs , excludeId );
+	};
+
 	const rtn = {
 		fetchSettings ,
 		reloadSettings ,
@@ -260,6 +275,8 @@ export const reaxel_SettingsView = reaxel( () => {
 		applySettings ,
 		isDirty ,
 		changeEditAIModalVisible ,
+		setAIEnabled ,
+		createDefaultAIName ,
 		submitSettings : ipcMethods.submitSettings ,
 		exitSettings : ipcMethods.exitSettings ,
 		turnToNextAiPage : ipcMethods.turnToNextAiPage ,
@@ -353,6 +370,60 @@ function defaultAIFields():AI.EditAIItem {
 		from_server_list_proxy : null ,
 		user_fill_proxy : null,
 	};
+}
+
+const AINameSuffixPool = [
+	'Anselm' ,
+	'Leopold' ,
+	'Florian' ,
+	'Dietrich' ,
+	'Ludwig' ,
+	'Frieda' ,
+	'Odette' ,
+	'Colette' ,
+	'Mireille' ,
+	'Bastien' ,
+	'Lucien' ,
+	'Claudine' ,
+	'Cosimo' ,
+	'Ludovico' ,
+	'Vittorio' ,
+	'Marcello' ,
+	'Fiorella' ,
+	'Ginevra',
+] as const;
+
+const AINameFamilyPrefix:Record<AI.AIFamily , string> = {
+	chatgpt : 'ChatGPT' ,
+	grok : 'Grok' ,
+	gemini : 'Gemini' ,
+	deepseek : 'DeepSeek' ,
+	perplexity : 'Perplexity' ,
+	claude : 'Claude' ,
+	custom : 'Custom AI' ,
+	'dev-proxy-test' : 'Proxy Test',
+};
+
+function buildDefaultAIName(family:AI.AIFamily , AIs:AI.AIItem[] , excludeId?:string | null) {
+	const prefix = AINameFamilyPrefix[family] || family;
+	const normalizedExistingNames = AIs
+		.filter( ai => ai.id !== excludeId )
+		.map( ai => ai.label.trim().toLowerCase() )
+		.filter( Boolean );
+	const suffix = AINameSuffixPool.find( name => {
+		const normalizedName = name.toLowerCase();
+		return !normalizedExistingNames.some( existing => existing.includes( normalizedName ) );
+	} );
+
+	if( suffix ) {
+		return `${ prefix }-${ suffix }`;
+	}
+
+	let index = 2;
+	while( normalizedExistingNames.some( existing => existing.includes( `${ prefix }-${ index }`.toLowerCase() ) ) ) {
+		index++;
+	}
+	return `${ prefix }-${ index }`;
 }
 
 export type Reaxel_SettingsView = Pick<typeof reaxel_SettingsView , "mutate"|"store"|"setState">;

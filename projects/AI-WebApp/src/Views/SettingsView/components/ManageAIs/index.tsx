@@ -1,3 +1,16 @@
+const AIEnabledCheckbox = reaxper( ( { id }:{ id:string } ) => {
+	const target = reaxel_SettingsView.store.Data.AIs.find( ai => ai.id === id );
+	const { setAIEnabled } = reaxel_SettingsView();
+
+	return <Checkbox
+		checked={ target ? !target.disabled : false }
+		disabled={ !target }
+		onChange={ e => {
+			setAIEnabled( id , e.target.checked );
+		} }
+	/>;
+} );
+
 const columns:TableColumnType<AI.AIItem>[] = [
 	{
 		title : <I18n>Drag</I18n> ,
@@ -10,17 +23,7 @@ const columns:TableColumnType<AI.AIItem>[] = [
 		title : <I18n>Enabled</I18n> ,
 		width : 80 ,
 		render( _value , record ) {
-			return <Checkbox
-				checked={ !record.disabled }
-				onChange={ e => {
-					reaxel_SettingsView.mutate.Data( state => {
-						const target = state.AIs.find( ai => ai.id === record.id );
-						if( target ) {
-							target.disabled = !e.target.checked;
-						}
-					} );
-				} }
-			/>;
+			return <AIEnabledCheckbox id={ record.id }/>;
 		},
 	} ,
 	{
@@ -225,6 +228,7 @@ const SortableRow:React.FC<Readonly<RowProps>> = reaxper( props => {
 const EditAIModal = reaxper( () => {
 	const { edit_AI_modal:store } = reaxel_SettingsView.store.UIControls.manage_AIs;
 	const { edit_AI_modal:setState } = reaxel_SettingsView.setState.UIControls.manage_AIs;
+	const { createDefaultAIName } = reaxel_SettingsView();
 	
 	const fields = store.fields;
 	const ProxyComponent = {
@@ -360,12 +364,17 @@ const EditAIModal = reaxper( () => {
 				<Select
 					value={ fields.AI_family }
 					onChange={ value => {
-						const defaultUrl = defaultURLByFamily( value );
-						setState.fields( {
-							AI_family : value ,
+						const family = value as AI.AIFamily;
+						const defaultUrl = defaultURLByFamily( family );
+						const patch:Partial<AI.EditAIItem> = {
+							AI_family : family ,
 							url : defaultUrl ,
 							url_override : null,
-						} );
+						};
+						if( store.mode === 'add' ) {
+							patch.label = createDefaultAIName( family );
+						}
+						setState.fields( patch );
 						setUrlEditing( false );
 					} }
 				>

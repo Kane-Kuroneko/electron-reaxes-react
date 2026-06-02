@@ -98,6 +98,8 @@ export default {
 	
 	// Manage AIs
 	"Drag" : "拖拽" ,
+	"New" : "新增" ,
+	"Modified" : "已修改" ,
 	"App name" : "应用名称" ,
 	"AI name" : "AI 名称" ,
 	"Family" : "系列" ,

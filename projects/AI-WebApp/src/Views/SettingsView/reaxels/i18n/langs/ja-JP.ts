@@ -98,6 +98,8 @@ export default {
 	
 	// Manage AIs
 	"Drag" : "ドラッグ" ,
+	"New" : "新規" ,
+	"Modified" : "変更済み" ,
 	"App name" : "アプリ名" ,
 	"AI name" : "AI 名" ,
 	"Family" : "ファミリー" ,
