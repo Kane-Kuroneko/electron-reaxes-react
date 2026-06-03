@@ -12,15 +12,27 @@ export type ResolvedAppearance = {
 };
 
 const sessionLanguageHandlers = new WeakMap<Session , string>();
+const AIPageBackgroundColors:Record<'light' | 'dark' , string> = {
+	light : '#ffffff' ,
+	dark : '#111417',
+};
 
 export const getAppearanceEnvironment = ():AppearanceEnvironment => {
 	const systemLanguage = normalizeConcreteLanguage( app.getLocale() );
-	const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+	const systemTheme = getSystemTheme();
 	return {
 		systemLanguage ,
 		systemTheme ,
 		systemLanguageName : getLanguageDisplayName( systemLanguage ),
 	};
+};
+
+export const getAIPageBackgroundColorByTheme = (theme:'light' | 'dark') => {
+	return AIPageBackgroundColors[theme];
+};
+
+export const getAIPageBackgroundColor = (appearance:Settings['appearance']) => {
+	return getAIPageBackgroundColorByTheme( resolveAppearance( appearance ).theme );
 };
 
 export const resolveAppearance = (
@@ -57,6 +69,7 @@ export const applyAIPageAppearanceToView = (
 	appearance:Settings['appearance'],
 ) => {
 	const resolvedAppearance = resolveAppearance( appearance );
+	view.setBackgroundColor( getAIPageBackgroundColorByTheme( resolvedAppearance.theme ) );
 	const ses = view.webContents.session;
 	installAcceptLanguageHeader( ses , resolvedAppearance.acceptLanguages );
 	try {
@@ -72,7 +85,8 @@ export const getAIPagePreloadArguments = (appearance:Settings['appearance']) => 
 	return [
 		`--ai-webapp-language=${ resolvedAppearance.language }` ,
 		`--ai-webapp-theme=${ resolvedAppearance.theme }` ,
-		`--ai-webapp-theme-source=${ resolvedAppearance.themeSource }`,
+		`--ai-webapp-theme-source=${ resolvedAppearance.themeSource }` ,
+		`--ai-webapp-background-color=${ getAIPageBackgroundColorByTheme( resolvedAppearance.theme ) }`,
 	];
 };
 
@@ -96,6 +110,30 @@ const installAcceptLanguageHeader = (ses:Session , acceptLanguages:string) => {
 	} );
 };
 
+const getSystemTheme = ():'light' | 'dark' => {
+	// nativeTheme.themeSource 会覆盖 shouldUseDarkColors，这里只返回系统级主题。
+	if( process.platform === 'darwin' ) {
+		return getMacOSSystemTheme();
+	}
+	if(
+		process.platform === 'win32'
+		&& typeof nativeTheme.shouldUseDarkColorsForSystemIntegratedUI === 'boolean'
+	) {
+		return nativeTheme.shouldUseDarkColorsForSystemIntegratedUI ? 'dark' : 'light';
+	}
+	return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+};
+
+const getMacOSSystemTheme = ():'light' | 'dark' => {
+	try {
+		return systemPreferences.getUserDefault( 'AppleInterfaceStyle' , 'string' ) === 'Dark'
+			? 'dark'
+			: 'light';
+	} catch ( error ) {
+		return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+	}
+};
+
 import {
 	buildAcceptLanguages ,
 	getLanguageDisplayName ,
@@ -111,6 +149,8 @@ import type { Languages } from '#src/Types/Languages';
 import {
 	app ,
 	nativeTheme ,
+	systemPreferences ,
 	type Session ,
 	type WebContentsView,
 } from 'electron';
+import process from 'node:process';

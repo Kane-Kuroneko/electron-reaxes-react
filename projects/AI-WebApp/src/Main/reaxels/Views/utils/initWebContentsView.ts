@@ -5,6 +5,7 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	
 	const viewOptions = normalizeViewOptions( options );
 	const view = new WebContentsView(viewOptions);
+	applyInitialViewBackground( view , viewOptions );
 	if( dev() ) {
 		useBeautifulDevtool( view );
 	}
@@ -155,6 +156,16 @@ const normalizeViewOptions = (options:WebContentsViewConstructorOptions&ExtraBro
 	};
 };
 
+const applyInitialViewBackground = (
+	view:WebContentsView ,
+	options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions,
+) => {
+	if( options.type !== 'AI-View' || !options.settings ) {
+		return;
+	}
+	view.setBackgroundColor( getAIPageBackgroundColor( options.settings.appearance ) );
+};
+
 const shouldOpenInCurrentView = (currentURL:string , nextURL:string) => {
 	try {
 		return new URL( currentURL ).origin === new URL( nextURL ).origin;
@@ -179,6 +190,7 @@ import { handleAISwitchShortcutInput } from '#main/services/shortcuts/ai-switch'
 import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import {
 	applyAIPageAppearanceToView ,
+	getAIPageBackgroundColor ,
 	getAIPagePreloadArguments,
 } from '#main/services/appearance';
 import type { Settings } from "#src/Types/SettingsTypes";

@@ -3,6 +3,7 @@ export const RCAppearancePanel = reaxper(() => {
 		store:{UIControls:{appearance:store}, Environment:environmentStore},
 		setState:{UIControls:{appearance:setState}}
 	} = reaxel_SettingsView;
+	const { setTheme } = reaxel_SettingsView();
 
 	const handleLanguageChange = (value: Appearance.Language) => {
 		setState({ language: value });
@@ -11,10 +12,7 @@ export const RCAppearancePanel = reaxper(() => {
 	};
 
 	const handleThemeChange = (value: Appearance.Theme) => {
-		setState( {
-			theme : value ,
-			darkmode : resolveThemePreference( value , environmentStore.systemTheme ) === 'dark',
-		} );
+		void setTheme( value );
 	};
 
 	return <div className="settings-section">
@@ -51,8 +49,7 @@ import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-vi
 import { reaxel_I18n } from "#src/Views/SettingsView/reaxels/i18n";
 import { RCLanguageSelect } from '../LanguageSelect';
 import {
-	resolveLanguagePreference ,
-	resolveThemePreference,
+	resolveLanguagePreference,
 } from '#src/shared/appearance';
 import {
 	Form ,

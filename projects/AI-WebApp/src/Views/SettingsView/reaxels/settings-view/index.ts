@@ -68,7 +68,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		} ,
 		Environment : {
 			systemLanguage : checkAs<Languages>( normalizeConcreteLanguage( navigator.language ) ) ,
-			systemTheme : checkAs<'light' | 'dark'>( getBrowserSystemTheme() ),
+			systemTheme : checkAs<'light' | 'dark'>( 'light' ),
 		} ,
 		get_settings_status : {
 			pending : false ,
@@ -111,12 +111,9 @@ export const reaxel_SettingsView = reaxel( () => {
 	
 	if( typeof window !== 'undefined' && window.matchMedia ) {
 		const darkSchemeQuery = window.matchMedia( '(prefers-color-scheme: dark)' );
-		darkSchemeQuery.addEventListener?.( 'change' , event => {
-			const systemTheme = event.matches ? 'dark' : 'light';
-			setState.Environment( { systemTheme } );
-			if( store.UIControls.appearance.theme === 'system' ) {
-				applyThemePreferenceToDocument( 'system' , systemTheme );
-			}
+		darkSchemeQuery.addEventListener?.( 'change' , () => {
+			// matchMedia 只作为变化信号，系统主题值通过 IPC 从主进程获取。
+			void refreshAppearanceEnvironment();
 		} );
 	}
 
@@ -148,6 +145,20 @@ export const reaxel_SettingsView = reaxel( () => {
 				error : true,
 			} );
 			throw error;
+		}
+	}
+
+	async function refreshAppearanceEnvironment() {
+		try {
+			const environment = await ipcMethods.getAppearanceEnvironment();
+			setState.Environment( environment );
+			if( store.UIControls.appearance.theme === 'system' ) {
+				applyThemePreferenceToDocument( 'system' , environment.systemTheme );
+			}
+			return environment;
+		} catch ( error ) {
+			console.error( '[SettingsView] Failed to refresh appearance environment:' , error );
+			return store.Environment;
 		}
 	}
 	
@@ -183,6 +194,18 @@ export const reaxel_SettingsView = reaxel( () => {
 		
 		// 更新快照，用于 dirty 状态检测
 		updateSnapshot();
+	}
+
+	async function setTheme( theme:Appearance.Theme ) {
+		const environment = theme === 'system'
+			? await refreshAppearanceEnvironment()
+			: store.Environment;
+		const resolvedTheme = resolveThemePreference( theme , environment.systemTheme );
+		setState.UIControls.appearance( {
+			theme ,
+			darkmode : resolvedTheme === 'dark',
+		} );
+		applyThemePreferenceToDocument( theme , environment.systemTheme );
 	}
 	
 	function buildSettingsFromStore():Settings {
@@ -271,6 +294,8 @@ export const reaxel_SettingsView = reaxel( () => {
 		fetchSettings ,
 		reloadSettings ,
 		setSettings ,
+		refreshAppearanceEnvironment ,
+		setTheme ,
 		buildSettingsFromStore ,
 		applySettings ,
 		isDirty ,
@@ -305,16 +330,9 @@ export const reaxel_SettingsView = reaxel( () => {
 	} );
 } );
 
-function getBrowserSystemTheme():'light' | 'dark' {
-	if( typeof window === 'undefined' || !window.matchMedia ) {
-		return 'light';
-	}
-	return window.matchMedia( '(prefers-color-scheme: dark)' ).matches ? 'dark' : 'light';
-}
-
 function applyThemePreferenceToDocument(
 	theme:Appearance.Theme = 'system' ,
-	systemTheme:'light' | 'dark' = getBrowserSystemTheme(),
+	systemTheme:'light' | 'dark' = 'light',
 ) {
 	const resolvedTheme = resolveThemePreference( theme , systemTheme );
 	document.documentElement.dataset.aiWebappThemeSource = theme;

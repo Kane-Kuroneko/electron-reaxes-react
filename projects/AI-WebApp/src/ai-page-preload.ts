@@ -7,6 +7,7 @@ const readArgument = (name:string) => {
 const language = readArgument( '--ai-webapp-language' );
 const theme = readArgument( '--ai-webapp-theme' );
 const themeSource = readArgument( '--ai-webapp-theme-source' );
+const backgroundColor = readArgument( '--ai-webapp-background-color' ) || '#111417';
 
 const defineNavigatorGetter = (key:'language' | 'languages' , getter:() => unknown) => {
 	try {
@@ -33,6 +34,27 @@ const applyThemeToDocument = () => {
 	document.documentElement.dataset.aiWebappThemeSource = themeSource || theme;
 	document.documentElement.style.colorScheme = theme;
 };
+
+const injectLoadingThemeStyle = () => {
+	if( theme !== 'dark' || document.getElementById( 'ai-webapp-loading-theme-style' ) ) {
+		return;
+	}
+	const style = document.createElement( 'style' );
+	style.id = 'ai-webapp-loading-theme-style';
+	style.textContent = `
+html[data-ai-webapp-theme="dark"] {
+	background-color: ${ backgroundColor };
+	color-scheme: dark;
+}
+html[data-ai-webapp-theme="dark"] body {
+	background-color: ${ backgroundColor };
+}
+`;
+	( document.head || document.documentElement ).appendChild( style );
+};
+
+injectLoadingThemeStyle();
+applyThemeToDocument();
 
 if( document.readyState === 'loading' ) {
 	document.addEventListener( 'DOMContentLoaded' , applyThemeToDocument , { once : true } );
