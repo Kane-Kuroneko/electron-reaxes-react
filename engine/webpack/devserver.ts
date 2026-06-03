@@ -16,7 +16,12 @@ export const devServerConf: Configuration = {
 		},
 	},
 	devMiddleware : {
-		// writeToDisk : true,
+		writeToDisk : true,
+	},
+	headers : {
+		'Cache-Control' : 'no-store, no-cache, must-revalidate, proxy-revalidate',
+		'Pragma' : 'no-cache',
+		'Expires' : '0',
 	},
 	liveReload:true,
 	host: "0.0.0.0",

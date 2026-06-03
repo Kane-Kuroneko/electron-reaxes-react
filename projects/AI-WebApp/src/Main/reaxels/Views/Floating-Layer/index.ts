@@ -159,7 +159,7 @@ export const reaxel_FloatingLayer = reaxel( () => {
 		} );
 
 		if( dev() ) {
-			floatingWindow.webContents.loadURL( `https://localhost:${ __DEV_PORT__ }/Floating-Layer` );
+			floatingWindow.webContents.loadURL( createDevRendererURL( 'Floating-Layer' ) , getFreshLoadURLOptions() );
 		} else {
 			floatingWindow.webContents.loadFile( path.join( absAppRunningPath , './renderer/Floating-Layer/index.html' ) );
 		}
@@ -193,6 +193,19 @@ export const reaxel_FloatingLayer = reaxel( () => {
 		mutate,
 	} );
 } );
+
+const createDevRendererURL = (entry:string) => {
+	return `https://localhost:${ __DEV_PORT__ }/${ entry }?t=${ Date.now() }`;
+};
+
+const getFreshLoadURLOptions = () => {
+	return {
+		extraHeaders : [
+			'Cache-Control: no-cache',
+			'Pragma: no-cache',
+		].join( '\n' ),
+	};
+};
 
 import { mainWindow } from '#main/mainWindow';
 import { useIpcMainToRenderer } from '#main/services/ipc';

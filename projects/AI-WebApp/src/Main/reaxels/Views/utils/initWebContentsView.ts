@@ -60,9 +60,9 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 const useSettingsView = (view:WebContentsView,options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
 	if(dev()){
 		~async function loadDevSettingsView() {
-			const loaded = await safeLoadURL( view , `https://localhost:${__DEV_PORT__}/SettingsView` , 'Settings-View' );
+			const loaded = await safeLoadURL( view , createDevRendererURL( 'SettingsView' ) , 'Settings-View' );
 			if( !loaded ) {
-				await safeLoadFile( view , path.join( absAppRunningPath , './renderer/SettingsView/index.html' ) , 'Settings-View fallback' );
+				console.error( '[Views] Settings-View dev server is unavailable. Run webpack.start before electron.start.' );
 			}
 		}();
 	}else {
@@ -99,7 +99,7 @@ const safeLoadURL = async(
 	context:string,
 ) => {
 	try {
-		await view.webContents.loadURL( url );
+		await view.webContents.loadURL( url , getFreshLoadURLOptions( url ) );
 		return true;
 	} catch ( error ) {
 		console.warn( `[Views] ${ context } loadURL failed:` , url , error );
@@ -119,6 +119,22 @@ const safeLoadFile = async(
 		console.warn( `[Views] ${ context } loadFile failed:` , filePath , error );
 		return false;
 	}
+};
+
+const createDevRendererURL = (entry:string) => {
+	return `https://localhost:${ __DEV_PORT__ }/${ entry }?t=${ Date.now() }`;
+};
+
+const getFreshLoadURLOptions = (url:string) => {
+	if( !dev() || !url.startsWith( `https://localhost:${ __DEV_PORT__ }/` ) ) {
+		return undefined;
+	}
+	return {
+		extraHeaders : [
+			'Cache-Control: no-cache',
+			'Pragma: no-cache',
+		].join( '\n' ),
+	};
 };
 
 const normalizeViewOptions = (options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {

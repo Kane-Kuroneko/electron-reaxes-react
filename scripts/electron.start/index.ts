@@ -1,18 +1,53 @@
-import path from 'node:path';
-import { spawn } from 'node:child_process';
-import { absolutelyPath_RepositoryRoot } from '../../engine/toolkit/repo-paths';
-import { getProjectPaths } from '../../engine/toolkit/project-paths';
-
-
-const { absolutelyPath_subproject } = getProjectPaths.default;
+const {
+	absolutelyPath_subproject ,
+	absolutelyPath_subprojectDist,
+} = getProjectPaths.default;
 
 const absolutelyElectronExe = path.join( absolutelyPath_RepositoryRoot , 'node_modules/electron/dist/electron.exe' );
+
+try {
+	assertFreshElectronStartupArtifacts( {
+		sourcePaths : [
+			path.join( absolutelyPath_subproject , 'src/Main' ) ,
+			path.join( absolutelyPath_subproject , 'src/preload.ts' ) ,
+			path.join( absolutelyPath_subproject , 'src/ai-page-preload.ts' ) ,
+			path.join( absolutelyPath_subproject , 'src/shared' ) ,
+			path.join( absolutelyPath_subproject , 'partial.webpack-conf.ts' ) ,
+			path.join( absolutelyPath_RepositoryRoot , 'generic-services' ) ,
+			path.join( absolutelyPath_RepositoryRoot , 'engine/babel/conf.ts' ) ,
+			path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/base.conf.ts' ) ,
+			path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/dev.conf.ts' ) ,
+			path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/prod.conf.ts' ) ,
+			path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/electron-main.conf.ts' ) ,
+			path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/electron-preload.conf.ts' ) ,
+			path.join( absolutelyPath_RepositoryRoot , 'scripts/utils/mixedRepoWebpackConf.ts' ),
+		] ,
+		artifacts : [
+			{
+				label : 'main process bundle' ,
+				path : path.join( absolutelyPath_subprojectDist , 'main.js' ),
+			} ,
+			{
+				label : 'settings preload bundle' ,
+				path : path.join( absolutelyPath_subprojectDist , 'preload.js' ),
+			} ,
+			{
+				label : 'AI page preload bundle' ,
+				path : path.join( absolutelyPath_subprojectDist , 'ai-page-preload.js' ),
+			},
+		],
+	} );
+} catch ( error ) {
+	console.error( error?.message || error );
+	process.exit( 1 );
+}
 
 // 使用 spawn 来启动 Electron
 const electronProcess = spawn(absolutelyElectronExe, ['.','--inspect=9229','--experimental-network-inspection'], {
 	cwd: absolutelyPath_subproject, // 设置当前工作目录为 subproject 路径
 	stdio: 'inherit', // 忽略 stdin, 监听 stdout 和 stderr
 	env :{
+		...process.env,
 		NODE_OPTIONS: '--enable-source-maps',
 		NODE_TLS_REJECT_UNAUTHORIZED : '0'
 	}
@@ -39,3 +74,9 @@ electronProcess.on('exit', (code) => {
 electronProcess.on('error', (err) => {
 	console.error(`Electron process error: ${err}`);
 });
+
+import { assertFreshElectronStartupArtifacts } from '../utils/build-artifacts';
+import { absolutelyPath_RepositoryRoot } from '../../engine/toolkit/repo-paths';
+import { getProjectPaths } from '../../engine/toolkit/project-paths';
+import { spawn } from 'node:child_process';
+import path from 'node:path';

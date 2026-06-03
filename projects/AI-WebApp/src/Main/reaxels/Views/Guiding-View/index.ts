@@ -94,7 +94,7 @@ export const reaxel_GuidingView = reaxel( () => {
 		} );
 		
 		if( dev() ) {
-			guidingWindow.webContents.loadURL( `https://localhost:${ __DEV_PORT__ }/GuidingView` );
+			guidingWindow.webContents.loadURL( createDevRendererURL( 'GuidingView' ) , getFreshLoadURLOptions() );
 		} else {
 			guidingWindow.webContents.loadFile( path.join( absAppRunningPath , './renderer/GuidingView/index.html' ) );
 		}
@@ -220,6 +220,19 @@ const testConnectivityTarget = async(target:typeof connectivityTargets[number]):
 	} finally {
 		clearTimeout( timer );
 	}
+};
+
+const createDevRendererURL = (entry:string) => {
+	return `https://localhost:${ __DEV_PORT__ }/${ entry }?t=${ Date.now() }`;
+};
+
+const getFreshLoadURLOptions = () => {
+	return {
+		extraHeaders : [
+			'Cache-Control: no-cache',
+			'Pragma: no-cache',
+		].join( '\n' ),
+	};
 };
 
 import {

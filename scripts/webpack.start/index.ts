@@ -65,6 +65,8 @@ const buildMain = async( conf: Configuration ) => {
 	} );
 };
 
+resetBuildDist( getProjectPaths.default.absolutelyPath_subprojectDist , 'webpack-start' );
+
 startRendererServer( webpack_conf_for_electron_renderer ).
 then( () => buildPreload( webpack_conf_for_electron_preload ) ).
 then( () => buildMain( webpack_conf_for_electron_main ) ).
@@ -82,8 +84,9 @@ then( () => {
 
 import purdy from 'purdy';
 import { webpack_conf_for_electron_main , webpack_conf_for_electron_renderer ,webpack_conf_for_electron_preload } from "../utils/mixedRepoWebpackConf";
+import { resetBuildDist } from '../utils/build-artifacts';
 
-import { port , project , mock , env , node_env , method , analyze , experimental } from "../../engine/toolkit";
+import { port , project , mock , env , node_env , method , analyze , experimental , getProjectPaths } from "../../engine/toolkit";
 import { getPort , getIPV4address , webpack_promise } from "../../engine/utils";
 import { merge } from "webpack-merge";
 import WebpackDevServer from "webpack-dev-server";
