@@ -4,6 +4,7 @@ const {
 } = getProjectPaths.default;
 
 const absolutelyElectronExe = path.join( absolutelyPath_RepositoryRoot , 'node_modules/electron/dist/electron.exe' );
+const buildStatePath = getBuildStatePath( absolutelyPath_subprojectDist );
 
 const sharedBuildSourcePaths = [
 	path.join( absolutelyPath_subproject , 'partial.webpack-conf.ts' ) ,
@@ -34,21 +35,25 @@ const aiPagePreloadSourcePaths = [
 
 try {
 	assertFreshElectronStartupArtifacts( {
+		buildStatePath ,
 		artifacts : [
 			{
 				label : 'main process bundle' ,
 				path : path.join( absolutelyPath_subprojectDist , 'main.js' ),
 				sourcePaths : mainProcessSourcePaths,
+				buildStateTarget : 'electron-main',
 			} ,
 			{
 				label : 'settings preload bundle' ,
 				path : path.join( absolutelyPath_subprojectDist , 'preload.js' ),
 				sourcePaths : preloadSourcePaths,
+				buildStateTarget : 'electron-preload',
 			} ,
 			{
 				label : 'AI page preload bundle' ,
 				path : path.join( absolutelyPath_subprojectDist , 'ai-page-preload.js' ),
 				sourcePaths : aiPagePreloadSourcePaths,
+				buildStateTarget : 'electron-preload',
 			},
 		],
 	} );
@@ -90,7 +95,7 @@ electronProcess.on('error', (err) => {
 	console.error(`Electron process error: ${err}`);
 });
 
-import { assertFreshElectronStartupArtifacts } from '../utils/build-artifacts';
+import { assertFreshElectronStartupArtifacts , getBuildStatePath } from '../utils/build-artifacts';
 import { absolutelyPath_RepositoryRoot } from '../../engine/toolkit/repo-paths';
 import { getProjectPaths } from '../../engine/toolkit/project-paths';
 import { spawn } from 'node:child_process';

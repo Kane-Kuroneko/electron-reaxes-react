@@ -27,6 +27,64 @@ export const webpack_promise = (config:Configuration) : Promise<{compiler:Compil
 	});
 };
 
+export const webpack_watch = (config:Configuration , handlers:WebpackWatchHandlers = {}) => {
+	const compiler = webpack( {
+		...config ,
+		watch : false,
+	} );
+	let first = true;
+	let settled = false;
+	let watching = null as Watching;
+	const firstDone = new Promise<WebpackWatchEvent>( ( resolve , reject ) => {
+		watching = compiler.watch( config.watchOptions ?? {} , ( error , stats ) => {
+			const hasErrors = Boolean( error || stats?.hasErrors() );
+			const event:WebpackWatchEvent = {
+				compiler ,
+				watching ,
+				first ,
+				error : error ?? null ,
+				stats : stats ?? null ,
+				hasErrors ,
+				errors : getWebpackWatchErrors( error , stats ),
+			};
+			if( hasErrors ) {
+				handlers.failed?.( event );
+				if( !settled ) {
+					settled = true;
+					reject( error ?? event.errors );
+				}
+			} else {
+				handlers.done?.( event );
+				if( !settled ) {
+					settled = true;
+					resolve( event );
+				}
+			}
+			handlers.afterEach?.( event );
+			first = false;
+		} );
+	} );
+	return {
+		compiler ,
+		watching ,
+		firstDone,
+	};
+};
+
+const getWebpackWatchErrors = (error:Error | null | undefined , stats:Stats | null | undefined) => {
+	if( error ) {
+		return [ error ];
+	}
+	if( stats?.hasErrors() ) {
+		return stats.toJson( {
+			all : false ,
+			errors : true ,
+			errorDetails : true,
+		} ).errors ?? [];
+	}
+	return [];
+};
+
 /*返回本机的ipv4局域网地址*/
 export const getIPV4address = () => {
 	const network = os.networkInterfaces();
@@ -71,5 +129,21 @@ export const reflect = <M extends Array<{
 import { fileURLToPath, pathToFileURL } from "url";
 import path from "path";
 import os from "os";
-import webpack , {Compiler,Stats,Configuration} from "webpack";
+import webpack , {Compiler,Stats,Configuration,Watching} from "webpack";
 import portfinder from "portfinder";
+
+export type WebpackWatchEvent = {
+	compiler: Compiler;
+	watching: Watching;
+	first: boolean;
+	error: Error | null;
+	stats: Stats | null;
+	hasErrors: boolean;
+	errors: unknown[];
+};
+
+export type WebpackWatchHandlers = {
+	done?: (event:WebpackWatchEvent) => void;
+	failed?: (event:WebpackWatchEvent) => void;
+	afterEach?: (event:WebpackWatchEvent) => void;
+};

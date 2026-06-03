@@ -8,6 +8,43 @@
 /**
  * build-renderer
  */
+const { absolutelyPath_subprojectDist } = getProjectPaths.default;
+const buildStatePath = getBuildStatePath( absolutelyPath_subprojectDist );
+const activeWatchings = [];
+
+const withBuildStatePlugin = (conf:Configuration , target:string , label:string , artifacts:string[] = []) => {
+	if( !conf ) {
+		return conf;
+	}
+	return {
+		...conf ,
+		plugins : [
+			...( conf.plugins ?? [] ) ,
+			createBuildStateWebpackPlugin( {
+				statePath : buildStatePath ,
+				target ,
+				label ,
+				artifacts,
+			} ),
+		],
+	};
+};
+
+const runWebpackStartCompiler = (conf:Configuration , label:string) => {
+	if( conf.watch ) {
+		const watcher = webpack_watch( conf , {
+			failed( event ) {
+				if( event.first ) return;
+				console.log( chalk.red( `${ label }重新打包失败` ) );
+				console.log( event.errors );
+			},
+		} );
+		activeWatchings.push( watcher.watching );
+		return watcher.firstDone;
+	}
+	return webpack_promise( conf );
+};
+
 const startRendererServer = async( conf: Configuration ) => {
 	if(!conf){
 		console.log(chalk.green('不需要打包renderer\n'));
@@ -39,7 +76,7 @@ const buildPreload = async (conf: Configuration) => {
 		console.log(chalk.green('不需要打包preload'));
 		return Promise.resolve();
 	}
-	return webpack_promise( conf ).
+	return runWebpackStartCompiler( conf , 'electron-preload' ).
 	then( ( { stats } ) => {
 		console.log( chalk.green( `Electron-Preload打包成功` ) );
 	} ).
@@ -54,7 +91,7 @@ const buildPreload = async (conf: Configuration) => {
  * build main
  */
 const buildMain = async( conf: Configuration ) => {
-	return webpack_promise( conf ).
+	return runWebpackStartCompiler( conf , 'electron-main' ).
 	then( ( { stats } ) => {
 		console.log( chalk.green( `Electron-Main打包成功` ) );
 	} ).
@@ -65,11 +102,34 @@ const buildMain = async( conf: Configuration ) => {
 	} );
 };
 
-resetBuildDist( getProjectPaths.default.absolutelyPath_subprojectDist , 'webpack-start' );
+resetBuildDist( absolutelyPath_subprojectDist , 'webpack-start' );
+resetBuildState( buildStatePath , 'webpack-start' );
 
-startRendererServer( webpack_conf_for_electron_renderer ).
-then( () => buildPreload( webpack_conf_for_electron_preload ) ).
-then( () => buildMain( webpack_conf_for_electron_main ) ).
+const webpack_conf_for_electron_renderer_with_build_state = withBuildStatePlugin(
+	webpack_conf_for_electron_renderer ,
+	'electron-renderer' ,
+	'electron renderer' ,
+	[ path.join( absolutelyPath_subprojectDist , 'renderer' ) ]
+);
+const webpack_conf_for_electron_preload_with_build_state = withBuildStatePlugin(
+	webpack_conf_for_electron_preload ,
+	'electron-preload' ,
+	'electron preload' ,
+	[
+		path.join( absolutelyPath_subprojectDist , 'preload.js' ) ,
+		path.join( absolutelyPath_subprojectDist , 'ai-page-preload.js' ),
+	]
+);
+const webpack_conf_for_electron_main_with_build_state = withBuildStatePlugin(
+	webpack_conf_for_electron_main ,
+	'electron-main' ,
+	'electron main' ,
+	[ path.join( absolutelyPath_subprojectDist , 'main.js' ) ]
+);
+
+startRendererServer( webpack_conf_for_electron_renderer_with_build_state ).
+then( () => buildPreload( webpack_conf_for_electron_preload_with_build_state ) ).
+then( () => buildMain( webpack_conf_for_electron_main_with_build_state ) ).
 then( () => {
 	console.log(chalk.green('打包成功，点击启动Electron Dev'));
 	console.log('file://package.json:10');
@@ -79,16 +139,16 @@ then( () => {
 	
 } ).catch(e => {
 	console.log('打包失败!',purdy(e,{}));
-	process.exitCode = 1;
+	process.exit( 1 );
 });
 
 
 import purdy from 'purdy';
 import { webpack_conf_for_electron_main , webpack_conf_for_electron_renderer ,webpack_conf_for_electron_preload } from "../utils/mixedRepoWebpackConf";
-import { resetBuildDist } from '../utils/build-artifacts';
+import { createBuildStateWebpackPlugin , getBuildStatePath , resetBuildDist , resetBuildState } from '../utils/build-artifacts';
 
 import { port , project , mock , env , node_env , method , analyze , experimental , getProjectPaths } from "../../engine/toolkit";
-import { getPort , getIPV4address , webpack_promise } from "../../engine/utils";
+import { getPort , getIPV4address , webpack_promise , webpack_watch } from "../../engine/utils";
 import { merge } from "webpack-merge";
 import WebpackDevServer from "webpack-dev-server";
 import chalk from "chalk";
