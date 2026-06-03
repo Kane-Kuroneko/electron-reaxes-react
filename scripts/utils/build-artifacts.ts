@@ -14,39 +14,47 @@ export const resetBuildDist = (distPath:string , reason = 'webpack') => {
 };
 
 export const assertFreshElectronStartupArtifacts = (options:FreshArtifactOptions) => {
-	const sourcePaths = options.sourcePaths.map( item => path.resolve( item ) );
-	const artifacts = options.artifacts.map( item => ( {
-		...item ,
-		path : path.resolve( item.path ),
-	} ) );
-	const newestSource = findNewestSource( sourcePaths );
-	const missing = artifacts.filter( artifact => !fs.existsSync( artifact.path ) );
-	const stale = artifacts.filter( artifact => {
-		if( !fs.existsSync( artifact.path ) || !newestSource ) return false;
-		return fs.statSync( artifact.path ).mtimeMs < newestSource.mtimeMs;
+	const defaultSourcePaths = resolveSourcePaths( options.sourcePaths ?? [] );
+	const artifactStates = options.artifacts.map( artifact => {
+		const sourcePaths = artifact.sourcePaths ? resolveSourcePaths( artifact.sourcePaths ) : defaultSourcePaths;
+		const artifactPath = path.resolve( artifact.path );
+		const newestSource = findNewestSource( sourcePaths );
+		const artifactExists = fs.existsSync( artifactPath );
+		const stale = artifactExists && newestSource ? fs.statSync( artifactPath ).mtimeMs < newestSource.mtimeMs : false;
+		return {
+			...artifact ,
+			path : artifactPath ,
+			newestSource ,
+			missing : !artifactExists ,
+			stale,
+		};
 	} );
+	const failedArtifacts = artifactStates.filter( artifact => artifact.missing || artifact.stale );
 
-	if( missing.length === 0 && stale.length === 0 ) {
+	if( failedArtifacts.length === 0 ) {
 		return;
 	}
 
 	const lines = [
 		'[BuildArtifacts] Electron startup artifacts are not fresh.',
-		`newest source: ${ newestSource ? `${ newestSource.path } (${ new Date( newestSource.mtimeMs ).toLocaleString() })` : 'not found' }`,
 	];
-	if( missing.length ) {
-		lines.push( 'missing artifacts:' );
-		lines.push( ...missing.map( artifact => `  - ${ artifact.label }: ${ artifact.path }` ) );
-	}
-	if( stale.length ) {
-		lines.push( 'stale artifacts:' );
-		lines.push( ...stale.map( artifact => {
+	for( const artifact of failedArtifacts ) {
+		lines.push( `${ artifact.label }:` );
+		if( artifact.missing ) {
+			lines.push( `  missing artifact: ${ artifact.path }` );
+		}
+		if( artifact.stale ) {
 			const stat = fs.statSync( artifact.path );
-			return `  - ${ artifact.label }: ${ artifact.path } (${ stat.mtime.toLocaleString() })`;
-		} ) );
+			lines.push( `  stale artifact: ${ artifact.path } (${ stat.mtime.toLocaleString() })` );
+		}
+		lines.push( `  newest source: ${ artifact.newestSource ? `${ artifact.newestSource.path } (${ new Date( artifact.newestSource.mtimeMs ).toLocaleString() })` : 'not found' }` );
 	}
 	lines.push( 'Run yarn start:webpack AI-WebApp first, or run yarn build:webpack for a production build.' );
 	throw new Error( lines.join( '\n' ) );
+};
+
+const resolveSourcePaths = (sourcePaths:string[]) => {
+	return sourcePaths.map( item => path.resolve( item ) );
 };
 
 const findNewestSource = (sourcePaths:string[]) => {
@@ -103,11 +111,14 @@ const shouldUseSourceFile = (sourcePath:string) => {
 };
 
 export type FreshArtifactOptions = {
-	sourcePaths: string[];
-	artifacts: Array<{
-		label: string;
-		path: string;
-	}>;
+	sourcePaths?: string[];
+	artifacts: FreshArtifact[];
+};
+
+export type FreshArtifact = {
+	label: string;
+	path: string;
+	sourcePaths?: string[];
 };
 
 type NewestSource = {

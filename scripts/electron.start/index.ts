@@ -5,35 +5,50 @@ const {
 
 const absolutelyElectronExe = path.join( absolutelyPath_RepositoryRoot , 'node_modules/electron/dist/electron.exe' );
 
+const sharedBuildSourcePaths = [
+	path.join( absolutelyPath_subproject , 'partial.webpack-conf.ts' ) ,
+	path.join( absolutelyPath_RepositoryRoot , 'engine/babel/conf.ts' ) ,
+	path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/base.conf.ts' ) ,
+	path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/dev.conf.ts' ) ,
+	path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/prod.conf.ts' ) ,
+	path.join( absolutelyPath_RepositoryRoot , 'scripts' , 'utils' , 'mixedRepoWebpackConf.ts' ),
+];
+const mainProcessSourcePaths = [
+	path.join( absolutelyPath_subproject , 'src/Main' ) ,
+	path.join( absolutelyPath_subproject , 'src/shared' ) ,
+	path.join( absolutelyPath_RepositoryRoot , 'generic-services' ) ,
+	path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/electron-main.conf.ts' ) ,
+	...sharedBuildSourcePaths,
+];
+const preloadSourcePaths = [
+	path.join( absolutelyPath_subproject , 'src/preload.ts' ) ,
+	path.join( absolutelyPath_RepositoryRoot , 'generic-services' , 'toolkit' , 'electron' , 'preload.ipc.ts' ) ,
+	path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/electron-preload.conf.ts' ) ,
+	...sharedBuildSourcePaths,
+];
+const aiPagePreloadSourcePaths = [
+	path.join( absolutelyPath_subproject , 'src/ai-page-preload.ts' ) ,
+	path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/electron-preload.conf.ts' ) ,
+	...sharedBuildSourcePaths,
+];
+
 try {
 	assertFreshElectronStartupArtifacts( {
-		sourcePaths : [
-			path.join( absolutelyPath_subproject , 'src/Main' ) ,
-			path.join( absolutelyPath_subproject , 'src/preload.ts' ) ,
-			path.join( absolutelyPath_subproject , 'src/ai-page-preload.ts' ) ,
-			path.join( absolutelyPath_subproject , 'src/shared' ) ,
-			path.join( absolutelyPath_subproject , 'partial.webpack-conf.ts' ) ,
-			path.join( absolutelyPath_RepositoryRoot , 'generic-services' ) ,
-			path.join( absolutelyPath_RepositoryRoot , 'engine/babel/conf.ts' ) ,
-			path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/base.conf.ts' ) ,
-			path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/dev.conf.ts' ) ,
-			path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/prod.conf.ts' ) ,
-			path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/electron-main.conf.ts' ) ,
-			path.join( absolutelyPath_RepositoryRoot , 'engine/webpack/electron-preload.conf.ts' ) ,
-			path.join( absolutelyPath_RepositoryRoot , 'scripts/utils/mixedRepoWebpackConf.ts' ),
-		] ,
 		artifacts : [
 			{
 				label : 'main process bundle' ,
 				path : path.join( absolutelyPath_subprojectDist , 'main.js' ),
+				sourcePaths : mainProcessSourcePaths,
 			} ,
 			{
 				label : 'settings preload bundle' ,
 				path : path.join( absolutelyPath_subprojectDist , 'preload.js' ),
+				sourcePaths : preloadSourcePaths,
 			} ,
 			{
 				label : 'AI page preload bundle' ,
 				path : path.join( absolutelyPath_subprojectDist , 'ai-page-preload.js' ),
+				sourcePaths : aiPagePreloadSourcePaths,
 			},
 		],
 	} );

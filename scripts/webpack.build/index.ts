@@ -15,6 +15,7 @@ then( ( [ renderer , preload , main ] ) => {
 catch( e => {
 	console.log( chalk.red( 'fatal' ) );
 	console.log( e );
+	process.exitCode = 1;
 } );
 
 import chalk from 'chalk';

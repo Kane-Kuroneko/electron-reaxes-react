@@ -54,4 +54,4 @@ export const electronProdConf_Renderer:WebpackConfiguration = {
 }
 import dayjs from 'dayjs';
 import { LoggerWebpackPlugn } from "../toolkit";
-import webpack from 'webpack';
+import webpack , { type Configuration as WebpackConfiguration } from 'webpack';

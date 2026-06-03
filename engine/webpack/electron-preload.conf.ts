@@ -25,4 +25,4 @@ export const electronPreloadConf: WebpackConfiguration = {
 };
 import { getProjectPaths } from '../toolkit';
 import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';
-import webpack from 'webpack';
+import webpack , { type Configuration as WebpackConfiguration } from 'webpack';

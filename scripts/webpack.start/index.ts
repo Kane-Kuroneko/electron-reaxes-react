@@ -24,12 +24,12 @@ const startRendererServer = async( conf: Configuration ) => {
 		} ).
 		catch( ( e ) => {
 			console.error(e);
-			// throw e;
+			throw e;
 		} );
 	} catch ( e ) {
 		console.error( e );
 		// console.warn( "WDS可能意外退出了!" );
-		// return Promise.reject( e );
+		throw e;
 	}
 };
 
@@ -46,7 +46,7 @@ const buildPreload = async (conf: Configuration) => {
 	catch( ( reason ) => {
 		console.log( reason );
 		console.log( chalk.red( `electron-preload打包失败,请在inspect模式下查看详情` ) );
-		// throw reason;
+		throw reason;
 	} );
 }
 
@@ -61,7 +61,7 @@ const buildMain = async( conf: Configuration ) => {
 	catch( ( reason ) => {
 		console.log( reason );
 		console.log( chalk.red( `electron主进程打包失败,请在inspect模式下查看详情` ) );
-		// throw reason;
+		throw reason;
 	} );
 };
 
@@ -79,6 +79,7 @@ then( () => {
 	
 } ).catch(e => {
 	console.log('打包失败!',purdy(e,{}));
+	process.exitCode = 1;
 });
 
 
