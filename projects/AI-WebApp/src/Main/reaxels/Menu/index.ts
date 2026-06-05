@@ -257,117 +257,16 @@ const createAdjacentAIMenuLabel = (
 	ai:Settings['AIs'][number] | null,
 ) => {
 	if( !ai ) {
-		return `${ emoji } ${ label }`;
+		return escapeElectronMenuBarLabel( `${ emoji } ${ label }` );
 	}
-	return `${ emoji } ${ label } ${ fitMenuAIName( ai.label || ai.id ) }`;
+	return escapeElectronMenuBarLabel( `${ emoji } ${ label } ${ fitMenuAIName( ai.label || ai.id ) }` );
 };
-
-// Electron 原生菜单无法指定等宽字体,这里用估算宽度和 Unicode 空白尽量降低菜单栏抖动.
-const MENU_AI_NAME_WIDTH = 18;
-const MENU_AI_NAME_ELLIPSIS = '...';
-
-const fitMenuAIName = (name:string) => {
-	const normalizedName = normalizeMenuAIName( name );
-	const ellipsisWidth = getMenuTextWidth( MENU_AI_NAME_ELLIPSIS );
-
-	if( getMenuTextWidth( normalizedName ) <= MENU_AI_NAME_WIDTH ) {
-		return padMenuTextToWidth( normalizedName , MENU_AI_NAME_WIDTH );
-	}
-
-	let fitted = '';
-	let fittedWidth = 0;
-	for( const char of Array.from( normalizedName ) ) {
-		const nextWidth = getMenuCharWidth( char );
-		if( fittedWidth + nextWidth + ellipsisWidth > MENU_AI_NAME_WIDTH ) {
-			break;
-		}
-		fitted += char;
-		fittedWidth += nextWidth;
-	}
-	return padMenuTextToWidth( `${ fitted }${ MENU_AI_NAME_ELLIPSIS }` , MENU_AI_NAME_WIDTH );
-};
-
-const normalizeMenuAIName = (name:string) => {
-	return name.replace( /\s+/g , ' ' ).trim() || 'AI';
-};
-
-const padMenuTextToWidth = (text:string , targetWidth:number) => {
-	let result = text;
-	let remainingWidth = targetWidth - getMenuTextWidth( text );
-	for( const space of MENU_WIDTH_SPACES ) {
-		while( remainingWidth >= space.width - 0.01 ) {
-			result += space.char;
-			remainingWidth -= space.width;
-		}
-	}
-	return result;
-};
-
-const getMenuTextWidth = (text:string) => {
-	return Array.from( text ).reduce( ( width , char ) => {
-		return width + getMenuCharWidth( char );
-	} , 0 );
-};
-
-const getMenuCharWidth = (char:string) => {
-	if( /[\u0300-\u036F\u200D\uFE0E\uFE0F]/.test( char ) ) {
-		return 0;
-	}
-	if( char === ' ' ) {
-		return 0.35;
-	}
-	if( MENU_SPACE_WIDTHS[char] ) {
-		return MENU_SPACE_WIDTHS[char];
-	}
-	if( isEmojiLikeChar( char ) || isCJKChar( char ) ) {
-		return 2;
-	}
-	if( /[MW@#%&]/.test( char ) ) {
-		return 1.25;
-	}
-	if( /[A-Z0-9]/.test( char ) ) {
-		return 0.95;
-	}
-	if( /[a-z]/.test( char ) ) {
-		return /[ijlrtf]/.test( char )
-			? 0.5
-			: /[mw]/.test( char )
-				? 1.15
-				: 0.85;
-	}
-	if( /[.,'`|:;]/.test( char ) ) {
-		return 0.35;
-	}
-	if( /[-_/\\()[\]{}]/.test( char ) ) {
-		return 0.55;
-	}
-	return 1;
-};
-
-const isCJKChar = (char:string) => {
-	return /[\u2E80-\u9FFF\uF900-\uFAFF\u3040-\u30FF\uAC00-\uD7AF]/.test( char );
-};
-
-const isEmojiLikeChar = (char:string) => {
-	return /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test( char );
-};
-
-const MENU_WIDTH_SPACES = [
-	{ char : '\u2003' , width : 1 } ,
-	{ char : '\u2007' , width : 0.9 } ,
-	{ char : '\u2002' , width : 0.5 } ,
-	{ char : '\u00A0' , width : 0.35 } ,
-	{ char : '\u202F' , width : 0.2 } ,
-	{ char : '\u2009' , width : 0.12 } ,
-	{ char : '\u200A' , width : 0.06 },
-];
-
-const MENU_SPACE_WIDTHS = MENU_WIDTH_SPACES.reduce( ( result , space ) => {
-	result[space.char] = space.width;
-	return result;
-} , {} as Record<string , number> );
 
 import { Reaxel_View } from '../Views';
+import {
+	escapeElectronMenuBarLabel ,
+	fitMenuAIName,
+} from './menu-label-width';
 import {
 	autoUpdater ,
 	dialog ,

@@ -1,5 +1,5 @@
 export const reaxel_GuidingView = reaxel( () => {
-	const initialSystemLanguage = normalizeConcreteLanguage( navigator.language );
+	const initialSystemLanguage = checkAs<Languages>( 'zh-CN' );
 	const { store , setState , mutate } = createReaxable( {
 		Page : {
 			current : 0,
@@ -350,11 +350,11 @@ import { reaxel_GuidingI18n } from '#src/Views/GuidingView/reaxels/i18n';
 import {
 	concreteLanguages ,
 	getLanguageDisplayName ,
-	normalizeConcreteLanguage ,
 	resolveLanguagePreference ,
 	resolveThemePreference,
 } from '#src/shared/appearance';
 import type { Guiding } from '#src/Types/Guiding';
+import type { Languages } from '#src/Types/Languages';
 import type { Appearance } from '#src/Types/SettingsTypes/Appearance';
 import type { AI } from '#src/Types/SettingsTypes/AI';
 import {

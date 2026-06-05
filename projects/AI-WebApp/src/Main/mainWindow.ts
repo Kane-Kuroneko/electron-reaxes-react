@@ -42,6 +42,21 @@ export const createMainWindow = async() => {
 	return mainWindow;
 };
 
+export const showMainWindow = () => {
+	if( !mainWindow || mainWindow.isDestroyed() ) {
+		return null;
+	}
+	if( mainWindow.isMinimized() ) {
+		mainWindow.restore();
+	}
+	if( !mainWindow.isVisible() ) {
+		mainWindow.show();
+	}
+	mainWindow.focus();
+	mainWindow.moveTop();
+	return mainWindow;
+};
+
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import { dev } from 'electron-is';
 import {

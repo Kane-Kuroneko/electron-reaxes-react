@@ -67,7 +67,7 @@ export const reaxel_SettingsView = reaxel( () => {
 			AIs : checkAs<AI.AIItem[]>( [] ),
 		} ,
 		Environment : {
-			systemLanguage : checkAs<Languages>( normalizeConcreteLanguage( navigator.language ) ) ,
+			systemLanguage : checkAs<Languages>( 'en-US' ) ,
 			systemTheme : checkAs<'light' | 'dark'>( 'light' ),
 		} ,
 		get_settings_status : {
@@ -413,7 +413,6 @@ import { rehancer_Dev } from './rehancer_Dev';
 import { reaxel_I18n } from "#src/Views/SettingsView/reaxels/i18n";
 import { createSettingsIpcService } from '#src/Views/SettingsView/services/Settings';
 import {
-	normalizeConcreteLanguage ,
 	normalizeThemePreference ,
 	resolveLanguagePreference ,
 	resolveThemePreference,

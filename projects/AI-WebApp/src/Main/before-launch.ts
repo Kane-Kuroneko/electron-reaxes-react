@@ -38,7 +38,7 @@ function applyPreLaunchSettings() {
 
 		const language = resolveLanguagePreference(
 			normalizeLanguagePreference( settings.appearance?.language ) ,
-			normalizeConcreteLanguage( app.getLocale() ),
+			getPreLaunchSystemLanguage(),
 		);
 		app.commandLine.appendSwitch( 'lang' , language );
 		nativeTheme.themeSource = normalizeThemePreference(
@@ -56,6 +56,18 @@ function applyPreLaunchSettings() {
 	}
 }
 
+function getPreLaunchSystemLanguage() {
+	try {
+		const preferredLanguages = app.getPreferredSystemLanguages();
+		if( preferredLanguages.length ) {
+			return resolvePreferredSystemLanguage( preferredLanguages );
+		}
+	} catch ( error ) {
+		console.warn( '[Before-Launch] Failed to get preferred system languages:' , error );
+	}
+	return 'en-US';
+}
+
 import './foundation/electron.conf';
 import { install } from 'source-map-support';
 import logger from 'electron-log/main';
@@ -66,8 +78,8 @@ import * as path from 'node:path';
 import { setAppProfilePath } from "#main/foundation/debug/app-data-path";
 import { applyPendingDevCleanStart } from '#main/services/dev/clean-start';
 import {
-	normalizeConcreteLanguage ,
 	normalizeLanguagePreference ,
 	normalizeThemePreference ,
+	resolvePreferredSystemLanguage ,
 	resolveLanguagePreference,
 } from '#src/shared/appearance';

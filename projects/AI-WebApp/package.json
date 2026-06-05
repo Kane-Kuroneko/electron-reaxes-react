@@ -9,7 +9,7 @@
 		"start:webpack": "yarn --cwd ../.. tsx scripts/webpack.start/index.ts AI-WebApp 4444",
 		"start:electron": "yarn --cwd ../.. tsx scripts/electron.start/index.ts AI-WebApp",
 		"build:webpack": "yarn --cwd ../.. tsx scripts/webpack.build/index.ts AI-WebApp production",
-		"build:electron": "node -e \"require('node:fs').rmSync('__Bin',{recursive:true,force:true})\" && electron-builder build -w"
+		"build:electron": "yarn --cwd ../.. tsx scripts/electron.build/index.ts AI-WebApp"
 	},
 	"type": "commonjs",
 	"description": "",

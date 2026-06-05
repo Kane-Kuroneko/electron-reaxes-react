@@ -30,11 +30,7 @@ export function initTray(): Tray | null {
 	updateTrayMenu();
 	
 	trayInstance.on( 'double-click' , () => {
-		const win = BrowserWindow.getAllWindows()[0];
-		if( win ) {
-			win.show();
-			win.focus();
-		}
+		showMainWindow();
 	} );
 	
 	return trayInstance;
@@ -47,11 +43,7 @@ export function updateTrayMenu() {
 		{
 			label : t('Show Window') ,
 			click : () => {
-				const win = BrowserWindow.getAllWindows()[0];
-				if( win ) {
-					win.show();
-					win.focus();
-				}
+				showMainWindow();
 			},
 		} ,
 		{ type : 'separator' } ,
@@ -96,6 +88,9 @@ export function syncTrayState( enabled: boolean ) {
 	}
 }
 
+import {
+	showMainWindow,
+} from '#main/mainWindow';
 import {
 	app ,
 	BrowserWindow ,

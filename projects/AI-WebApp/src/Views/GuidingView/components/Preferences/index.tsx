@@ -28,7 +28,7 @@ export const RCPreferencesPage = reaxper( () => {
 						value={ store.UIControls.appearance.theme }
 						onChange={ event => setTheme( event.target.value ) }
 					>
-						<Radio.Button value="system">{ copy.followSystem } { getResolvedTheme() }</Radio.Button>
+						<Radio.Button value="system">{ copy.followSystem }( { reaxel_GuidingView.store.Environment.systemTheme } )</Radio.Button>
 						<Radio.Button value="light">Light</Radio.Button>
 						<Radio.Button value="dark">Dark</Radio.Button>
 					</Radio.Group>

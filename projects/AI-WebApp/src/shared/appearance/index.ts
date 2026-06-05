@@ -14,20 +14,37 @@ export const languageDisplayNames:Record<Languages , string> = {
 	'ko-KR' : '한국어',
 };
 
-export const normalizeConcreteLanguage = (language?:string):Languages => {
-	if( !language ) return 'en-US';
-	const normalized = language.replace( '_' , '-' );
+export const normalizeSupportedConcreteLanguage = (language?:string):Languages | null => {
+	if( !language ) return null;
+	const normalized = language.replace( /_/g , '-' );
+	const normalizedLower = normalized.toLowerCase();
 	const exact = concreteLanguages.find( item => item.toLowerCase() === normalized.toLowerCase() );
 	if( exact ) return exact;
-	const base = normalized.split( '-' )[0].toLowerCase();
+	const base = normalizedLower.split( '-' )[0];
+	if( base === 'en' ) return 'en-US';
 	if( base === 'zh' ) {
-		return normalized.toLowerCase().includes( 'tw' ) || normalized.toLowerCase().includes( 'hk' )
+		return normalizedLower.includes( 'tw' ) || normalizedLower.includes( 'hk' ) || normalizedLower.includes( 'hant' )
 			? 'zh-TW'
 			: 'zh-CN';
 	}
 	if( base === 'ja' ) return 'ja-JP';
 	if( base === 'ko' ) return 'ko-KR';
-	return 'en-US';
+	return null;
+};
+
+export const normalizeConcreteLanguage = (language?:string):Languages => {
+	return normalizeSupportedConcreteLanguage( language ) || 'en-US';
+};
+
+export const resolvePreferredSystemLanguage = (
+	languages?:readonly string[] | null ,
+	fallback?:string,
+):Languages => {
+	for( const language of languages || [] ) {
+		const normalized = normalizeSupportedConcreteLanguage( language );
+		if( normalized ) return normalized;
+	}
+	return normalizeConcreteLanguage( fallback );
 };
 
 export const normalizeLanguagePreference = (language?:string):Appearance.Language => {

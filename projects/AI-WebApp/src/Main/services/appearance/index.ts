@@ -18,13 +18,25 @@ const AIPageBackgroundColors:Record<'light' | 'dark' , string> = {
 };
 
 export const getAppearanceEnvironment = ():AppearanceEnvironment => {
-	const systemLanguage = normalizeConcreteLanguage( app.getLocale() );
+	const systemLanguage = getSystemLanguage();
 	const systemTheme = getSystemTheme();
 	return {
 		systemLanguage ,
 		systemTheme ,
 		systemLanguageName : getLanguageDisplayName( systemLanguage ),
 	};
+};
+
+const getSystemLanguage = ():Languages => {
+	try {
+		const preferredLanguages = app.getPreferredSystemLanguages();
+		if( preferredLanguages.length ) {
+			return resolvePreferredSystemLanguage( preferredLanguages );
+		}
+	} catch ( error ) {
+		console.warn( '[Appearance] Failed to get preferred system languages:' , error );
+	}
+	return normalizeConcreteLanguage( app.getLocale() );
 };
 
 export const getAIPageBackgroundColorByTheme = (theme:'light' | 'dark') => {
@@ -140,6 +152,7 @@ import {
 	normalizeConcreteLanguage ,
 	normalizeLanguagePreference ,
 	normalizeThemePreference ,
+	resolvePreferredSystemLanguage ,
 	resolveLanguagePreference ,
 	resolveThemePreference,
 } from '#src/shared/appearance';
