@@ -26,6 +26,7 @@ const deleteAI = useRpc('delete-ai');
 const resetAIsToDefaults = useRpc('reset-ais-to-defaults');
 const getPreloadAIFamilies = useRpc('get-preload-ai-families');
 const getAppearanceEnvironment = useRpc('get-appearance-environment');
+const setStartupAIPageLoadMode = useRpc('set-startup-ai-page-load-mode');
 const getGuidingDefaults = useRpc('get-guiding-defaults');
 const guidingSaveProgress = useRpc('guiding-save-progress');
 const guidingTestConnectivity = useRpc('guiding-test-connectivity');
@@ -51,6 +52,7 @@ const api = {
 	resetAIsToDefaults,
 	getPreloadAIFamilies,
 	getAppearanceEnvironment,
+	setStartupAIPageLoadMode,
 	getGuidingDefaults,
 	guidingSaveProgress,
 	guidingTestConnectivity,

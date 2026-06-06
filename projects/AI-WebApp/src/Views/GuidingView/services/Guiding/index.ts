@@ -3,6 +3,7 @@ export const createGuidingIpcService = () => {
 		getDefaults : getGuidingDefaults ,
 		saveProgress : guidingSaveProgress ,
 		testConnectivity : guidingTestConnectivity ,
+		getAppearanceEnvironment ,
 		finish : guidingFinish,
 	};
 };
@@ -17,6 +18,10 @@ export const guidingSaveProgress = (progress:Guiding.Progress) => {
 
 export const guidingTestConnectivity = () => {
 	return api.guidingTestConnectivity();
+};
+
+export const getAppearanceEnvironment = () => {
+	return api.getAppearanceEnvironment();
 };
 
 export const guidingFinish = (options:Guiding.FinishOptions) => {

@@ -1,5 +1,5 @@
 export const reaxel_GuidingView = reaxel( () => {
-	const initialSystemLanguage = checkAs<Languages>( 'zh-CN' );
+	const initialSystemLanguage = checkAs<Languages>( 'en-US' );
 	const { store , setState , mutate } = createReaxable( {
 		Page : {
 			current : 0,
@@ -28,7 +28,7 @@ export const reaxel_GuidingView = reaxel( () => {
 		Environment : {
 			systemLanguage : initialSystemLanguage ,
 			systemLanguageName : getLanguageDisplayName( initialSystemLanguage ) ,
-			systemTheme : checkAs<'light' | 'dark'>( getBrowserSystemTheme() ),
+			systemTheme : checkAs<'light' | 'dark'>( 'light' ),
 		} ,
 		Status : {
 			loading : true ,
@@ -45,10 +45,9 @@ export const reaxel_GuidingView = reaxel( () => {
 	
 	if( typeof window !== 'undefined' && window.matchMedia ) {
 		const darkSchemeQuery = window.matchMedia( '(prefers-color-scheme: dark)' );
-		darkSchemeQuery.addEventListener?.( 'change' , event => {
-			const systemTheme = event.matches ? 'dark' : 'light';
-			setState.Environment( { systemTheme } );
-			applyThemeToDocument( getResolvedTheme() );
+		darkSchemeQuery.addEventListener?.( 'change' , () => {
+			// matchMedia 只作为变化信号，系统主题值通过 IPC 从主进程获取。
+			void refreshAppearanceEnvironment();
 		} );
 	}
 	
@@ -66,15 +65,18 @@ export const reaxel_GuidingView = reaxel( () => {
 			error : false,
 		} );
 		try {
-			const defaults = await ipcMethods.getDefaults();
-			const systemLanguage = defaults.appearance.resolvedLanguage;
+			const [ defaults , environment ] = await Promise.all( [
+				ipcMethods.getDefaults() ,
+				ipcMethods.getAppearanceEnvironment(),
+			] );
+			const systemLanguage = environment.systemLanguage;
 			setState.Data( {
 				defaults,
 			} );
 			setState.Environment( {
 				systemLanguage ,
-				systemLanguageName : defaults.systemLanguageName ,
-				systemTheme : defaults.appearance.resolvedTheme,
+				systemLanguageName : environment.systemLanguageName ,
+				systemTheme : environment.systemTheme,
 			} );
 			setState.UIControls.appearance( {
 				language : defaults.appearance.language ,
@@ -92,7 +94,7 @@ export const reaxel_GuidingView = reaxel( () => {
 			} );
 			applyThemeToDocument( resolveThemePreference(
 				defaults.appearance.theme ,
-				defaults.appearance.resolvedTheme,
+				environment.systemTheme,
 			) );
 		} catch ( error ) {
 			console.error( '[GuidingView] Failed to load defaults:' , error );
@@ -116,9 +118,24 @@ export const reaxel_GuidingView = reaxel( () => {
 			store.Environment.systemLanguage,
 		);
 	}
-	
-	function getCopy() {
-		return reaxel_GuidingI18n().getCopy();
+
+	async function refreshAppearanceEnvironment() {
+		try {
+			const environment = await ipcMethods.getAppearanceEnvironment();
+			setState.Environment( {
+				systemLanguage : environment.systemLanguage ,
+				systemLanguageName : environment.systemLanguageName ,
+				systemTheme : environment.systemTheme,
+			} );
+			applyThemeToDocument( getResolvedTheme() );
+			if( store.UIControls.appearance.language === 'follow-system' ) {
+				syncI18nLanguage( 'follow-system' , environment.systemLanguage );
+			}
+			return environment;
+		} catch ( error ) {
+			console.error( '[GuidingView] Failed to refresh appearance environment:' , error );
+			return store.Environment;
+		}
 	}
 
 	function syncI18nLanguage(
@@ -296,9 +313,9 @@ export const reaxel_GuidingView = reaxel( () => {
 	const rtn = {
 		init ,
 		reloadDefaults ,
+		refreshAppearanceEnvironment ,
 		getResolvedTheme ,
 		getResolvedLanguage ,
-		getCopy ,
 		getCanDirectConnect ,
 		getLanguageOptions ,
 		setLanguage ,
@@ -322,13 +339,6 @@ export const reaxel_GuidingView = reaxel( () => {
 		mutate,
 	} );
 } );
-
-function getBrowserSystemTheme():'light' | 'dark' {
-	if( typeof window === 'undefined' || !window.matchMedia ) {
-		return 'light';
-	}
-	return window.matchMedia( '(prefers-color-scheme: dark)' ).matches ? 'dark' : 'light';
-}
 
 function applyThemeToDocument( theme:'light' | 'dark' ) {
 	document.documentElement.dataset.aiWebappTheme = theme;

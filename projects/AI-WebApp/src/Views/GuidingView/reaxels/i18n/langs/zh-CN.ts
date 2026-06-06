@@ -6,6 +6,8 @@ export default {
 	'Language' : '语言' ,
 	'Theme' : '主题' ,
 	'Follow System' : '跟随系统' ,
+	'Light' : '浅色' ,
+	'Dark' : '深色' ,
 	'One shell for multiple AIs' : '多 AI 页面统一管理' ,
 	'Keep common AI services in one Electron host and switch by your configured order instead of scattered browser tabs.' : '把常用 AI 服务放在同一个 Electron 宿主中，按配置顺序切换，避免浏览器标签分散。' ,
 	'Isolated AI sessions' : '每个 AI 独立会话' ,

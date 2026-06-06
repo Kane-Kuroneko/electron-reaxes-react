@@ -1,47 +1,45 @@
 export const RCPreferencesPage = reaxper( () => {
 	const { store } = reaxel_GuidingView;
 	const {
-		getCopy ,
 		getLanguageOptions ,
 		getResolvedTheme ,
 		setLanguage ,
 		setTheme,
 	} = reaxel_GuidingView();
-	const copy = getCopy();
 	
 	return <section className="guiding-page">
 		<div className="guiding-controls">
 			<Form layout="vertical">
-				<Form.Item label={ copy.language }>
+				<Form.Item label={<I18n>Language</I18n>}>
 					<Select
 						value={ store.UIControls.appearance.language }
 						onChange={ setLanguage }
 						options={ getLanguageOptions() }
-						optionRender={ option => renderLanguageOption( option , copy.followSystem , store.Environment.systemLanguageName ) }
-						labelRender={ item => renderLanguageSelectedLabel( item , copy.followSystem , store.Environment.systemLanguageName ) }
+						optionRender={ option => renderLanguageOption( option , store.Environment.systemLanguageName ) }
+						labelRender={ item => renderLanguageSelectedLabel( item , store.Environment.systemLanguageName ) }
 					/>
 				</Form.Item>
 			</Form>
 			<Form layout="vertical">
-				<Form.Item label={ copy.theme }>
+				<Form.Item label={<I18n>Theme</I18n>}>
 					<Radio.Group
 						value={ store.UIControls.appearance.theme }
 						onChange={ event => setTheme( event.target.value ) }
 					>
-						<Radio.Button value="system">{ copy.followSystem }( { reaxel_GuidingView.store.Environment.systemTheme } )</Radio.Button>
-						<Radio.Button value="light">Light</Radio.Button>
-						<Radio.Button value="dark">Dark</Radio.Button>
+						<Radio.Button value="system"><I18n>Follow System</I18n>( { reaxel_GuidingView.store.Environment.systemTheme } )</Radio.Button>
+						<Radio.Button value="light"><I18n>Light</I18n></Radio.Button>
+						<Radio.Button value="dark"><I18n>Dark</I18n></Radio.Button>
 					</Radio.Group>
 				</Form.Item>
 			</Form>
 		</div>
 		<div className="intro-grid">
-			{ copy.intro.map( item => <article
+			{ introItems.map( item => <article
 				key={ item.title }
 				className="intro-item"
 			>
-				<h2>{ item.title }</h2>
-				<p>{ item.body }</p>
+				<h2><I18n>{ item.title }</I18n></h2>
+				<p><I18n>{ item.body }</I18n></p>
 			</article> ) }
 		</div>
 	</section>;
@@ -49,12 +47,11 @@ export const RCPreferencesPage = reaxper( () => {
 
 const renderLanguageOption = (
 	option:any ,
-	followSystem:string ,
 	systemLanguageName:string,
 ) => {
 	if( option.data.value === 'follow-system' ) {
 		return <span>
-			{ followSystem }
+			<I18n>Follow System</I18n>
 			<br />
 			<span className="select-option-subtitle">{ systemLanguageName }</span>
 		</span>;
@@ -64,16 +61,35 @@ const renderLanguageOption = (
 
 const renderLanguageSelectedLabel = (
 	item:any ,
-	followSystem:string ,
 	systemLanguageName:string,
 ) => {
 	if( item.value === 'follow-system' ) {
-		return <span>{ followSystem } ({ systemLanguageName })</span>;
+		return <span><I18n>Follow System</I18n> ({ systemLanguageName })</span>;
 	}
 	return item.label ?? String( item.value );
 };
 
+const introItems = [
+	{
+		title : 'One shell for multiple AIs' ,
+		body : 'Keep common AI services in one Electron host and switch by your configured order instead of scattered browser tabs.',
+	} ,
+	{
+		title : 'Isolated AI sessions' ,
+		body : 'Each AI page uses a stable partition for login state, proxy behavior, and storage isolation.',
+	} ,
+	{
+		title : 'Network policy per page' ,
+		body : 'Use global proxy defaults, per-AI overrides, system proxy, or direct mode depending on your network.',
+	} ,
+	{
+		title : 'Local-first runtime' ,
+		body : 'Settings live in the local userData directory, while menu, tray, and quick switching sync with the main process.',
+	},
+] as const;
+
 import { reaxel_GuidingView } from '#src/Views/GuidingView/reaxels/guiding-view';
+import { I18n } from '#src/Views/GuidingView/reaxels/exports';
 import {
 	Form ,
 	Radio ,

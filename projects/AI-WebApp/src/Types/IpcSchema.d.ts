@@ -26,6 +26,7 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	'reset-ais-to-defaults': IpcStructure.IpcRpc<[void], { success: boolean }>;
 	'get-preload-ai-families': IpcStructure.IpcRpc<[void], AI.AIFamily[]>;
 	'get-appearance-environment': IpcStructure.IpcRpc<[void], AppearanceEnvironment>;
+	'set-startup-ai-page-load-mode': IpcStructure.IpcRpc<[mode: Startup.AIPageLoadMode], SettingsApplyResult>;
 	'get-guiding-defaults': IpcStructure.IpcRpc<[void], Guiding.Defaults>;
 	'guiding-save-progress': IpcStructure.IpcRpc<[progress: Guiding.Progress], { success: boolean }>;
 	'guiding-test-connectivity': IpcStructure.IpcRpc<[void], Guiding.ConnectivityResult>;
@@ -56,6 +57,7 @@ import {
 	PatchPath ,
 } from "#src/Types/SettingsTypes/SettingsPatchPath";
 import { AI } from "#src/Types/SettingsTypes/AI";
+import type { Startup } from "#src/Types/SettingsTypes/Startup";
 import type { FloatingLayer } from "#src/Types/FloatingLayer";
 import type { Languages } from '#src/Types/Languages';
 import type { Guiding } from '#src/Types/Guiding';

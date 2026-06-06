@@ -35,9 +35,7 @@ export const Reaxel_View = reaxel( () => {
 	async function onReadyLoadAIView() {
 		const settings = getRuntimeSettings();
 		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
-		const targetAI = activeAIs.find( ai => ai.id === store.currentAIViewKey )
-			|| activeAIs.find( ai => ai.AI_family === store.currentAIViewKey )
-			|| activeAIs[0];
+		const targetAI = resolveStartupAI( activeAIs , settings , store.currentAIViewKey );
 		
 		if( targetAI ) {
 			setState( { currentAIViewKey : targetAI.id } );
@@ -204,6 +202,22 @@ const getRuntimeSettings = ():Settings => {
 		...settingsConfigService.getEffectiveSettings() ,
 		AIs : aiConfigService.getEffectiveAIs(),
 	};
+};
+
+const resolveStartupAI = (
+	activeAIs:AI.AIItem[] ,
+	settings:Settings ,
+	currentAIViewKey:string,
+) => {
+	if( activeAIs.length === 0 ) {
+		return null;
+	}
+	if( settings.startup.aiPageLoadMode === 'first-ai' ) {
+		return activeAIs[0];
+	}
+	return activeAIs.find( ai => ai.id === currentAIViewKey )
+		|| activeAIs.find( ai => ai.AI_family === currentAIViewKey )
+		|| activeAIs[0];
 };
 
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";

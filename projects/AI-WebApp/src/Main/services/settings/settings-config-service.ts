@@ -28,6 +28,9 @@ export const createDefaultRuntimeSettings = ():RuntimeSettings => ( {
 		show_tray : true ,
 		close_to_tray : true,
 	} ,
+	startup : {
+		aiPageLoadMode : 'last-used-ai',
+	} ,
 	appearance : {
 		darkmode : false ,
 		theme : 'system' ,
@@ -87,6 +90,11 @@ export const normalizeRuntimeSettings = (settings?:Partial<RuntimeSettings>):Run
 			...defaults.system ,
 			...settings?.system,
 		} ,
+		startup : {
+			...defaults.startup ,
+			...settings?.startup ,
+			aiPageLoadMode : normalizeStartupAIPageLoadMode( settings?.startup?.aiPageLoadMode ),
+		} ,
 		appearance : {
 			...defaults.appearance ,
 			...appearance ,
@@ -95,6 +103,10 @@ export const normalizeRuntimeSettings = (settings?:Partial<RuntimeSettings>):Run
 			language : normalizeLanguagePreference( appearance?.language ?? defaults.appearance.language ),
 		},
 	};
+};
+
+export const normalizeStartupAIPageLoadMode = (mode?:string):RuntimeSettings['startup']['aiPageLoadMode'] => {
+	return mode === 'first-ai' ? 'first-ai' : 'last-used-ai';
 };
 
 class SettingsConfigService {

@@ -10,6 +10,9 @@ export type Settings = {
 	},
 	AIs : AI.AIItem[],
 	system : SystemSettings.Conf,
+	startup : {
+		aiPageLoadMode : Startup.AIPageLoadMode,
+	},
 	appearance : {
 		darkmode : Appearance.Darkmode,
 		theme : Appearance.Theme,
@@ -38,4 +41,5 @@ export type SettingsApplyResult = {
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { SystemSettings } from "#src/Types/SettingsTypes/System";
+import { Startup } from "#src/Types/SettingsTypes/Startup";
 import { Appearance } from "#src/Types/SettingsTypes/Appearance";

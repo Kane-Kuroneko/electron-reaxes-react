@@ -90,6 +90,7 @@ export const reaxable_Settings = () => {
 				proxy_server_list : checkAs<NetworkProxy.ProxyServer.Server[]>( createDefaultProxyServers() ) ,
 			} ,
 			manage_AIs : {
+				startupAIPageLoadMode : checkAs<Startup.AIPageLoadMode>( 'last-used-ai' ) ,
 				AIs : checkAs<( {
 					enabled: boolean,
 				} & AI.AIItem )[]>( [] ) ,
@@ -167,3 +168,4 @@ import {
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 import { Appearance } from "#src/Types/SettingsTypes/Appearance";
+import type { Startup } from "#src/Types/SettingsTypes/Startup";

@@ -24,6 +24,7 @@ export namespace Settings {
 	export type PersistedSettings = {
 		networks: SharedSettings['networks'],
 		system: SharedSettings['system'],
+		startup: SharedSettings['startup'],
 		appearance: SharedSettings['appearance'],
 		AIs : AI.AIItem[],
 	}

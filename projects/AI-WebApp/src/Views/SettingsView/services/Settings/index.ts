@@ -10,6 +10,10 @@ export const applySettings = (settings: Settings) => {
 	return api.applySettings(settings);
 }
 
+export const exitSettings = () => {
+	return api.exitSettings();
+}
+
 // AI Configuration Management
 export const getAIs = () => {
 	return api.getAIs();
@@ -39,6 +43,14 @@ export const getPreloadAIFamilies = () => {
 	return api.getPreloadAIFamilies();
 }
 
+export const getAppearanceEnvironment = () => {
+	return api.getAppearanceEnvironment();
+}
+
+export const setStartupAIPageLoadMode = (mode: Startup.AIPageLoadMode) => {
+	return api.setStartupAIPageLoadMode(mode);
+}
+
 export const turnToNextAiPage = () => {
 	return api.turnToNextAiPage();
 }
@@ -47,39 +59,12 @@ export const turnToPreviousAiPage = () => {
 	return api.turnToPreviousAiPage();
 }
 
-export const getAppearanceEnvironment = () => {
-	return api.getAppearanceEnvironment();
-}
-
 export const devCleanStart = () => {
 	return api.devCleanStart();
 }
 
-export const createSettingsIpcService = () => {
-	return {
-		async submitSettings ( path: PatchPath<Settings> , partialSettings: PatchData<PatchPath<Settings> , Settings> ){
-			return ( await submitSettings(path , partialSettings) ).success;
-		},
-		fetchSettings,
-		applySettings,
-		exitSettings(){
-			api.exitSettings();
-		},
-		getAIs,
-		getDefaultAIs,
-		updateAI,
-		addAI,
-		deleteAI,
-		resetAIsToDefaults,
-		getPreloadAIFamilies,
-		turnToNextAiPage,
-		turnToPreviousAiPage,
-		getAppearanceEnvironment,
-		devCleanStart,
-	};
-};
-
 
 import { Settings } from '#src/Types/SettingsTypes';
 import { AI } from '#src/Types/SettingsTypes/AI';
+import type { Startup } from '#src/Types/SettingsTypes/Startup';
 import {PatchData,PatchPath} from '#src/Types/SettingsTypes/SettingsPatchPath';

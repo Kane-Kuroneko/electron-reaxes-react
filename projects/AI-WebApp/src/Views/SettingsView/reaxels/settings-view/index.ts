@@ -42,6 +42,7 @@ export const reaxel_SettingsView = reaxel( () => {
 				proxy_server_list : defaultProxyServers(),
 			} ,
 			manage_AIs : {
+				startupAIPageLoadMode : checkAs<Startup.AIPageLoadMode>( 'last-used-ai' ) ,
 				edit_AI_modal : {
 					visible : false ,
 					mode : checkAs<"edit" | "add">( 'edit' ) ,
@@ -81,9 +82,7 @@ export const reaxel_SettingsView = reaxel( () => {
 	} );
 	
 	rehancer_Dev( { store , setState , mutate } )();
-	
-	const ipcMethods = createSettingsIpcService();
-	
+
 	// dirty 状态追踪: 存储上次加载/应用成功后的设置快照
 	let _lastSavedSnapshot = '';
 	// 已提交(已生效)的 AI IDs 集合，用于前端判断哪些 AI 是新增未保存的
@@ -118,7 +117,7 @@ export const reaxel_SettingsView = reaxel( () => {
 	}
 
 	async function fetchSettings() {
-		return await ipcMethods.fetchSettings();
+		return await fetchSettingsService();
 	}
 	
 	async function reloadSettings() {
@@ -128,7 +127,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		} );
 		try {
 			const [ environment , settings ] = await Promise.all( [
-				ipcMethods.getAppearanceEnvironment() ,
+				getAppearanceEnvironment(),
 				fetchSettings(),
 			] );
 			setState.Environment( environment );
@@ -150,7 +149,7 @@ export const reaxel_SettingsView = reaxel( () => {
 
 	async function refreshAppearanceEnvironment() {
 		try {
-			const environment = await ipcMethods.getAppearanceEnvironment();
+			const environment = await getAppearanceEnvironment();
 			setState.Environment( environment );
 			if( store.UIControls.appearance.theme === 'system' ) {
 				applyThemePreferenceToDocument( 'system' , environment.systemTheme );
@@ -178,6 +177,9 @@ export const reaxel_SettingsView = reaxel( () => {
 			language : settings.appearance.language,
 		} );
 		setState.UIControls.system( settings.system );
+		setState.UIControls.manage_AIs( {
+			startupAIPageLoadMode : settings.startup?.aiPageLoadMode || 'last-used-ai',
+		} );
 		mutate( s => {
 			s.Data.AIs = settings.AIs || [];
 		} );
@@ -226,6 +228,9 @@ export const reaxel_SettingsView = reaxel( () => {
 			} ,
 			AIs : store.Data.AIs ,
 			system : store.UIControls.system ,
+			startup : {
+				aiPageLoadMode : store.UIControls.manage_AIs.startupAIPageLoadMode,
+			} ,
 			appearance : {
 				darkmode : store.UIControls.appearance.darkmode ,
 				theme : store.UIControls.appearance.theme ,
@@ -242,7 +247,7 @@ export const reaxel_SettingsView = reaxel( () => {
 			error : false,
 		} );
 		try {
-			const result = await ipcMethods.applySettings( buildSettingsFromStore() );
+			const result = await applySettingsService( buildSettingsFromStore() );
 			if( result.success && result.settings ) {
 				setSettings( result.settings );
 			}
@@ -290,6 +295,10 @@ export const reaxel_SettingsView = reaxel( () => {
 		return buildDefaultAIName( family , store.Data.AIs , excludeId );
 	};
 
+	const setStartupAIPageLoadMode = (aiPageLoadMode:Startup.AIPageLoadMode) => {
+		setState.UIControls.manage_AIs( { startupAIPageLoadMode : aiPageLoadMode } );
+	};
+
 	const rtn = {
 		fetchSettings ,
 		reloadSettings ,
@@ -302,10 +311,11 @@ export const reaxel_SettingsView = reaxel( () => {
 		changeEditAIModalVisible ,
 		setAIEnabled ,
 		createDefaultAIName ,
-		submitSettings : ipcMethods.submitSettings ,
-		exitSettings : ipcMethods.exitSettings ,
-		turnToNextAiPage : ipcMethods.turnToNextAiPage ,
-		turnToPreviousAiPage : ipcMethods.turnToPreviousAiPage ,
+		setStartupAIPageLoadMode ,
+		submitSettings ,
+		exitSettings ,
+		turnToNextAiPage ,
+		turnToPreviousAiPage ,
 		/**
 		 * 判断某个 AI 是否为新增未保存的
 		 */
@@ -411,7 +421,15 @@ export type Reaxel_SettingsView = Pick<typeof reaxel_SettingsView , "mutate"|"st
 
 import { rehancer_Dev } from './rehancer_Dev';
 import { reaxel_I18n } from "#src/Views/SettingsView/reaxels/i18n";
-import { createSettingsIpcService } from '#src/Views/SettingsView/services/Settings';
+import {
+	applySettings as applySettingsService ,
+	exitSettings ,
+	fetchSettings as fetchSettingsService ,
+	getAppearanceEnvironment ,
+	submitSettings ,
+	turnToNextAiPage ,
+	turnToPreviousAiPage,
+} from '#src/Views/SettingsView/services/Settings';
 import {
 	normalizeThemePreference ,
 	resolveLanguagePreference ,
@@ -432,4 +450,5 @@ import type {
 } from '#src/Types/SettingsTypes';
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { Appearance } from "#src/Types/SettingsTypes/Appearance";
+import type { Startup } from "#src/Types/SettingsTypes/Startup";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";

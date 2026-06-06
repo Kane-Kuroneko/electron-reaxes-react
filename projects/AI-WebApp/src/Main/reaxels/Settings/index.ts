@@ -6,12 +6,14 @@ export const reaxel_Settings = reaxel( () => {
 	const { setState , store , mutate } = createReaxable( {
 		networks : initialSettings.networks ,
 		system : initialSettings.system ,
+		startup : initialSettings.startup ,
 		appearance : initialSettings.appearance,
 	} );
 	
 	const getCurrentSettings = ():Settings => ( {
 		networks : cloneData( store.networks ) ,
 		system : cloneData( store.system ) ,
+		startup : cloneData( store.startup ) ,
 		appearance : cloneData( store.appearance ) ,
 		AIs : aiConfigService.getEffectiveAIs(),
 	} );
@@ -26,6 +28,7 @@ export const reaxel_Settings = reaxel( () => {
 		mutate( s => {
 			s.networks = cloneData( persistedSettings.networks );
 			s.system = cloneData( persistedSettings.system );
+			s.startup = cloneData( persistedSettings.startup );
 			s.appearance = cloneData( persistedSettings.appearance );
 		} );
 		return getCurrentSettings();
@@ -44,6 +47,7 @@ export const reaxel_Settings = reaxel( () => {
 		const normalizedRuntimeSettings = normalizeRuntimeSettings( {
 			networks : settings.networks ,
 			system : settings.system ,
+			startup : settings.startup ,
 			appearance : settings.appearance,
 		} );
 		const normalizedAIs = ( settings.AIs || [] ).map( ai => ( {
@@ -62,6 +66,7 @@ export const reaxel_Settings = reaxel( () => {
 		mutate( s => {
 			s.networks = normalizedRuntimeSettings.networks;
 			s.system = normalizedRuntimeSettings.system;
+			s.startup = normalizedRuntimeSettings.startup;
 			s.appearance = normalizedRuntimeSettings.appearance;
 		} );
 		
@@ -132,6 +137,32 @@ export const reaxel_Settings = reaxel( () => {
 			console.error( '[Settings] Failed to submit settings:' , error );
 			return {
 				success : false ,
+				error : error?.message || String( error ),
+			};
+		}
+	} );
+
+	useIpcRpc( 'set-startup-ai-page-load-mode' ).handle( async( { event } , mode ) => {
+		try {
+			return await applySettings( {
+				...getCurrentSettings() ,
+				startup : {
+					...store.startup ,
+					aiPageLoadMode : normalizeStartupAIPageLoadMode( mode ),
+				},
+			} );
+		} catch ( error ) {
+			console.error( '[Settings] Failed to set startup AI page load mode:' , error );
+			return {
+				success : false ,
+				restartRequired : false ,
+				restartReasons : [] ,
+				applied : {
+					settingsPersisted : false ,
+					aiViewsSynced : false ,
+					menuRebuilt : false ,
+					proxyUpdated : false,
+				} ,
 				error : error?.message || String( error ),
 			};
 		}
@@ -237,6 +268,7 @@ import { rehancer_ipcReceive } from './rehancer_ipcReceive';
 import { applyElectronAppearance } from '#main/services/appearance';
 import {
 	getSettingsConfigService ,
+	normalizeStartupAIPageLoadMode ,
 	normalizeRuntimeSettings,
 } from '#main/services/settings/settings-config-service';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';

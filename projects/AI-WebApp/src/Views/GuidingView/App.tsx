@@ -1,7 +1,6 @@
 export const App = reaxper( () => {
 	const { store } = reaxel_GuidingView;
 	const {
-		getCopy ,
 		getResolvedTheme ,
 		init,
 	} = reaxel_GuidingView();
@@ -18,7 +17,6 @@ export const App = reaxper( () => {
 		return <div className="guiding-root guiding-loading">Loading setup...</div>;
 	}
 	
-	const copy = getCopy();
 	const PageComponent = {
 		0 : RCPreferencesPage ,
 		1 : RCNetworkPage ,
@@ -37,12 +35,16 @@ export const App = reaxper( () => {
 				<header className="guiding-header">
 					<div>
 						<div className="guiding-kicker">AI WebApp</div>
-						<h1>{ copy.title }</h1>
+						<h1><I18n>Initialize your AI workspace</I18n></h1>
 					</div>
 					<Steps
 						current={ store.Page.current }
 						size="small"
-						items={ copy.steps.map( title => ( { title } ) ) }
+						items={ [
+							{ title : <I18n>Preferences</I18n> } ,
+							{ title : <I18n>Network</I18n> } ,
+							{ title : <I18n>AI Pages</I18n> },
+						] }
 					/>
 				</header>
 				
@@ -60,6 +62,7 @@ import { RCAIPagesPage } from './components/AIPages';
 import { RCGuidingFooter } from './components/Footer';
 import { RCNetworkPage } from './components/Network';
 import { RCPreferencesPage } from './components/Preferences';
+import { I18n } from './reaxels/exports';
 import { reaxel_GuidingView } from '#src/Views/GuidingView/reaxels/guiding-view';
 import {
 	ConfigProvider ,

@@ -6,6 +6,8 @@ export default {
 	'Language' : '언어' ,
 	'Theme' : '테마' ,
 	'Follow System' : '시스템 설정 따르기' ,
+	'Light' : '라이트' ,
+	'Dark' : '다크' ,
 	'One shell for multiple AIs' : '여러 AI 페이지 통합 관리' ,
 	'Keep common AI services in one Electron host and switch by your configured order instead of scattered browser tabs.' : '자주 쓰는 AI 서비스를 하나의 Electron 호스트에 모으고 설정한 순서대로 전환합니다.' ,
 	'Isolated AI sessions' : 'AI별 독립 세션' ,

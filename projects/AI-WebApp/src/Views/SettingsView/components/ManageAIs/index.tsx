@@ -88,7 +88,11 @@ const columns:TableColumnType<AI.AIItem>[] = [
 ];
 
 export const RCManageAIsPanel = reaxper( () => {
-	const { changeEditAIModalVisible , reloadSettings } = reaxel_SettingsView();
+	const {
+		changeEditAIModalVisible ,
+		reloadSettings ,
+		setStartupAIPageLoadMode,
+	} = reaxel_SettingsView();
 	const [resetModalVisible , setResetModalVisible] = React.useState( false );
 	const sensors = useSensors(
 		useSensor( PointerSensor , {
@@ -124,6 +128,28 @@ export const RCManageAIsPanel = reaxper( () => {
 	
 	return <div className="settings-section">
 		<div className="section-title"><I18n>Manage AIs</I18n></div>
+		<Form
+			layout="vertical"
+			style={ { marginBottom : 16 } }
+		>
+			<Form.Item label={<I18n>Startup AI Page</I18n>}>
+				<Radio.Group
+					value={ reaxel_SettingsView.store.UIControls.manage_AIs.startupAIPageLoadMode }
+					onChange={ event => {
+						setStartupAIPageLoadMode( event.target.value as Startup.AIPageLoadMode );
+					} }
+					style={ { userSelect : 'none' } }
+				>
+					<Space
+						direction="vertical"
+						size={ 4 }
+					>
+						<Radio value="last-used-ai"><I18n>Load the AI page used last time before exit</I18n></Radio>
+						<Radio value="first-ai"><I18n>Always load the first AI page when app starts</I18n></Radio>
+					</Space>
+				</Radio.Group>
+			</Form.Item>
+		</Form>
 		<Button
 			type="primary"
 			onClick={ () => {
@@ -250,6 +276,9 @@ const EditAIModal = reaxper( () => {
 	const isCustomFamily = fields.AI_family === 'custom';
 	// 内置 family 的 URL 可选择覆盖; custom family 的 URL 直接属于当前 AI 实例.
 	const displayUrl = isCustomFamily ? fields.url : fields.url_override || defaultURLByFamily( fields.AI_family );
+	const isFirstAIForcedPreload = reaxel_SettingsView.store.UIControls.manage_AIs.startupAIPageLoadMode === 'first-ai'
+		&& store.mode === 'edit'
+		&& reaxel_SettingsView.store.Data.AIs[0]?.id === store.editing_id;
 	
 	const handleSave = () => {
 		const effectiveUrl = ( isCustomFamily ? fields.url : fields.url_override || defaultURLByFamily( fields.AI_family ) ).trim();
@@ -432,15 +461,24 @@ const EditAIModal = reaxper( () => {
 				label={<I18n>Preload on Startup</I18n>}
 				valuePropName="checked"
 			>
-				<Checkbox
-					checked={ fields.preloadOnStartup ?? false }
-					onChange={ e => {
-						setState.fields( { preloadOnStartup : e.target.checked } );
-					} }
-					style={ { userSelect : 'none' } }
+				<Space
+					size={ 6 }
+					align="center"
 				>
-					<I18n>Load this AI immediately when app starts</I18n>
-				</Checkbox>
+					<Checkbox
+						checked={ isFirstAIForcedPreload || ( fields.preloadOnStartup ?? false ) }
+						disabled={ isFirstAIForcedPreload }
+						onChange={ e => {
+							setState.fields( { preloadOnStartup : e.target.checked } );
+						} }
+						style={ { userSelect : 'none' } }
+					>
+						<I18n>Load this AI immediately when app starts</I18n>
+					</Checkbox>
+					{ isFirstAIForcedPreload ? <Tooltip title={<I18n>When [Always load the first AI page when app starts] is checked, this option is always selected</I18n>}>
+						<InfoCircleOutlined style={ { color : '#8c8c8c' } }/>
+					</Tooltip> : null }
+				</Space>
 			</Form.Item>
 		</Form>
 	</Modal>;
@@ -755,6 +793,8 @@ import { AIFamily } from "#src/shared/statics/AI-family";
 import { createDefaultProxyConf as defaultProxyConf } from "#src/shared/statics/default-proxy";
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
+import type { Startup } from "#src/Types/SettingsTypes/Startup";
+import { InfoCircleOutlined } from '@ant-design/icons';
 import React from 'react';
 import { reaxper } from 'reaxes-react';
 import {
@@ -772,6 +812,7 @@ import {
 	Table ,
 	TableColumnType ,
 	Tag,
+	Tooltip,
 } from 'antd';
 import { DndContext , PointerSensor , useSensor , useSensors } from '@dnd-kit/core';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';

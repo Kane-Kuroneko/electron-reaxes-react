@@ -6,6 +6,8 @@ export default {
 	'Language' : '言語' ,
 	'Theme' : 'テーマ' ,
 	'Follow System' : 'システムに従う' ,
+	'Light' : 'ライト' ,
+	'Dark' : 'ダーク' ,
 	'One shell for multiple AIs' : '複数 AI ページを一元管理' ,
 	'Keep common AI services in one Electron host and switch by your configured order instead of scattered browser tabs.' : 'よく使う AI サービスを 1 つの Electron ホストにまとめ、設定順に切り替えます。' ,
 	'Isolated AI sessions' : 'AI ごとに独立したセッション' ,
