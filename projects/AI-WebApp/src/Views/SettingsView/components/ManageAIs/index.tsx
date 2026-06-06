@@ -55,9 +55,12 @@ const columns:TableColumnType<AI.AIItem>[] = [
 	} ,
 	{
 		title : <I18n>Operations</I18n> ,
-		width : 160 ,
+		width : 220 ,
 		render : ( _text , record ) => {
-			const { changeEditAIModalVisible } = reaxel_SettingsView();
+			const {
+				changeEditAIModalVisible ,
+				changeCloneAIModalVisible,
+			} = reaxel_SettingsView();
 			return <Space size={ 4 }>
 				<Button
 					type="link"
@@ -66,6 +69,13 @@ const columns:TableColumnType<AI.AIItem>[] = [
 						changeEditAIModalVisible( true , record.id );
 					} }
 				><I18n>Edit</I18n></Button>
+				<Button
+					type="link"
+					size="small"
+					onClick={ () => {
+						changeCloneAIModalVisible( record.id );
+					} }
+				><I18n>Clone</I18n></Button>
 				<Button
 					type="link"
 					size="small"
@@ -254,7 +264,10 @@ const SortableRow:React.FC<Readonly<RowProps>> = reaxper( props => {
 const EditAIModal = reaxper( () => {
 	const { edit_AI_modal:store } = reaxel_SettingsView.store.UIControls.manage_AIs;
 	const { edit_AI_modal:setState } = reaxel_SettingsView.setState.UIControls.manage_AIs;
-	const { createDefaultAIName } = reaxel_SettingsView();
+	const {
+		changeEditAIModalVisible ,
+		createDefaultAIName,
+	} = reaxel_SettingsView();
 	
 	const fields = store.fields;
 	const ProxyComponent = {
@@ -370,10 +383,7 @@ const EditAIModal = reaxper( () => {
 		open={ store.visible }
 		title={ store.mode === 'add' ? <I18n>Add AI Page</I18n> : <I18n>Edit AI Page</I18n> }
 		onCancel={ () => {
-			setState( {
-				visible : false ,
-				editing_id : null,
-			} );
+			changeEditAIModalVisible( false );
 		} }
 		onOk={ handleSave }
 		okText={i18n('Save')}

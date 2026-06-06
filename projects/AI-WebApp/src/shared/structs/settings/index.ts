@@ -25,6 +25,7 @@ export const sharedSettingsStatus = {
 			} ,
 		} ,
 		proxy_server_list : checkAs<NetworkProxy.ProxyServer.Server[]>( createDefaultProxyServers() ) ,
+		proxy_test_urls : createDefaultProxyTestURLs(),
 	}
 }
 
@@ -88,6 +89,7 @@ export const reaxable_Settings = () => {
 					} ,
 				} ,
 				proxy_server_list : checkAs<NetworkProxy.ProxyServer.Server[]>( createDefaultProxyServers() ) ,
+				proxy_test_urls : createDefaultProxyTestURLs(),
 			} ,
 			manage_AIs : {
 				startupAIPageLoadMode : checkAs<Startup.AIPageLoadMode>( 'last-used-ai' ) ,
@@ -164,6 +166,7 @@ import {
 	createDefaultGlobalProxy ,
 	createDefaultProxyConf ,
 	createDefaultProxyServers,
+	createDefaultProxyTestURLs,
 } from '#src/shared/statics/default-proxy';
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";

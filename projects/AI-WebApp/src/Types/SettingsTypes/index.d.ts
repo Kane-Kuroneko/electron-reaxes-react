@@ -6,6 +6,7 @@ export type Settings = {
 			user_fill_proxy? : NetworkProxy.GlobalProxy; //当proxy_mode为user_fill时使用此字段
 		},
 		proxy_server_list:NetworkProxy.ProxyServer.Server[],
+		proxy_test_urls: NetworkProxy.ProxyTestURLs,
 		
 	},
 	AIs : AI.AIItem[],

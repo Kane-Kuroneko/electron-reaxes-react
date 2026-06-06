@@ -29,6 +29,7 @@ export const reaxel_SettingsView = reaxel( () => {
 					success : false ,
 					error : null,
 				} ,
+				proxy_test_urls : defaultProxyTestURLs(),
 				edit_proxy_server_modal : {
 					visible : false ,
 					mode : checkAs<"edit" | "add">( 'edit' ) ,
@@ -89,9 +90,10 @@ export const reaxel_SettingsView = reaxel( () => {
 	let _committedAIIds = new Set<string>();
 	// 已提交的 AI 快照，用于判断是否已修改
 	let _committedAISnapshot = new Map<string , string>();
+	let _proxyTestURLSubmitQueue:Promise<unknown> = Promise.resolve();
 	
 	function updateSnapshot() {
-		_lastSavedSnapshot = JSON.stringify( buildSettingsFromStore() );
+		_lastSavedSnapshot = JSON.stringify( buildDirtySettingsSnapshot() );
 		// 同步更新 committed AI 状态
 		_committedAIIds = new Set( store.Data.AIs.map( ai => ai.id ) );
 		_committedAISnapshot = new Map(
@@ -101,7 +103,14 @@ export const reaxel_SettingsView = reaxel( () => {
 	
 	function isDirty(): boolean {
 		if( !_lastSavedSnapshot ) return false;
-		return JSON.stringify( buildSettingsFromStore() ) !== _lastSavedSnapshot;
+		return JSON.stringify( buildDirtySettingsSnapshot() ) !== _lastSavedSnapshot;
+	}
+
+	function buildDirtySettingsSnapshot() {
+		const settings = buildSettingsFromStore();
+		// 测试 URL 是输入时即时持久化字段，不参与底部 Apply/Save 的 dirty 判断。
+		delete ( settings.networks as Partial<Settings['networks']> ).proxy_test_urls;
+		return settings;
 	}
 	
 	~async function loadSettingsOnStartup() {
@@ -170,6 +179,10 @@ export const reaxel_SettingsView = reaxel( () => {
 				...( settings.networks.global_proxy.user_fill_proxy || {} ),
 			} ,
 			proxy_server_list : settings.networks.proxy_server_list || defaultProxyServers(),
+			proxy_test_urls : {
+				...defaultProxyTestURLs() ,
+				...( settings.networks.proxy_test_urls || {} ),
+			},
 		} );
 		setState.UIControls.appearance( {
 			darkmode : settings.appearance.darkmode ,
@@ -225,6 +238,7 @@ export const reaxel_SettingsView = reaxel( () => {
 					},
 				} ,
 				proxy_server_list : networks.proxy_server_list,
+				proxy_test_urls : networks.proxy_test_urls,
 			} ,
 			AIs : store.Data.AIs ,
 			system : store.UIControls.system ,
@@ -237,8 +251,8 @@ export const reaxel_SettingsView = reaxel( () => {
 				language : store.UIControls.appearance.language,
 			},
 		};
-		// 深拷贝去除 Proxy 包装, 使数据可通过 IPC 结构化克隆传输
-		return JSON.parse( JSON.stringify( raw ) );
+		// 去除 observable 包装, 使数据可通过 IPC 结构化克隆传输。
+		return cloneForIPC( raw );
 	}
 	
 	async function applySettings() {
@@ -275,8 +289,29 @@ export const reaxel_SettingsView = reaxel( () => {
 			mode : AI_id ? 'edit' : 'add' ,
 			editing_id : AI_id || null ,
 			fields : targetFields
-				? checkAs<AI.EditAIItem>( _.cloneDeep( targetFields ) )
+				? checkAs<AI.EditAIItem>( cloneForIPC( targetFields ) )
 				: defaultAIFields(),
+		} );
+	};
+
+	const changeCloneAIModalVisible = (AI_id:string) => {
+		const targetFields = store.Data.AIs.find( item => item.id === AI_id );
+		if( !targetFields ) return;
+		setState.UIControls.manage_AIs.edit_AI_modal( {
+			visible : true ,
+			mode : 'add' ,
+			editing_id : null ,
+			fields : checkAs<AI.EditAIItem>( cloneForIPC( {
+				label : targetFields.label ,
+				AI_family : targetFields.AI_family ,
+				url : targetFields.url ,
+				url_override : targetFields.url_override ,
+				desc : targetFields.desc ,
+				preloadOnStartup : targetFields.preloadOnStartup ,
+				proxy_mode : targetFields.proxy_mode ,
+				from_server_list_proxy : targetFields.from_server_list_proxy ,
+				user_fill_proxy : targetFields.user_fill_proxy,
+			} ) ),
 		} );
 	};
 	
@@ -299,6 +334,27 @@ export const reaxel_SettingsView = reaxel( () => {
 		setState.UIControls.manage_AIs( { startupAIPageLoadMode : aiPageLoadMode } );
 	};
 
+	const setProxyTestURL = async( target:NetworkProxy.ProxyTestTarget , url:string ) => {
+		const nextProxyTestURLs:NetworkProxy.ProxyTestURLs = {
+			...store.UIControls.networks.proxy_test_urls ,
+			[target] : url,
+		};
+		setState.UIControls.networks( {
+			proxy_test_urls : nextProxyTestURLs,
+		} );
+		_proxyTestURLSubmitQueue = _proxyTestURLSubmitQueue
+			.catch( () => null )
+			.then( async() => {
+				const payload = cloneForIPC( nextProxyTestURLs );
+				const result = await submitSettings( '/networks/proxy_test_urls' , payload );
+				if( !result.success ) {
+					throw new Error( result.error || 'Failed to save proxy test URLs' );
+				}
+				return result;
+			} );
+		return _proxyTestURLSubmitQueue;
+	};
+
 	const rtn = {
 		fetchSettings ,
 		reloadSettings ,
@@ -309,9 +365,11 @@ export const reaxel_SettingsView = reaxel( () => {
 		applySettings ,
 		isDirty ,
 		changeEditAIModalVisible ,
+		changeCloneAIModalVisible ,
 		setAIEnabled ,
 		createDefaultAIName ,
 		setStartupAIPageLoadMode ,
+		setProxyTestURL ,
 		submitSettings ,
 		exitSettings ,
 		turnToNextAiPage ,
@@ -435,10 +493,12 @@ import {
 	resolveLanguagePreference ,
 	resolveThemePreference,
 } from '#src/shared/appearance';
+import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import {
 	createDefaultGlobalProxy as defaultGlobalProxyFields ,
 	createDefaultProxyConf as defaultProxyConf ,
 	createDefaultProxyServers as defaultProxyServers,
+	createDefaultProxyTestURLs as defaultProxyTestURLs,
 } from '#src/shared/statics/default-proxy';
 import type { Languages } from '#src/Types/Languages';
 import type {

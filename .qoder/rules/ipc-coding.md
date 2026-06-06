@@ -95,6 +95,21 @@ export interface IpcRpc extends Record<string, IpcStructure.IpcRpc<unknown[], un
 
 ## ⚠️ 常见错误
 
+### 错误 0: 把 Reaxes/MobX observable 或复杂对象直接传给 IPC
+
+Electron IPC 使用结构化克隆传输参数。Reaxes/MobX 的 observable、Proxy、class 实例、函数、DOM/Event、含循环引用的对象等都可能触发 `An object could not be cloned.`。
+
+```typescript
+// ❌ 错误：store 里的对象可能是 observable/proxy，不能直接跨 IPC
+api.testProxyServer(reaxel_SettingsView.store.UIControls.networks.proxy_fields, url);
+
+// ✅ 正确：跨 IPC 前先转成 plain data
+const payload = cloneForIPC(reaxel_SettingsView.store.UIControls.networks.proxy_fields);
+api.testProxyServer(payload, url);
+```
+
+新增或修改 IPC 调用时必须检查参数是否为可结构化克隆的 plain data；SettingsView 中来自 `reaxel_SettingsView.store` 的对象尤其要先通过 `#src/shared/utils/clone-for-ipc.utility` 的 `cloneForIPC` 转换。该工具内部使用 MobX 官方 `toJS` 展开 observable，并处理普通对象中嵌套 observable 的情况。
+
 ### 错误 1: 主进程直接使用 ipcMain
 
 ```typescript

@@ -24,6 +24,7 @@ Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with n
 - Reaxel modules use `reaxel_` names and usually return `Object.assign(() => rtn, { store, setState, mutate })`.
 - React components should use `reaxper` when matching existing SettingsView/Main patterns.
 - Hooks are globally provided in this repo; existing code often uses `useEffect`, `useState`, etc. without React imports.
+- If a function or utility is broadly reusable and business-agnostic, place it in the appropriate host `utils` or `toolkits` directory instead of keeping local copies in feature modules, for example `projects/AI-WebApp/src/shared/utils/clone-for-ipc.utility.ts`.
 - Avoid unrelated cleanup. Many files have existing loose typing and commented debug code; only change it when needed for the task.
 
 ## IPC Rules

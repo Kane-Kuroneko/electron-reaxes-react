@@ -51,6 +51,10 @@ export const setStartupAIPageLoadMode = (mode: Startup.AIPageLoadMode) => {
 	return api.setStartupAIPageLoadMode(mode);
 }
 
+export const testProxyServer = (proxyConf: NetworkProxy.ProxyConfFields, url: string) => {
+	return api.testProxyServer(cloneForIPC(proxyConf), url);
+}
+
 export const turnToNextAiPage = () => {
 	return api.turnToNextAiPage();
 }
@@ -66,5 +70,7 @@ export const devCleanStart = () => {
 
 import { Settings } from '#src/Types/SettingsTypes';
 import { AI } from '#src/Types/SettingsTypes/AI';
+import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import { NetworkProxy } from '#src/Types/SettingsTypes/NetworkProxy';
 import type { Startup } from '#src/Types/SettingsTypes/Startup';
 import {PatchData,PatchPath} from '#src/Types/SettingsTypes/SettingsPatchPath';

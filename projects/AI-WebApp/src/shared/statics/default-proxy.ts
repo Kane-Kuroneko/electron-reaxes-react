@@ -1,4 +1,6 @@
 export const DEFAULT_EXAMPLE_PROXY_SERVER_ID = 'example';
+export const DEFAULT_FOREIGN_PROXY_TEST_URL = 'https://api.ipify.org?format=json';
+export const DEFAULT_DOMESTIC_PROXY_TEST_URL = 'https://myip.ipip.net';
 
 export const createDefaultProxyConf = ():NetworkProxy.ProxyConfFields => ( {
 	protocol : 'http' ,
@@ -21,5 +23,10 @@ export const createDefaultProxyServers = ():NetworkProxy.ProxyServer.Server[] =>
 		enabled : false,
 	},
 ];
+
+export const createDefaultProxyTestURLs = ():NetworkProxy.ProxyTestURLs => ( {
+	foreign : DEFAULT_FOREIGN_PROXY_TEST_URL ,
+	domestic : DEFAULT_DOMESTIC_PROXY_TEST_URL,
+} );
 
 import type { NetworkProxy } from '#src/Types/SettingsTypes/NetworkProxy';

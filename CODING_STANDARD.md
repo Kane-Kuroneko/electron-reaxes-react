@@ -204,6 +204,11 @@ export const functionName = <T>(param: T): ReturnType => {
 // 无额外 import 或 import 在底部
 ```
 
+### 3.4 通用工具归位
+
+- 如果函数或工具可能被广泛复用、业务无关，应根据宿主环境放入相应目录的 `utils` 或 `toolkits` 中，而不是散落在业务模块内。
+- 工具函数文件使用 `.utility.ts` 后缀；例如 AI-WebApp 里的 IPC/observable plain clone 放在 `src/shared/utils/clone-for-ipc.utility.ts`。
+
 ---
 
 ## 4️⃣ 注释规范 📝
@@ -463,6 +468,7 @@ utils/
 - [ ] **Import 是否按重要性排序？（第三方库 → 别名路径 → 相对路径 → 样式）**
 - [ ] **reaxel 实例是否使用 `reaxel_` 前缀？**
 - [ ] **工具函数文件是否使用 `.utility.ts` 后缀？**
+- [ ] **通用、业务无关的工具是否放在对应 `utils`/`toolkits` 目录？**
 - [ ] **注释是否使用中文？**
 - [ ] **是否使用 Tab 缩进？**
 - [ ] **是否使用分号结尾？**

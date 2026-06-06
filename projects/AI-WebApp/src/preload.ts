@@ -27,6 +27,7 @@ const resetAIsToDefaults = useRpc('reset-ais-to-defaults');
 const getPreloadAIFamilies = useRpc('get-preload-ai-families');
 const getAppearanceEnvironment = useRpc('get-appearance-environment');
 const setStartupAIPageLoadMode = useRpc('set-startup-ai-page-load-mode');
+const testProxyServer = useRpc('test-proxy-server');
 const getGuidingDefaults = useRpc('get-guiding-defaults');
 const guidingSaveProgress = useRpc('guiding-save-progress');
 const guidingTestConnectivity = useRpc('guiding-test-connectivity');
@@ -53,6 +54,7 @@ const api = {
 	getPreloadAIFamilies,
 	getAppearanceEnvironment,
 	setStartupAIPageLoadMode,
+	testProxyServer,
 	getGuidingDefaults,
 	guidingSaveProgress,
 	guidingTestConnectivity,

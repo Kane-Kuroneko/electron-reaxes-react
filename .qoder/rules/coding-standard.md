@@ -133,6 +133,11 @@ interface IUserData {}
 
 - **不强制要求删除尾随空格**（`trim_trailing_whitespace = false`）
 
+### 通用工具归位
+
+- 如果函数或工具可能被广泛复用、业务无关，应根据宿主环境放入相应目录的 `utils` 或 `toolkits` 中，而不是散落在业务模块内。
+- 工具文件遵循 `.utility.ts` 命名；例如 AI-WebApp 里的 IPC/observable plain clone 应放在 `src/shared/utils/clone-for-ipc.utility.ts`。
+
 ---
 
 ## 🔍 代码审查检查清单
@@ -143,6 +148,7 @@ interface IUserData {}
 - [ ] Import 语句是否集中在文件底部
 - [ ] 命名是否遵循 camelCase/PascalCase/kebab-case 规范
 - [ ] Reaxel 模块是否使用 kebab-case 命名
+- [ ] 通用、业务无关的工具是否放在对应 `utils`/`toolkits` 目录
 
 ---
 

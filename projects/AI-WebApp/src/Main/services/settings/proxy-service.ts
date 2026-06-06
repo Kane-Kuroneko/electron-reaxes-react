@@ -9,10 +9,7 @@ const proxyAuthHandlers = new WeakMap<WebContentsView , (...args:any[]) => void>
 
 const getProxyRules = (proxyConf:NetworkProxy.ProxyConfFields):string => {
 	const address = `${ proxyConf.hostname }:${ proxyConf.port }`;
-	if( proxyConf.protocol === 'socks5' ) {
-		return `socks5://${ address }`;
-	}
-	return `http=${ address };https=${ address }`;
+	return `${ proxyConf.protocol }://${ address }`;
 };
 
 const getProxyAuth = (proxyConf:NetworkProxy.ProxyConfFields):NetworkProxy.ProxyAuthFields | null => {
@@ -61,7 +58,7 @@ const globalBypassMatchesAI = (ai:AI.AIItem , globalProxy:NetworkProxy.GlobalPro
 
 export const resolveGlobalProxy = (settings:Pick<Settings , 'networks'>):ResolvedProxy => {
 	const globalProxy = settings.networks.global_proxy;
-	
+
 	switch( globalProxy.proxy_mode ) {
 		case 'direct':
 			return directProxy();
@@ -123,6 +120,102 @@ export const applyAIProxyToView = async(
 	return resolvedProxy;
 };
 
+export const testProxyConnectivity = async(
+	proxyConf:NetworkProxy.ProxyConfFields ,
+	url:string,
+):Promise<NetworkProxy.ProxyTestResult> => {
+	const startedAt = Date.now();
+	let targetUrl = url;
+	const controller = new AbortController();
+	const timer = setTimeout( () => controller.abort() , 8000 );
+	const ses = session.fromPartition( `proxy-test-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 , 8 ) }` );
+	const normalizedProxyConf = normalizeProxyConf( proxyConf );
+	const proxyAuth = getProxyAuth( normalizedProxyConf );
+	const resolvedProxy = fixedProxy( normalizedProxyConf , 'global' );
+	const diagnostic = createProxyTestDiagnostic( normalizedProxyConf , resolvedProxy );
+	const loginHandler = (
+		event:any ,
+		_webContents:any ,
+		_authenticationResponseDetails:any ,
+		authInfo:any ,
+		callback:(username?:string , password?:string) => void,
+	) => {
+		if(
+			!authInfo?.isProxy ||
+			!proxyAuth ||
+			authInfo.host !== normalizedProxyConf.hostname ||
+			Number( authInfo.port ) !== Number( normalizedProxyConf.port )
+		) {
+			return;
+		}
+		event.preventDefault();
+		callback( proxyAuth.username , proxyAuth.password );
+	};
+
+	try {
+		targetUrl = normalizeTestURL( url );
+		await applyResolvedProxyToSession( ses , resolvedProxy );
+		if( proxyAuth ) {
+			app.on( 'login' , loginHandler );
+		}
+		const response = await ses.fetch( targetUrl , {
+			method : 'GET' ,
+			signal : controller.signal,
+		} );
+		const text = await response.text();
+		const ipAddress = extractIPAddress( text );
+		const durationMs = Date.now() - startedAt;
+
+		if( response.status < 200 || response.status >= 400 ) {
+			return {
+				...diagnostic ,
+				success : false ,
+				url : targetUrl ,
+				status : response.status ,
+				durationMs ,
+				error : `HTTP ${ response.status }`,
+			};
+		}
+		if( !ipAddress ) {
+			return {
+				...diagnostic ,
+				success : false ,
+				url : targetUrl ,
+				status : response.status ,
+				durationMs ,
+				error : 'Response did not contain an IP address',
+			};
+		}
+		return {
+			...diagnostic ,
+			success : true ,
+			url : targetUrl ,
+			status : response.status ,
+			durationMs ,
+			ipAddress,
+		};
+	} catch ( error ) {
+		return {
+			...diagnostic ,
+			success : false ,
+			url : targetUrl ,
+			durationMs : Date.now() - startedAt ,
+			error : error?.message || String( error ),
+		};
+	} finally {
+		clearTimeout( timer );
+		if( proxyAuth ) {
+			app.removeListener( 'login' , loginHandler );
+		}
+		try {
+			await ses.clearCache();
+			await ses.clearStorageData();
+		} catch ( error ) {
+			console.error( '[ProxyTest] Failed to clear test session:' , error );
+		}
+	}
+};
+
 const installProxyAuthHandler = (view:WebContentsView , resolvedProxy:ResolvedProxy) => {
 	const previousHandler = proxyAuthHandlers.get( view );
 	if( previousHandler ) {
@@ -148,9 +241,41 @@ const installProxyAuthHandler = (view:WebContentsView , resolvedProxy:ResolvedPr
 	proxyAuthHandlers.set( view , handler );
 };
 
+const normalizeTestURL = (url:string) => {
+	const trimmed = ( url || '' ).trim();
+	if( !trimmed ) {
+		throw new Error( 'Test URL is required' );
+	}
+	const parsed = new URL( trimmed );
+	if( parsed.protocol !== 'http:' && parsed.protocol !== 'https:' ) {
+		throw new Error( 'Only HTTP and HTTPS test URLs are supported' );
+	}
+	return parsed.toString();
+};
+
+const extractIPAddress = (text:string) => {
+	const candidates = text.match( /[0-9a-fA-F:.]{3,}/g ) || [];
+	return candidates.find( candidate => isIP( candidate.replace( /^\[|\]$/g , '' ) ) ) || null;
+};
+
+const createProxyTestDiagnostic = (
+	proxyConf:NetworkProxy.ProxyConfFields ,
+	resolvedProxy:ResolvedProxy,
+) => {
+	return {
+		proxyRules : resolvedProxy.proxyRules ,
+		proxyServer : `${ proxyConf.hostname }:${ proxyConf.port }` ,
+		proxyProtocol : proxyConf.protocol,
+	};
+};
+
 import type {
 	Session ,
 	WebContentsView,
+} from 'electron';
+import {
+	app ,
+	session,
 } from 'electron';
 import type { Settings } from '#src/Types/SettingsTypes';
 import { AI } from '#src/Types/SettingsTypes/AI';
@@ -159,3 +284,4 @@ import {
 	normalizeGlobalProxy ,
 	normalizeProxyConf,
 } from '#main/services/settings/settings-config-service';
+import { isIP } from 'node:net';

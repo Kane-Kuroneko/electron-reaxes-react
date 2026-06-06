@@ -8,11 +8,10 @@ export type SettingsConfigFile = {
 	settings: RuntimeSettings;
 };
 
-const cloneData = <T>(data:T):T => JSON.parse( JSON.stringify( data ) );
-
 export const createDefaultProxyConf = sharedCreateDefaultProxyConf;
 export const createDefaultGlobalProxy = sharedCreateDefaultGlobalProxy;
 export const createDefaultProxyServers = sharedCreateDefaultProxyServers;
+export const createDefaultProxyTestURLs = sharedCreateDefaultProxyTestURLs;
 
 export const createDefaultRuntimeSettings = ():RuntimeSettings => ( {
 	networks : {
@@ -22,6 +21,7 @@ export const createDefaultRuntimeSettings = ():RuntimeSettings => ( {
 			user_fill_proxy : createDefaultGlobalProxy(),
 		} ,
 		proxy_server_list : createDefaultProxyServers(),
+		proxy_test_urls : createDefaultProxyTestURLs(),
 	} ,
 	system : {
 		gpu_acceleration : true ,
@@ -63,6 +63,13 @@ export const normalizeGlobalProxy = (proxyConf?:NetworkProxy.GlobalProxy):Networ
 	};
 };
 
+export const normalizeProxyTestURLs = (proxyTestURLs?:Partial<NetworkProxy.ProxyTestURLs>):NetworkProxy.ProxyTestURLs => {
+	return {
+		...createDefaultProxyTestURLs() ,
+		...( proxyTestURLs || {} ),
+	};
+};
+
 export const normalizeRuntimeSettings = (settings?:Partial<RuntimeSettings>):RuntimeSettings => {
 	const defaults = createDefaultRuntimeSettings();
 	const networks = settings?.networks;
@@ -85,6 +92,7 @@ export const normalizeRuntimeSettings = (settings?:Partial<RuntimeSettings>):Run
 					enabled : server.enabled !== false,
 				} ) )
 				: defaults.networks.proxy_server_list,
+			proxy_test_urls : normalizeProxyTestURLs( networks?.proxy_test_urls ),
 		} ,
 		system : {
 			...defaults.system ,
@@ -117,7 +125,7 @@ class SettingsConfigService {
 	}
 	
 	getDefaultSettings():RuntimeSettings {
-		return cloneData( createDefaultRuntimeSettings() );
+		return cloneObservableToPlain( createDefaultRuntimeSettings() );
 	}
 	
 	getUserSettings():RuntimeSettings | null {
@@ -174,10 +182,12 @@ import {
 	normalizeLanguagePreference ,
 	normalizeThemePreference,
 } from '#src/shared/appearance';
+import { cloneObservableToPlain } from '#src/shared/utils/clone-for-ipc.utility';
 import {
 	createDefaultGlobalProxy as sharedCreateDefaultGlobalProxy ,
 	createDefaultProxyConf as sharedCreateDefaultProxyConf ,
 	createDefaultProxyServers as sharedCreateDefaultProxyServers,
+	createDefaultProxyTestURLs as sharedCreateDefaultProxyTestURLs,
 } from '#src/shared/statics/default-proxy';
 import type { Settings } from '#src/Types/SettingsTypes';
 import { NetworkProxy } from '#src/Types/SettingsTypes/NetworkProxy';

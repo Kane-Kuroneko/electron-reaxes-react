@@ -346,7 +346,7 @@ function applyThemeToDocument( theme:'light' | 'dark' ) {
 }
 
 function normalizeGuidingProgress(progress:Guiding.Progress):Guiding.Progress {
-	return JSON.parse( JSON.stringify( progress ) );
+	return cloneObservableToPlain( progress );
 }
 
 function createCustomAIId() {
@@ -363,6 +363,7 @@ import {
 	resolveLanguagePreference ,
 	resolveThemePreference,
 } from '#src/shared/appearance';
+import { cloneObservableToPlain } from '#src/shared/utils/clone-for-ipc.utility';
 import type { Guiding } from '#src/Types/Guiding';
 import type { Languages } from '#src/Types/Languages';
 import type { Appearance } from '#src/Types/SettingsTypes/Appearance';

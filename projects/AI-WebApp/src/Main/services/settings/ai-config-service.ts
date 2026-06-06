@@ -12,8 +12,6 @@ export interface AIConfigFile {
 	deletedIds?: string[];
 }
 
-const cloneData = <T>(data:T):T => JSON.parse( JSON.stringify( data ) );
-
 const AI_FAMILY_DEFAULT_URLS:Record<AI.AIFamily , string> = {
 	chatgpt : 'https://chatgpt.com' ,
 	grok : 'https://grok.com' ,
@@ -63,7 +61,7 @@ class AIConfigService {
 	}
 	
 	getDefaultAIs():AI.AIItem[] {
-		return cloneData( this.defaultConfig.ais ).map( normalizeAI );
+		return cloneObservableToPlain( this.defaultConfig.ais ).map( normalizeAI );
 	}
 	
 	getUserConfig():AIConfigFile | null {
@@ -242,4 +240,5 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { app } from 'electron';
 import defaultAIsData from '#src/shared/statics/default-ais.json';
+import { cloneObservableToPlain } from '#src/shared/utils/clone-for-ipc.utility';
 import { AI } from '#src/Types/SettingsTypes/AI';

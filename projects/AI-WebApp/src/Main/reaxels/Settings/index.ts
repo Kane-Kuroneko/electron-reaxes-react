@@ -11,10 +11,10 @@ export const reaxel_Settings = reaxel( () => {
 	} );
 	
 	const getCurrentSettings = ():Settings => ( {
-		networks : cloneData( store.networks ) ,
-		system : cloneData( store.system ) ,
-		startup : cloneData( store.startup ) ,
-		appearance : cloneData( store.appearance ) ,
+		networks : cloneObservableToPlain( store.networks ) ,
+		system : cloneObservableToPlain( store.system ) ,
+		startup : cloneObservableToPlain( store.startup ) ,
+		appearance : cloneObservableToPlain( store.appearance ) ,
 		AIs : aiConfigService.getEffectiveAIs(),
 	} );
 	
@@ -26,10 +26,10 @@ export const reaxel_Settings = reaxel( () => {
 	const reloadFromDisk = ():Settings => {
 		const persistedSettings = settingsConfigService.getEffectiveSettings();
 		mutate( s => {
-			s.networks = cloneData( persistedSettings.networks );
-			s.system = cloneData( persistedSettings.system );
-			s.startup = cloneData( persistedSettings.startup );
-			s.appearance = cloneData( persistedSettings.appearance );
+			s.networks = cloneObservableToPlain( persistedSettings.networks );
+			s.system = cloneObservableToPlain( persistedSettings.system );
+			s.startup = cloneObservableToPlain( persistedSettings.startup );
+			s.appearance = cloneObservableToPlain( persistedSettings.appearance );
 		} );
 		return getCurrentSettings();
 	};
@@ -167,6 +167,10 @@ export const reaxel_Settings = reaxel( () => {
 			};
 		}
 	} );
+
+	useIpcRpc( 'test-proxy-server' ).handle( async( { event } , proxyConf , url ) => {
+		return await testProxyConnectivity( proxyConf , url );
+	} );
 	
 	useIpcRpc( 'get-ais' ).handle( async() => {
 		return aiConfigService.getEffectiveAIs();
@@ -225,10 +229,8 @@ export const reaxel_Settings = reaxel( () => {
 	} );
 } );
 
-const cloneData = <T>(data:T):T => JSON.parse( JSON.stringify( data ) );
-
 const applyPatchByPath = <T extends object>(settings:T , path:string , data:any):T => {
-	const patchedSettings = cloneData( settings );
+	const patchedSettings = cloneObservableToPlain( settings );
 	const keys = path.split( '/' ).filter( Boolean );
 	let target:any = patchedSettings;
 	
@@ -271,9 +273,11 @@ import {
 	normalizeStartupAIPageLoadMode ,
 	normalizeRuntimeSettings,
 } from '#main/services/settings/settings-config-service';
+import { testProxyConnectivity } from '#main/services/settings/proxy-service';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';
 import { syncTrayState , updateTrayMenu } from '#main/services/tray';
 import { requestDevCleanStart } from '#main/services/dev/clean-start';
+import { cloneObservableToPlain } from '#src/shared/utils/clone-for-ipc.utility';
 import {
 	reaxel ,
 	createReaxable,
