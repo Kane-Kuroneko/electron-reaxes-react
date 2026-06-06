@@ -34,7 +34,18 @@ declare type NotNull<T> = Exclude<T , null | undefined>;
 
 /*DOM*/
 declare interface EventTarget {
-	value?: string;
+	value?: any;
+}
+
+declare interface IteratorObject<T , TReturn = unknown , TNext = unknown> {}
+declare interface MapIterator<T> extends IterableIterator<T> {}
+declare interface SetIterator<T> extends IterableIterator<T> {}
+declare interface ReadonlySetLike<T> {
+	readonly size: number;
+	has( value: T ): boolean;
+	keys(): IterableIterator<T>;
+	values(): IterableIterator<T>;
+	entries(): IterableIterator<[ T , T ]>;
 }
 /*CSS*/
 declare module '*.module.less'

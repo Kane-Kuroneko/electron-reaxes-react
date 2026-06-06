@@ -68,7 +68,7 @@ const Cookie = {
         encode: encodeURIComponent,
         expires: 365,
         path: '/',
-        secure: window.hash.protocol === 'https:',
+        secure: window.location.protocol === 'https:',
       },
       options,
     );

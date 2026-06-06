@@ -15,11 +15,17 @@ export const RCSystemPanel = reaxper(() => {
 				<I18n>GPU Acceleration</I18n>
 			</Checkbox>
 			<Checkbox
-				checked={store.tray}
-				onChange={e=>setState({tray : e.target.checked})}
+				checked={store.close_to_tray}
+				onChange={e => {
+					const checked = e.target.checked;
+					setState({
+						show_tray : checked ? true : store.show_tray ,
+						close_to_tray : checked,
+					});
+				}}
 				style={{userSelect:'none'}}
 			>
-				<I18n>Exit to Tray</I18n>
+				<I18n>Close to Tray</I18n>
 			</Checkbox>
 		</Space>
 	</div>;

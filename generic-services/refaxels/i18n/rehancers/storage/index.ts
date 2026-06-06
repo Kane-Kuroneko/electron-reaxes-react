@@ -33,5 +33,5 @@ type Options = Partial<{
 	
 }>;
 
-import { Refaxel_I18n , Languages } from '../../index.tsx';
+import { Refaxel_I18n , Languages } from '../../index';
 import { reaxel_storage } from '../../../../reaxels/storage';

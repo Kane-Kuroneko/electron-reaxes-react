@@ -45,7 +45,7 @@ const batchTransformCSSHumpToLowercase = (object:{[key in keyof CSSStyleDeclarat
 const argumentsAgent = (secondary , ...args) => args.reduce((accu, arg , index ) => (accu[0] += typeof arg === "string" ? arg : (accu.push(arg),"%o"),accu) ,['%c',secondary]);
 
 
-export const crayon : Crayon = new Proxy((cssProperties:Partial<CSSStyleDeclaration> = {}) => {
+export const crayon : Crayon = new Proxy(((cssProperties:Partial<CSSStyleDeclaration> = {}) => {
 	/*using as crayon({CSSProperties})('wanna log msg')*/
 	return (...logs) => {
 		let cssString = Object.keys(cssProperties).reduce((accumulator,key:string) => {
@@ -61,7 +61,7 @@ export const crayon : Crayon = new Proxy((cssProperties:Partial<CSSStyleDeclarat
 		console.groupEnd();
 		return;
 	};
-},{
+}) as Crayon,{
 	get : (target, propKey:string, receiver) => {
 		
 		if([

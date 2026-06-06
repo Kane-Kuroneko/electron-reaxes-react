@@ -62,12 +62,16 @@ export const If = ({children, condition}) => {
 export const Else = () => null;
 If.Else = Else;
 
+type SwitchCase = React.FunctionComponent<{
+	value?: any;
+	children?: React.ReactNode;
+}>;
 type Switch = React.FunctionComponent<{
-  children;
-  target;
+	children;
+	target;
 }> & {
-  Case: Function;
-  Default: Function;
+	Case: SwitchCase;
+	Default: SwitchCase;
 };
 export const Switch = (({children, target}) => {
   const {Case, Default} = Switch;
@@ -114,8 +118,8 @@ export const Switch = (({children, target}) => {
  类似于switch(value){case 1:case 2:case3:return "xxx";}
  */
 Object.assign(Switch, {
-  Case: ({value, children}) => {},
-  Default: ({children}) => {},
+	Case: ({value, children}) => null,
+	Default: ({children}) => null,
 });
 
 function $example() {
