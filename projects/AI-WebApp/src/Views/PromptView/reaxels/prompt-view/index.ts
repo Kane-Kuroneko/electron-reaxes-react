@@ -7,8 +7,12 @@ export const reaxel_PromptView = reaxel( () => {
 		side : checkAs<PromptView.Side>( 'left' ) ,
 		items : checkAs<PromptView.Item[]>( [] ) ,
 		appearance : {
-			theme : checkAs<'light' | 'dark'>( 'light' ) ,
-			themeSource : checkAs<PromptView.Appearance['themeSource']>( 'light' ),
+			theme : checkAs<Appearance.Theme>( 'system' ) ,
+			language : checkAs<Appearance.Language>( 'follow-system' ),
+		} ,
+		environment : {
+			systemLanguage : checkAs<Languages>( 'en-US' ) ,
+			systemTheme : checkAs<'light' | 'dark'>( 'light' ),
 		} ,
 		status : {
 			loading : true ,
@@ -31,9 +35,10 @@ export const reaxel_PromptView = reaxel( () => {
 			setState( {
 				side : state.side ,
 				items : state.items ,
-				appearance : state.appearance,
+				appearance : state.appearance ,
+				environment : state.environment,
 			} );
-			applyAppearanceToDocument( state.appearance );
+			applyPromptViewEnvironment( state.appearance , state.environment );
 			setState.status( {
 				loading : false ,
 				error : '',
@@ -135,9 +140,9 @@ export const reaxel_PromptView = reaxel( () => {
 		const item = store.items.find( prompt => prompt.id === id );
 		const result = await api.copyPromptViewText( item?.content || '' );
 		if( result.success ) {
-			message.success( 'Copied' );
+			message.success( i18n( 'Copied' ) );
 		} else {
-			message.error( result.error || 'Copy failed' );
+			message.error( result.error || i18n( 'Copy failed' ) );
 		}
 		return result;
 	};
@@ -179,13 +184,34 @@ const createPromptItemId = () => {
 	return `prompt-${ globalThis.crypto?.randomUUID?.() || `${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 , 10 ) }` }`;
 };
 
-const applyAppearanceToDocument = (appearance:PromptView.Appearance) => {
-	document.documentElement.dataset.aiWebappTheme = appearance.theme;
-	document.documentElement.dataset.aiWebappThemeSource = appearance.themeSource;
+const applyPromptViewEnvironment = (
+	appearance:PromptView.Appearance ,
+	environment:PromptView.Environment,
+) => {
+	const resolvedLanguage = resolveLanguagePreference( appearance.language , environment.systemLanguage );
+	reaxel_I18n().setLanguage( resolvedLanguage as any );
+	applyThemePreferenceToDocument( appearance.theme , environment.systemTheme );
 };
 
+const applyThemePreferenceToDocument = (
+	theme:Appearance.Theme = 'system' ,
+	systemTheme:'light' | 'dark' = 'light',
+) => {
+	const resolvedTheme = resolveThemePreference( theme , systemTheme );
+	document.documentElement.dataset.aiWebappThemeSource = theme;
+	document.documentElement.dataset.aiWebappTheme = resolvedTheme;
+};
+
+import { reaxel_I18n } from '../i18n';
+import { i18n } from '../exports';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import {
+	resolveLanguagePreference ,
+	resolveThemePreference,
+} from '#src/shared/appearance';
 import type { PromptView } from '#src/Types/PromptView';
+import type { Appearance } from '#src/Types/SettingsTypes/Appearance';
+import type { Languages } from '#src/Types/Languages';
 import { arrayMove } from '@dnd-kit/sortable';
 import { message } from 'antd';
 import {

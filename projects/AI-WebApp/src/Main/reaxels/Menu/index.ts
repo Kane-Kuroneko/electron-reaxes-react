@@ -100,7 +100,7 @@ export const reaxel_Menu = reaxel( () => {
 						label : t( 'PromptView Left' ) ,
 						type : 'checkbox' ,
 						checked : promptViewLeftVisible ,
-						accelerator : 'CmdOrCtrl+Shift+[' ,
+						accelerator : 'ctrl+,' ,
 						click : () => {
 							reaxel_PromptViews().togglePromptView( 'left' );
 						},
@@ -109,7 +109,7 @@ export const reaxel_Menu = reaxel( () => {
 						label : t( 'PromptView Right' ) ,
 						type : 'checkbox' ,
 						checked : promptViewRightVisible ,
-						accelerator : 'CmdOrCtrl+Shift+]' ,
+						accelerator : 'ctrl+.' ,
 						click : () => {
 							reaxel_PromptViews().togglePromptView( 'right' );
 						},

@@ -7,7 +7,8 @@ export const getPromptViewState = (side:PromptView.Side):PromptView.State => {
 	return {
 		side : safeSide ,
 		items : getPromptViewItems( safeSide ) ,
-		appearance : getPromptViewAppearance(),
+		appearance : getPromptViewAppearance() ,
+		environment : getPromptViewEnvironment(),
 	};
 };
 
@@ -44,10 +45,17 @@ const getPromptViewItems = (side:PromptView.Side) => {
 
 const getPromptViewAppearance = ():PromptView.Appearance => {
 	const settings = getSettingsConfigService().getEffectiveSettings();
-	const environment = getAIPageEnvironment( settings.appearance );
 	return {
-		theme : environment.theme ,
-		themeSource : normalizeThemeSource( environment.themeSource ),
+		theme : settings.appearance.theme ,
+		language : settings.appearance.language,
+	};
+};
+
+const getPromptViewEnvironment = ():PromptView.Environment => {
+	const environment = getAppearanceEnvironment();
+	return {
+		systemLanguage : environment.systemLanguage ,
+		systemTheme : environment.systemTheme,
 	};
 };
 
@@ -93,12 +101,6 @@ const normalizePromptViewSide = (side:PromptView.Side):PromptView.Side => {
 	return side === 'right' ? 'right' : 'left';
 };
 
-const normalizeThemeSource = (themeSource:string):PromptView.Appearance['themeSource'] => {
-	return themeSource === 'dark' || themeSource === 'system'
-		? themeSource
-		: 'light';
-};
-
 const createPromptItemId = () => {
 	return `prompt-${ randomUUID() }`;
 };
@@ -108,7 +110,7 @@ type PromptViewStoreSchema = {
 	right?: PromptView.Item[];
 };
 
-import { getAIPageEnvironment } from '#main/services/appearance';
+import { getAppearanceEnvironment } from '#main/services/appearance';
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
 import type { PromptView } from '#src/Types/PromptView';
 import ElectronStore from 'electron-store';

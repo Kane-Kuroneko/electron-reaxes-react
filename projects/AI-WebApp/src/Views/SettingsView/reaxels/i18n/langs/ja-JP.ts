@@ -33,6 +33,13 @@ export default {
 	"The last AI page cannot be closed" : "最後の AI ページは閉じられません" ,
 	"PromptView Left" : "左側 PromptView" ,
 	"PromptView Right" : "右側 PromptView" ,
+	"New Prompt" : "新規 Prompt" ,
+	"Prompt text" : "Prompt テキスト" ,
+	"Duplicate" : "複製" ,
+	"Copy" : "コピー" ,
+	"Copied" : "コピーしました" ,
+	"Copy failed" : "コピーに失敗しました" ,
+	"Drag to sort" : "ドラッグして並べ替え" ,
 	
 	// Tray
 	"Show Window" : "ウィンドウを表示" ,

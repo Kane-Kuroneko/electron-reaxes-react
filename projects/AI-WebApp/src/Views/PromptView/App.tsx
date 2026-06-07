@@ -7,6 +7,7 @@ export const App = reaxper( () => {
 		reorderPrompts,
 	} = reaxel_PromptView();
 	const { store } = reaxel_PromptView;
+	const resolvedTheme = resolveThemePreference( store.appearance.theme , store.environment.systemTheme );
 	const sensors = useSensors(
 		useSensor( PointerSensor , {
 			activationConstraint : {
@@ -29,7 +30,7 @@ export const App = reaxper( () => {
 	
 	return <ConfigProvider
 		theme={ {
-			algorithm : store.appearance.theme === 'dark'
+			algorithm : resolvedTheme === 'dark'
 				? antdTheme.darkAlgorithm
 				: antdTheme.defaultAlgorithm,
 		} }
@@ -44,7 +45,7 @@ export const App = reaxper( () => {
 					size="small"
 					icon={ <PlusOutlined/> }
 					onClick={ addPrompt }
-				>New</Button>
+				><I18n>New</I18n></Button>
 			</header>
 			<section className="prompt-view-body">
 				{ store.status.loading ? <div className="prompt-view-loading"><Spin/></div> : null }
@@ -53,7 +54,7 @@ export const App = reaxper( () => {
 						type="primary"
 						icon={ <PlusOutlined/> }
 						onClick={ addPrompt }
-					>New Prompt</Button>
+					><I18n>New Prompt</I18n></Button>
 				</div> : null }
 				{ !store.status.loading && store.items.length > 0 ? <DndContext
 					sensors={ sensors }
@@ -65,10 +66,9 @@ export const App = reaxper( () => {
 						strategy={ verticalListSortingStrategy }
 					>
 						<div className="prompt-card-list">
-							{ store.items.map( ( item , index ) => <PromptCard
+							{ store.items.map( item => <PromptCard
 								key={ item.id }
 								item={ item }
-								index={ index }
 							/> ) }
 						</div>
 					</SortableContext>
@@ -80,7 +80,6 @@ export const App = reaxper( () => {
 
 const PromptCard = reaxper( ( props:{
 	item: PromptView.Item;
-	index: number;
 } ) => {
 	const {
 		persistNow ,
@@ -112,12 +111,11 @@ const PromptCard = reaxper( ( props:{
 		<Card
 			className="prompt-card"
 			size="small"
-			title={ <span className="prompt-card-title">Prompt { props.index + 1 }</span> }
 		>
 			<TextArea
 				value={ props.item.content }
 				autoSize={ { minRows : 5 , maxRows : 14 } }
-				placeholder="Prompt text"
+				placeholder={ i18n( 'Prompt text' ) }
 				onChange={ event => {
 					setPromptText( props.item.id , event.target.value );
 				} }
@@ -126,14 +124,14 @@ const PromptCard = reaxper( ( props:{
 				} }
 			/>
 			<div className="prompt-card-actions">
-				<Tooltip title="Duplicate">
+				<Tooltip title={<I18n>Duplicate</I18n>}>
 					<Button
 						size="small"
 						icon={ <PlusSquareOutlined/> }
 						onClick={ () => duplicatePrompt( props.item.id ) }
 					/>
 				</Tooltip>
-				<Tooltip title="Copy">
+				<Tooltip title={<I18n>Copy</I18n>}>
 					<Button
 						size="small"
 						icon={ <CopyOutlined/> }
@@ -142,7 +140,7 @@ const PromptCard = reaxper( ( props:{
 						} }
 					/>
 				</Tooltip>
-				<Tooltip title="Delete">
+				<Tooltip title={<I18n>Delete</I18n>}>
 					<Button
 						size="small"
 						danger
@@ -150,7 +148,7 @@ const PromptCard = reaxper( ( props:{
 						onClick={ () => deletePrompt( props.item.id ) }
 					/>
 				</Tooltip>
-				<Tooltip title="Drag to sort">
+				<Tooltip title={<I18n>Drag to sort</I18n>}>
 					<Button
 						size="small"
 						className="prompt-card-drag-handle"
@@ -165,6 +163,8 @@ const PromptCard = reaxper( ( props:{
 } );
 
 import { reaxel_PromptView } from './reaxels/prompt-view';
+import { I18n , i18n } from './reaxels/exports';
+import { resolveThemePreference } from '#src/shared/appearance';
 import type { PromptView } from '#src/Types/PromptView';
 import {
 	CopyOutlined ,

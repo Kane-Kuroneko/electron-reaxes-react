@@ -101,8 +101,12 @@ export namespace PromptView {
       side: Side;
       items: Item[];
       appearance: {
-         theme: 'light' | 'dark';
-         themeSource: 'light' | 'dark' | 'system';
+         theme: 'light' | 'dark' | 'system';
+         language: Languages | 'follow-system';
+      };
+      environment: {
+         systemLanguage: Languages;
+         systemTheme: 'light' | 'dark';
       };
    };
 }
@@ -110,10 +114,10 @@ export namespace PromptView {
 
 ## 快捷键
 
-- `CmdOrCtrl+Shift+[`: Toggle PromptViewLeft
-- `CmdOrCtrl+Shift+]`: Toggle PromptViewRight
+- `Ctrl+,`: Toggle PromptViewLeft
+- `Ctrl+.`: Toggle PromptViewRight
 
-现有 AI 切换快捷键已经使用 `CmdOrCtrl+[` / `CmdOrCtrl+]` 和 `Alt+[` / `Alt+]`，因此 PromptView 使用 Shift 变体避免覆盖。
+现有 AI 切换快捷键已经使用 `CmdOrCtrl+[` / `CmdOrCtrl+]` 和 `Alt+[` / `Alt+]`，因此 PromptView 使用 comma/period 变体避免覆盖。
 
 ## 验证标准
 

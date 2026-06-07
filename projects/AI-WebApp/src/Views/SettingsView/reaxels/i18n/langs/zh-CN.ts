@@ -33,6 +33,13 @@ export default {
 	"The last AI page cannot be closed" : "最后一个AI页无法被关闭" ,
 	"PromptView Left" : "左侧 PromptView" ,
 	"PromptView Right" : "右侧 PromptView" ,
+	"New Prompt" : "新建 Prompt" ,
+	"Prompt text" : "Prompt 文本" ,
+	"Duplicate" : "复制一份" ,
+	"Copy" : "复制" ,
+	"Copied" : "已复制" ,
+	"Copy failed" : "复制失败" ,
+	"Drag to sort" : "拖拽排序" ,
 	
 	// Tray
 	"Show Window" : "显示窗口" ,
