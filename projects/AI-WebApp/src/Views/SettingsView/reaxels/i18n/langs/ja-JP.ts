@@ -31,6 +31,8 @@ export default {
 	"No enabled AI pages" : "有効な AI ページがありません" ,
 	"Close This AI" : "この AI を閉じる" ,
 	"The last AI page cannot be closed" : "最後の AI ページは閉じられません" ,
+	"PromptView Left" : "左側 PromptView" ,
+	"PromptView Right" : "右側 PromptView" ,
 	
 	// Tray
 	"Show Window" : "ウィンドウを表示" ,

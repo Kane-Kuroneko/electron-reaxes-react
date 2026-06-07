@@ -31,6 +31,8 @@ export default {
 	"No enabled AI pages" : "활성화된 AI 페이지가 없습니다" ,
 	"Close This AI" : "현재 AI 닫기" ,
 	"The last AI page cannot be closed" : "마지막 AI 페이지는 닫을 수 없습니다" ,
+	"PromptView Left" : "왼쪽 PromptView" ,
+	"PromptView Right" : "오른쪽 PromptView" ,
 	
 	// Tray
 	"Show Window" : "창 표시" ,

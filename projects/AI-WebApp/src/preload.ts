@@ -33,6 +33,9 @@ const guidingSaveProgress = useRpc('guiding-save-progress');
 const guidingTestConnectivity = useRpc('guiding-test-connectivity');
 const guidingFinish = useRpc('guiding-finish');
 const devCleanStart = useRpc('dev-clean-start');
+const getPromptViewState = useRpc('get-prompt-view-state');
+const savePromptViewItems = useRpc('save-prompt-view-items');
+const copyPromptViewText = useRpc('copy-prompt-view-text');
 
 const api = {
 	fetchSettings ,
@@ -60,6 +63,9 @@ const api = {
 	guidingTestConnectivity,
 	guidingFinish,
 	devCleanStart,
+	getPromptViewState,
+	savePromptViewItems,
+	copyPromptViewText,
 };
 export type API = typeof api;
 

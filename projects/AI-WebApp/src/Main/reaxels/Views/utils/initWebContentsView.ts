@@ -14,13 +14,19 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	mainWindow.contentView.addChildView(view);
 	
 	// 初始化崩溃报告器
-	const viewName = options.type === 'AI-View' ? `AI-View-${options.domain || 'unknown'}` : 'Settings-View';
+	const viewName = options.type === 'AI-View'
+		? `AI-View-${options.domain || 'unknown'}`
+		: options.type === 'Prompt-View'
+			? options.promptSide === 'right' ? 'PromptViewRight' : 'PromptViewLeft'
+			: 'Settings-View';
 	new ViewCrashReporter(view, viewName);
 	
 	if(viewOptions.type==='Settings-View'){
 		useSettingsView(view, options);
 	}else if(viewOptions.type==='AI-View'){
 		useAIView(view, viewOptions);
+	}else if(viewOptions.type==='Prompt-View'){
+		usePromptView(view, viewOptions);
 	}
 	
 	//让View跟随主窗口大小
@@ -28,6 +34,9 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	view.setBounds( { x: 0, y: 0, width, height} );
 	//太TMD蠢了!直接获取窗口大小的时候因为Menu的原因获取到的是错的!必须要重新获取并设置一遍
 	view.webContents.on( 'did-finish-load' , () => {
+		if( viewOptions.type === 'Prompt-View' ) {
+			return;
+		}
 		const {
 			width ,
 			height,
@@ -72,6 +81,30 @@ const useSettingsView = (view:WebContentsView,options:WebContentsViewConstructor
 	}
 	
 }
+const usePromptView = (view:WebContentsView,options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
+	const side = options.promptSide || 'left';
+	if(dev()){
+		~async function loadDevPromptView() {
+			const loaded = await safeLoadURL(
+				view ,
+				`${ createDevRendererURL( 'PromptView' ) }&side=${ side }` ,
+				`Prompt-View-${ side }`,
+			);
+			if( !loaded ) {
+				console.error( '[Views] Prompt-View dev server is unavailable. Run webpack.start before electron.start.' );
+			}
+		}();
+	}else {
+		void safeLoadFile(
+			view ,
+			path.join(absAppRunningPath,`./renderer/PromptView/index.html`) ,
+			`Prompt-View-${ side }` ,
+			{
+				query : { side },
+			},
+		);
+	}
+}
 const useAIView = (view:WebContentsView,options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
 	view.webContents.setWindowOpenHandler(({ url }) => {
 		if( shouldOpenInCurrentView( view.webContents.getURL() || options.domain , url ) ) {
@@ -112,10 +145,11 @@ const safeLoadURL = async(
 const safeLoadFile = async(
 	view:WebContentsView ,
 	filePath:string ,
-	context:string,
+	context:string ,
+	options?:LoadFileOptions,
 ) => {
 	try {
-		await view.webContents.loadFile( filePath );
+		await view.webContents.loadFile( filePath , options );
 		return true;
 	} catch ( error ) {
 		console.warn( `[Views] ${ context } loadFile failed:` , filePath , error );
@@ -141,7 +175,14 @@ const getFreshLoadURLOptions = (url:string) => {
 
 const normalizeViewOptions = (options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
 	if( options.type !== 'AI-View' ) {
-		return options;
+		return {
+			...options ,
+			webPreferences : {
+				nodeIntegration : false ,
+				contextIsolation : true ,
+				...( options.webPreferences || {} ),
+			},
+		};
 	}
 	return {
 		...options ,
@@ -172,32 +213,35 @@ const shouldOpenInCurrentView = (currentURL:string , nextURL:string) => {
 	}
 };
 
-import {
-	shell ,
-	WebContentsView,
-	dialog,
-	type WebContentsViewConstructorOptions,
-} from 'electron';
+type AI = "chatgpt"|"grok"|"gemini"|"deepseek"|"perplexity";
+type ExtraBrowserWindowOptions = {
+	domain? : string;
+	type : "AI-View"|"Settings-View"|"Prompt-View";
+	aiConfig?: AISettings.AIItem;
+	settings?: Settings;
+	promptSide?: PromptView.Side;
+}
+
 import { mainWindow } from "#main/mainWindow";
-import * as path from "path";
-import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
-import {dev} from 'electron-is';
 import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 import { applyAIProxyToView } from "#main/services/settings/proxy-service";
 import { handleAISwitchShortcutInput } from '#main/services/shortcuts/ai-switch';
 import { installWebContentsKeyboardGuard } from '#main/services/shortcuts/window-keyboard';
 import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
+import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {
 	applyAIPageAppearanceToView ,
 	getAIPageBackgroundColor ,
 } from '#main/services/appearance';
 import type { Settings } from "#src/Types/SettingsTypes";
 import type { AI as AISettings } from "#src/Types/SettingsTypes/AI";
-
-type AI = "chatgpt"|"grok"|"gemini"|"deepseek"|"perplexity";
-type ExtraBrowserWindowOptions = {
-	domain? : string;
-	type : "AI-View"|"Settings-View";
-	aiConfig?: AISettings.AIItem;
-	settings?: Settings;
-}
+import type { PromptView } from '#src/Types/PromptView';
+import {dev} from 'electron-is';
+import {
+	shell ,
+	WebContentsView,
+	dialog,
+	type LoadFileOptions,
+	type WebContentsViewConstructorOptions,
+} from 'electron';
+import * as path from "path";

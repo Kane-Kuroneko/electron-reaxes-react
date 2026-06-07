@@ -28,6 +28,8 @@ export const reaxel_Menu = reaxel( () => {
 		const previousAI = resolveAdjacentMenuAI( enabledAIs , currentAIViewKey , -1 );
 		const instantiatedAIViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
 		const canSwitchInstantiatedAI = instantiatedAIViews.length > 1;
+		const promptViewLeftVisible = reaxel_PromptViews.store.left.visible || reaxel_PromptViews.store.left.width > 0;
+		const promptViewRightVisible = reaxel_PromptViews.store.right.visible || reaxel_PromptViews.store.right.width > 0;
 		
 		return Menu.buildFromTemplate( [
 			{
@@ -92,6 +94,25 @@ export const reaxel_Menu = reaxel( () => {
 								: reaxel_AIViews().currentAIView?.view;
 							view?.webContents.toggleDevTools();
 						} ,
+					} ,
+					{ type : 'separator' } ,
+					{
+						label : t( 'PromptView Left' ) ,
+						type : 'checkbox' ,
+						checked : promptViewLeftVisible ,
+						accelerator : 'CmdOrCtrl+Shift+[' ,
+						click : () => {
+							reaxel_PromptViews().togglePromptView( 'left' );
+						},
+					} ,
+					{
+						label : t( 'PromptView Right' ) ,
+						type : 'checkbox' ,
+						checked : promptViewRightVisible ,
+						accelerator : 'CmdOrCtrl+Shift+]' ,
+						click : () => {
+							reaxel_PromptViews().togglePromptView( 'right' );
+						},
 					} ,
 					{
 						label : t('Wipe and Reload This Page') ,
@@ -244,6 +265,8 @@ export const reaxel_Menu = reaxel( () => {
 	} , () => [
 		Reaxel_View.store.currentAIViewKey ,
 		Reaxel_View.store.settingsViewOpened,
+		reaxel_PromptViews.store.left.visible ,
+		reaxel_PromptViews.store.right.visible,
 	] );
 	
 	const rtn = {
@@ -316,6 +339,7 @@ import {
 import { mainWindow } from "#main/mainWindow";
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
 import { reaxel_AIViews } from "#main/reaxels/Views/AI-Views";
+import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import { getAIConfigService } from "#main/services/settings/ai-config-service";
 import { getSettingsConfigService } from "#main/services/settings/settings-config-service";
 import type { Settings } from "#src/Types/SettingsTypes";

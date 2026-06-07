@@ -31,6 +31,8 @@ export default {
 	"No enabled AI pages" : "沒有啟用的 AI 頁面" ,
 	"Close This AI" : "關閉目前 AI" ,
 	"The last AI page cannot be closed" : "最後一個 AI 頁無法被關閉" ,
+	"PromptView Left" : "左側 PromptView" ,
+	"PromptView Right" : "右側 PromptView" ,
 	
 	// Tray
 	"Show Window" : "顯示視窗" ,

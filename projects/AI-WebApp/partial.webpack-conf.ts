@@ -49,6 +49,7 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 			"SettingsView" : path.resolve(subProjectRootPath, "src/Views/SettingsView/index.tsx"),
 			"FloatingView" : path.resolve(subProjectRootPath, "src/Views/FloatingView/index.tsx"),
 			"GuidingView" : path.resolve(subProjectRootPath, "src/Views/GuidingView/index.tsx"),
+			"PromptView" : path.resolve(subProjectRootPath, "src/Views/PromptView/index.tsx"),
 		},
 		
 		output: {
@@ -82,6 +83,13 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 			new HtmlWebpackPlugin( {
 				chunks:["GuidingView"],
 				filename : 'GuidingView/index.html' ,
+				template : path.join( subProjectRootPath , "engine/index.template.html" ) ,
+				minify : false ,
+				hash : true,
+			} ) ,
+			new HtmlWebpackPlugin( {
+				chunks:["PromptView"],
+				filename : 'PromptView/index.html' ,
 				template : path.join( subProjectRootPath , "engine/index.template.html" ) ,
 				minify : false ,
 				hash : true,

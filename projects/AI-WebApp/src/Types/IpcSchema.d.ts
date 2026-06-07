@@ -39,6 +39,9 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	'guiding-test-connectivity': IpcStructure.IpcRpc<[void], Guiding.ConnectivityResult>;
 	'guiding-finish': IpcStructure.IpcRpc<[options: Guiding.FinishOptions], { success: boolean }>;
 	'dev-clean-start': IpcStructure.IpcRpc<[void], DevCleanStartResult>;
+	'get-prompt-view-state': IpcStructure.IpcRpc<[side: PromptView.Side], PromptView.State>;
+	'save-prompt-view-items': IpcStructure.IpcRpc<[side: PromptView.Side, items: PromptView.Item[]], PromptView.SaveResult>;
+	'copy-prompt-view-text': IpcStructure.IpcRpc<[text: string], PromptView.CopyResult>;
 }
 type MainToRendererReply<K extends keyof MainToRendererEvents> = ReplyFromMtrEvents<MainToRendererEvents , K>;
 type AppearanceEnvironment = {
@@ -70,3 +73,4 @@ import type { FloatingView } from "#src/Types/FloatingView";
 import type { Languages } from '#src/Types/Languages';
 import type { Guiding } from '#src/Types/Guiding';
 import type { AIPageEnvironment } from '#src/Types/AIPageEnvironment';
+import type { PromptView } from '#src/Types/PromptView';

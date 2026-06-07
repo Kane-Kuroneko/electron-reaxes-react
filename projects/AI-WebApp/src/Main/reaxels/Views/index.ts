@@ -14,22 +14,27 @@ export const Reaxel_View = reaxel( () => {
 	} );
 	
 	function fitWindow(target?:string) {
-		const viewSetBounds = (view:WebContentsView) => view?.setBounds( {
-			x : 0 ,
+		const { width , height } = mainWindow.getContentBounds();
+		const promptInsets = reaxel_PromptViews().getLayoutInsets();
+		const centerBounds = {
+			x : promptInsets.left ,
 			y : 0 ,
-			width : mainWindow.getContentBounds().width ,
-			height : mainWindow.getContentBounds().height,
-		} );
+			width : Math.max( 1 , width - promptInsets.left - promptInsets.right ) ,
+			height,
+		};
+		const viewSetBounds = (view:WebContentsView) => view?.setBounds( centerBounds );
 		
 		if( target ) {
 			const runtimeView = reaxel_AIViews.store.AIViews.find( item => item.id === target );
 			viewSetBounds( runtimeView?.view );
+			reaxel_PromptViews().syncBounds( { x : 0 , y : 0 , width , height } );
 			return;
 		}
 		reaxel_AIViews.store.AIViews.forEach( runtimeView => {
 			viewSetBounds( runtimeView.view );
 		} );
 		viewSetBounds( reaxel_SettingsView.store.settingsView.view );
+		reaxel_PromptViews().syncBounds( { x : 0 , y : 0 , width , height } );
 	}
 	
 	async function onReadyLoadAIView() {
@@ -206,6 +211,7 @@ export const Reaxel_View = reaxel( () => {
 		} );
 		registerAISwitchGlobalShortcuts();
 		reaxel_FloatingView().initFloatingView();
+		reaxel_PromptViews().registerIpc();
 		await onReadyLoadAIView();
 		mainWindow.on( 'resize' , () => {
 			fitWindow();
@@ -313,6 +319,7 @@ const resolveStartupAI = (
 };
 
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
+import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import {
 	WebContentsView,
 } from "electron";

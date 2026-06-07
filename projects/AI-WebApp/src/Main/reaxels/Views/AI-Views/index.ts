@@ -16,6 +16,7 @@ export const reaxel_AIViews = reaxel( () => {
 		const existingRuntimeView = store.AIViews.find( item => item.id === ai.id );
 		if( existingRuntimeView?.view ) {
 			void updateRuntimeAIView( existingRuntimeView , ai , settings );
+			Reaxel_View().fitWindow( ai.id );
 			return existingRuntimeView.view;
 		}
 		
@@ -24,6 +25,7 @@ export const reaxel_AIViews = reaxel( () => {
 		mutate( s => {
 			s.AIViews.push( nextRuntimeView );
 		} );
+		Reaxel_View().fitWindow( ai.id );
 		
 		return nextRuntimeView.view;
 	};
