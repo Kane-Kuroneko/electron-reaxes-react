@@ -143,7 +143,9 @@ export default {
 	"When [Always load the first AI page when app starts] is checked, this option is always selected" : "[시작 시 목록의 첫 번째 AI page 항상 로드]가 선택되면 이 옵션은 항상 선택됩니다" ,
 	"Preload on Startup" : "시작 시 미리 로드" ,
 	"Load this AI immediately when app starts" : "앱 시작 시 이 AI를 즉시 로드" ,
-	"This will permanently reset all AI page configurations to factory defaults. All your custom AI pages, URL overrides, and proxy settings will be lost." : "이 작업은 모든 AI 페이지 구성을 공장 기본값으로 영구적으로 초기화합니다. 모든 사용자 지정 AI 페이지, URL 재정의 및 프록시 설정이 손실됩니다." ,
+	"Failed to reset AI pages" : "AI 페이지 초기화에 실패했습니다" ,
+	"AI pages reset to defaults" : "AI 페이지가 기본값으로 초기화되었습니다" ,
+	"This will permanently reset all AI page configurations to factory defaults and clear page data including cookies, login state, localStorage, cache, and auth cache. All your custom AI pages, URL overrides, and proxy settings will be lost." : "이 작업은 모든 AI 페이지 구성을 공장 기본값으로 영구적으로 초기화하고 쿠키, 로그인 상태, localStorage, 캐시 및 인증 캐시를 포함한 페이지 데이터를 삭제합니다. 모든 사용자 지정 AI 페이지, URL 재정의 및 프록시 설정이 손실됩니다." ,
 	"Hold the button below to confirm reset." : "아래 버튼을 길게 눌러 초기화를 확인하세요." ,
 	
 	"" : "" ,

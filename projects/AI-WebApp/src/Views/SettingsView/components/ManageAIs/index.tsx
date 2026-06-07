@@ -128,11 +128,17 @@ export const RCManageAIsPanel = reaxper( () => {
 	
 	const handleResetConfirmed = async() => {
 		try {
-			await resetAIsToDefaults();
+			const result = await resetAIsToDefaults();
+			if( !result.success ) {
+				message.error( result.error || i18n( 'Failed to reset AI pages' ) );
+				return;
+			}
 			await reloadSettings();
 			setResetModalVisible( false );
+			message.success( i18n( 'AI pages reset to defaults' ) );
 		} catch ( err ) {
 			console.error( '[ManageAIs] Reset failed:' , err );
+			message.error( i18n( 'Failed to reset AI pages' ) );
 		}
 	};
 	
@@ -795,7 +801,7 @@ const ResetConfirmModal:React.FC<{
 	>
 		<div style={ { padding : '12px 0' } }>
 			<p style={ { marginBottom : 16 , fontSize : 14 } }>
-				<I18n>This will permanently reset all AI page configurations to factory defaults. All your custom AI pages, URL overrides, and proxy settings will be lost.</I18n>
+				<I18n>This will permanently reset all AI page configurations to factory defaults and clear page data including cookies, login state, localStorage, cache, and auth cache. All your custom AI pages, URL overrides, and proxy settings will be lost.</I18n>
 			</p>
 			<p style={ { marginBottom : 24 , color : '#ff4d4f' , fontWeight : 500 } }>
 				<I18n>Hold the button below to confirm reset.</I18n>

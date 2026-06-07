@@ -143,7 +143,9 @@ export default {
 	"When [Always load the first AI page when app starts] is checked, this option is always selected" : "［起動時に一覧の最初の AI page を常に読み込む］が選択されている場合、この項目は必ず選択されます" ,
 	"Preload on Startup" : "起動時にプリロード" ,
 	"Load this AI immediately when app starts" : "アプリ起動時にこの AI を即座に読み込み" ,
-	"This will permanently reset all AI page configurations to factory defaults. All your custom AI pages, URL overrides, and proxy settings will be lost." : "この操作はすべての AI ページ設定を工場出荷時のデフォルトに永久的にリセットします。すべてのカスタム AI ページ、URL オーバーライド、プロキシ設定が失われます。" ,
+	"Failed to reset AI pages" : "AI ページのリセットに失敗しました" ,
+	"AI pages reset to defaults" : "AI ページをデフォルトにリセットしました" ,
+	"This will permanently reset all AI page configurations to factory defaults and clear page data including cookies, login state, localStorage, cache, and auth cache. All your custom AI pages, URL overrides, and proxy settings will be lost." : "この操作により、すべての AI ページ設定が工場出荷時のデフォルトに永久的にリセットされ、Cookie、ログイン状態、localStorage、キャッシュ、認証キャッシュを含むページデータが消去されます。すべてのカスタム AI ページ、URL オーバーライド、プロキシ設定が失われます。" ,
 	"Hold the button below to confirm reset." : "下のボタンを長押ししてリセットを確認してください。" ,
 	
 	"" : "" ,

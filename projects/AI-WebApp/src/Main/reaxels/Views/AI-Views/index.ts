@@ -43,11 +43,14 @@ export const reaxel_AIViews = reaxel( () => {
 	 * 销毁所有AI Views并清除其session/storage数据
 	 * 用于 Reset All AI Pages
 	 */
-	const destroyAllAndClearData = async() => {
+	const destroyAllAndClearData = async(aiIds:string[] = []) => {
 		const viewsCopy = store.AIViews.slice();
 		
-		// 收集所有partition名
-		const partitions = viewsCopy.map( rv => rv.partition );
+		// reset 需要覆盖未在本次运行期创建 view、但磁盘上已存在的历史 AI partition。
+		const collectResult = collectResetPartitions( aiIds , viewsCopy );
+		if( !collectResult.success ) {
+			return collectResult;
+		}
 		
 		// 销毁所有view
 		viewsCopy.forEach( rv => {
@@ -58,16 +61,7 @@ export const reaxel_AIViews = reaxel( () => {
 			s.AIViews = [];
 		} );
 		
-		// 清除每个partition的session数据(cookies, localStorage, cache等)
-		for( const partition of partitions ) {
-			try {
-				const ses = session.fromPartition( partition );
-				await ses.clearStorageData();
-				await ses.clearCache();
-			} catch ( error ) {
-				console.warn( '[AIViews] Failed to clear session data for partition:' , partition , error );
-			}
-		}
+		return await clearSessionPartitions( collectResult.partitions );
 	};
 	
 	const syncAIViewsWithConfig = async( settings:Settings ) => {
@@ -320,8 +314,95 @@ const resolveCurrentAI = (settings:Settings):AI.AIItem | null => {
 		|| activeAIs[0];
 };
 
-const getAIPartition = (aiId:string) => {
-	return `persist:ai-webapp-ai-${ aiId.replace( /[^a-zA-Z0-9_-]/g , '_' ) }`;
+const PERSISTENT_PARTITION_PREFIX = 'persist:';
+const AI_PARTITION_PREFIX = 'ai-webapp-ai-';
+
+export const getAIPartition = (aiId:string) => {
+	return `${ PERSISTENT_PARTITION_PREFIX }${ AI_PARTITION_PREFIX }${ aiId.replace( /[^a-zA-Z0-9_-]/g , '_' ) }`;
+};
+
+const getAIPartitionsForAIIds = (aiIds:string[]) => {
+	return aiIds
+		.filter( Boolean )
+		.map( getAIPartition );
+};
+
+const collectResetPartitions = (
+	aiIds:string[] ,
+	runtimeViews:RuntimeAIView[],
+) => {
+	const persistedPartitions = getPersistedAIPartitionsFromUserData();
+	return {
+		success : persistedPartitions.errors.length === 0 ,
+		partitions : uniqueStrings( [
+			...getAIPartitionsForAIIds( aiIds ) ,
+			...runtimeViews.map( runtimeView => runtimeView.partition ) ,
+			...persistedPartitions.partitions,
+		] ) ,
+		errors : persistedPartitions.errors,
+	};
+};
+
+const getPersistedAIPartitionsFromUserData = ():PersistedAIPartitionDiscoveryResult => {
+	try {
+		const partitionsDir = path.join( app.getPath( 'userData' ) , 'Partitions' );
+		if( !fs.existsSync( partitionsDir ) ) {
+			return {
+				partitions : [] ,
+				errors : [],
+			};
+		}
+		return {
+			partitions : fs.readdirSync( partitionsDir , { withFileTypes : true } )
+				.filter( entry => entry.isDirectory() && entry.name.startsWith( AI_PARTITION_PREFIX ) )
+				.map( entry => `${ PERSISTENT_PARTITION_PREFIX }${ entry.name }` ) ,
+			errors : [],
+		};
+	} catch ( error ) {
+		console.warn( '[AIViews] Failed to scan persisted AI partitions:' , error );
+		return {
+			partitions : [] ,
+			errors : [
+				{
+					target : 'persisted AI partition directory' ,
+					error : stringifyUnknownError( error ),
+				},
+			],
+		};
+	}
+};
+
+const clearSessionPartitions = async(partitions:string[]):Promise<ResetAISessionDataResult> => {
+	const errors:ResetAISessionDataError[] = [];
+
+	for( const partition of partitions ) {
+		try {
+			const ses = session.fromPartition( partition );
+			await ses.clearStorageData();
+			await ses.clearCache();
+			await ses.clearAuthCache();
+		} catch ( error ) {
+			errors.push( {
+				target : partition ,
+				error : stringifyUnknownError( error ),
+			} );
+			console.warn( '[AIViews] Failed to clear session data for partition:' , partition , error );
+		}
+	}
+
+	return {
+		success : errors.length === 0 ,
+		partitions ,
+		errors,
+	};
+};
+
+const stringifyUnknownError = (error:unknown) => {
+	return error instanceof Error ? error.message : String( error );
+};
+
+const uniqueStrings = (items:string[]) => {
+	return Array.from( new Set( items.filter( Boolean ) ) );
 };
 
 const getRuntimeAIProxyKey = (ai:AI.AIItem , settings:Settings) => {
@@ -416,6 +497,22 @@ type CreateRuntimeAIViewOptions = {
 	visible?: boolean;
 };
 
+type ResetAISessionDataError = {
+	target: string;
+	error: string;
+};
+
+type ResetAISessionDataResult = {
+	success: boolean;
+	partitions: string[];
+	errors: ResetAISessionDataError[];
+};
+
+type PersistedAIPartitionDiscoveryResult = {
+	partitions: string[];
+	errors: ResetAISessionDataError[];
+};
+
 import { getAIDomainByFamily } from './data';
 import type { AI } from '#src/Types/SettingsTypes/AI';
 import type { Settings } from '#src/Types/SettingsTypes';
@@ -441,7 +538,10 @@ import {
 } from 'reaxes';
 import {
 	session ,
+	app ,
 	type WebContents ,
 	type WebContentsView,
 } from 'electron';
 import type { AIPageEnvironment } from '#src/Types/AIPageEnvironment';
+import * as fs from 'node:fs';
+import * as path from 'node:path';

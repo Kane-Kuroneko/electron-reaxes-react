@@ -143,7 +143,9 @@ export default {
 	"When [Always load the first AI page when app starts] is checked, this option is always selected" : "当勾选[启动时始终加载第一个AI page]时此选项必然选中" ,
 	"Preload on Startup" : "启动时预加载" ,
 	"Load this AI immediately when app starts" : "应用启动时立即加载此 AI" ,
-	"This will permanently reset all AI page configurations to factory defaults. All your custom AI pages, URL overrides, and proxy settings will be lost." : "此操作将永久重置所有 AI 页面配置为出厂默认值。您所有的自定义 AI 页面、URL 覆盖和代理设置都将丢失。" ,
+	"Failed to reset AI pages" : "重置 AI 页面失败" ,
+	"AI pages reset to defaults" : "AI 页面已重置为默认值" ,
+	"This will permanently reset all AI page configurations to factory defaults and clear page data including cookies, login state, localStorage, cache, and auth cache. All your custom AI pages, URL overrides, and proxy settings will be lost." : "此操作会将所有 AI 页面配置永久重置为出厂默认值，并清除页面数据，包括 Cookie、登录态、localStorage、缓存和认证缓存。所有自定义 AI 页面、URL 覆盖和代理设置都将丢失。" ,
 	"Hold the button below to confirm reset." : "长按下方按钮确认重置。" ,
 	
 	"" : "" ,

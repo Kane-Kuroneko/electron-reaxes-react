@@ -202,13 +202,30 @@ export const reaxel_Settings = reaxel( () => {
 	} );
 	
 	useIpcRpc( 'reset-ais-to-defaults' ).handle( async() => {
-		// 销毁所有AI Views并清除session/storage
-		await reaxel_AIViews().destroyAllAndClearData();
-		// 重置配置到默认
-		aiConfigService.resetToDefaults();
-		// 重新同步视图(重建菜单+重新初始化AI Views)
-		await syncRuntimeViews();
-		return { success : true };
+		try {
+			const resetAIIds = collectResetAISessionIds( aiConfigService );
+			const clearResult = await reaxel_AIViews().destroyAllAndClearData( resetAIIds );
+
+			if( !clearResult.success ) {
+				await syncRuntimeViews();
+				return {
+					success : false ,
+					error : formatResetAIDataError( clearResult.errors ),
+				};
+			}
+
+			// session/storage 清理成功后再重置配置，避免失败时丢失可重试的 AI id 来源。
+			aiConfigService.resetToDefaults();
+			await syncRuntimeViews();
+			return { success : true };
+		} catch ( error ) {
+			await syncRuntimeViews();
+			console.error( '[Settings] Failed to reset AIs to defaults:' , error );
+			return {
+				success : false ,
+				error : error?.message || String( error ),
+			};
+		}
 	} );
 	
 	useIpcRpc( 'get-preload-ai-families' ).handle( async() => {
@@ -268,6 +285,22 @@ const getEnabledProxyServerId = (
 	} )
 		? proxyServerId
 		: null;
+};
+
+const collectResetAISessionIds = (aiConfigService:ReturnType<typeof getAIConfigService>) => {
+	const userConfig = aiConfigService.getUserConfig();
+	return Array.from( new Set( [
+		...aiConfigService.getEffectiveAIs().map( ai => ai.id ) ,
+		...aiConfigService.getDefaultAIs().map( ai => ai.id ) ,
+		...( userConfig?.ais || [] ).map( ai => ai.id ) ,
+		...( userConfig?.deletedIds || [] ),
+	].filter( Boolean ) ) );
+};
+
+const formatResetAIDataError = (errors:{ target:string; error:string }[]) => {
+	return `Failed to clear AI page data for ${ errors.length } target(s): ${
+		errors.map( item => `${ item.target } (${ item.error })` ).join( '; ' )
+	}`;
 };
 
 export type Reaxel_Settings = typeof reaxel_Settings;

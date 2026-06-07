@@ -29,7 +29,7 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	'update-ai': IpcStructure.IpcRpc<[id: string, updates: Partial<AI.AIItem>], AI.AIItem | null>;
 	'add-ai': IpcStructure.IpcRpc<[ai: Omit<AI.AIItem, 'id'> & { id?: string }], AI.AIItem>;
 	'delete-ai': IpcStructure.IpcRpc<[id: string], boolean>;
-	'reset-ais-to-defaults': IpcStructure.IpcRpc<[void], { success: boolean }>;
+	'reset-ais-to-defaults': IpcStructure.IpcRpc<[void], { success: boolean, error?: string }>;
 	'get-preload-ai-families': IpcStructure.IpcRpc<[void], AI.AIFamily[]>;
 	'get-appearance-environment': IpcStructure.IpcRpc<[void], AppearanceEnvironment>;
 	'set-startup-ai-page-load-mode': IpcStructure.IpcRpc<[mode: Startup.AIPageLoadMode], SettingsApplyResult>;

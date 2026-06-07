@@ -143,7 +143,9 @@ export default {
 	"When [Always load the first AI page when app starts] is checked, this option is always selected" : "當勾選[啟動時始終載入第一個 AI page]時此選項必然選中" ,
 	"Preload on Startup" : "啟動時預載" ,
 	"Load this AI immediately when app starts" : "應用啟動時立即載入此 AI" ,
-	"This will permanently reset all AI page configurations to factory defaults. All your custom AI pages, URL overrides, and proxy settings will be lost." : "此操作將永久重置所有 AI 頁面設定為出廠預設值。您所有的自訂 AI 頁面、URL 覆蓋和代理設定都將遺失。" ,
+	"Failed to reset AI pages" : "重置 AI 頁面失敗" ,
+	"AI pages reset to defaults" : "AI 頁面已重置為預設值" ,
+	"This will permanently reset all AI page configurations to factory defaults and clear page data including cookies, login state, localStorage, cache, and auth cache. All your custom AI pages, URL overrides, and proxy settings will be lost." : "此操作會將所有 AI 頁面設定永久重置為出廠預設值，並清除頁面資料，包括 Cookie、登入狀態、localStorage、快取和認證快取。所有自訂 AI 頁面、URL 覆蓋和代理設定都將遺失。" ,
 	"Hold the button below to confirm reset." : "長按下方按鈕確認重置。" ,
 	
 	"" : "" ,
