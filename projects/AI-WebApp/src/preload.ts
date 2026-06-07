@@ -11,8 +11,8 @@ const updatePreloadAIConfig = useRtm('update-preload-ai-config');
 const languageChange = useRtm('language-change');
 const turnToNextAiPage = useRtm('turn-to-next-ai-page');
 const turnToPreviousAiPage = useRtm('turn-to-previous-ai-page');
-const onFloatingLayerCommand = (callback:(command:FloatingLayer.Command) => void) => {
-	return useMtr( 'floating-layer-command' )( ( _ , command ) => {
+const onFloatingViewCommand = (callback:(command:FloatingView.Command) => void) => {
+	return useMtr( 'floating-view-command' )( ( _ , command ) => {
 		callback( command );
 	} );
 };
@@ -43,7 +43,7 @@ const api = {
 	languageChange,
 	turnToNextAiPage,
 	turnToPreviousAiPage,
-	onFloatingLayerCommand,
+	onFloatingViewCommand,
 	// AI Configuration Management
 	getAIs,
 	getDefaultAIs,
@@ -89,4 +89,4 @@ import type {
 	RendererToMainEvents ,
 } from './Types/IpcSchema';
 import { createIpc } from '#generics/toolkit/electron/preload.ipc';
-import type { FloatingLayer } from './Types/FloatingLayer';
+import type { FloatingView } from './Types/FloatingView';

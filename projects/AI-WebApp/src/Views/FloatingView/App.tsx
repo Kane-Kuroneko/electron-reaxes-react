@@ -1,8 +1,8 @@
 export const App = reaxper( () => {
-	const { handleCommand } = reaxel_FloatingLayer();
+	const { handleCommand } = reaxel_FloatingView();
 
 	useEffect( () => {
-		const disposable = api.onFloatingLayerCommand( command => {
+		const disposable = api.onFloatingViewCommand( command => {
 			handleCommand( command );
 		} );
 
@@ -11,12 +11,12 @@ export const App = reaxper( () => {
 		};
 	} , [] );
 
-	return <main className="floating-layer-root">
+	return <main className="floating-view-root">
 		<SwitchAiBar />
 	</main>;
 } );
 
 import { SwitchAiBar } from './components/SwitchAiBar';
-import { reaxel_FloatingLayer } from './reaxels/floating-layer';
+import { reaxel_FloatingView } from './reaxels/floating-view';
 import { reaxper } from 'reaxes-react';
 import './index.less';

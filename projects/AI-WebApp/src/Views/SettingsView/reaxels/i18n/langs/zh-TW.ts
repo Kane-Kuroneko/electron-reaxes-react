@@ -24,8 +24,13 @@ export default {
 	"Next AI" : "下一個 AI" ,
 	"Previous AI Page" : "上一個 AI 頁面" ,
 	"Next AI Page" : "下一個 AI 頁面" ,
+	"Previous Opened AI" : "上一個已開啟 AI" ,
+	"Next Opened AI" : "下一個已開啟 AI" ,
+	"Previous Instantiated AI Page" : "上一個已開啟 AI 頁面" ,
+	"Next Instantiated AI Page" : "下一個已開啟 AI 頁面" ,
 	"No enabled AI pages" : "沒有啟用的 AI 頁面" ,
 	"Close This AI" : "關閉目前 AI" ,
+	"The last AI page cannot be closed" : "最後一個 AI 頁無法被關閉" ,
 	
 	// Tray
 	"Show Window" : "顯示視窗" ,

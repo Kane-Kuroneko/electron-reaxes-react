@@ -24,8 +24,13 @@ export default {
 	"Next AI" : "다음 AI" ,
 	"Previous AI Page" : "이전 AI 페이지" ,
 	"Next AI Page" : "다음 AI 페이지" ,
+	"Previous Opened AI" : "이전 열린 AI" ,
+	"Next Opened AI" : "다음 열린 AI" ,
+	"Previous Instantiated AI Page" : "이전 열린 AI 페이지" ,
+	"Next Instantiated AI Page" : "다음 열린 AI 페이지" ,
 	"No enabled AI pages" : "활성화된 AI 페이지가 없습니다" ,
 	"Close This AI" : "현재 AI 닫기" ,
+	"The last AI page cannot be closed" : "마지막 AI 페이지는 닫을 수 없습니다" ,
 	
 	// Tray
 	"Show Window" : "창 표시" ,

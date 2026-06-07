@@ -1,9 +1,9 @@
-export const reaxel_FloatingLayer = reaxel( () => {
+export const reaxel_FloatingView = reaxel( () => {
 	const { store , setState , mutate } = createReaxable( {
 		switchAiBar : {
 			visible : false ,
-			direction : checkAs<FloatingLayer.SwitchAiBarDirection>( 'next' ) ,
-			items : checkAs<FloatingLayer.SwitchAiBarItem[]>( [] ) ,
+			direction : checkAs<FloatingView.SwitchAiBarDirection>( 'next' ) ,
+			items : checkAs<FloatingView.SwitchAiBarItem[]>( [] ) ,
 			currentId : '' ,
 			sequence : 0 ,
 			total : 0,
@@ -26,7 +26,7 @@ export const reaxel_FloatingLayer = reaxel( () => {
 		} );
 	};
 
-	const showSwitchAiBar = (payload:FloatingLayer.SwitchAiBarPayload) => {
+	const showSwitchAiBar = (payload:FloatingView.SwitchAiBarPayload) => {
 		clearHideTimer();
 		setState.switchAiBar( {
 			...payload ,
@@ -35,20 +35,30 @@ export const reaxel_FloatingLayer = reaxel( () => {
 		hideTimer = setTimeout( hideSwitchAiBar , 2000 );
 	};
 
-	const handleCommand = (command:FloatingLayer.Command) => {
+	const showGlobalMessage = (payload:FloatingView.GlobalMessagePayload) => {
+		message.destroy();
+		message[payload.type]( payload.content , payload.duration );
+	};
+
+	const handleCommand = (command:FloatingView.Command) => {
 		if( command.type === 'switch-ai-bar:show' ) {
 			showSwitchAiBar( command.payload );
 			return;
 		}
 		if( command.type === 'switch-ai-bar:hide' ) {
 			hideSwitchAiBar();
+			return;
+		}
+		if( command.type === 'global-message:show' ) {
+			showGlobalMessage( command.payload );
 		}
 	};
 
 	const rtn = {
 		handleCommand ,
 		showSwitchAiBar ,
-		hideSwitchAiBar,
+		hideSwitchAiBar ,
+		showGlobalMessage,
 	};
 
 	return Object.assign( () => rtn , {
@@ -58,7 +68,8 @@ export const reaxel_FloatingLayer = reaxel( () => {
 	} );
 } );
 
-import type { FloatingLayer } from '#src/Types/FloatingLayer';
+import type { FloatingView } from '#src/Types/FloatingView';
+import { message } from 'antd';
 import {
 	createReaxable ,
 	reaxel,

@@ -1,4 +1,4 @@
-export namespace FloatingLayer {
+export namespace FloatingView {
 	export type SwitchAiBarDirection = 'next' | 'previous';
 
 	export type SwitchAiBarItemPosition = 'prev' | 'current' | 'next';
@@ -18,6 +18,12 @@ export namespace FloatingLayer {
 		total: number;
 	};
 
+	export type GlobalMessagePayload = {
+		type: 'success' | 'info' | 'warning' | 'error';
+		content: string;
+		duration?: number;
+	};
+
 	export type Command =
 		| {
 			type: 'switch-ai-bar:show';
@@ -25,6 +31,10 @@ export namespace FloatingLayer {
 		}
 		| {
 			type: 'switch-ai-bar:hide';
+		}
+		| {
+			type: 'global-message:show';
+			payload: GlobalMessagePayload;
 		};
 }
 

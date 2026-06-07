@@ -5,6 +5,7 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	
 	const viewOptions = normalizeViewOptions( options );
 	const view = new WebContentsView(viewOptions);
+	installWebContentsKeyboardGuard( view.webContents );
 	applyInitialViewBackground( view , viewOptions );
 	if( dev() ) {
 		useBeautifulDevtool( view );
@@ -184,6 +185,7 @@ import {dev} from 'electron-is';
 import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 import { applyAIProxyToView } from "#main/services/settings/proxy-service";
 import { handleAISwitchShortcutInput } from '#main/services/shortcuts/ai-switch';
+import { installWebContentsKeyboardGuard } from '#main/services/shortcuts/window-keyboard';
 import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import {
 	applyAIPageAppearanceToView ,

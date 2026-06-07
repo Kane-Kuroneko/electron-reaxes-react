@@ -47,7 +47,7 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 		},
 		entry: {
 			"SettingsView" : path.resolve(subProjectRootPath, "src/Views/SettingsView/index.tsx"),
-			"Floating-Layer" : path.resolve(subProjectRootPath, "src/Views/Floating-Layer/index.tsx"),
+			"FloatingView" : path.resolve(subProjectRootPath, "src/Views/FloatingView/index.tsx"),
 			"GuidingView" : path.resolve(subProjectRootPath, "src/Views/GuidingView/index.tsx"),
 		},
 		
@@ -73,8 +73,8 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 				// inject: false,
 			} ) ,
 			new HtmlWebpackPlugin( {
-				chunks:["Floating-Layer"],
-				filename : 'Floating-Layer/index.html' ,
+				chunks:["FloatingView"],
+				filename : 'FloatingView/index.html' ,
 				template : path.join( subProjectRootPath , "engine/index.template.html" ) ,
 				minify : false ,
 				hash : true,

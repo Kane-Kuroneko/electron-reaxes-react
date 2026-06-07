@@ -1,19 +1,31 @@
 type AISwitchShortcutHandlers = {
-	next?: () => void;
-	previous?: () => void;
+	nextConfigured?: () => void;
+	previousConfigured?: () => void;
+	nextInstantiated?: () => void;
+	previousInstantiated?: () => void;
+	closeCurrent?: () => void;
 };
 
-type AISwitchShortcutDirection = keyof AISwitchShortcutHandlers;
+type AISwitchShortcutAction = keyof AISwitchShortcutHandlers;
 
 let handlers:AISwitchShortcutHandlers = {};
 let globalShortcutsRegistered = false;
 
-const globalShortcutAccelerators:Record<AISwitchShortcutDirection , string> = {
-	previous : 'CommandOrControl+[' ,
-	next : 'CommandOrControl+]',
+const globalShortcutAccelerators:Record<AISwitchShortcutAction , string> = {
+	previousConfigured : 'CommandOrControl+[' ,
+	nextConfigured : 'CommandOrControl+]' ,
+	previousInstantiated : 'Alt+[' ,
+	nextInstantiated : 'Alt+]' ,
+	closeCurrent : 'CommandOrControl+W',
 };
 
-const shortcutDirections:AISwitchShortcutDirection[] = [ 'previous' , 'next' ];
+const shortcutActions:AISwitchShortcutAction[] = [
+	'previousConfigured' ,
+	'nextConfigured' ,
+	'previousInstantiated' ,
+	'nextInstantiated' ,
+	'closeCurrent',
+];
 
 export const setAISwitchShortcutHandlers = (nextHandlers:AISwitchShortcutHandlers) => {
 	handlers = nextHandlers;
@@ -24,20 +36,20 @@ export const registerAISwitchGlobalShortcuts = () => {
 		return;
 	}
 	const failedAccelerators:string[] = [];
-	shortcutDirections.forEach( direction => {
-		const accelerator = globalShortcutAccelerators[direction];
+	shortcutActions.forEach( action => {
+		const accelerator = globalShortcutAccelerators[action];
 		if( globalShortcut.isRegistered( accelerator ) ) {
 			return;
 		}
 		const registered = globalShortcut.register( accelerator , () => {
-			invokeAISwitchShortcut( direction );
+			invokeAISwitchShortcut( action );
 		} );
 		if( !registered ) {
 			failedAccelerators.push( accelerator );
 		}
 	} );
-	globalShortcutsRegistered = shortcutDirections.every( direction => {
-		return globalShortcut.isRegistered( globalShortcutAccelerators[direction] );
+	globalShortcutsRegistered = shortcutActions.every( action => {
+		return globalShortcut.isRegistered( globalShortcutAccelerators[action] );
 	} );
 	if( failedAccelerators.length ) {
 		console.warn( '[Shortcuts] Failed to register AI switch shortcuts:' , failedAccelerators );
@@ -57,26 +69,41 @@ export const handleAISwitchShortcutInput = (event:any , input:any) => {
 	if( input.type !== 'keyDown' ) {
 		return false;
 	}
-	if( !input.control && !input.meta ) {
-		return false;
-	}
 	const key = String( input.key || '' ).toLowerCase();
 	const code = String( input.code || '' );
-	const direction = key === '[' || code === 'BracketLeft'
+	const action = resolveShortcutAction( input , key , code );
+	if( !action ) {
+		return false;
+	}
+	event.preventDefault();
+	invokeAISwitchShortcut( action );
+	return true;
+};
+
+const resolveShortcutAction = (
+	input:any ,
+	key:string ,
+	code:string,
+):AISwitchShortcutAction | null => {
+	const bracketDirection = key === '[' || code === 'BracketLeft'
 		? 'previous'
 		: key === ']' || code === 'BracketRight'
 			? 'next'
 			: null;
-	if( !direction ) {
-		return false;
+	if( bracketDirection && ( input.control || input.meta ) ) {
+		return bracketDirection === 'previous' ? 'previousConfigured' : 'nextConfigured';
 	}
-	event.preventDefault();
-	invokeAISwitchShortcut( direction );
-	return true;
+	if( bracketDirection && input.alt && !input.control && !input.meta ) {
+		return bracketDirection === 'previous' ? 'previousInstantiated' : 'nextInstantiated';
+	}
+	if( ( input.control || input.meta ) && !input.alt && ( key === 'w' || code === 'KeyW' ) ) {
+		return 'closeCurrent';
+	}
+	return null;
 };
 
-const invokeAISwitchShortcut = (direction:AISwitchShortcutDirection) => {
-	handlers[direction]?.();
+const invokeAISwitchShortcut = (action:AISwitchShortcutAction) => {
+	handlers[action]?.();
 };
 
 app.on( 'will-quit' , unregisterAISwitchGlobalShortcuts );

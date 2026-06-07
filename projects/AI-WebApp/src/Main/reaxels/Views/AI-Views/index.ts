@@ -184,6 +184,7 @@ export const reaxel_AIViews = reaxel( () => {
 		destroyAllAndClearData ,
 		syncAIViewsWithConfig ,
 		showAIView ,
+		getRuntimeAIViewsInSettingsOrder ,
 		canCloseCurrentAIView ,
 		closeCurrentAIViewAndShowNext ,
 		applyVisibility,

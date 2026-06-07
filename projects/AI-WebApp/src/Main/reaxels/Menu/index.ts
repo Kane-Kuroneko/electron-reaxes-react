@@ -26,7 +26,8 @@ export const reaxel_Menu = reaxel( () => {
 		const { currentAIViewKey } = Reaxel_View.store;
 		const nextAI = resolveAdjacentMenuAI( enabledAIs , currentAIViewKey , 1 );
 		const previousAI = resolveAdjacentMenuAI( enabledAIs , currentAIViewKey , -1 );
-		const canCloseThisAI = reaxel_AIViews().canCloseCurrentAIView( settings );
+		const instantiatedAIViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
+		const canSwitchInstantiatedAI = instantiatedAIViews.length > 1;
 		
 		return Menu.buildFromTemplate( [
 			{
@@ -127,17 +128,18 @@ export const reaxel_Menu = reaxel( () => {
 					{ label : t('Zoom Out') , role : 'zoomOut' } ,
 					{ type : 'separator' } ,
 					{ label : t('Toggle Fullscreen') , role : 'togglefullscreen' } ,
-					...( canCloseThisAI ? [
-						{ type : 'separator' as const } ,
-						{
-							label : t('Close This AI') ,
-							click : () => {
-								if( reaxel_AIViews().closeCurrentAIViewAndShowNext( getRuntimeSettings() ) ) {
-									rebuildMenu();
-								}
-							},
+					{ type : 'separator' } ,
+					{
+						label : createPlainMenuLabel( t('Close This AI') ) ,
+						accelerator : 'CmdOrCtrl+W' ,
+						registerAccelerator : false ,
+						enabled : !!reaxel_AIViews().currentAIView ,
+						click : () => {
+							if( Reaxel_View().closeCurrentAIView() ) {
+								rebuildMenu();
+							}
 						},
-					] : [] ),
+					},
 				],
 			} ,
 			{
@@ -152,7 +154,29 @@ export const reaxel_Menu = reaxel( () => {
 						} ) ),
 						{ type : 'separator' as const } ,
 						{
-							label : t('Previous AI Page') ,
+							label : createPlainMenuLabel( t('Previous Opened AI') ) ,
+							type : 'normal' as const ,
+							accelerator : 'Alt+[' ,
+							registerAccelerator : false ,
+							enabled : canSwitchInstantiatedAI ,
+							click : () => {
+								void Reaxel_View().turnToPreviousInstantiatedAiPage();
+							},
+						} ,
+						{
+							label : createPlainMenuLabel( t('Next Opened AI') ) ,
+							type : 'normal' as const ,
+							accelerator : 'Alt+]' ,
+							registerAccelerator : false ,
+							enabled : canSwitchInstantiatedAI ,
+							click : () => {
+								void Reaxel_View().turnToNextInstantiatedAiPage();
+							},
+						} ,
+						{ type : 'separator' as const } ,
+						{
+							label : createPlainMenuLabel( t('Previous AI Page') ) ,
+							type : 'normal' as const ,
 							accelerator : 'CmdOrCtrl+[' ,
 							registerAccelerator : false ,
 							enabled : enabledAIs.length > 1 ,
@@ -161,7 +185,8 @@ export const reaxel_Menu = reaxel( () => {
 							},
 						} ,
 						{
-							label : t('Next AI Page') ,
+							label : createPlainMenuLabel( t('Next AI Page') ) ,
+							type : 'normal' as const ,
 							accelerator : 'CmdOrCtrl+]' ,
 							registerAccelerator : false ,
 							enabled : enabledAIs.length > 1 ,
@@ -261,6 +286,10 @@ const resolveAdjacentMenuAI = (
 
 const getWrappedIndex = (index:number , length:number) => {
 	return ( index + length ) % length;
+};
+
+const createPlainMenuLabel = (label:string) => {
+	return escapeElectronMenuBarLabel( label.trim() );
 };
 
 const createAdjacentAIMenuLabel = (

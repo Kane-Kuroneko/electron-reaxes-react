@@ -24,8 +24,13 @@ export default {
 	"Next AI" : "次の AI" ,
 	"Previous AI Page" : "前の AI ページ" ,
 	"Next AI Page" : "次の AI ページ" ,
+	"Previous Opened AI" : "前の開いている AI" ,
+	"Next Opened AI" : "次の開いている AI" ,
+	"Previous Instantiated AI Page" : "前の開いている AI ページ" ,
+	"Next Instantiated AI Page" : "次の開いている AI ページ" ,
 	"No enabled AI pages" : "有効な AI ページがありません" ,
 	"Close This AI" : "この AI を閉じる" ,
+	"The last AI page cannot be closed" : "最後の AI ページは閉じられません" ,
 	
 	// Tray
 	"Show Window" : "ウィンドウを表示" ,

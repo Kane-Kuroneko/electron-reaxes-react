@@ -10,7 +10,7 @@ export interface RendererToMainEvents extends Record<string , IpcStructure.Rende
 export interface MainToRendererEvents extends Record<string , IpcStructure.MainToRendererEvent<unknown[]>> {
 	'1' : IpcStructure.MainToRendererEvent<[number,string]>;
 	'2' : IpcStructure.MainToRendererEvent<[string,number]>;
-	'floating-layer-command' : IpcStructure.MainToRendererEvent<[FloatingLayer.Command]>;
+	'floating-view-command' : IpcStructure.MainToRendererEvent<[FloatingView.Command]>;
 	'ai-page-environment-change' : IpcStructure.MainToRendererEvent<[AIPageEnvironment]>;
 }
 
@@ -66,7 +66,7 @@ import {
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 import type { Startup } from "#src/Types/SettingsTypes/Startup";
-import type { FloatingLayer } from "#src/Types/FloatingLayer";
+import type { FloatingView } from "#src/Types/FloatingView";
 import type { Languages } from '#src/Types/Languages';
 import type { Guiding } from '#src/Types/Guiding';
 import type { AIPageEnvironment } from '#src/Types/AIPageEnvironment';

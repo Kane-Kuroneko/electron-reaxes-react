@@ -48,17 +48,17 @@ export const Reaxel_View = reaxel( () => {
 	};
 
 	const createSwitchAiBarPayload = (
-		activeAIs:AI.AIItem[] ,
+		items:SwitchAiBarPayloadItem[] ,
 		currentIndex:number ,
-		direction:FloatingLayer.SwitchAiBarDirection,
-	):FloatingLayer.SwitchAiBarPayload => {
-		const total = activeAIs.length;
-		const createItem = (offset:number , position:FloatingLayer.SwitchAiBarItemPosition) => {
-			const ai = activeAIs[getWrappedIndex( currentIndex + offset , total )];
+		direction:FloatingView.SwitchAiBarDirection,
+	):FloatingView.SwitchAiBarPayload => {
+		const total = items.length;
+		const createItem = (offset:number , position:FloatingView.SwitchAiBarItemPosition) => {
+			const ai = items[getWrappedIndex( currentIndex + offset , total )];
 			return {
 				id : ai.id ,
 				label : ai.label ,
-				family : ai.AI_family ,
+				family : ai.family ,
 				position,
 			};
 		};
@@ -70,7 +70,7 @@ export const Reaxel_View = reaxel( () => {
 				createItem( 0 , 'current' ) ,
 				createItem( 1 , 'next' ),
 			] ,
-			currentId : activeAIs[currentIndex].id ,
+			currentId : items[currentIndex].id ,
 			sequence : Date.now() ,
 			total,
 		};
@@ -78,7 +78,7 @@ export const Reaxel_View = reaxel( () => {
 
 	const turnToAiPageByOffset = (
 		offset:number ,
-		direction:FloatingLayer.SwitchAiBarDirection,
+		direction:FloatingView.SwitchAiBarDirection,
 	) => {
 		if( shouldIgnoreDuplicateSwitch( direction ) ) {
 			return null;
@@ -86,7 +86,7 @@ export const Reaxel_View = reaxel( () => {
 		const settings = getRuntimeSettings();
 		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
 		if( activeAIs.length === 0 ) {
-			reaxel_FloatingLayer().api.hideSwitchAiBar();
+			reaxel_FloatingView().api.hideSwitchAiBar();
 			return null;
 		}
 
@@ -98,11 +98,45 @@ export const Reaxel_View = reaxel( () => {
 		const nextAI = activeAIs[nextIndex];
 		const view = reaxel_AIViews().showAIView( nextAI.id , settings );
 
-		reaxel_FloatingLayer().api.showSwitchAiBar(
-			createSwitchAiBarPayload( activeAIs , nextIndex , direction ),
+		reaxel_FloatingView().api.showSwitchAiBar(
+			createSwitchAiBarPayload( activeAIs.map( createPayloadItemFromAI ) , nextIndex , direction ),
 		);
 
 		return view;
+	};
+
+	const turnToInstantiatedAiPageByOffset = (
+		offset:number ,
+		direction:FloatingView.SwitchAiBarDirection,
+	) => {
+		if( shouldIgnoreDuplicateSwitch( `instantiated:${ direction }` ) ) {
+			return null;
+		}
+		const settings = getRuntimeSettings();
+		const runtimeViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
+		if( runtimeViews.length === 0 ) {
+			reaxel_FloatingView().api.hideSwitchAiBar();
+			return null;
+		}
+
+		const currentIndex = runtimeViews.findIndex( runtimeView => runtimeView.id === store.currentAIViewKey );
+		const baseIndex = currentIndex === -1
+			? offset > 0 ? -1 : 0
+			: currentIndex;
+		const nextIndex = getWrappedIndex( baseIndex + offset , runtimeViews.length );
+		const nextRuntimeView = runtimeViews[nextIndex];
+
+		setState( {
+			currentAIViewKey : nextRuntimeView.id ,
+			settingsViewOpened : false,
+		} );
+		reaxel_AIViews().applyVisibility();
+
+		reaxel_FloatingView().api.showSwitchAiBar(
+			createSwitchAiBarPayload( runtimeViews.map( createPayloadItemFromRuntimeView ) , nextIndex , direction ),
+		);
+
+		return nextRuntimeView.view;
 	};
 
 	const turnToNextAiPage = () => {
@@ -113,10 +147,34 @@ export const Reaxel_View = reaxel( () => {
 		return turnToAiPageByOffset( -1 , 'previous' );
 	};
 
-	let lastSwitchAt = 0;
-	let lastSwitchDirection:FloatingLayer.SwitchAiBarDirection | null = null;
+	const turnToNextInstantiatedAiPage = () => {
+		return turnToInstantiatedAiPageByOffset( 1 , 'next' );
+	};
 
-	const shouldIgnoreDuplicateSwitch = (direction:FloatingLayer.SwitchAiBarDirection) => {
+	const turnToPreviousInstantiatedAiPage = () => {
+		return turnToInstantiatedAiPageByOffset( -1 , 'previous' );
+	};
+
+	const closeCurrentAIView = () => {
+		const settings = getRuntimeSettings();
+		const runtimeViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
+		const currentRuntimeView = runtimeViews.find( runtimeView => runtimeView.id === store.currentAIViewKey );
+
+		if( !store.settingsViewOpened && currentRuntimeView && runtimeViews.length <= 1 ) {
+			reaxel_FloatingView().api.showGlobalMessage( {
+				type : 'warning' ,
+				content : reaxel_I18n().i18n( 'The last AI page cannot be closed' ),
+			} );
+			return false;
+		}
+
+		return reaxel_AIViews().closeCurrentAIViewAndShowNext( settings );
+	};
+
+	let lastSwitchAt = 0;
+	let lastSwitchDirection:string | null = null;
+
+	const shouldIgnoreDuplicateSwitch = (direction:string) => {
 		const now = Date.now();
 		const duplicate = direction === lastSwitchDirection && now - lastSwitchAt < 40;
 		lastSwitchAt = now;
@@ -130,15 +188,24 @@ export const Reaxel_View = reaxel( () => {
 		if( runtimeViewsInitialized ) return;
 		runtimeViewsInitialized = true;
 		setAISwitchShortcutHandlers( {
-			next : () => {
+			nextConfigured : () => {
 				turnToNextAiPage();
 			} ,
-			previous : () => {
+			previousConfigured : () => {
 				turnToPreviousAiPage();
+			} ,
+			nextInstantiated : () => {
+				turnToNextInstantiatedAiPage();
+			} ,
+			previousInstantiated : () => {
+				turnToPreviousInstantiatedAiPage();
+			} ,
+			closeCurrent : () => {
+				closeCurrentAIView();
 			},
 		} );
 		registerAISwitchGlobalShortcuts();
-		reaxel_FloatingLayer().initFloatingLayer();
+		reaxel_FloatingView().initFloatingView();
 		await onReadyLoadAIView();
 		mainWindow.on( 'resize' , () => {
 			fitWindow();
@@ -185,7 +252,10 @@ export const Reaxel_View = reaxel( () => {
 		initRuntimeViews ,
 		fitWindow,
 		turnToNextAiPage ,
-		turnToPreviousAiPage,
+		turnToPreviousAiPage ,
+		turnToNextInstantiatedAiPage ,
+		turnToPreviousInstantiatedAiPage ,
+		closeCurrentAIView,
 	};
 	
 	return Object.assign( () => rtn , {
@@ -202,6 +272,28 @@ const getRuntimeSettings = ():Settings => {
 		...settingsConfigService.getEffectiveSettings() ,
 		AIs : aiConfigService.getEffectiveAIs(),
 	};
+};
+
+const createPayloadItemFromAI = (ai:AI.AIItem):SwitchAiBarPayloadItem => {
+	return {
+		id : ai.id ,
+		label : ai.label ,
+		family : ai.AI_family,
+	};
+};
+
+const createPayloadItemFromRuntimeView = (runtimeView:RuntimeAIView):SwitchAiBarPayloadItem => {
+	return {
+		id : runtimeView.id ,
+		label : runtimeView.label ,
+		family : runtimeView.AIName,
+	};
+};
+
+type SwitchAiBarPayloadItem = {
+	id: string;
+	label: string;
+	family: AI.AIFamily;
 };
 
 const resolveStartupAI = (
@@ -227,7 +319,10 @@ import {
 import ElectronStore from "electron-store";
 import { mainWindow } from "#main/mainWindow";
 import { reaxel_AIViews } from "#main/reaxels/Views/AI-Views";
-import { reaxel_FloatingLayer } from "#main/reaxels/Views/Floating-Layer";
+import {
+	reaxel_FloatingView ,
+} from "#main/reaxels/Views/FloatingView";
+import { reaxel_I18n } from "#main/reaxels/I18n";
 import { useIpcRendererToMain } from "#main/services/ipc";
 import {
 	registerAISwitchGlobalShortcuts ,
@@ -236,9 +331,10 @@ import {
 } from '#main/services/shortcuts/ai-switch';
 import { getAIConfigService } from "#main/services/settings/ai-config-service";
 import { getSettingsConfigService } from "#main/services/settings/settings-config-service";
-import type { FloatingLayer } from "#src/Types/FloatingLayer";
+import type { FloatingView } from "#src/Types/FloatingView";
 import type { AI } from "#src/Types/SettingsTypes/AI";
 import type { Settings } from "#src/Types/SettingsTypes";
+import type { RuntimeAIView } from "#main/reaxels/Views/AI-Views";
 import {
 	createReaxable ,
 	obsReaction ,

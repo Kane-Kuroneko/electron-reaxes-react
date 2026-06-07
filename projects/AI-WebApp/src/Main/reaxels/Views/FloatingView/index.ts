@@ -1,30 +1,30 @@
 const { absAppRunningPath } = reaxel_ElectronENV();
 
-export const reaxel_FloatingLayer = reaxel( () => {
+export const reaxel_FloatingView = reaxel( () => {
 	const { store , setState , mutate } = createReaxable( {
-		floatingLayer : {
+		floatingView : {
 			window : checkAs<BrowserWindow>( null ) ,
 			loaded : false ,
-			commandQueue : checkAs<FloatingLayer.Command[]>( [] ),
+			commandQueue : checkAs<FloatingView.Command[]>( [] ),
 		},
 	} );
 
 	let mainWindowEventsBound = false;
 
-	const getFloatingLayerBounds = () => {
+	const getFloatingViewBounds = () => {
 		return mainWindow.getContentBounds();
 	};
 
 	const syncBounds = () => {
-		const floatingWindow = store.floatingLayer.window;
+		const floatingWindow = store.floatingView.window;
 		if( !floatingWindow || floatingWindow.isDestroyed() || mainWindow.isDestroyed() ) {
 			return;
 		}
-		floatingWindow.setBounds( getFloatingLayerBounds() , false );
+		floatingWindow.setBounds( getFloatingViewBounds() , false );
 	};
 
 	const showLayerWindow = () => {
-		const floatingWindow = store.floatingLayer.window;
+		const floatingWindow = store.floatingView.window;
 		if( !floatingWindow || floatingWindow.isDestroyed() ) {
 			return;
 		}
@@ -36,42 +36,42 @@ export const reaxel_FloatingLayer = reaxel( () => {
 	};
 
 	const hideLayerWindow = () => {
-		const floatingWindow = store.floatingLayer.window;
+		const floatingWindow = store.floatingView.window;
 		if( floatingWindow && !floatingWindow.isDestroyed() ) {
 			floatingWindow.hide();
 		}
 	};
 
-	const sendCommandNow = (command:FloatingLayer.Command) => {
-		const floatingWindow = store.floatingLayer.window;
+	const sendCommandNow = (command:FloatingView.Command) => {
+		const floatingWindow = store.floatingView.window;
 		if( !floatingWindow || floatingWindow.isDestroyed() ) {
 			return;
 		}
-		useIpcMainToRenderer( 'floating-layer-command' ).targets( [ floatingWindow.webContents ] ).send( command );
+		useIpcMainToRenderer( 'floating-view-command' ).targets( [ floatingWindow.webContents ] ).send( command );
 	};
 
 	const flushCommandQueue = () => {
-		if( !store.floatingLayer.loaded ) {
+		if( !store.floatingView.loaded ) {
 			return;
 		}
-		const commands = store.floatingLayer.commandQueue.slice();
-		mutate.floatingLayer( state => {
+		const commands = store.floatingView.commandQueue.slice();
+		mutate.floatingView( state => {
 			state.commandQueue = [];
 		} );
 		commands.forEach( sendCommandNow );
 	};
 
-	const queueOrSendCommand = (command:FloatingLayer.Command) => {
-		const floatingWindow = initFloatingLayer();
+	const queueOrSendCommand = (command:FloatingView.Command) => {
+		const floatingWindow = initFloatingView();
 		if( !floatingWindow || floatingWindow.isDestroyed() ) {
 			return;
 		}
 		showLayerWindow();
-		if( store.floatingLayer.loaded ) {
+		if( store.floatingView.loaded ) {
 			sendCommandNow( command );
 			return;
 		}
-		mutate.floatingLayer( state => {
+		mutate.floatingView( state => {
 			state.commandQueue.push( command );
 		} );
 	};
@@ -93,15 +93,15 @@ export const reaxel_FloatingLayer = reaxel( () => {
 		mainWindow.on( 'hide' , hideLayerWindow );
 		mainWindow.on( 'minimize' , hideLayerWindow );
 		mainWindow.on( 'closed' , () => {
-			const floatingWindow = store.floatingLayer.window;
+			const floatingWindow = store.floatingView.window;
 			if( floatingWindow && !floatingWindow.isDestroyed() ) {
 				floatingWindow.close();
 			}
 		} );
 	};
 
-	function initFloatingLayer() {
-		const existingWindow = store.floatingLayer.window;
+	function initFloatingView() {
+		const existingWindow = store.floatingView.window;
 		if( existingWindow && !existingWindow.isDestroyed() ) {
 			return existingWindow;
 		}
@@ -133,7 +133,7 @@ export const reaxel_FloatingLayer = reaxel( () => {
 		floatingWindow.setIgnoreMouseEvents( true , { forward : true } );
 		floatingWindow.setMenu( null );
 		floatingWindow.setAlwaysOnTop( true , 'floating' );
-		setState.floatingLayer( {
+		setState.floatingView( {
 			window : floatingWindow ,
 			loaded : false ,
 			commandQueue : [],
@@ -142,7 +142,7 @@ export const reaxel_FloatingLayer = reaxel( () => {
 		syncBounds();
 
 		floatingWindow.on( 'closed' , () => {
-			setState.floatingLayer( {
+			setState.floatingView( {
 				window : null ,
 				loaded : false ,
 				commandQueue : [],
@@ -150,7 +150,7 @@ export const reaxel_FloatingLayer = reaxel( () => {
 		} );
 
 		floatingWindow.webContents.once( 'did-finish-load' , () => {
-			setState.floatingLayer( {
+			setState.floatingView( {
 				loaded : true,
 			} );
 			syncBounds();
@@ -159,16 +159,16 @@ export const reaxel_FloatingLayer = reaxel( () => {
 		} );
 
 		if( dev() ) {
-			floatingWindow.webContents.loadURL( createDevRendererURL( 'Floating-Layer' ) , getFreshLoadURLOptions() );
+			floatingWindow.webContents.loadURL( createDevRendererURL( 'FloatingView' ) , getFreshLoadURLOptions() );
 		} else {
-			floatingWindow.webContents.loadFile( path.join( absAppRunningPath , './renderer/Floating-Layer/index.html' ) );
+			floatingWindow.webContents.loadFile( path.join( absAppRunningPath , './renderer/FloatingView/index.html' ) );
 		}
 
 		return floatingWindow;
 	}
 
 	const api = {
-		showSwitchAiBar( payload:FloatingLayer.SwitchAiBarPayload ) {
+		showSwitchAiBar( payload:FloatingView.SwitchAiBarPayload ) {
 			queueOrSendCommand( {
 				type : 'switch-ai-bar:show' ,
 				payload,
@@ -178,12 +178,18 @@ export const reaxel_FloatingLayer = reaxel( () => {
 			queueOrSendCommand( {
 				type : 'switch-ai-bar:hide',
 			} );
+		} ,
+		showGlobalMessage( payload:FloatingView.GlobalMessagePayload ) {
+			queueOrSendCommand( {
+				type : 'global-message:show' ,
+				payload,
+			} );
 		},
 	};
 
 	const rtn = {
 		api ,
-		initFloatingLayer ,
+		initFloatingView ,
 		syncBounds,
 	};
 
@@ -210,7 +216,7 @@ const getFreshLoadURLOptions = () => {
 import { mainWindow } from '#main/mainWindow';
 import { useIpcMainToRenderer } from '#main/services/ipc';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
-import type { FloatingLayer } from '#src/Types/FloatingLayer';
+import type { FloatingView } from '#src/Types/FloatingView';
 import {
 	BrowserWindow,
 } from 'electron';

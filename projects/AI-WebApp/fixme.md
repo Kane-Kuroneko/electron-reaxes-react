@@ -731,7 +731,7 @@ Menu 和 Views 都依赖同一份 runtime settings。如果各自读取和组装
 
 ### 问题现状
 
-主窗口、SettingsView、GuidingView、Floating-Layer、AI WebContentsView 基本都设置了：
+主窗口、SettingsView、GuidingView、FloatingView、AI WebContentsView 基本都设置了：
 
 - `nodeIntegration: false`
 - `contextIsolation: true`
@@ -759,7 +759,7 @@ AI-WebApp 会加载远程 AI 服务网页。Electron 应用承载远程网页时
 - `projects/AI-WebApp/src/Main/mainWindow.ts`
 - `projects/AI-WebApp/src/Main/reaxels/Views/utils/initWebContentsView.ts`
 - `projects/AI-WebApp/src/Main/reaxels/Views/Guiding-View/index.ts`
-- `projects/AI-WebApp/src/Main/reaxels/Views/Floating-Layer/index.ts`
+- `projects/AI-WebApp/src/Main/reaxels/Views/FloatingView/index.ts`
 - `projects/AI-WebApp/src/Main/foundation/electron.conf.ts`
 - `projects/AI-WebApp/partial.webpack-conf.ts`
 
@@ -767,13 +767,13 @@ AI-WebApp 会加载远程 AI 服务网页。Electron 应用承载远程网页时
 
 1. 评估 preload 与 sandbox 的兼容性，尤其是 `contextBridge` 和项目 IPC 工具是否正常。
 2. 对 AI 页面优先启用 `sandbox: true`。
-3. 对本地 SettingsView/GuidingView/Floating-Layer 分别测试，能启用则统一启用。
+3. 对本地 SettingsView/GuidingView/FloatingView 分别测试，能启用则统一启用。
 4. 确认 `__DEV__` 在生产构建中可靠为 false。
 5. 对 remote debugging 开关增加二次保护，例如只在显式环境变量开启时设置。
 
 验证方式：
 
-- 启用 sandbox 后 SettingsView、GuidingView、Floating-Layer IPC 仍可用。
+- 启用 sandbox 后 SettingsView、GuidingView、FloatingView IPC 仍可用。
 - AI 页面能正常加载和登录。
 - 生产构建中搜索不到 remote debugging 开关实际执行路径。
 
@@ -806,7 +806,7 @@ AI-WebApp 的业务对象嵌套较深，例如 settings、AI item、proxy config
 - `projects/AI-WebApp/tsconfig.json`
 - `projects/AI-WebApp/src/Views/SettingsView/tsconfig.json`
 - `projects/AI-WebApp/src/Views/GuidingView/tsconfig.json`
-- `projects/AI-WebApp/src/Views/Floating-Layer/tsconfig.json`
+- `projects/AI-WebApp/src/Views/FloatingView/tsconfig.json`
 - 全部出现 `any` / `as any` 的源码文件
 
 修复步骤：
