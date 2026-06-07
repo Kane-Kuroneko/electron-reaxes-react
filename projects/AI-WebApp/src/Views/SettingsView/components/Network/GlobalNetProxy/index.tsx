@@ -12,8 +12,13 @@ export const GlobalProxy = reaxper( () => {
 				<Radio.Group
 					value={ store.proxy_mode }
 					onChange={ ( e ) => {
+						const proxyMode = e.target.value as NetworkProxy.GlobalProxyMode;
+						const proxyServers = getEnabledProxyServers();
 						setState( {
-							proxy_mode : e.target.value ,
+							proxy_mode : proxyMode ,
+							using_proxy_server_id : proxyMode === 'from_server_list'
+								? getSelectedProxyServerId( proxyServers ) || proxyServers[0]?.proxy_server_id || null
+								: store.using_proxy_server_id,
 						} );
 					} }
 					style={ { userSelect : 'none' } }
@@ -32,27 +37,39 @@ export const GlobalProxy = reaxper( () => {
 	</div>;
 } );
 
+const getEnabledProxyServers = () => {
+	return store.proxy_server_list.filter( server => server.enabled !== false );
+};
+
+const getSelectedProxyServerId = (proxyServers = getEnabledProxyServers()) => {
+	return proxyServers.some( server => server.proxy_server_id === store.using_proxy_server_id )
+		? store.using_proxy_server_id
+		: null;
+};
+
 const ProxyServerSelector = reaxper( () => {
 	if(store.proxy_mode !== 'from_server_list'){
 		return null;
 	}
+	const proxyServers = getEnabledProxyServers();
+	const selectedProxyServerId = getSelectedProxyServerId( proxyServers );
 	return <div className={ less.proxySubFields }>
 		<Form.Item
 			label={<I18n>Proxy Server</I18n>}
 			style={ { marginBottom : 0 } }
 		>
 			<Select
-				value={store.using_proxy_server_id}
+				value={ selectedProxyServerId || undefined }
 				onChange={(value) => {
 					setState({
-						using_proxy_server_id: value,
+						using_proxy_server_id: value || null,
 					});
 				}}
 				placeholder={i18n('Select a proxy server')}
 				variant="outlined"
+				allowClear
 			>
-				{store.proxy_server_list
-					.filter(server => server.enabled)
+				{proxyServers
 					.map(server => (
 						<Select.Option
 							key={server.proxy_server_id}

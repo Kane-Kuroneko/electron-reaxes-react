@@ -309,7 +309,7 @@ const EditAIModal = reaxper( () => {
 			desc : fields.desc ,
 			preloadOnStartup : fields.preloadOnStartup === true ,
 			proxy_mode : fields.proxy_mode ,
-			from_server_list_proxy : fields.from_server_list_proxy || null ,
+			from_server_list_proxy : getEnabledProxyServerId( fields.from_server_list_proxy ) ,
 			user_fill_proxy : fields.user_fill_proxy || null,
 		};
 		
@@ -451,7 +451,7 @@ const EditAIModal = reaxper( () => {
 						if( proxyMode === 'user_fill' && !fields.user_fill_proxy ) {
 							patch.user_fill_proxy = defaultProxyConf();
 						}
-						if( proxyMode === 'from_server_list' && !fields.from_server_list_proxy ) {
+						if( proxyMode === 'from_server_list' && !getEnabledProxyServerId( fields.from_server_list_proxy ) ) {
 							patch.from_server_list_proxy = firstEnabledProxyServerId();
 						}
 						setState.fields( patch );
@@ -497,17 +497,19 @@ const EditAIModal = reaxper( () => {
 export const SelectProxyServer = reaxper( () => {
 	const { edit_AI_modal:store } = reaxel_SettingsView.store.UIControls.manage_AIs;
 	const { edit_AI_modal:setState } = reaxel_SettingsView.setState.UIControls.manage_AIs;
-	const proxyServers = reaxel_SettingsView.store.UIControls.networks.proxy_server_list.filter( server => server.enabled );
+	const proxyServers = reaxel_SettingsView.store.UIControls.networks.proxy_server_list.filter( server => server.enabled !== false );
+	const selectedProxyServerId = getEnabledProxyServerId( store.fields.from_server_list_proxy );
 	
 	return <Select
 		style={ { width : '100%' , marginTop : 12 } }
-		value={ store.fields.from_server_list_proxy }
+		value={ selectedProxyServerId || undefined }
 		placeholder={i18n('Select a proxy server')}
 		onChange={ value => {
 			setState.fields( {
-				from_server_list_proxy : value,
+				from_server_list_proxy : value || null,
 			} );
 		} }
+		allowClear
 		options={ proxyServers.map( server => ( {
 			value : server.proxy_server_id ,
 			label : `${ server.server_name } (${ server.proxy_conf.protocol }://${ server.proxy_conf.hostname }:${ server.proxy_conf.port })`,
@@ -629,7 +631,17 @@ const ProxyAuthFields = reaxper( ( { proxyConf }:{ proxyConf:NetworkProxy.ProxyC
 } );
 
 const firstEnabledProxyServerId = () => {
-	return reaxel_SettingsView.store.UIControls.networks.proxy_server_list.find( server => server.enabled )?.proxy_server_id || null;
+	return reaxel_SettingsView.store.UIControls.networks.proxy_server_list.find( server => {
+		return server.enabled !== false;
+	} )?.proxy_server_id || null;
+};
+
+const getEnabledProxyServerId = (proxyServerId:string | null | undefined) => {
+	return reaxel_SettingsView.store.UIControls.networks.proxy_server_list.some( server => {
+		return server.enabled !== false && server.proxy_server_id === proxyServerId;
+	} )
+		? proxyServerId
+		: null;
 };
 
 const createAIId = () => {

@@ -55,7 +55,10 @@ export const reaxel_Settings = reaxel( () => {
 			disabled : ai.disabled === true ,
 			url_override : ai.url_override || null ,
 			proxy_mode : ai.proxy_mode || 'follow_global_setting' ,
-			from_server_list_proxy : ai.from_server_list_proxy || null ,
+			from_server_list_proxy : getEnabledProxyServerId(
+				ai.from_server_list_proxy ,
+				normalizedRuntimeSettings.networks.proxy_server_list,
+			) ,
 			user_fill_proxy : ai.user_fill_proxy || null ,
 			preloadOnStartup : ai.preloadOnStartup === true,
 		} ) );
@@ -254,6 +257,17 @@ const detectRestartReasons = (previousSettings:Settings , nextSettings:Settings)
 	}
 	
 	return restartReasons;
+};
+
+const getEnabledProxyServerId = (
+	proxyServerId:string | null | undefined ,
+	proxyServerList:Settings['networks']['proxy_server_list'],
+) => {
+	return proxyServerList.some( server => {
+		return server.enabled !== false && server.proxy_server_id === proxyServerId;
+	} )
+		? proxyServerId
+		: null;
 };
 
 export type Reaxel_Settings = typeof reaxel_Settings;

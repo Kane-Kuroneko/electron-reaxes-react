@@ -74,10 +74,16 @@ const createColumns = (openProxyTestModal:(server:NetworkProxy.ProxyServer.Serve
 			return <Checkbox
 				checked={ record.enabled }
 				onChange={ ( e ) => {
-					reaxel_SettingsView.mutate.UIControls.networks( state => {
-						const target = state.proxy_server_list.find( server => server.proxy_server_id === record.proxy_server_id );
+					const enabled = e.target.checked;
+					reaxel_SettingsView.mutate( state => {
+						const target = state.UIControls.networks.proxy_server_list.find( server => {
+							return server.proxy_server_id === record.proxy_server_id;
+						} );
 						if( target ) {
-							target.enabled = e.target.checked;
+							target.enabled = enabled;
+						}
+						if( !enabled ) {
+							clearProxyServerReferences( state , record.proxy_server_id );
 						}
 					} );
 				} }
@@ -123,17 +129,33 @@ const createColumns = (openProxyTestModal:(server:NetworkProxy.ProxyServer.Serve
 				type="link"
 				danger
 				onClick={ () => {
-					reaxel_SettingsView.mutate.UIControls.networks( state => {
-						state.proxy_server_list = state.proxy_server_list.filter( server => server.proxy_server_id !== record.proxy_server_id );
-						if( state.using_proxy_server_id === record.proxy_server_id ) {
-							state.using_proxy_server_id = null;
-						}
+					reaxel_SettingsView.mutate( state => {
+						state.UIControls.networks.proxy_server_list = state.UIControls.networks.proxy_server_list.filter( server => {
+							return server.proxy_server_id !== record.proxy_server_id;
+						} );
+						clearProxyServerReferences( state , record.proxy_server_id );
 					} );
 				} }
 			><I18n>Delete</I18n></Button>;
 		},
 	}
 ];
+
+const clearProxyServerReferences = (state , proxyServerId:string) => {
+	const networks = state.UIControls.networks;
+	if( networks.using_proxy_server_id === proxyServerId ) {
+		networks.using_proxy_server_id = null;
+	}
+	state.Data.AIs.forEach( ai => {
+		if( ai.from_server_list_proxy === proxyServerId ) {
+			ai.from_server_list_proxy = null;
+		}
+	} );
+	const fields = state.UIControls.manage_AIs.edit_AI_modal.fields;
+	if( fields.from_server_list_proxy === proxyServerId ) {
+		fields.from_server_list_proxy = null;
+	}
+};
 
 const ProxyServerTestModal = reaxper( ( {
 	visible ,
@@ -349,7 +371,7 @@ const EditProxyServerModal = reaxper( () => {
 				/>
 			</Form.Item>
 			<Form.Item label={<I18n>Password</I18n>}>
-				<Input
+				<Input.Password
 					value={ notFalse( store.fields.proxy_conf.proxy_auth )?.password }
 					placeholder={i18n('Password')}
 					onChange={ ( e ) => {
@@ -374,21 +396,28 @@ const EditProxyServerModal = reaxper( () => {
 			} );
 		} }
 		onOk={() => {
-			reaxel_SettingsView.mutate.UIControls.networks( state => {
+			reaxel_SettingsView.mutate( state => {
+				const networks = state.UIControls.networks;
 				const nextServer:NetworkProxy.ProxyServer.Server = {
 					proxy_server_id : store.editing_id ,
 					server_name : store.fields.server_name ,
 					enabled : store.fields.enabled ,
 					proxy_conf : store.fields.proxy_conf,
 				};
-				const index = state.proxy_server_list.findIndex( server => server.proxy_server_id === store.editing_id );
+				const index = networks.proxy_server_list.findIndex( server => {
+					return server.proxy_server_id === store.editing_id;
+				} );
 				if( index === -1 ) {
-					state.proxy_server_list.push( nextServer );
+					networks.proxy_server_list.push( nextServer );
 				} else {
-					state.proxy_server_list[index] = nextServer;
+					networks.proxy_server_list[index] = nextServer;
 				}
-				if( !state.using_proxy_server_id ) {
-					state.using_proxy_server_id = nextServer.proxy_server_id;
+				if( !nextServer.enabled ) {
+					clearProxyServerReferences( state , nextServer.proxy_server_id );
+					return;
+				}
+				if( !networks.using_proxy_server_id ) {
+					networks.using_proxy_server_id = nextServer.proxy_server_id;
 				}
 			} );
 			setState( {

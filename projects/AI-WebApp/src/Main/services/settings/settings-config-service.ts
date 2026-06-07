@@ -76,6 +76,13 @@ export const normalizeRuntimeSettings = (settings?:Partial<RuntimeSettings>):Run
 	const globalProxy = networks?.global_proxy;
 	const appearance = settings?.appearance;
 	const theme = normalizeThemePreference( appearance?.theme , appearance?.darkmode );
+	const proxyServerList = Array.isArray( networks?.proxy_server_list )
+		? networks.proxy_server_list.map( server => ( {
+			...server ,
+			proxy_conf : normalizeProxyConf( server.proxy_conf ) ,
+			enabled : server.enabled !== false,
+		} ) )
+		: defaults.networks.proxy_server_list;
 	
 	return {
 		networks : {
@@ -83,15 +90,10 @@ export const normalizeRuntimeSettings = (settings?:Partial<RuntimeSettings>):Run
 				...defaults.networks.global_proxy ,
 				...globalProxy ,
 				proxy_mode : globalProxy?.proxy_mode || defaults.networks.global_proxy.proxy_mode ,
+				proxy_server_id : normalizeProxyServerId( globalProxy?.proxy_server_id , proxyServerList ) ,
 				user_fill_proxy : normalizeGlobalProxy( globalProxy?.user_fill_proxy ),
 			} ,
-			proxy_server_list : Array.isArray( networks?.proxy_server_list )
-				? networks.proxy_server_list.map( server => ( {
-					...server ,
-					proxy_conf : normalizeProxyConf( server.proxy_conf ) ,
-					enabled : server.enabled !== false,
-				} ) )
-				: defaults.networks.proxy_server_list,
+			proxy_server_list : proxyServerList,
 			proxy_test_urls : normalizeProxyTestURLs( networks?.proxy_test_urls ),
 		} ,
 		system : {
@@ -115,6 +117,17 @@ export const normalizeRuntimeSettings = (settings?:Partial<RuntimeSettings>):Run
 
 export const normalizeStartupAIPageLoadMode = (mode?:string):RuntimeSettings['startup']['aiPageLoadMode'] => {
 	return mode === 'first-ai' ? 'first-ai' : 'last-used-ai';
+};
+
+const normalizeProxyServerId = (
+	proxyServerId:string | null | undefined ,
+	proxyServerList:NetworkProxy.ProxyServer.Server[],
+) => {
+	return proxyServerList.some( server => {
+		return server.enabled !== false && server.proxy_server_id === proxyServerId;
+	} )
+		? proxyServerId
+		: null;
 };
 
 class SettingsConfigService {

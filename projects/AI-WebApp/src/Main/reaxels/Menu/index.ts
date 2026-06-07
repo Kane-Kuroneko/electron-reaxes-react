@@ -26,6 +26,7 @@ export const reaxel_Menu = reaxel( () => {
 		const { currentAIViewKey } = Reaxel_View.store;
 		const nextAI = resolveAdjacentMenuAI( enabledAIs , currentAIViewKey , 1 );
 		const previousAI = resolveAdjacentMenuAI( enabledAIs , currentAIViewKey , -1 );
+		const canCloseThisAI = reaxel_AIViews().canCloseCurrentAIView( settings );
 		
 		return Menu.buildFromTemplate( [
 			{
@@ -125,7 +126,18 @@ export const reaxel_Menu = reaxel( () => {
 					} ,
 					{ label : t('Zoom Out') , role : 'zoomOut' } ,
 					{ type : 'separator' } ,
-					{ label : t('Toggle Fullscreen') , role : 'togglefullscreen' },
+					{ label : t('Toggle Fullscreen') , role : 'togglefullscreen' } ,
+					...( canCloseThisAI ? [
+						{ type : 'separator' as const } ,
+						{
+							label : t('Close This AI') ,
+							click : () => {
+								if( reaxel_AIViews().closeCurrentAIViewAndShowNext( getRuntimeSettings() ) ) {
+									rebuildMenu();
+								}
+							},
+						},
+					] : [] ),
 				],
 			} ,
 			{

@@ -18,11 +18,14 @@ export default {
 	
 	// Menu - Switch AI
 	"Switch AI" : "切换 AI" ,
+	"Previous" : "上一个" ,
+	"Next" : "下一个" ,
 	"Previous AI" : "上一个 AI" ,
 	"Next AI" : "下一个 AI" ,
 	"Previous AI Page" : "上一个 AI 页面" ,
 	"Next AI Page" : "下一个 AI 页面" ,
 	"No enabled AI pages" : "没有启用的 AI 页面" ,
+	"Close This AI" : "关闭当前 AI" ,
 	
 	// Tray
 	"Show Window" : "显示窗口" ,

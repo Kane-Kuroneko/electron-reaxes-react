@@ -113,6 +113,53 @@ export const reaxel_AIViews = reaxel( () => {
 		applyVisibility();
 		return view;
 	};
+
+	const getRuntimeAIViewsInSettingsOrder = (settings:Settings) => {
+		const runtimeViewById = new Map( store.AIViews.map( runtimeView => [
+			runtimeView.id ,
+			runtimeView,
+		] ) );
+		const orderedRuntimeViews = settings.AIs
+			.filter( ai => !ai.disabled )
+			.map( ai => runtimeViewById.get( ai.id ) )
+			.filter( ( runtimeView ): runtimeView is RuntimeAIView => !!runtimeView );
+		const orderedIds = new Set( orderedRuntimeViews.map( runtimeView => runtimeView.id ) );
+		return [
+			...orderedRuntimeViews ,
+			...store.AIViews.filter( runtimeView => !orderedIds.has( runtimeView.id ) ),
+		];
+	};
+
+	const canCloseCurrentAIView = (settings:Settings) => {
+		if( Reaxel_View.store.settingsViewOpened ) {
+			return false;
+		}
+		const runtimeViews = getRuntimeAIViewsInSettingsOrder( settings );
+		const currentIndex = runtimeViews.findIndex( runtimeView => {
+			return runtimeView.id === Reaxel_View.store.currentAIViewKey;
+		} );
+		return runtimeViews.length > 1 && currentIndex !== -1;
+	};
+
+	const closeCurrentAIViewAndShowNext = (settings:Settings) => {
+		if( !canCloseCurrentAIView( settings ) ) {
+			return false;
+		}
+		const runtimeViews = getRuntimeAIViewsInSettingsOrder( settings );
+		const currentIndex = runtimeViews.findIndex( runtimeView => {
+			return runtimeView.id === Reaxel_View.store.currentAIViewKey;
+		} );
+		const currentRuntimeView = runtimeViews[currentIndex];
+		const nextRuntimeView = runtimeViews[( currentIndex + 1 ) % runtimeViews.length];
+
+		destroyAIView( currentRuntimeView.id );
+		Reaxel_View.setState( {
+			currentAIViewKey : nextRuntimeView.id ,
+			settingsViewOpened : false,
+		} );
+		applyVisibility();
+		return true;
+	};
 	
 	const applyVisibility = () => {
 		const currentAIViewKey = Reaxel_View.store.currentAIViewKey;
@@ -137,6 +184,8 @@ export const reaxel_AIViews = reaxel( () => {
 		destroyAllAndClearData ,
 		syncAIViewsWithConfig ,
 		showAIView ,
+		canCloseCurrentAIView ,
+		closeCurrentAIViewAndShowNext ,
 		applyVisibility,
 	};
 

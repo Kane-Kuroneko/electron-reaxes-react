@@ -171,14 +171,18 @@ export const reaxel_SettingsView = reaxel( () => {
 	}
 	
 	function setSettings( settings:SettingsFetchResult | Settings ) {
+		const proxyServerList = settings.networks.proxy_server_list || defaultProxyServers();
 		setState.UIControls.networks( {
 			proxy_mode : settings.networks.global_proxy.proxy_mode ,
-			using_proxy_server_id : settings.networks.global_proxy.proxy_server_id || null ,
+			using_proxy_server_id : getEnabledProxyServerId(
+				settings.networks.global_proxy.proxy_server_id || null ,
+				proxyServerList,
+			) ,
 			proxy_fields : {
 				...defaultGlobalProxyFields() ,
 				...( settings.networks.global_proxy.user_fill_proxy || {} ),
 			} ,
-			proxy_server_list : settings.networks.proxy_server_list || defaultProxyServers(),
+			proxy_server_list : proxyServerList,
 			proxy_test_urls : {
 				...defaultProxyTestURLs() ,
 				...( settings.networks.proxy_test_urls || {} ),
@@ -229,7 +233,10 @@ export const reaxel_SettingsView = reaxel( () => {
 			networks : {
 				global_proxy : {
 					proxy_mode : networks.proxy_mode ,
-					proxy_server_id : networks.using_proxy_server_id ,
+					proxy_server_id : getEnabledProxyServerId(
+						networks.using_proxy_server_id ,
+						networks.proxy_server_list,
+					) ,
 					user_fill_proxy : {
 						...defaultGlobalProxyFields() ,
 						...networks.proxy_fields ,
@@ -240,7 +247,13 @@ export const reaxel_SettingsView = reaxel( () => {
 				proxy_server_list : networks.proxy_server_list,
 				proxy_test_urls : networks.proxy_test_urls,
 			} ,
-			AIs : store.Data.AIs ,
+			AIs : store.Data.AIs.map( ai => ( {
+				...ai ,
+				from_server_list_proxy : getEnabledProxyServerId(
+					ai.from_server_list_proxy ,
+					networks.proxy_server_list,
+				),
+			} ) ) ,
 			system : store.UIControls.system ,
 			startup : {
 				aiPageLoadMode : store.UIControls.manage_AIs.startupAIPageLoadMode,
@@ -262,8 +275,8 @@ export const reaxel_SettingsView = reaxel( () => {
 		} );
 		try {
 			const result = await applySettingsService( buildSettingsFromStore() );
-			if( result.success && result.settings ) {
-				setSettings( result.settings );
+			if( result.success ) {
+				await reloadSettings();
 			}
 			setState.submit_settings_status( {
 				pending : false ,
@@ -419,6 +432,17 @@ function defaultAIFields():AI.EditAIItem {
 		from_server_list_proxy : null ,
 		user_fill_proxy : null,
 	};
+}
+
+function getEnabledProxyServerId(
+	proxyServerId:string | null | undefined ,
+	proxyServerList:NetworkProxy.ProxyServer.Server[],
+) {
+	return proxyServerList.some( server => {
+		return server.enabled !== false && server.proxy_server_id === proxyServerId;
+	} )
+		? proxyServerId
+		: null;
 }
 
 const AINameSuffixPool = [
