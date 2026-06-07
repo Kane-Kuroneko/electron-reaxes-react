@@ -75,6 +75,7 @@ export const openSettingsView = (openDevTools = false) => {
 	const settingsView = reaxel_SettingsView().initSettingsView();
 	settingsView.setVisible( true );
 	mainWindow.contentView.addChildView( settingsView );
+	Reaxel_View().fitWindow();
 	if( openDevTools ) {
 		settingsView.webContents.openDevTools();
 	}

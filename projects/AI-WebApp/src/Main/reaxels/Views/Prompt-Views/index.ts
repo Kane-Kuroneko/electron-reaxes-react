@@ -113,8 +113,8 @@ export const reaxel_PromptViews = reaxel( () => {
 		}
 		const width = Math.max( 0 , Math.round( sideState.width ) );
 		const visible = width > 0 || sideState.visible;
-		view.setVisible( visible );
-		view.setBounds( {
+		setViewVisibleIfChanged( view , visible );
+		setViewBoundsIfChanged( view , {
 			x : side === 'left' ? 0 : Math.max( 0 , bounds.width - width ) ,
 			y : 0 ,
 			width ,
@@ -128,10 +128,11 @@ export const reaxel_PromptViews = reaxel( () => {
 		finalVisible:boolean,
 	) => {
 		clearAnimationTimer( side );
-		const startedAt = Date.now();
+		const startedAt = performance.now();
 		const sideState = getSideState( side );
-		const startWidth = sideState.width;
+		const startWidth = Math.round( sideState.width );
 		const distance = targetWidth - startWidth;
+		let lastSyncedWidth = startWidth;
 		
 		mutateSide( side , state => {
 			state.visible = true;
@@ -144,15 +145,18 @@ export const reaxel_PromptViews = reaxel( () => {
 		}
 		
 		const tick = () => {
-			const elapsed = Date.now() - startedAt;
+			const elapsed = performance.now() - startedAt;
 			const progress = Math.min( 1 , elapsed / PROMPT_VIEW_ANIMATION_MS );
 			const eased = promptViewBezier( progress );
-			const nextWidth = startWidth + distance * eased;
+			const nextWidth = Math.round( startWidth + distance * eased );
 			
-			mutateSide( side , state => {
-				state.width = nextWidth;
-			} );
-			syncAnimatedLayout( side , nextWidth );
+			if( nextWidth !== lastSyncedWidth || progress >= 1 ) {
+				lastSyncedWidth = nextWidth;
+				mutateSide( side , state => {
+					state.width = nextWidth;
+				} );
+				syncAnimatedLayout( side , nextWidth , distance > 0 );
+			}
 
 			if( progress >= 1 ) {
 				finishAnimation( side , targetWidth , finalVisible );
@@ -197,24 +201,37 @@ export const reaxel_PromptViews = reaxel( () => {
 	
 	const syncAnimatedLayout = (
 		side:PromptView.Side ,
-		nextWidth:number,
+		nextWidth:number ,
+		expanding:boolean,
 	) => {
 		const bounds = mainWindow.getContentBounds();
 		const leftWidth = side === 'left'
-			? Math.max( 0 , Math.round( nextWidth ) )
+			? Math.max( 0 , nextWidth )
 			: Math.max( 0 , Math.round( store.left.width ) );
 		const rightWidth = side === 'right'
-			? Math.max( 0 , Math.round( nextWidth ) )
+			? Math.max( 0 , nextWidth )
 			: Math.max( 0 , Math.round( store.right.width ) );
 
-		syncSideBoundsWithWidth( 'left' , bounds , leftWidth );
-		syncSideBoundsWithWidth( 'right' , bounds , rightWidth );
-		Reaxel_View().fitCurrentCenterView( {
-			x : leftWidth ,
-			y : 0 ,
-			width : Math.max( 1 , bounds.width - leftWidth - rightWidth ) ,
-			height : bounds.height,
-		} );
+		const syncCenterView = () => {
+			Reaxel_View().fitCurrentCenterView( {
+				x : leftWidth ,
+				y : 0 ,
+				width : Math.max( 1 , bounds.width - leftWidth - rightWidth ) ,
+				height : bounds.height,
+			} );
+		};
+		const syncSideViews = () => {
+			syncSideBoundsWithWidth( 'left' , bounds , leftWidth );
+			syncSideBoundsWithWidth( 'right' , bounds , rightWidth );
+		};
+
+		if( expanding ) {
+			syncSideViews();
+			syncCenterView();
+			return;
+		}
+		syncCenterView();
+		syncSideViews();
 	};
 
 	const getSideState = (side:PromptView.Side) => {
@@ -276,12 +293,13 @@ const syncSideBoundsWithWidth = (
 	if( !view || view.webContents.isDestroyed() ) {
 		return;
 	}
-	const visible = width > 0 || sideState.visible;
-	view.setVisible( visible );
-	view.setBounds( {
-		x : side === 'left' ? 0 : Math.max( 0 , bounds.width - width ) ,
+	const roundedWidth = Math.max( 0 , Math.round( width ) );
+	const visible = roundedWidth > 0 || sideState.visible;
+	setViewVisibleIfChanged( view , visible );
+	setViewBoundsIfChanged( view , {
+		x : side === 'left' ? 0 : Math.max( 0 , bounds.width - roundedWidth ) ,
 		y : 0 ,
-		width ,
+		width : roundedWidth ,
 		height : bounds.height,
 	} );
 };
@@ -302,16 +320,36 @@ const broadcastPromptViewAppearanceState = (state:PromptView.AppearanceState) =>
 	useIpcMainToRenderer( 'prompt-view-appearance-change' ).targets( targets ).send( state );
 };
 
-// cubic-bezier(0.16, 1, 0.3, 1)；用二分反解 x，再取 y，避免主进程 setBounds 线性跳变。
+const setViewVisibleIfChanged = (view:WebContentsView , visible:boolean) => {
+	if( view.getVisible() === visible ) {
+		return;
+	}
+	view.setVisible( visible );
+};
+
+const setViewBoundsIfChanged = (view:WebContentsView , bounds:Rectangle) => {
+	if( isSameBounds( view.getBounds() , bounds ) ) {
+		return;
+	}
+	view.setBounds( bounds );
+};
+
+const isSameBounds = (left:Rectangle , right:Rectangle) => {
+	return left.x === right.x
+		&& left.y === right.y
+		&& left.width === right.width
+		&& left.height === right.height;
+};
+
 const promptViewBezier = (progress:number) => {
-	const x1 = 0.16;
-	const y1 = 1;
-	const x2 = 0.3;
+	const x1 = 0.42;
+	const y1 = 0;
+	const x2 = 0.58;
 	const y2 = 1;
 	let low = 0;
 	let high = 1;
 	let t = progress;
-	
+
 	for( let i = 0 ; i < 8 ; i++ ) {
 		t = ( low + high ) / 2;
 		const x = cubicBezierAxis( t , x1 , x2 );
@@ -321,7 +359,7 @@ const promptViewBezier = (progress:number) => {
 			high = t;
 		}
 	}
-	
+
 	return cubicBezierAxis( t , y1 , y2 );
 };
 
@@ -332,8 +370,8 @@ const cubicBezierAxis = (t:number , p1:number , p2:number) => {
 		+ t * t * t;
 };
 
-const PROMPT_VIEW_ANIMATION_MS = 240;
-const PROMPT_VIEW_ANIMATION_FRAME_MS = 12;
+const PROMPT_VIEW_ANIMATION_MS = 300;
+const PROMPT_VIEW_ANIMATION_FRAME_MS = 3;
 
 type PromptSideState = {
 	name: 'PromptViewLeft' | 'PromptViewRight';

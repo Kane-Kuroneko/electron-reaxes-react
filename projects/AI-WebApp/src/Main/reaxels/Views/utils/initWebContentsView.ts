@@ -12,6 +12,14 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	}
 	view.webContents.setVisualZoomLevelLimits(1,5);
 	mainWindow.contentView.addChildView(view);
+	const refreshBounds = () => {
+		if( options.refreshBounds ) {
+			options.refreshBounds( view );
+			return;
+		}
+		const { width , height } = mainWindow.getContentBounds();
+		view.setBounds( { x: 0, y: 0, width, height} );
+	};
 	
 	// 初始化崩溃报告器
 	const viewName = options.type === 'AI-View'
@@ -29,24 +37,10 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 		usePromptView(view, viewOptions);
 	}
 	
-	//让View跟随主窗口大小
-	const { width , height } = mainWindow.getContentBounds();
-	view.setBounds( { x: 0, y: 0, width, height} );
-	//太TMD蠢了!直接获取窗口大小的时候因为Menu的原因获取到的是错的!必须要重新获取并设置一遍
+	// 初始兜底布局；AI/Settings 等中心内容可通过 refreshBounds 接入 Reaxel_View 的 inset 布局。
+	refreshBounds();
 	view.webContents.on( 'did-finish-load' , () => {
-		if( viewOptions.type === 'Prompt-View' ) {
-			return;
-		}
-		const {
-			width ,
-			height,
-		} = mainWindow.getContentBounds();
-		view.setBounds( {
-			x : 0 ,
-			y : 0 ,
-			width ,
-			height,
-		} );
+		options.refreshBounds?.( view );
 	} );
 	
 	//当用户ctrl+r时reload当前view;f12 devtools
@@ -220,6 +214,7 @@ type ExtraBrowserWindowOptions = {
 	aiConfig?: AISettings.AIItem;
 	settings?: Settings;
 	promptSide?: PromptView.Side;
+	refreshBounds?: (view:WebContentsView) => void;
 }
 
 import { mainWindow } from "#main/mainWindow";

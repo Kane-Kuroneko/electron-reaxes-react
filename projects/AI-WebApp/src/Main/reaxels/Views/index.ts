@@ -15,14 +15,8 @@ export const Reaxel_View = reaxel( () => {
 	
 	function fitWindow(target?:string) {
 		const { width , height } = mainWindow.getContentBounds();
-		const promptInsets = reaxel_PromptViews().getLayoutInsets();
-		const centerBounds = {
-			x : promptInsets.left ,
-			y : 0 ,
-			width : Math.max( 1 , width - promptInsets.left - promptInsets.right ) ,
-			height,
-		};
-		const viewSetBounds = (view:WebContentsView) => view?.setBounds( centerBounds );
+		const centerBounds = getCenterBounds( { x : 0 , y : 0 , width , height } );
+		const viewSetBounds = (view:WebContentsView) => setViewBoundsIfChanged( view , centerBounds );
 		
 		if( target ) {
 			const runtimeView = reaxel_AIViews.store.AIViews.find( item => item.id === target );
@@ -37,8 +31,32 @@ export const Reaxel_View = reaxel( () => {
 		reaxel_PromptViews().syncBounds( { x : 0 , y : 0 , width , height } );
 	}
 
+	function fitContentView(view?:WebContentsView | null) {
+		setViewBoundsIfChanged( view , getCenterBounds() );
+	}
+
 	function fitCurrentCenterView(bounds:Rectangle) {
-		getCurrentCenterView()?.setBounds( bounds );
+		setViewBoundsIfChanged( getCurrentCenterView() , bounds );
+	}
+
+	function getCenterBounds(bounds = mainWindow.getContentBounds()):Rectangle {
+		const promptInsets = reaxel_PromptViews().getLayoutInsets();
+		return {
+			x : promptInsets.left ,
+			y : 0 ,
+			width : Math.max( 1 , bounds.width - promptInsets.left - promptInsets.right ) ,
+			height : bounds.height,
+		};
+	}
+
+	function setViewBoundsIfChanged(view:WebContentsView | null | undefined , bounds:Rectangle) {
+		if( !view || view.webContents.isDestroyed() ) {
+			return;
+		}
+		if( isSameBounds( view.getBounds() , bounds ) ) {
+			return;
+		}
+		view.setBounds( bounds );
 	}
 
 	function focusCurrentContentView() {
@@ -267,6 +285,7 @@ export const Reaxel_View = reaxel( () => {
 	obsReaction( ( first ) => {
 		if( first ) return;
 		
+		fitWindow();
 		reaxel_SettingsView.store.settingsView.view?.setVisible( store.settingsViewOpened );
 		reaxel_AIViews().applyVisibility();
 	} , () => [
@@ -277,6 +296,7 @@ export const Reaxel_View = reaxel( () => {
 	const rtn = {
 		initRuntimeViews ,
 		fitWindow,
+		fitContentView ,
 		fitCurrentCenterView ,
 		focusCurrentContentView ,
 		turnToNextAiPage ,
@@ -316,6 +336,13 @@ const createPayloadItemFromRuntimeView = (runtimeView:RuntimeAIView):SwitchAiBar
 		label : runtimeView.label ,
 		family : runtimeView.AIName,
 	};
+};
+
+const isSameBounds = (left:Rectangle , right:Rectangle) => {
+	return left.x === right.x
+		&& left.y === right.y
+		&& left.width === right.width
+		&& left.height === right.height;
 };
 
 type SwitchAiBarPayloadItem = {

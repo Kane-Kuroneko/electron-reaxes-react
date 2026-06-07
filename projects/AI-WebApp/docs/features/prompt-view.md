@@ -17,7 +17,7 @@ MVP 目标是提供稳定的暂存、编辑、复制和排序能力。自动把 
 
 - 菜单和快捷键可分别切换左、右 PromptView。
 - 左右侧栏展开时，中间区域重新布局，当前中心内容继续显示；常规运行态下中间是当前 AI page。
-- 侧栏宽度使用 cubic-bezier easing 逐帧调整，避免瞬间跳变。
+- 侧栏展开/收起使用无回弹的 ease-in-out Bezier；动画期间直接 resize PromptView 和中心 AI view，使主进程布局状态与视觉状态保持一致。
 - SettingsView 中切换主题或语言时，PromptView 会通过主进程事件同步即时预览；Apply/Save 成功后，主进程再次广播持久化后的最终外观状态。
 - 每个 prompt 用 Card 包裹，主体是 textarea，底部是操作区：
   - duplicate：复制当前卡片为新卡片。
@@ -47,7 +47,7 @@ MVP 目标是提供稳定的暂存、编辑、复制和排序能力。自动把 
 - 管理 `PromptViewLeft` / `PromptViewRight` 两个 `WebContentsView` 的创建、显示状态、当前宽度、目标宽度和动画。
 - 向现有 `Reaxel_View.fitWindow()` 暴露左右 inset，让 AI views / SettingsView 的 bounds 被压缩到中间区域。
 - 在 resize、toggle 和动画帧中同步左右侧栏 bounds。
-- 动画帧内只更新左右 PromptView 和当前中心 WebContentsView 的 bounds，避免每帧重排所有 AI views。
+- 动画帧内直接更新当前中心 WebContentsView 和左右 PromptView 的 bounds，避免每帧重排所有 AI views；重复 bounds 不再提交给 Electron。展开时先扩大侧栏再调整中心 view，收起时先调整中心 view 再缩小侧栏，避免短暂露出背景或旧帧。
 - 在显示 PromptView 时关闭 SettingsView，使常规中心区域回到当前 AI page。
 
 新增 prompt 数据服务：

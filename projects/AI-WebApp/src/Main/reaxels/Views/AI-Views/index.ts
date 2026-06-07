@@ -199,6 +199,9 @@ export const reaxel_AIViews = reaxel( () => {
 			domain : options.loadURL || domain ,
 			aiConfig : ai ,
 			settings ,
+			refreshBounds : view => {
+				Reaxel_View().fitContentView( view );
+			} ,
 			webPreferences : {
 				partition,
 			},

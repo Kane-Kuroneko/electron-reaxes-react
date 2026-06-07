@@ -42,6 +42,7 @@ export const reaxel_Menu = reaxel( () => {
 							const settingsView = reaxel_SettingsView().initSettingsView();
 							settingsView.setVisible( true );
 							mainWindow.contentView.addChildView( settingsView );
+							Reaxel_View().fitWindow();
 						},
 					} ,
 					{ type : 'separator' } ,
