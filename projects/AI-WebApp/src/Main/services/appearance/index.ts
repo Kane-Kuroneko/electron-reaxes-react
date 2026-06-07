@@ -80,29 +80,35 @@ export const applyAIPageAppearanceToView = (
 	view:WebContentsView ,
 	appearance:Settings['appearance'],
 ) => {
-	const resolvedAppearance = resolveAppearance( appearance );
-	view.setBackgroundColor( getAIPageBackgroundColorByTheme( resolvedAppearance.theme ) );
+	const environment = getAIPageEnvironment( appearance );
+	applyAIPageEnvironmentToView( view , environment );
+	return getAIPageAppearanceKey( environment );
+};
+
+export const applyAIPageEnvironmentToView = (
+	view:WebContentsView ,
+	environment:AIPageEnvironment,
+) => {
+	view.setBackgroundColor( environment.backgroundColor );
 	const ses = view.webContents.session;
-	installAcceptLanguageHeader( ses , resolvedAppearance.acceptLanguages );
+	installAcceptLanguageHeader( ses , environment.acceptLanguages );
 	try {
-		ses.setUserAgent( ses.getUserAgent() , resolvedAppearance.acceptLanguages );
+		ses.setUserAgent( ses.getUserAgent() , environment.acceptLanguages );
 	} catch ( error ) {
 		console.warn( '[Appearance] Failed to set session accept languages:' , error );
 	}
-	return getAIPageAppearanceKey( resolvedAppearance );
 };
 
-export const getAIPagePreloadArguments = (appearance:Settings['appearance']) => {
+export const getAIPageEnvironment = (appearance:Settings['appearance']):AIPageEnvironment => {
 	const resolvedAppearance = resolveAppearance( appearance );
-	return [
-		`--ai-webapp-language=${ resolvedAppearance.language }` ,
-		`--ai-webapp-theme=${ resolvedAppearance.theme }` ,
-		`--ai-webapp-theme-source=${ resolvedAppearance.themeSource }` ,
-		`--ai-webapp-background-color=${ getAIPageBackgroundColorByTheme( resolvedAppearance.theme ) }`,
-	];
+	return {
+		...resolvedAppearance ,
+		languages : buildNavigatorLanguages( resolvedAppearance.language ) ,
+		backgroundColor : getAIPageBackgroundColorByTheme( resolvedAppearance.theme ),
+	};
 };
 
-export const getAIPageAppearanceKey = (appearance:ResolvedAppearance) => {
+export const getAIPageAppearanceKey = (appearance:ResolvedAppearance | AIPageEnvironment) => {
 	return JSON.stringify( {
 		language : appearance.language ,
 		theme : appearance.theme ,
@@ -148,6 +154,7 @@ const getMacOSSystemTheme = ():'light' | 'dark' => {
 
 import {
 	buildAcceptLanguages ,
+	buildNavigatorLanguages ,
 	getLanguageDisplayName ,
 	normalizeConcreteLanguage ,
 	normalizeLanguagePreference ,
@@ -159,6 +166,7 @@ import {
 import type { Settings } from '#src/Types/SettingsTypes';
 import type { Appearance } from '#src/Types/SettingsTypes/Appearance';
 import type { Languages } from '#src/Types/Languages';
+import type { AIPageEnvironment } from '#src/Types/AIPageEnvironment';
 import {
 	app ,
 	nativeTheme ,

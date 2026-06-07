@@ -6,7 +6,11 @@ export const reaxel_AIViews = reaxel( () => {
 	} = createReaxable( {
 		AIViews : checkAs<RuntimeAIView[]>( [] ),
 	} );
-	
+
+	useIpcSync( 'get-ai-page-environment' ).handle( ( { event } ) => {
+		return getAIPageEnvironmentForWebContents( event.sender );
+	} );
+
 	const initAIView = ( ai:AI.AIItem , settings:Settings ) => {
 		console.log( '[AIViews] initAIView start:' , ai.id , ai.url || getAIDomainByFamily( ai.AI_family ) );
 		const existingRuntimeView = store.AIViews.find( item => item.id === ai.id );
@@ -15,45 +19,13 @@ export const reaxel_AIViews = reaxel( () => {
 			return existingRuntimeView.view;
 		}
 		
-		const view = initWebContentsView( {
-			type : 'AI-View' ,
-			domain : ai.url || getAIDomainByFamily( ai.AI_family ) ,
-			aiConfig : ai ,
-			settings ,
-			webPreferences : {
-				partition : getAIPartition( ai.id ),
-			},
-		} );
-		const appearanceKey = applyAIPageAppearanceToView( view , settings.appearance );
-		const nextRuntimeView:RuntimeAIView = {
-			id : ai.id ,
-			label : ai.label ,
-			AIName : ai.AI_family ,
-			view ,
-			domain : ai.url || getAIDomainByFamily( ai.AI_family ) ,
-			partition : getAIPartition( ai.id ) ,
-			config : ai ,
-			proxyKey : '' ,
-			appearanceKey ,
-			ready : false,
-		};
-		const markViewReady = () => {
-			mutate( s => {
-				const target = s.AIViews.find( item => item.id === ai.id );
-				if( target ) {
-					target.ready = true;
-				}
-			} );
-			focusAIViewIfCurrent( ai.id , view );
-		};
-		view.webContents.on( 'did-stop-loading' , markViewReady );
-		view.webContents.on( 'did-fail-load' , markViewReady );
+		const nextRuntimeView = createRuntimeAIView( ai , settings );
 		
 		mutate( s => {
 			s.AIViews.push( nextRuntimeView );
 		} );
 		
-		return view;
+		return nextRuntimeView.view;
 	};
 	
 	const destroyAIView = (id:string) => {
@@ -61,12 +33,7 @@ export const reaxel_AIViews = reaxel( () => {
 		if( !runtimeView?.view ) {
 			return;
 		}
-		try {
-			mainWindow.contentView.removeChildView( runtimeView.view );
-			runtimeView.view.webContents.close();
-		} catch ( error ) {
-			console.warn( '[AIViews] Failed to destroy AI view:' , id , error );
-		}
+		closeRuntimeWebContentsView( runtimeView.view , id , 'destroy' );
 		mutate( s => {
 			s.AIViews = s.AIViews.filter( item => item.id !== id );
 		} );
@@ -84,12 +51,7 @@ export const reaxel_AIViews = reaxel( () => {
 		
 		// 销毁所有view
 		viewsCopy.forEach( rv => {
-			try {
-				mainWindow.contentView.removeChildView( rv.view );
-				rv.view.webContents.close();
-			} catch ( error ) {
-				console.warn( '[AIViews] Failed to destroy view during reset:' , rv.id , error );
-			}
+			closeRuntimeWebContentsView( rv.view , rv.id , 'reset' );
 		} );
 		
 		mutate( s => {
@@ -177,6 +139,89 @@ export const reaxel_AIViews = reaxel( () => {
 		showAIView ,
 		applyVisibility,
 	};
+
+	const createRuntimeAIView = (
+		ai:AI.AIItem ,
+		settings:Settings ,
+		options:CreateRuntimeAIViewOptions = {},
+	):RuntimeAIView => {
+		const domain = ai.url || getAIDomainByFamily( ai.AI_family );
+		const partition = getAIPartition( ai.id );
+		const environment = getRuntimeAIPageEnvironment( settings );
+		const view = initWebContentsView( {
+			type : 'AI-View' ,
+			domain : options.loadURL || domain ,
+			aiConfig : ai ,
+			settings ,
+			webPreferences : {
+				partition,
+			},
+		} );
+		setAIPageEnvironmentForView( view , environment );
+		if( typeof options.visible === 'boolean' ) {
+			view.setVisible( options.visible );
+		}
+		bindRuntimeAIViewReadyHandlers( ai.id , view );
+		return {
+			id : ai.id ,
+			label : ai.label ,
+			AIName : ai.AI_family ,
+			view ,
+			domain ,
+			partition ,
+			config : ai ,
+			proxyKey : getRuntimeAIProxyKey( ai , settings ) ,
+			appearanceKey : getAIPageAppearanceKey( environment ) ,
+			ready : false,
+		};
+	};
+
+	const bindRuntimeAIViewReadyHandlers = (aiId:string , view:WebContentsView) => {
+		const markViewReady = () => {
+			mutate( s => {
+				const target = s.AIViews.find( item => item.id === aiId );
+				if( target?.view === view ) {
+					target.ready = true;
+				}
+			} );
+			focusAIViewIfCurrent( aiId , view );
+		};
+		view.webContents.on( 'did-stop-loading' , markViewReady );
+		view.webContents.on( 'did-fail-load' , markViewReady );
+	};
+
+	const updateRuntimeAIView = async(
+		runtimeView:RuntimeAIView ,
+		ai:AI.AIItem ,
+		settings:Settings,
+	) => {
+		const nextDomain = ai.url || getAIDomainByFamily( ai.AI_family );
+		const nextProxyKey = getRuntimeAIProxyKey( ai , settings );
+		const nextEnvironment = getRuntimeAIPageEnvironment( settings );
+		const nextAppearanceKey = getAIPageAppearanceKey( nextEnvironment );
+		const domainChanged = runtimeView.domain !== nextDomain;
+		const proxyChanged = runtimeView.proxyKey !== '' && runtimeView.proxyKey !== nextProxyKey;
+		const appearanceChanged = runtimeView.appearanceKey !== '' && runtimeView.appearanceKey !== nextAppearanceKey;
+
+		const resolvedProxy = await applyAIProxyToView( runtimeView.view , ai , settings );
+		const appliedProxyKey = JSON.stringify( resolvedProxy );
+		applyAIPageEnvironmentToView( runtimeView.view , nextEnvironment );
+		const appliedAppearanceKey = getAIPageAppearanceKey( nextEnvironment );
+		applyRuntimeAIViewConfig( runtimeView , ai , nextDomain , appliedProxyKey , appliedAppearanceKey );
+		setAIPageEnvironmentForView( runtimeView.view , nextEnvironment );
+
+		if( appearanceChanged ) {
+			sendAIPageEnvironmentToView( runtimeView.view , nextEnvironment , runtimeView.id );
+		}
+
+		if( domainChanged ) {
+			runtimeView.ready = false;
+			void safeLoadAIURL( runtimeView.view , nextDomain , `domainChanged:${ runtimeView.id }` );
+		} else if( proxyChanged ) {
+			runtimeView.ready = false;
+			runtimeView.view.webContents.reloadIgnoringCache();
+		}
+	};
 	
 	return Object.assign( () => rtn , {
 		store ,
@@ -185,34 +230,7 @@ export const reaxel_AIViews = reaxel( () => {
 	} );
 } );
 
-const updateRuntimeAIView = async(
-	runtimeView:RuntimeAIView ,
-	ai:AI.AIItem ,
-	settings:Settings,
-) => {
-	const nextDomain = ai.url || getAIDomainByFamily( ai.AI_family );
-	const resolvedProxy = await applyAIProxyToView( runtimeView.view , ai , settings );
-	const nextAppearanceKey = applyAIPageAppearanceToView( runtimeView.view , settings.appearance );
-	const nextProxyKey = JSON.stringify( resolvedProxy );
-	const domainChanged = runtimeView.domain !== nextDomain;
-	const proxyChanged = runtimeView.proxyKey !== '' && runtimeView.proxyKey !== nextProxyKey;
-	const appearanceChanged = runtimeView.appearanceKey !== '' && runtimeView.appearanceKey !== nextAppearanceKey;
-	
-	runtimeView.label = ai.label;
-	runtimeView.AIName = ai.AI_family;
-	runtimeView.domain = nextDomain;
-	runtimeView.config = ai;
-	runtimeView.proxyKey = nextProxyKey;
-	runtimeView.appearanceKey = nextAppearanceKey;
-	
-	if( domainChanged ) {
-		runtimeView.ready = false;
-		void safeLoadAIURL( runtimeView.view , nextDomain , `domainChanged:${ runtimeView.id }` );
-	} else if( proxyChanged || appearanceChanged ) {
-		runtimeView.ready = false;
-		runtimeView.view.webContents.reloadIgnoringCache();
-	}
-};
+const aiPageEnvironmentByWebContents = new WeakMap<WebContents , AIPageEnvironment>();
 
 const safeLoadAIURL = async(
 	view:WebContentsView ,
@@ -224,6 +242,21 @@ const safeLoadAIURL = async(
 	} catch ( error ) {
 		console.warn( '[AIViews] loadURL failed:' , context , url , error );
 	}
+};
+
+const applyRuntimeAIViewConfig = (
+	runtimeView:RuntimeAIView ,
+	ai:AI.AIItem ,
+	domain:string ,
+	proxyKey:string ,
+	appearanceKey:string,
+) => {
+	runtimeView.label = ai.label;
+	runtimeView.AIName = ai.AI_family;
+	runtimeView.domain = domain;
+	runtimeView.config = ai;
+	runtimeView.proxyKey = proxyKey;
+	runtimeView.appearanceKey = appearanceKey;
 };
 
 const resolveCurrentAI = (settings:Settings):AI.AIItem | null => {
@@ -239,6 +272,55 @@ const resolveCurrentAI = (settings:Settings):AI.AIItem | null => {
 
 const getAIPartition = (aiId:string) => {
 	return `persist:ai-webapp-ai-${ aiId.replace( /[^a-zA-Z0-9_-]/g , '_' ) }`;
+};
+
+const getRuntimeAIProxyKey = (ai:AI.AIItem , settings:Settings) => {
+	return JSON.stringify( resolveAIProxy( ai , settings ) );
+};
+
+const getRuntimeAIPageEnvironment = (settings:Settings) => {
+	return getAIPageEnvironment( settings.appearance );
+};
+
+const setAIPageEnvironmentForView = (
+	view:WebContentsView ,
+	environment:AIPageEnvironment,
+) => {
+	aiPageEnvironmentByWebContents.set( view.webContents , environment );
+};
+
+const getAIPageEnvironmentForWebContents = (webContents:WebContents) => {
+	return aiPageEnvironmentByWebContents.get( webContents ) || null;
+};
+
+const sendAIPageEnvironmentToView = (
+	view:WebContentsView ,
+	environment:AIPageEnvironment ,
+	id:string,
+) => {
+	if( view.webContents.isDestroyed() ) {
+		return;
+	}
+	useIpcMainToRenderer( 'ai-page-environment-change' ).targets( [
+		view.webContents,
+	] ).send( environment );
+	console.info( '[AIViews] Sent AI page environment update:' , id );
+};
+
+const closeRuntimeWebContentsView = (
+	view:WebContentsView ,
+	id:string ,
+	context:string,
+) => {
+	try {
+		mainWindow.contentView.removeChildView( view );
+		aiPageEnvironmentByWebContents.delete( view.webContents );
+		if( !view.webContents.isDestroyed() ) {
+			view.webContents.close();
+		}
+	} catch ( error ) {
+		console.warn( '[AIViews] Failed to close AI view:' , context , id , error );
+	}
 };
 
 const focusRuntimeAIViewIfReady = (runtimeView:RuntimeAIView) => {
@@ -279,17 +361,37 @@ export type RuntimeAIView = {
 	ready: boolean;
 };
 
+type CreateRuntimeAIViewOptions = {
+	loadURL?: string;
+	visible?: boolean;
+};
+
 import { getAIDomainByFamily } from './data';
 import type { AI } from '#src/Types/SettingsTypes/AI';
 import type { Settings } from '#src/Types/SettingsTypes';
 import { initWebContentsView } from '#main/reaxels/Views/utils/initWebContentsView';
-import { applyAIProxyToView } from '#main/services/settings/proxy-service';
-import { applyAIPageAppearanceToView } from '#main/services/appearance';
+import {
+	applyAIProxyToView ,
+	resolveAIProxy,
+} from '#main/services/settings/proxy-service';
+import {
+	applyAIPageEnvironmentToView ,
+	getAIPageEnvironment ,
+	getAIPageAppearanceKey ,
+} from '#main/services/appearance';
+import {
+	useIpcMainToRenderer ,
+	useIpcSync,
+} from '#main/services/ipc';
 import { mainWindow } from '#main/mainWindow';
 import { Reaxel_View } from '../';
 import {
 	createReaxable ,
 	reaxel,
 } from 'reaxes';
-import { session } from 'electron';
-import type { WebContentsView } from 'electron';
+import {
+	session ,
+	type WebContents ,
+	type WebContentsView,
+} from 'electron';
+import type { AIPageEnvironment } from '#src/Types/AIPageEnvironment';

@@ -149,9 +149,6 @@ const normalizeViewOptions = (options:WebContentsViewConstructorOptions&ExtraBro
 			contextIsolation : true ,
 			...( options.webPreferences || {} ) ,
 			preload : path.join( absAppRunningPath , 'ai-page-preload.js' ) ,
-			additionalArguments : options.settings
-				? getAIPagePreloadArguments( options.settings.appearance )
-				: [],
 		},
 	};
 };
@@ -191,7 +188,6 @@ import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool
 import {
 	applyAIPageAppearanceToView ,
 	getAIPageBackgroundColor ,
-	getAIPagePreloadArguments,
 } from '#main/services/appearance';
 import type { Settings } from "#src/Types/SettingsTypes";
 import type { AI as AISettings } from "#src/Types/SettingsTypes/AI";

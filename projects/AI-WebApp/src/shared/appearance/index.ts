@@ -91,5 +91,13 @@ export const buildAcceptLanguages = (language:Languages) => {
 	return `${ language },${ base };q=0.9,en-US;q=0.8,en;q=0.7`;
 };
 
+export const buildNavigatorLanguages = (language:Languages) => {
+	const base = language.split( '-' )[0];
+	const languages = language === base
+		? [ language ]
+		: [ language , base , 'en-US' , 'en' ];
+	return Array.from( new Set( languages ) );
+};
+
 import type { Languages } from '#src/Types/Languages';
 import type { Appearance } from '#src/Types/SettingsTypes/Appearance';

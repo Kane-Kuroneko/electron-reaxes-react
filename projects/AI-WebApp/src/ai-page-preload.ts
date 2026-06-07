@@ -1,13 +1,47 @@
-const readArgument = (name:string) => {
-	const prefix = `${ name }=`;
-	const target = process.argv.find( item => item.startsWith( prefix ) );
-	return target ? target.slice( prefix.length ) : '';
+const useMtr = createIpc<MainToRendererEvents>( 'mtrEvent' );
+
+const fallbackEnvironment:AIPageEnvironment = {
+	language : 'en-US' ,
+	languages : [ 'en-US' , 'en' ] ,
+	theme : 'light' ,
+	themeSource : 'light' ,
+	backgroundColor : '#ffffff' ,
+	acceptLanguages : 'en-US,en;q=0.9',
 };
 
-const language = readArgument( '--ai-webapp-language' );
-const theme = readArgument( '--ai-webapp-theme' );
-const themeSource = readArgument( '--ai-webapp-theme-source' );
-const backgroundColor = readArgument( '--ai-webapp-background-color' ) || '#111417';
+const sendSync = <Channel extends keyof IpcSyncRpc>(
+	channel:Channel ,
+	...payloads:IpcSyncRpc[Channel]['payloads']
+):IpcSyncRpc[Channel]['response'] => {
+	return ipcRenderer.sendSync( 'JSON_SYNC' , { channel } , ...payloads );
+};
+
+const getInitialAIPageEnvironment = ():AIPageEnvironment => {
+	try {
+		const environment = sendSync( 'get-ai-page-environment' );
+		return isAIPageEnvironment( environment )
+			? environment
+			: fallbackEnvironment;
+	} catch ( error ) {
+		console.warn( '[AIPagePreload] Failed to get initial environment:' , error );
+		return fallbackEnvironment;
+	}
+};
+
+const isAIPageEnvironment = (value:unknown):value is AIPageEnvironment => {
+	if( !value || typeof value !== 'object' ) {
+		return false;
+	}
+	const environment = value as Partial<AIPageEnvironment>;
+	return typeof environment.language === 'string'
+		&& Array.isArray( environment.languages )
+		&& ( environment.theme === 'light' || environment.theme === 'dark' )
+		&& typeof environment.themeSource === 'string'
+		&& typeof environment.backgroundColor === 'string'
+		&& typeof environment.acceptLanguages === 'string';
+};
+
+let currentEnvironment = getInitialAIPageEnvironment();
 
 const defineNavigatorGetter = (key:'language' | 'languages' , getter:() => unknown) => {
 	try {
@@ -20,44 +54,68 @@ const defineNavigatorGetter = (key:'language' | 'languages' , getter:() => unkno
 	}
 };
 
-if( language ) {
-	defineNavigatorGetter( 'language' , () => language );
-	defineNavigatorGetter( 'languages' , () => {
-		const base = language.split( '-' )[0];
-		return language === base ? [ language ] : [ language , base , 'en-US' , 'en' ];
-	} );
-}
-
-const applyThemeToDocument = () => {
-	if( !theme ) return;
-	document.documentElement.dataset.aiWebappTheme = theme;
-	document.documentElement.dataset.aiWebappThemeSource = themeSource || theme;
-	document.documentElement.style.colorScheme = theme;
+const installNavigatorEnvironment = () => {
+	defineNavigatorGetter( 'language' , () => currentEnvironment.language );
+	defineNavigatorGetter( 'languages' , () => currentEnvironment.languages.slice() );
 };
 
-const injectLoadingThemeStyle = () => {
-	if( theme !== 'dark' || document.getElementById( 'ai-webapp-loading-theme-style' ) ) {
+const applyThemeToDocument = () => {
+	document.documentElement.dataset.aiWebappTheme = currentEnvironment.theme;
+	document.documentElement.dataset.aiWebappThemeSource = currentEnvironment.themeSource;
+	document.documentElement.style.colorScheme = currentEnvironment.theme;
+};
+
+const syncLoadingThemeStyle = () => {
+	const existingStyle = document.getElementById( 'ai-webapp-loading-theme-style' );
+	if( currentEnvironment.theme !== 'dark' ) {
+		existingStyle?.remove();
 		return;
 	}
-	const style = document.createElement( 'style' );
+	const style = existingStyle || document.createElement( 'style' );
 	style.id = 'ai-webapp-loading-theme-style';
 	style.textContent = `
 html[data-ai-webapp-theme="dark"] {
-	background-color: ${ backgroundColor };
+	background-color: ${ currentEnvironment.backgroundColor };
 	color-scheme: dark;
 }
 html[data-ai-webapp-theme="dark"] body {
-	background-color: ${ backgroundColor };
+	background-color: ${ currentEnvironment.backgroundColor };
 }
 `;
-	( document.head || document.documentElement ).appendChild( style );
+	if( !existingStyle ) {
+		( document.head || document.documentElement ).appendChild( style );
+	}
 };
 
-injectLoadingThemeStyle();
-applyThemeToDocument();
+const applyAIPageEnvironment = (environment:AIPageEnvironment) => {
+	currentEnvironment = environment;
+	applyThemeToDocument();
+	syncLoadingThemeStyle();
+};
+
+installNavigatorEnvironment();
+applyAIPageEnvironment( currentEnvironment );
 
 if( document.readyState === 'loading' ) {
-	document.addEventListener( 'DOMContentLoaded' , applyThemeToDocument , { once : true } );
+	document.addEventListener( 'DOMContentLoaded' , () => {
+		applyAIPageEnvironment( currentEnvironment );
+	} , { once : true } );
 } else {
-	applyThemeToDocument();
+	applyAIPageEnvironment( currentEnvironment );
 }
+
+useMtr( 'ai-page-environment-change' )( ( _ , environment ) => {
+	if( !isAIPageEnvironment( environment ) ) {
+		console.warn( '[AIPagePreload] Ignored invalid environment update:' , environment );
+		return;
+	}
+	applyAIPageEnvironment( environment );
+} );
+
+import type {
+	IpcSyncRpc ,
+	MainToRendererEvents,
+} from './Types/IpcSchema';
+import type { AIPageEnvironment } from '#src/Types/AIPageEnvironment';
+import { createIpc } from '#generics/toolkit/electron/preload.ipc';
+import { ipcRenderer } from 'electron';

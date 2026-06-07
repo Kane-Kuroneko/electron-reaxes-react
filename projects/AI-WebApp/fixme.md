@@ -38,18 +38,28 @@ AI 页面创建时，`projects/AI-WebApp/src/Main/reaxels/Views/utils/initWebCon
 
 修复步骤：
 
-1. 明确 AI 页面外观/语言更新策略：要么重建 WebContentsView，要么不用 `additionalArguments` 承载会变化的状态。
-2. 如果选择重建：
-   - 在 `updateRuntimeAIView` 检测到 appearance key 变化时，销毁旧 view。
-   - 使用同一 `AIItem.id` 和同一 partition 创建新 view。
-   - 恢复 bounds、visible 状态和 currentAIViewKey。
-   - 重新应用 proxy、Accept-Language、appearance。
-3. 如果选择运行时注入：
-   - `ai-page-preload.ts` 保留初始注入。
-   - 在 settings apply 后，通过 `webContents.executeJavaScript` 或 preload 暴露的安全 channel 注入最新 `document.documentElement.dataset`、CSS 变量、可能的语言状态。
-   - 注意 `navigator.language` 这类属性是否允许重复 define，需要处理已定义属性的可配置性。
-4. 修改 `updateRuntimeAIView`，不要只 reload；要保证 preload 依赖的可变状态能重新生效。
-5. 增加日志或返回结果字段，明确哪些 AI view 被更新、哪些被重建。
+1. 明确 AI 页面外观/语言更新策略：不要用 `additionalArguments` 承载会变化的语言、主题和 background color，也不要通过 `executeJavaScript` 从 main 进程直接打补丁到远程页面上下文。
+2. 新增 AI page environment 数据结构，统一描述 preload 需要的动态环境：
+   - `language` / `languages`
+   - `theme` / `themeSource`
+   - `backgroundColor`
+   - `acceptLanguages`
+3. `ai-page-preload.ts` 启动时通过 typed sync IPC 获取初始 AI page environment。这里使用同步 IPC 的原因是 preload 的异步 Promise 不会阻塞远程页面首批脚本，`navigator.language` 等环境值必须在页面脚本执行前尽量就位。
+4. `ai-page-preload.ts` 通过 typed main-to-renderer IPC 监听 `ai-page-environment-change`，只在 preload 内部更新：
+   - `Navigator.prototype.language`
+   - `Navigator.prototype.languages`
+   - `document.documentElement.dataset.aiWebappTheme`
+   - `document.documentElement.dataset.aiWebappThemeSource`
+   - `document.documentElement.style.colorScheme`
+   - loading/background style
+5. main 进程继续负责 session 级状态：
+   - `Accept-Language` request header
+   - session user agent acceptLanguages
+   - view background color
+   - proxy
+6. 修改 `updateRuntimeAIView`：appearance key 变化时不再重建 WebContentsView，也不依赖 reload 让 `additionalArguments` 重新生效；而是更新 session/view 状态后向对应 AI WebContents 发送最新 environment。
+7. 当 `appearance.theme === 'system'` 时，监听系统主题变化并同步已存在 AI view，避免只覆盖 Settings apply 路径。
+8. 增加日志或返回结果字段，明确哪些 AI view 收到了环境更新。
 
 验证方式：
 

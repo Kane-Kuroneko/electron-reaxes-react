@@ -11,7 +11,13 @@ export interface MainToRendererEvents extends Record<string , IpcStructure.MainT
 	'1' : IpcStructure.MainToRendererEvent<[number,string]>;
 	'2' : IpcStructure.MainToRendererEvent<[string,number]>;
 	'floating-layer-command' : IpcStructure.MainToRendererEvent<[FloatingLayer.Command]>;
+	'ai-page-environment-change' : IpcStructure.MainToRendererEvent<[AIPageEnvironment]>;
 }
+
+export interface IpcSyncRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , unknown>> {
+	'get-ai-page-environment': IpcStructure.IpcRpc<[void], AIPageEnvironment | null>;
+}
+
 export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , unknown>>{
 	'fetch-settings' : IpcStructure.IpcRpc<[void] , SettingsFetchResult>;
 	'apply-settings' : IpcStructure.IpcRpc<[settings: Settings], SettingsApplyResult>;
@@ -63,3 +69,4 @@ import type { Startup } from "#src/Types/SettingsTypes/Startup";
 import type { FloatingLayer } from "#src/Types/FloatingLayer";
 import type { Languages } from '#src/Types/Languages';
 import type { Guiding } from '#src/Types/Guiding';
+import type { AIPageEnvironment } from '#src/Types/AIPageEnvironment';

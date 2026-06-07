@@ -36,6 +36,14 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 			initTray();
 		}
 		
+		nativeTheme.on( 'updated' , () => {
+			const currentSettings = settingsRuntime.getCurrentSettings();
+			if( currentSettings.appearance.theme !== 'system' ) {
+				return;
+			}
+			void reaxel_AIViews().syncAIViewsWithConfig( currentSettings );
+		} );
+
 		if( !closeHandlerBound ) {
 			closeHandlerBound = true;
 			win.on( 'close' , event => {
@@ -83,6 +91,7 @@ import { reaxel_Settings } from "#main/reaxels/Settings";
 import { reaxel_Menu } from './reaxels/Menu';
 import { reaxel_I18n } from '#main/reaxels/I18n';
 import { Reaxel_View } from "#main/reaxels/Views";
+import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
 import {
@@ -101,4 +110,7 @@ import {
 	resolveLanguagePreference,
 } from '#src/shared/appearance';
 import { dev } from 'electron-is';
-import { app } from 'electron';
+import {
+	app ,
+	nativeTheme,
+} from 'electron';
