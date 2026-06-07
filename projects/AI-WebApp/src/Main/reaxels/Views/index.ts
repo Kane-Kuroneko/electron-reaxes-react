@@ -36,7 +36,27 @@ export const Reaxel_View = reaxel( () => {
 		viewSetBounds( reaxel_SettingsView.store.settingsView.view );
 		reaxel_PromptViews().syncBounds( { x : 0 , y : 0 , width , height } );
 	}
-	
+
+	function fitCurrentCenterView(bounds:Rectangle) {
+		getCurrentCenterView()?.setBounds( bounds );
+	}
+
+	function focusCurrentContentView() {
+		mainWindow.focus();
+		const view = getCurrentCenterView();
+		if( !view || view.webContents.isDestroyed() ) {
+			return;
+		}
+		view.webContents.focus();
+	}
+
+	function getCurrentCenterView() {
+		if( store.settingsViewOpened ) {
+			return reaxel_SettingsView.store.settingsView.view;
+		}
+		return reaxel_AIViews().currentAIView?.view || null;
+	}
+
 	async function onReadyLoadAIView() {
 		const settings = getRuntimeSettings();
 		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
@@ -257,6 +277,8 @@ export const Reaxel_View = reaxel( () => {
 	const rtn = {
 		initRuntimeViews ,
 		fitWindow,
+		fitCurrentCenterView ,
+		focusCurrentContentView ,
 		turnToNextAiPage ,
 		turnToPreviousAiPage ,
 		turnToNextInstantiatedAiPage ,
@@ -321,6 +343,7 @@ const resolveStartupAI = (
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import {
+	type Rectangle ,
 	WebContentsView,
 } from "electron";
 import ElectronStore from "electron-store";

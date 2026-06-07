@@ -1,24 +1,19 @@
 export const RCGeneralPanel = reaxper(() => {
 	const {
 		store:{UIControls:{appearance:appearanceStore, system:systemStore}, Environment:environmentStore},
-		setState:{UIControls:{appearance:setAppearance, system:setSystem}}
+		setState:{UIControls:{system:setSystem}}
 	} = reaxel_SettingsView;
+	const {
+		setLanguage ,
+		setTheme,
+	} = reaxel_SettingsView();
 
 	const handleLanguageChange = (value: Appearance.Language) => {
-		setAppearance({ language: value });
-		// 仅更新渲染进程 i18n（即时预览），主进程 Menu/Tray 在 Apply/Save 时才变更
-		reaxel_I18n().setLanguage(
-			resolveLanguagePreference( value , environmentStore.systemLanguage ) as any,
-		);
+		setLanguage( value );
 	};
 
 	const handleThemeChange = (value: Appearance.Theme) => {
-		setAppearance( {
-			theme : value ,
-			darkmode : resolveThemePreference( value , environmentStore.systemTheme ) === 'dark',
-		} );
-		document.documentElement.dataset.aiWebappThemeSource = value;
-		document.documentElement.dataset.aiWebappTheme = resolveThemePreference( value , environmentStore.systemTheme );
+		void setTheme( value );
 	};
 	
 	return <div className="settings-section">
@@ -96,12 +91,7 @@ export const RCGeneralPanel = reaxper(() => {
 });
 
 import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
-import { reaxel_I18n } from "#src/Views/SettingsView/reaxels/i18n";
 import { RCLanguageSelect } from '../LanguageSelect';
-import {
-	resolveLanguagePreference ,
-	resolveThemePreference,
-} from '#src/shared/appearance';
 import {
 	Checkbox ,
 	Form ,

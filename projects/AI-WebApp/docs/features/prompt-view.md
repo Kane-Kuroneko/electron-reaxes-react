@@ -18,6 +18,7 @@ MVP 目标是提供稳定的暂存、编辑、复制和排序能力。自动把 
 - 菜单和快捷键可分别切换左、右 PromptView。
 - 左右侧栏展开时，中间区域重新布局，当前中心内容继续显示；常规运行态下中间是当前 AI page。
 - 侧栏宽度使用 cubic-bezier easing 逐帧调整，避免瞬间跳变。
+- SettingsView 中切换主题或语言时，PromptView 会通过主进程事件同步即时预览；Apply/Save 成功后，主进程再次广播持久化后的最终外观状态。
 - 每个 prompt 用 Card 包裹，主体是 textarea，底部是操作区：
   - duplicate：复制当前卡片为新卡片。
   - copy：复制 textarea 内容到系统剪贴板。
@@ -46,6 +47,7 @@ MVP 目标是提供稳定的暂存、编辑、复制和排序能力。自动把 
 - 管理 `PromptViewLeft` / `PromptViewRight` 两个 `WebContentsView` 的创建、显示状态、当前宽度、目标宽度和动画。
 - 向现有 `Reaxel_View.fitWindow()` 暴露左右 inset，让 AI views / SettingsView 的 bounds 被压缩到中间区域。
 - 在 resize、toggle 和动画帧中同步左右侧栏 bounds。
+- 动画帧内只更新左右 PromptView 和当前中心 WebContentsView 的 bounds，避免每帧重排所有 AI views。
 - 在显示 PromptView 时关闭 SettingsView，使常规中心区域回到当前 AI page。
 
 新增 prompt 数据服务：
@@ -65,6 +67,8 @@ MVP 目标是提供稳定的暂存、编辑、复制和排序能力。自动把 
 - `api.getPromptViewState(side)`
 - `api.savePromptViewItems(side, items)`
 - `api.copyPromptViewText(text)`
+- `api.previewPromptViewAppearance(appearance)`
+- `api.onPromptViewAppearanceChange(callback)`
 
 所有 channel 写入 `src/Types/IpcSchema.d.ts`。Renderer 只调用 `window.api`，不直接导入 Electron IPC。
 
@@ -114,8 +118,8 @@ export namespace PromptView {
 
 ## 快捷键
 
-- `Ctrl+,`: Toggle PromptViewLeft
-- `Ctrl+.`: Toggle PromptViewRight
+- `Alt+,`: Toggle PromptViewLeft
+- `Alt+.`: Toggle PromptViewRight
 
 现有 AI 切换快捷键已经使用 `CmdOrCtrl+[` / `CmdOrCtrl+]` 和 `Alt+[` / `Alt+]`，因此 PromptView 使用 comma/period 变体避免覆盖。
 

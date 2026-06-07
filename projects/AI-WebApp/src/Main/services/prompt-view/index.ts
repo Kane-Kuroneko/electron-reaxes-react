@@ -7,7 +7,15 @@ export const getPromptViewState = (side:PromptView.Side):PromptView.State => {
 	return {
 		side : safeSide ,
 		items : getPromptViewItems( safeSide ) ,
-		appearance : getPromptViewAppearance() ,
+		...getPromptViewAppearanceState(),
+	};
+};
+
+export const getPromptViewAppearanceState = (
+	appearance = getPromptViewAppearance(),
+):PromptView.AppearanceState => {
+	return {
+		appearance : normalizePromptViewAppearance( appearance ) ,
 		environment : getPromptViewEnvironment(),
 	};
 };
@@ -48,6 +56,16 @@ const getPromptViewAppearance = ():PromptView.Appearance => {
 	return {
 		theme : settings.appearance.theme ,
 		language : settings.appearance.language,
+	};
+};
+
+const normalizePromptViewAppearance = (
+	appearance:PromptView.Appearance,
+):PromptView.Appearance => {
+	const settingsAppearance = getSettingsConfigService().getEffectiveSettings().appearance;
+	return {
+		theme : normalizeThemePreference( appearance?.theme || settingsAppearance.theme , settingsAppearance.darkmode ) ,
+		language : normalizeLanguagePreference( appearance?.language || settingsAppearance.language ),
 	};
 };
 
@@ -112,6 +130,10 @@ type PromptViewStoreSchema = {
 
 import { getAppearanceEnvironment } from '#main/services/appearance';
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
+import {
+	normalizeLanguagePreference ,
+	normalizeThemePreference,
+} from '#src/shared/appearance';
 import type { PromptView } from '#src/Types/PromptView';
 import ElectronStore from 'electron-store';
 import { randomUUID } from 'node:crypto';

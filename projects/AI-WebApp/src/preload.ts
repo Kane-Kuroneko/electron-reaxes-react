@@ -11,9 +11,15 @@ const updatePreloadAIConfig = useRtm('update-preload-ai-config');
 const languageChange = useRtm('language-change');
 const turnToNextAiPage = useRtm('turn-to-next-ai-page');
 const turnToPreviousAiPage = useRtm('turn-to-previous-ai-page');
+const previewPromptViewAppearance = useRtm('prompt-view-appearance-preview-change');
 const onFloatingViewCommand = (callback:(command:FloatingView.Command) => void) => {
 	return useMtr( 'floating-view-command' )( ( _ , command ) => {
 		callback( command );
+	} );
+};
+const onPromptViewAppearanceChange = (callback:(state:PromptView.AppearanceState) => void) => {
+	return useMtr( 'prompt-view-appearance-change' )( ( _ , state ) => {
+		callback( state );
 	} );
 };
 
@@ -46,7 +52,9 @@ const api = {
 	languageChange,
 	turnToNextAiPage,
 	turnToPreviousAiPage,
+	previewPromptViewAppearance,
 	onFloatingViewCommand,
+	onPromptViewAppearanceChange,
 	// AI Configuration Management
 	getAIs,
 	getDefaultAIs,
@@ -96,3 +104,4 @@ import type {
 } from './Types/IpcSchema';
 import { createIpc } from '#generics/toolkit/electron/preload.ipc';
 import type { FloatingView } from './Types/FloatingView';
+import type { PromptView } from './Types/PromptView';

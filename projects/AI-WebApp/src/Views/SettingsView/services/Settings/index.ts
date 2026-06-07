@@ -47,6 +47,10 @@ export const getAppearanceEnvironment = () => {
 	return api.getAppearanceEnvironment();
 }
 
+export const previewPromptViewAppearance = (appearance: PromptView.Appearance) => {
+	return api.previewPromptViewAppearance(cloneForIPC(appearance));
+}
+
 export const setStartupAIPageLoadMode = (mode: Startup.AIPageLoadMode) => {
 	return api.setStartupAIPageLoadMode(mode);
 }
@@ -73,4 +77,5 @@ import { AI } from '#src/Types/SettingsTypes/AI';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import { NetworkProxy } from '#src/Types/SettingsTypes/NetworkProxy';
 import type { Startup } from '#src/Types/SettingsTypes/Startup';
+import type { PromptView } from '#src/Types/PromptView';
 import {PatchData,PatchPath} from '#src/Types/SettingsTypes/SettingsPatchPath';

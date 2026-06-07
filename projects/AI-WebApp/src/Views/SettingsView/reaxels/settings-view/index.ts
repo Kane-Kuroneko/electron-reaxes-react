@@ -210,6 +210,10 @@ export const reaxel_SettingsView = reaxel( () => {
 			) as any);
 		}
 		applyThemePreferenceToDocument( settings.appearance.theme , store.Environment.systemTheme );
+		previewPromptAppearance( {
+			theme : settings.appearance.theme ,
+			language : settings.appearance.language,
+		} );
 		
 		// 更新快照，用于 dirty 状态检测
 		updateSnapshot();
@@ -225,6 +229,18 @@ export const reaxel_SettingsView = reaxel( () => {
 			darkmode : resolvedTheme === 'dark',
 		} );
 		applyThemePreferenceToDocument( theme , environment.systemTheme );
+		previewPromptAppearanceFromStore( {
+			theme,
+		} );
+	}
+
+	function setLanguage( language:Appearance.Language ) {
+		setState.UIControls.appearance( { language } );
+		reaxel_I18n().setLanguage(resolveLanguagePreference(
+			language ,
+			store.Environment.systemLanguage,
+		) as any);
+		previewPromptAppearanceFromStore( { language } );
 	}
 	
 	function buildSettingsFromStore():Settings {
@@ -374,6 +390,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		setSettings ,
 		refreshAppearanceEnvironment ,
 		setTheme ,
+		setLanguage ,
 		buildSettingsFromStore ,
 		applySettings ,
 		isDirty ,
@@ -418,6 +435,17 @@ function applyThemePreferenceToDocument(
 	const resolvedTheme = resolveThemePreference( theme , systemTheme );
 	document.documentElement.dataset.aiWebappThemeSource = theme;
 	document.documentElement.dataset.aiWebappTheme = resolvedTheme;
+}
+
+function previewPromptAppearance(appearance:PromptView.Appearance) {
+	previewPromptViewAppearance( appearance );
+}
+
+function previewPromptAppearanceFromStore(appearance:Partial<PromptView.Appearance>) {
+	previewPromptAppearance( {
+		theme : appearance.theme || reaxel_SettingsView.store.UIControls.appearance.theme ,
+		language : appearance.language || reaxel_SettingsView.store.UIControls.appearance.language,
+	} );
 }
 
 function defaultAIFields():AI.EditAIItem {
@@ -508,6 +536,7 @@ import {
 	exitSettings ,
 	fetchSettings as fetchSettingsService ,
 	getAppearanceEnvironment ,
+	previewPromptViewAppearance ,
 	submitSettings ,
 	turnToNextAiPage ,
 	turnToPreviousAiPage,
@@ -525,6 +554,7 @@ import {
 	createDefaultProxyTestURLs as defaultProxyTestURLs,
 } from '#src/shared/statics/default-proxy';
 import type { Languages } from '#src/Types/Languages';
+import type { PromptView } from '#src/Types/PromptView';
 import type {
 	Menus,
 } from '#src/shared/structs/settings';

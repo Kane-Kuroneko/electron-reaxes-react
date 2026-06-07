@@ -78,6 +78,7 @@ export const reaxel_Settings = reaxel( () => {
 		reaxel_I18n().setLanguage(resolvedAppearance.language as any);
 		
 		await syncRuntimeViews();
+		reaxel_PromptViews().syncAppearanceFromSettings();
 		
 		const restartReasons = detectRestartReasons( previousSettings , getCurrentSettings() );
 		return {
@@ -310,6 +311,7 @@ import {
 	useIpcRendererToMain,
 } from '#main/services/ipc';
 import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
+import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import { reaxel_Menu } from '#main/reaxels/Menu';
 import { reaxel_I18n } from '#main/reaxels/I18n';
 import { Reaxel_View } from '#main/reaxels/Views';

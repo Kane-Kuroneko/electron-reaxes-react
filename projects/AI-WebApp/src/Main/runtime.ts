@@ -42,6 +42,7 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 				return;
 			}
 			void reaxel_AIViews().syncAIViewsWithConfig( currentSettings );
+			reaxel_PromptViews().syncAppearanceFromSettings();
 		} );
 
 		if( !closeHandlerBound ) {
@@ -92,6 +93,7 @@ import { reaxel_Menu } from './reaxels/Menu';
 import { reaxel_I18n } from '#main/reaxels/I18n';
 import { Reaxel_View } from "#main/reaxels/Views";
 import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
+import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
 import {

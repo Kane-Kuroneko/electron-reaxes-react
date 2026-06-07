@@ -25,6 +25,11 @@ export namespace PromptView {
 		environment: Environment;
 	};
 
+	export type AppearanceState = {
+		appearance: Appearance;
+		environment: Environment;
+	};
+
 	export type SaveResult = {
 		success: boolean;
 		items: Item[];

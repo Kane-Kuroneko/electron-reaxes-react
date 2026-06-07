@@ -11,7 +11,7 @@ export const reaxel_PromptViews = reaxel( () => {
 	} );
 	
 	let ipcRegistered = false;
-	const animationTimers:Partial<Record<PromptView.Side , ReturnType<typeof setInterval>>> = {};
+	const animationTimers:Partial<Record<PromptView.Side , ReturnType<typeof setTimeout>>> = {};
 	
 	const registerIpc = () => {
 		if( ipcRegistered ) return;
@@ -35,6 +35,10 @@ export const reaxel_PromptViews = reaxel( () => {
 					error : error instanceof Error ? error.message : String( error ),
 				};
 			}
+		} );
+
+		useIpcRendererToMain( 'prompt-view-appearance-preview-change' ).on( ( _ , appearance ) => {
+			broadcastPromptViewAppearanceState( getPromptViewAppearanceState( appearance ) );
 		} );
 	};
 	
@@ -73,7 +77,11 @@ export const reaxel_PromptViews = reaxel( () => {
 		syncSideBounds( 'left' , bounds );
 		syncSideBounds( 'right' , bounds );
 	};
-	
+
+	const syncAppearanceFromSettings = () => {
+		broadcastPromptViewAppearanceState( getPromptViewAppearanceState() );
+	};
+
 	const togglePromptView = (side:PromptView.Side) => {
 		const sideState = getSideState( side );
 		return setPromptViewVisible( side , !sideState.visible );
@@ -135,21 +143,26 @@ export const reaxel_PromptViews = reaxel( () => {
 			return;
 		}
 		
-		animationTimers[side] = setInterval( () => {
+		const tick = () => {
 			const elapsed = Date.now() - startedAt;
 			const progress = Math.min( 1 , elapsed / PROMPT_VIEW_ANIMATION_MS );
 			const eased = promptViewBezier( progress );
-			const nextWidth = Math.round( startWidth + distance * eased );
+			const nextWidth = startWidth + distance * eased;
 			
 			mutateSide( side , state => {
 				state.width = nextWidth;
 			} );
-			Reaxel_View().fitWindow();
-			
+			syncAnimatedLayout( side , nextWidth );
+
 			if( progress >= 1 ) {
 				finishAnimation( side , targetWidth , finalVisible );
+				return;
 			}
-		} , 16 );
+
+			animationTimers[side] = setTimeout( tick , PROMPT_VIEW_ANIMATION_FRAME_MS );
+		};
+
+		tick();
 	};
 	
 	const finishAnimation = (
@@ -170,17 +183,40 @@ export const reaxel_PromptViews = reaxel( () => {
 			sideState.view?.webContents.focus();
 		} else {
 			sideState.view?.setVisible( false );
+			Reaxel_View().focusCurrentContentView();
 		}
 	};
 	
 	const clearAnimationTimer = (side:PromptView.Side) => {
 		const timer = animationTimers[side];
 		if( timer ) {
-			clearInterval( timer );
+			clearTimeout( timer );
 			delete animationTimers[side];
 		}
 	};
 	
+	const syncAnimatedLayout = (
+		side:PromptView.Side ,
+		nextWidth:number,
+	) => {
+		const bounds = mainWindow.getContentBounds();
+		const leftWidth = side === 'left'
+			? Math.max( 0 , Math.round( nextWidth ) )
+			: Math.max( 0 , Math.round( store.left.width ) );
+		const rightWidth = side === 'right'
+			? Math.max( 0 , Math.round( nextWidth ) )
+			: Math.max( 0 , Math.round( store.right.width ) );
+
+		syncSideBoundsWithWidth( 'left' , bounds , leftWidth );
+		syncSideBoundsWithWidth( 'right' , bounds , rightWidth );
+		Reaxel_View().fitCurrentCenterView( {
+			x : leftWidth ,
+			y : 0 ,
+			width : Math.max( 1 , bounds.width - leftWidth - rightWidth ) ,
+			height : bounds.height,
+		} );
+	};
+
 	const getSideState = (side:PromptView.Side) => {
 		return side === 'right' ? store.right : store.left;
 	};
@@ -204,6 +240,7 @@ export const reaxel_PromptViews = reaxel( () => {
 		togglePromptView ,
 		showPromptView ,
 		hidePromptView,
+		syncAppearanceFromSettings,
 	};
 	
 	return Object.assign( () => rtn , {
@@ -227,6 +264,42 @@ function createPromptSideState(side:PromptView.Side):PromptSideState {
 const getPromptViewTargetWidth = () => {
 	const { width } = mainWindow.getContentBounds();
 	return Math.max( 260 , Math.min( 380 , Math.floor( width * 0.24 ) ) );
+};
+
+const syncSideBoundsWithWidth = (
+	side:PromptView.Side ,
+	bounds:Rectangle ,
+	width:number,
+) => {
+	const sideState = reaxel_PromptViews.store[side];
+	const view = sideState.view;
+	if( !view || view.webContents.isDestroyed() ) {
+		return;
+	}
+	const visible = width > 0 || sideState.visible;
+	view.setVisible( visible );
+	view.setBounds( {
+		x : side === 'left' ? 0 : Math.max( 0 , bounds.width - width ) ,
+		y : 0 ,
+		width ,
+		height : bounds.height,
+	} );
+};
+
+const broadcastPromptViewAppearanceState = (state:PromptView.AppearanceState) => {
+	const targets = [
+		reaxel_PromptViews.store.left.view ,
+		reaxel_PromptViews.store.right.view,
+	]
+		.filter( ( view ):view is WebContentsView => {
+			return !!view && !view.webContents.isDestroyed();
+		} )
+		.map( view => view.webContents );
+
+	if( targets.length === 0 ) {
+		return;
+	}
+	useIpcMainToRenderer( 'prompt-view-appearance-change' ).targets( targets ).send( state );
 };
 
 // cubic-bezier(0.16, 1, 0.3, 1)；用二分反解 x，再取 y，避免主进程 setBounds 线性跳变。
@@ -259,7 +332,8 @@ const cubicBezierAxis = (t:number , p1:number , p2:number) => {
 		+ t * t * t;
 };
 
-const PROMPT_VIEW_ANIMATION_MS = 260;
+const PROMPT_VIEW_ANIMATION_MS = 240;
+const PROMPT_VIEW_ANIMATION_FRAME_MS = 12;
 
 type PromptSideState = {
 	name: 'PromptViewLeft' | 'PromptViewRight';
@@ -274,9 +348,14 @@ import { initWebContentsView } from '#main/reaxels/Views/utils/initWebContentsVi
 import { Reaxel_View } from '#main/reaxels/Views';
 import {
 	getPromptViewState ,
+	getPromptViewAppearanceState ,
 	savePromptViewItems,
 } from '#main/services/prompt-view';
-import { useIpcRpc } from '#main/services/ipc';
+import {
+	useIpcMainToRenderer ,
+	useIpcRendererToMain ,
+	useIpcRpc,
+} from '#main/services/ipc';
 import { mainWindow } from '#main/mainWindow';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
 import type { PromptView } from '#src/Types/PromptView';

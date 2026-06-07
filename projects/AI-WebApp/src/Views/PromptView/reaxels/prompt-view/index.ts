@@ -22,8 +22,10 @@ export const reaxel_PromptView = reaxel( () => {
 	} );
 	
 	let saveTimer:ReturnType<typeof setTimeout> = null;
+	let appearanceChangeDisposer:{ dispose():void } = null;
 	
 	const init = async() => {
+		bindAppearanceChanges();
 		const side = getSideFromLocation();
 		setState( { side } );
 		setState.status( {
@@ -35,10 +37,11 @@ export const reaxel_PromptView = reaxel( () => {
 			setState( {
 				side : state.side ,
 				items : state.items ,
+			} );
+			applyPromptViewEnvironment( {
 				appearance : state.appearance ,
 				environment : state.environment,
 			} );
-			applyPromptViewEnvironment( state.appearance , state.environment );
 			setState.status( {
 				loading : false ,
 				error : '',
@@ -82,6 +85,25 @@ export const reaxel_PromptView = reaxel( () => {
 		return result;
 	};
 	
+	const applyPromptViewEnvironment = (state:PromptView.AppearanceState) => {
+		setState( {
+			appearance : state.appearance ,
+			environment : state.environment,
+		} );
+		const resolvedLanguage = resolveLanguagePreference( state.appearance.language , state.environment.systemLanguage );
+		reaxel_I18n().setLanguage( resolvedLanguage as any );
+		applyThemePreferenceToDocument( state.appearance.theme , state.environment.systemTheme );
+	};
+
+	const bindAppearanceChanges = () => {
+		if( appearanceChangeDisposer ) {
+			return;
+		}
+		appearanceChangeDisposer = api.onPromptViewAppearanceChange( state => {
+			applyPromptViewEnvironment( state );
+		} );
+	};
+
 	const setPromptText = (id:string , content:string) => {
 		setState( {
 			items : store.items.map( item => item.id === id
@@ -182,15 +204,6 @@ const createPromptItem = (content = ''):PromptView.Item => {
 
 const createPromptItemId = () => {
 	return `prompt-${ globalThis.crypto?.randomUUID?.() || `${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 , 10 ) }` }`;
-};
-
-const applyPromptViewEnvironment = (
-	appearance:PromptView.Appearance ,
-	environment:PromptView.Environment,
-) => {
-	const resolvedLanguage = resolveLanguagePreference( appearance.language , environment.systemLanguage );
-	reaxel_I18n().setLanguage( resolvedLanguage as any );
-	applyThemePreferenceToDocument( appearance.theme , environment.systemTheme );
 };
 
 const applyThemePreferenceToDocument = (

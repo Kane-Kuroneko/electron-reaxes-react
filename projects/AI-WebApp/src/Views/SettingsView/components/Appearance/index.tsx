@@ -1,14 +1,14 @@
 export const RCAppearancePanel = reaxper(() => {
 	const {
 		store:{UIControls:{appearance:store}, Environment:environmentStore},
-		setState:{UIControls:{appearance:setState}}
 	} = reaxel_SettingsView;
-	const { setTheme } = reaxel_SettingsView();
+	const {
+		setLanguage ,
+		setTheme,
+	} = reaxel_SettingsView();
 
 	const handleLanguageChange = (value: Appearance.Language) => {
-		setState({ language: value });
-		// 仅更新渲染进程 i18n（即时预览），主进程 Menu/Tray 在 Apply/Save 时才变更
-		reaxel_I18n().setLanguage(resolveLanguagePreference( value , environmentStore.systemLanguage ) as any);
+		setLanguage( value );
 	};
 
 	const handleThemeChange = (value: Appearance.Theme) => {
@@ -46,11 +46,7 @@ export const RCAppearancePanel = reaxper(() => {
 });
 
 import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
-import { reaxel_I18n } from "#src/Views/SettingsView/reaxels/i18n";
 import { RCLanguageSelect } from '../LanguageSelect';
-import {
-	resolveLanguagePreference,
-} from '#src/shared/appearance';
 import {
 	Form ,
 	Radio ,
