@@ -48,6 +48,7 @@ const normalizeAI = (ai:AI.AIItem):AI.AIItem => {
 		from_server_list_proxy : ai.from_server_list_proxy || null ,
 		user_fill_proxy : ai.user_fill_proxy || null ,
 		preloadOnStartup : ai.preloadOnStartup === true,
+		blockSensitiveRegionAccess : ai.blockSensitiveRegionAccess === true,
 	};
 };
 

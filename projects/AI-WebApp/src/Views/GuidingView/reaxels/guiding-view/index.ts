@@ -214,6 +214,7 @@ export const reaxel_GuidingView = reaxel( () => {
 			from_server_list_proxy : null ,
 			user_fill_proxy : null ,
 			preloadOnStartup : false,
+			blockSensitiveRegionAccess : false,
 		};
 		mutate.Data( data => {
 			data.customAIs = [ ...data.customAIs , ai ];

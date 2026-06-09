@@ -17,6 +17,7 @@ export namespace AI {
 		from_server_list_proxy: string | null; //proxy_server_id
 		user_fill_proxy: UserFillProxy;
 		preloadOnStartup: boolean; // 是否在应用启动时预加载
+		blockSensitiveRegionAccess: boolean; // 出口IP处于敏感地区时阻断访问
 	}
 	
 	export type EditAIItem = {
@@ -29,6 +30,7 @@ export namespace AI {
 		from_server_list_proxy: string | null; //proxy_server_id
 		user_fill_proxy: AIItem['user_fill_proxy'];
 		preloadOnStartup: boolean; // 是否在应用启动时预加载
+		blockSensitiveRegionAccess: boolean; // 出口IP处于敏感地区时阻断访问
 	}
 }
 

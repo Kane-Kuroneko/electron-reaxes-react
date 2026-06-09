@@ -25,6 +25,7 @@ export const reaxel_AIViews = reaxel( () => {
 		mutate( s => {
 			s.AIViews.push( nextRuntimeView );
 		} );
+		void updateRuntimeAIView( nextRuntimeView , ai , settings , { forceLoad : true } );
 		Reaxel_View().fitWindow( ai.id );
 		
 		return nextRuntimeView.view;
@@ -156,6 +157,19 @@ export const reaxel_AIViews = reaxel( () => {
 		applyVisibility();
 		return true;
 	};
+
+	const reloadCurrentAIView = async(settings:Settings , options:ReloadRuntimeAIViewOptions = {}) => {
+		const runtimeView = rtn.currentAIView;
+		if( !runtimeView ) {
+			return false;
+		}
+		const ai = settings.AIs.find( item => item.id === runtimeView.id ) || runtimeView.config;
+		await updateRuntimeAIView( runtimeView , ai , settings , {
+			forceLoad : true ,
+			...options,
+		} );
+		return true;
+	};
 	
 	const applyVisibility = () => {
 		const currentAIViewKey = Reaxel_View.store.currentAIViewKey;
@@ -183,6 +197,7 @@ export const reaxel_AIViews = reaxel( () => {
 		getRuntimeAIViewsInSettingsOrder ,
 		canCloseCurrentAIView ,
 		closeCurrentAIViewAndShowNext ,
+		reloadCurrentAIView ,
 		applyVisibility,
 	};
 
@@ -202,6 +217,7 @@ export const reaxel_AIViews = reaxel( () => {
 			refreshBounds : view => {
 				Reaxel_View().fitContentView( view );
 			} ,
+			skipInitialLoad : true ,
 			webPreferences : {
 				partition,
 			},
@@ -219,8 +235,10 @@ export const reaxel_AIViews = reaxel( () => {
 			domain ,
 			partition ,
 			config : ai ,
-			proxyKey : getRuntimeAIProxyKey( ai , settings ) ,
+			proxyKey : '' ,
 			appearanceKey : getAIPageAppearanceKey( environment ) ,
+			sensitiveRegionAccessKey : '' ,
+			loadTargetURL : '' ,
 			ready : false,
 		};
 	};
@@ -242,33 +260,57 @@ export const reaxel_AIViews = reaxel( () => {
 	const updateRuntimeAIView = async(
 		runtimeView:RuntimeAIView ,
 		ai:AI.AIItem ,
-		settings:Settings,
+		settings:Settings ,
+		options:UpdateRuntimeAIViewOptions = {},
 	) => {
 		const nextDomain = ai.url || getAIDomainByFamily( ai.AI_family );
 		const nextProxyKey = getRuntimeAIProxyKey( ai , settings );
 		const nextEnvironment = getRuntimeAIPageEnvironment( settings );
 		const nextAppearanceKey = getAIPageAppearanceKey( nextEnvironment );
+		const nextSensitiveRegionAccessKey = getSensitiveRegionAccessPolicyKey( ai , nextProxyKey );
 		const domainChanged = runtimeView.domain !== nextDomain;
 		const proxyChanged = runtimeView.proxyKey !== '' && runtimeView.proxyKey !== nextProxyKey;
 		const appearanceChanged = runtimeView.appearanceKey !== '' && runtimeView.appearanceKey !== nextAppearanceKey;
+		const sensitiveRegionAccessChanged = runtimeView.sensitiveRegionAccessKey !== ''
+			&& runtimeView.sensitiveRegionAccessKey !== nextSensitiveRegionAccessKey;
 
 		const resolvedProxy = await applyAIProxyToView( runtimeView.view , ai , settings );
 		const appliedProxyKey = JSON.stringify( resolvedProxy );
 		applyAIPageEnvironmentToView( runtimeView.view , nextEnvironment );
 		const appliedAppearanceKey = getAIPageAppearanceKey( nextEnvironment );
-		applyRuntimeAIViewConfig( runtimeView , ai , nextDomain , appliedProxyKey , appliedAppearanceKey );
+		const accessResult = await resolveSensitiveRegionAccess( {
+			ai ,
+			session : runtimeView.view.webContents.session ,
+			targetURL : nextDomain ,
+			proxyKey : appliedProxyKey,
+		} );
+		const loadTargetChanged = runtimeView.loadTargetURL !== ''
+			&& runtimeView.loadTargetURL !== accessResult.loadURL;
+		applyRuntimeAIViewConfig(
+			runtimeView ,
+			ai ,
+			nextDomain ,
+			appliedProxyKey ,
+			appliedAppearanceKey ,
+			accessResult.policyKey ,
+			accessResult.loadURL,
+		);
 		setAIPageEnvironmentForView( runtimeView.view , nextEnvironment );
+		logSensitiveRegionAccessResult( runtimeView.id , accessResult );
 
 		if( appearanceChanged ) {
 			sendAIPageEnvironmentToView( runtimeView.view , nextEnvironment , runtimeView.id );
 		}
 
-		if( domainChanged ) {
+		if(
+			options.forceLoad
+			|| domainChanged
+			|| proxyChanged
+			|| sensitiveRegionAccessChanged
+			|| loadTargetChanged
+		) {
 			runtimeView.ready = false;
-			void safeLoadAIURL( runtimeView.view , nextDomain , `domainChanged:${ runtimeView.id }` );
-		} else if( proxyChanged ) {
-			runtimeView.ready = false;
-			runtimeView.view.webContents.reloadIgnoringCache();
+			void safeLoadAIURL( runtimeView.view , accessResult.loadURL , `AI-View:${ runtimeView.id }` );
 		}
 	};
 	
@@ -298,7 +340,9 @@ const applyRuntimeAIViewConfig = (
 	ai:AI.AIItem ,
 	domain:string ,
 	proxyKey:string ,
-	appearanceKey:string,
+	appearanceKey:string ,
+	sensitiveRegionAccessKey:string ,
+	loadTargetURL:string,
 ) => {
 	runtimeView.label = ai.label;
 	runtimeView.AIName = ai.AI_family;
@@ -306,6 +350,8 @@ const applyRuntimeAIViewConfig = (
 	runtimeView.config = ai;
 	runtimeView.proxyKey = proxyKey;
 	runtimeView.appearanceKey = appearanceKey;
+	runtimeView.sensitiveRegionAccessKey = sensitiveRegionAccessKey;
+	runtimeView.loadTargetURL = loadTargetURL;
 };
 
 const resolveCurrentAI = (settings:Settings):AI.AIItem | null => {
@@ -414,6 +460,21 @@ const getRuntimeAIProxyKey = (ai:AI.AIItem , settings:Settings) => {
 	return JSON.stringify( resolveAIProxy( ai , settings ) );
 };
 
+const logSensitiveRegionAccessResult = (
+	aiId:string ,
+	result:SensitiveRegionAccessResult,
+) => {
+	if( result.allowed ) {
+		return;
+	}
+	console.warn(
+		'[AIViews] Sensitive region protection blocked AI page:' ,
+		aiId ,
+		result.reason ,
+		result.probe?.countryCode || 'unknown',
+	);
+};
+
 const getRuntimeAIPageEnvironment = (settings:Settings) => {
 	return getAIPageEnvironment( settings.appearance );
 };
@@ -494,6 +555,8 @@ export type RuntimeAIView = {
 	config: AI.AIItem;
 	proxyKey: string;
 	appearanceKey: string;
+	sensitiveRegionAccessKey: string;
+	loadTargetURL: string;
 	ready: boolean;
 };
 
@@ -501,6 +564,12 @@ type CreateRuntimeAIViewOptions = {
 	loadURL?: string;
 	visible?: boolean;
 };
+
+type UpdateRuntimeAIViewOptions = {
+	forceLoad?: boolean;
+};
+
+type ReloadRuntimeAIViewOptions = UpdateRuntimeAIViewOptions;
 
 type ResetAISessionDataError = {
 	target: string;
@@ -526,6 +595,11 @@ import {
 	applyAIProxyToView ,
 	resolveAIProxy,
 } from '#main/services/settings/proxy-service';
+import {
+	getSensitiveRegionAccessPolicyKey ,
+	resolveSensitiveRegionAccess,
+	type SensitiveRegionAccessResult,
+} from '#main/services/sensitive-region-access';
 import {
 	applyAIPageEnvironmentToView ,
 	getAIPageEnvironment ,

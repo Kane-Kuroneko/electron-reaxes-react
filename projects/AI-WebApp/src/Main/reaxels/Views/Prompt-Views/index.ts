@@ -370,7 +370,7 @@ const cubicBezierAxis = (t:number , p1:number , p2:number) => {
 		+ t * t * t;
 };
 
-const PROMPT_VIEW_ANIMATION_MS = 300;
+const PROMPT_VIEW_ANIMATION_MS = 150;
 const PROMPT_VIEW_ANIMATION_FRAME_MS = 3;
 
 type PromptSideState = {

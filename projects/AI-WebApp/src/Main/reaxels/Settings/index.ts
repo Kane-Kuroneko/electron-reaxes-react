@@ -61,6 +61,7 @@ export const reaxel_Settings = reaxel( () => {
 			) ,
 			user_fill_proxy : ai.user_fill_proxy || null ,
 			preloadOnStartup : ai.preloadOnStartup === true,
+			blockSensitiveRegionAccess : ai.blockSensitiveRegionAccess === true,
 		} ) );
 		
 		settingsConfigService.saveSettings( normalizedRuntimeSettings );

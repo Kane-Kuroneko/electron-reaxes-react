@@ -314,6 +314,7 @@ const EditAIModal = reaxper( () => {
 			url_override : isCustomFamily ? null : fields.url_override ,
 			desc : fields.desc ,
 			preloadOnStartup : fields.preloadOnStartup === true ,
+			blockSensitiveRegionAccess : fields.blockSensitiveRegionAccess === true ,
 			proxy_mode : fields.proxy_mode ,
 			from_server_list_proxy : getEnabledProxyServerId( fields.from_server_list_proxy ) ,
 			user_fill_proxy : fields.user_fill_proxy || null,
@@ -494,6 +495,28 @@ const EditAIModal = reaxper( () => {
 					{ isFirstAIForcedPreload ? <Tooltip title={<I18n>When [Always load the first AI page when app starts] is checked, this option is always selected</I18n>}>
 						<InfoCircleOutlined style={ { color : '#8c8c8c' } }/>
 					</Tooltip> : null }
+				</Space>
+			</Form.Item>
+			<Form.Item
+				label={<I18n>Sensitive Region Protection</I18n>}
+				valuePropName="checked"
+			>
+				<Space
+					size={ 6 }
+					align="center"
+				>
+					<Checkbox
+						checked={ fields.blockSensitiveRegionAccess === true }
+						onChange={ e => {
+							setState.fields( { blockSensitiveRegionAccess : e.target.checked } );
+						} }
+						style={ { userSelect : 'none' } }
+					>
+						<I18n>Block access when the outbound IP is in a sensitive region</I18n>
+					</Checkbox>
+					<Tooltip title={<I18n>Before loading this AI, verify the outbound IP country through the same proxy/session. If it is sensitive or cannot be verified, show a local block notice instead.</I18n>}>
+						<InfoCircleOutlined style={ { color : '#8c8c8c' } }/>
+					</Tooltip>
 				</Space>
 			</Form.Item>
 		</Form>

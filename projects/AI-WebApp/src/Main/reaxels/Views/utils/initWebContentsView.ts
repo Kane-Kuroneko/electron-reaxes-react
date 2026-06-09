@@ -108,6 +108,9 @@ const useAIView = (view:WebContentsView,options:WebContentsViewConstructorOption
 		shell.openExternal(url);
 		return { action: 'deny' };
 	});
+	if( options.skipInitialLoad ) {
+		return;
+	}
 	~async function loadAIView() {
 		try {
 			console.log( '[Views] Loading AI view:' , options.aiConfig?.id , options.domain );
@@ -215,6 +218,7 @@ type ExtraBrowserWindowOptions = {
 	settings?: Settings;
 	promptSide?: PromptView.Side;
 	refreshBounds?: (view:WebContentsView) => void;
+	skipInitialLoad?: boolean;
 }
 
 import { mainWindow } from "#main/mainWindow";

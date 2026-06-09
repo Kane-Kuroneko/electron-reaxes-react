@@ -66,10 +66,11 @@ export const reaxel_Menu = reaxel( () => {
 						label : t('Reload') ,
 						accelerator : 'ctrl+r' ,
 						click : () => {
-							const view = Reaxel_View.store.settingsViewOpened
-								? reaxel_SettingsView.store.settingsView.view
-								: reaxel_AIViews().currentAIView?.view;
-							view?.webContents.reload();
+							if( Reaxel_View.store.settingsViewOpened ) {
+								reaxel_SettingsView.store.settingsView.view?.webContents.reload();
+								return;
+							}
+							void reaxel_AIViews().reloadCurrentAIView( getRuntimeSettings() );
 						} ,
 					} ,
 					{
@@ -80,10 +81,7 @@ export const reaxel_Menu = reaxel( () => {
 								reaxel_SettingsView.store.settingsView.view?.webContents.reloadIgnoringCache();
 								return;
 							}
-							const currentAIView = reaxel_AIViews().currentAIView;
-							currentAIView?.view.webContents.loadURL( currentAIView.domain ).catch( error => {
-								console.warn( '[Menu] Force reload loadURL failed:' , currentAIView.domain , error );
-							} );
+							void reaxel_AIViews().reloadCurrentAIView( getRuntimeSettings() , { forceLoad : true } );
 						} ,
 					} ,
 					{
@@ -130,14 +128,16 @@ export const reaxel_Menu = reaxel( () => {
 									
 							const { currentAIView } = reaxel_AIViews();
 							if( !currentAIView ) return;
-							const { origin } = new URL( currentAIView.view.webContents.getURL() );
+							const origin = getClearableOrigin( currentAIView.view.webContents.getURL() );
 									
 							await currentAIView.view.webContents.clearHistory();
-							await currentAIView.view.webContents.session.clearStorageData( { origin } );
+							if( origin ) {
+								await currentAIView.view.webContents.session.clearStorageData( { origin } );
+								await currentAIView.view.webContents.session.clearData( { origins : [ origin ] } );
+							}
 							await currentAIView.view.webContents.session.clearCache();
-							await currentAIView.view.webContents.session.clearData( { origins : [ origin ] } );
 							await currentAIView.view.webContents.session.clearAuthCache();
-							currentAIView.view.webContents.reloadIgnoringCache();
+							await reaxel_AIViews().reloadCurrentAIView( getRuntimeSettings() , { forceLoad : true } );
 						} ,
 					} ,
 					{ type : 'separator' } ,
@@ -325,6 +325,17 @@ const createAdjacentAIMenuLabel = (
 		return escapeElectronMenuBarLabel( `${ emoji } ${ label }` );
 	}
 	return escapeElectronMenuBarLabel( `${ emoji } ${ label } ${ fitMenuAIName( ai.label || ai.id ) }` );
+};
+
+const getClearableOrigin = (url:string) => {
+	try {
+		const parsed = new URL( url );
+		return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+			? parsed.origin
+			: null;
+	} catch ( error ) {
+		return null;
+	}
 };
 
 import { Reaxel_View } from '../Views';

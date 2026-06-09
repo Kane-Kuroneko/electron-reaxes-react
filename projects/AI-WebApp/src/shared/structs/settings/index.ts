@@ -105,6 +105,7 @@ export const reaxable_Settings = () => {
 						url : '' ,
 						desc : '' ,
 						preloadOnStartup:false,
+						blockSensitiveRegionAccess:false,
 						proxy_mode : checkAs<NetworkProxy.AIProxyMode>( 'follow_global_setting' ) ,
 						from_server_list_proxy : checkAs<string>( null ) ,
 						user_fill_proxy : checkAs<NetworkProxy.ProxyConf>( null ) ,
