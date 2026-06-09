@@ -138,6 +138,11 @@ interface IUserData {}
 - 如果函数或工具可能被广泛复用、业务无关，应根据宿主环境放入相应目录的 `utils` 或 `toolkits` 中，而不是散落在业务模块内。
 - 工具文件遵循 `.utility.ts` 命名；例如 AI-WebApp 里的 IPC/observable plain clone 应放在 `src/shared/utils/clone-for-ipc.utility.ts`。
 
+### Git Commit Message
+
+- 提交信息必须像任务完成汇总一样具体，准确覆盖已完成的产品/文档变更、实现变更、bug 修复、多语言或配置变更，以及执行过的验证。
+- 多文件或多关注点改动应使用简洁 subject + 多条 body bullet；除非改动确实很小，否则不要只写一句话。
+
 ---
 
 ## 🔍 代码审查检查清单

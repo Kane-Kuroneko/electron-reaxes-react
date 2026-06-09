@@ -27,6 +27,12 @@ Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with n
 - If a function or utility is broadly reusable and business-agnostic, place it in the appropriate host `utils` or `toolkits` directory instead of keeping local copies in feature modules, for example `projects/AI-WebApp/src/shared/utils/clone-for-ipc.utility.ts`.
 - Avoid unrelated cleanup. Many files have existing loose typing and commented debug code; only change it when needed for the task.
 
+## Git Commit Messages
+
+- Commit messages must summarize the completed work with the same specificity as the final user-facing completion summary.
+- Prefer a concise subject plus multiple body bullets that cover product/documentation changes, implementation changes, bug fixes, localization or config changes, and verification performed.
+- Do not use a one-line commit message for multi-file or multi-concern changes unless the change is genuinely trivial.
+
 ## IPC Rules
 
 - Renderer code must call `window.api`/`api` exposed by `src/preload.ts`.
