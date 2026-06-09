@@ -37,19 +37,47 @@ export const App = reaxper( () => {
 	>
 		<main className="prompt-view-root">
 			<header className="prompt-view-header">
-				<div className="prompt-view-title">
-					{ store.side === 'left' ? 'PromptViewLeft' : 'PromptViewRight' }
+				<div className="prompt-view-heading">
+					<div className="prompt-view-kicker">
+						<FileTextOutlined/>
+						<span><I18n>Prompt Shelf</I18n></span>
+					</div>
+					<div className="prompt-view-title-row">
+						<h1><I18n>Prompts</I18n></h1>
+						<span className="prompt-view-side-pill">
+							<I18n>{ store.side === 'left' ? 'Left' : 'Right' }</I18n>
+						</span>
+					</div>
 				</div>
-				<Button
-					type="primary"
-					size="small"
-					icon={ <PlusOutlined/> }
-					onClick={ addPrompt }
-				><I18n>New</I18n></Button>
+				<Tooltip title={ <I18n>New Prompt</I18n> }>
+					<Button
+						type="primary"
+						className="prompt-view-add-button"
+						shape="circle"
+						icon={ <PlusOutlined/> }
+						aria-label={ i18n( 'New Prompt' ) }
+						onClick={ addPrompt }
+					/>
+				</Tooltip>
 			</header>
+			<div className="prompt-view-statusline">
+				<span>{ store.items.length } <I18n>prompts</I18n></span>
+				<span className={ `prompt-view-save-state ${ store.status.saving ? 'is-saving' : '' }` }>
+					{ store.status.saving ? <CloudSyncOutlined/> : <CheckCircleOutlined/> }
+					<I18n>{ store.status.saving ? 'Saving' : 'Saved' }</I18n>
+				</span>
+			</div>
 			<section className="prompt-view-body">
+				{ store.status.error ? <Alert
+					className="prompt-view-error"
+					type="error"
+					showIcon
+					message={ store.status.error }
+				/> : null }
 				{ store.status.loading ? <div className="prompt-view-loading"><Spin/></div> : null }
 				{ !store.status.loading && store.items.length === 0 ? <div className="prompt-view-empty">
+					<div className="prompt-view-empty-mark"><FileTextOutlined/></div>
+					<div className="prompt-view-empty-title"><I18n>No prompts</I18n></div>
 					<Button
 						type="primary"
 						icon={ <PlusOutlined/> }
@@ -66,9 +94,10 @@ export const App = reaxper( () => {
 						strategy={ verticalListSortingStrategy }
 					>
 						<div className="prompt-card-list">
-							{ store.items.map( item => <PromptCard
+							{ store.items.map( ( item , index ) => <PromptCard
 								key={ item.id }
 								item={ item }
+								index={ index }
 							/> ) }
 						</div>
 					</SortableContext>
@@ -80,6 +109,7 @@ export const App = reaxper( () => {
 
 const PromptCard = reaxper( ( props:{
 	item: PromptView.Item;
+	index: number;
 } ) => {
 	const {
 		persistNow ,
@@ -103,16 +133,67 @@ const PromptCard = reaxper( ( props:{
 		transition ,
 		...( isDragging ? { zIndex : 10 , position : 'relative' } : {} ),
 	};
+	const isEmpty = props.item.content.trim().length === 0;
 	
-	return <div
+	return <article
 		ref={ setNodeRef }
 		style={ style }
+		className={ `prompt-card ${ isDragging ? 'is-dragging' : '' }` }
 	>
-		<Card
-			className="prompt-card"
-			size="small"
-		>
+		<div className="prompt-card-topbar">
+			<div className="prompt-card-identity">
+				<Tooltip title={ <I18n>Drag to sort</I18n> }>
+					<Button
+						size="small"
+						type="text"
+						className="prompt-card-icon-button prompt-card-drag-handle"
+						icon={ <HolderOutlined/> }
+						aria-label={ i18n( 'Drag to sort' ) }
+						{ ...attributes }
+						{ ...listeners }
+					/>
+				</Tooltip>
+				<span className="prompt-card-title">{ i18n( 'Prompt' ) } { String( props.index + 1 ).padStart( 2 , '0' ) }</span>
+			</div>
+			<div className="prompt-card-actions">
+				<Tooltip title={<I18n>Duplicate</I18n>}>
+					<Button
+						size="small"
+						type="text"
+						className="prompt-card-icon-button"
+						icon={ <PlusSquareOutlined/> }
+						aria-label={ i18n( 'Duplicate' ) }
+						onClick={ () => duplicatePrompt( props.item.id ) }
+					/>
+				</Tooltip>
+				<Tooltip title={<I18n>Copy</I18n>}>
+					<Button
+						size="small"
+						type="text"
+						className="prompt-card-icon-button"
+						icon={ <CopyOutlined/> }
+						aria-label={ i18n( 'Copy' ) }
+						onClick={ () => {
+							void copyPrompt( props.item.id );
+						} }
+					/>
+				</Tooltip>
+				<Tooltip title={<I18n>Delete</I18n>}>
+					<Button
+						size="small"
+						type="text"
+						danger
+						className="prompt-card-icon-button"
+						icon={ <DeleteOutlined/> }
+						aria-label={ i18n( 'Delete' ) }
+						onClick={ () => deletePrompt( props.item.id ) }
+					/>
+				</Tooltip>
+			</div>
+		</div>
+		<div className="prompt-composer">
 			<TextArea
+				className="prompt-card-textarea"
 				value={ props.item.content }
 				autoSize={ { minRows : 5 , maxRows : 14 } }
 				placeholder={ i18n( 'Prompt text' ) }
@@ -123,43 +204,15 @@ const PromptCard = reaxper( ( props:{
 					void persistNow();
 				} }
 			/>
-			<div className="prompt-card-actions">
-				<Tooltip title={<I18n>Duplicate</I18n>}>
-					<Button
-						size="small"
-						icon={ <PlusSquareOutlined/> }
-						onClick={ () => duplicatePrompt( props.item.id ) }
-					/>
-				</Tooltip>
-				<Tooltip title={<I18n>Copy</I18n>}>
-					<Button
-						size="small"
-						icon={ <CopyOutlined/> }
-						onClick={ () => {
-							void copyPrompt( props.item.id );
-						} }
-					/>
-				</Tooltip>
-				<Tooltip title={<I18n>Delete</I18n>}>
-					<Button
-						size="small"
-						danger
-						icon={ <DeleteOutlined/> }
-						onClick={ () => deletePrompt( props.item.id ) }
-					/>
-				</Tooltip>
-				<Tooltip title={<I18n>Drag to sort</I18n>}>
-					<Button
-						size="small"
-						className="prompt-card-drag-handle"
-						icon={ <HolderOutlined/> }
-						{ ...attributes }
-						{ ...listeners }
-					/>
-				</Tooltip>
+			<div className="prompt-composer-footer">
+				<span className={ isEmpty ? 'is-empty' : '' }>
+					{ isEmpty ? <I18n>Empty</I18n> : <>
+						{ props.item.content.length } <I18n>chars</I18n>
+					</> }
+				</span>
 			</div>
-		</Card>
-	</div>;
+		</div>
+	</article>;
 } );
 
 import { reaxel_PromptView } from './reaxels/prompt-view';
@@ -167,8 +220,11 @@ import { I18n , i18n } from './reaxels/exports';
 import { resolveThemePreference } from '#src/shared/appearance';
 import type { PromptView } from '#src/Types/PromptView';
 import {
+	CheckCircleOutlined ,
+	CloudSyncOutlined ,
 	CopyOutlined ,
 	DeleteOutlined ,
+	FileTextOutlined ,
 	HolderOutlined ,
 	PlusOutlined ,
 	PlusSquareOutlined,
@@ -185,8 +241,8 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import React from 'react';
 import { reaxper } from 'reaxes-react';
 import {
+	Alert ,
 	Button ,
-	Card ,
 	ConfigProvider ,
 	Input ,
 	Spin ,
