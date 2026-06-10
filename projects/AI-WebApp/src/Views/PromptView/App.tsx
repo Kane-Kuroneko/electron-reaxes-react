@@ -34,6 +34,7 @@ export const App = reaxper( () => {
 				? antdTheme.darkAlgorithm
 				: antdTheme.defaultAlgorithm,
 		} }
+		motion={false}
 	>
 		<main className="prompt-view-root">
 			<header className="prompt-view-header">

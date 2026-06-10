@@ -98,8 +98,6 @@ export const reaxel_PromptViews = reaxel( () => {
 	const setPromptViewVisible = (side:PromptView.Side , visible:boolean) => {
 		if( visible ) {
 			initPromptView( side );
-			// PromptView 面向 AI page 复用 prompt，展开时让中心区域回到当前 AI page。
-			Reaxel_View.setState( { settingsViewOpened : false } );
 		}
 		const targetWidth = visible ? getPromptViewTargetWidth() : 0;
 		animatePromptViewWidth( side , targetWidth , visible );

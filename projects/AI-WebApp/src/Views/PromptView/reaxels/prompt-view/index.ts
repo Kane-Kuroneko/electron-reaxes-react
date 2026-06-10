@@ -120,8 +120,8 @@ export const reaxel_PromptView = reaxel( () => {
 	const addPrompt = () => {
 		setState( {
 			items : [
-				...store.items ,
 				createPromptItem(),
+				...store.items,
 			],
 		} );
 		queuePersist();
