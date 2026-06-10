@@ -1,4 +1,10 @@
 const { absolutelyPath_subprojectDist } = getProjectPaths();
+const rewriteMultiEntryIndex = (context:any) => {
+	const pathname = context?.parsedUrl?.pathname || context?.match?.[0] || '';
+	const entry = pathname.split( '/' ).filter( Boolean )[0];
+	return entry ? `/${ entry }/index.html` : '/index.html';
+};
+
 export const devServerConf: Configuration = {
 	port,
 	static:{
@@ -27,7 +33,17 @@ export const devServerConf: Configuration = {
 	host: "0.0.0.0",
 	allowedHosts: "all",
 	historyApiFallback: {
-		index : '/renderer/index.html',
+		rewrites : [
+			{
+				from : /^\/[^/.?]+\/?$/ ,
+				to : rewriteMultiEntryIndex,
+			} ,
+			{
+				from : /^\/renderer\/index\.html$/ ,
+				to : '/index.html',
+			},
+		] ,
+		index : '/index.html',
 	},
 };
 

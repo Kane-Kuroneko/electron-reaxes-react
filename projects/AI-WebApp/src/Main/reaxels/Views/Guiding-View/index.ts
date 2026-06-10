@@ -94,9 +94,10 @@ export const reaxel_GuidingView = reaxel( () => {
 		} );
 		
 		if( dev() ) {
-			guidingWindow.webContents.loadURL( createDevRendererURL( 'GuidingView' ) , getFreshLoadURLOptions() );
+			const url = createDevRendererEntryURL( 'GuidingView' );
+			guidingWindow.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
 		} else {
-			guidingWindow.webContents.loadFile( path.join( absAppRunningPath , './renderer/GuidingView/index.html' ) );
+			guidingWindow.webContents.loadFile( getRendererEntryFilePath( absAppRunningPath , 'GuidingView' ) );
 		}
 		
 		return guidingWindow;
@@ -222,24 +223,16 @@ const testConnectivityTarget = async(target:typeof connectivityTargets[number]):
 	}
 };
 
-const createDevRendererURL = (entry:string) => {
-	return `https://localhost:${ __DEV_PORT__ }/${ entry }?t=${ Date.now() }`;
-};
-
-const getFreshLoadURLOptions = () => {
-	return {
-		extraHeaders : [
-			'Cache-Control: no-cache',
-			'Pragma: no-cache',
-		].join( '\n' ),
-	};
-};
-
 import {
 	isMainRuntimeStarted ,
 	startMainRuntime,
 } from '#main/runtime';
 import { useIpcRpc } from '#main/services/ipc';
+import {
+	createDevRendererEntryURL ,
+	getFreshRendererLoadURLOptions ,
+	getRendererEntryFilePath,
+} from '#main/services/dev/renderer-entry';
 import {
 	applyElectronAppearance ,
 	getAppearanceEnvironment ,

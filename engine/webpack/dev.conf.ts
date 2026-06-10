@@ -38,6 +38,9 @@ export const electronDevConf_Renderer:WebpackConfiguration = {
 	mode : 'development',
 	stats : 'normal',
 	devtool : 'inline-source-map',
+	output : {
+		publicPath : '/',
+	},
 	externals : {
 	// 	'mobx' : `commonjs ${path.join(absolutelyPath_RepositoryRoot , 'vendors','mobx.development@6.13.5#umd.js')}`,
 	// 	'react' : `commonjs ${path.join(absolutelyPath_RepositoryRoot , 'vendors','react.development@18.3.1#umd.js')}`,

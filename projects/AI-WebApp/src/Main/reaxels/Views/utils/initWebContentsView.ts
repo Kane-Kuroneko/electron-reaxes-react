@@ -65,13 +65,13 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 const useSettingsView = (view:WebContentsView,options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
 	if(dev()){
 		~async function loadDevSettingsView() {
-			const loaded = await safeLoadURL( view , createDevRendererURL( 'SettingsView' ) , 'Settings-View' );
+			const loaded = await safeLoadURL( view , createDevRendererEntryURL( 'SettingsView' ) , 'Settings-View' );
 			if( !loaded ) {
 				console.error( '[Views] Settings-View dev server is unavailable. Run webpack.start before electron.start.' );
 			}
 		}();
 	}else {
-		void safeLoadFile( view , path.join(absAppRunningPath,`./renderer/SettingsView/index.html`) , 'Settings-View' );
+		void safeLoadFile( view , getRendererEntryFilePath( absAppRunningPath , 'SettingsView' ) , 'Settings-View' );
 	}
 	
 }
@@ -81,7 +81,7 @@ const usePromptView = (view:WebContentsView,options:WebContentsViewConstructorOp
 		~async function loadDevPromptView() {
 			const loaded = await safeLoadURL(
 				view ,
-				`${ createDevRendererURL( 'PromptView' ) }&side=${ side }` ,
+				createDevRendererEntryURL( 'PromptView' , { side } ) ,
 				`Prompt-View-${ side }`,
 			);
 			if( !loaded ) {
@@ -91,7 +91,7 @@ const usePromptView = (view:WebContentsView,options:WebContentsViewConstructorOp
 	}else {
 		void safeLoadFile(
 			view ,
-			path.join(absAppRunningPath,`./renderer/PromptView/index.html`) ,
+			getRendererEntryFilePath( absAppRunningPath , 'PromptView' ) ,
 			`Prompt-View-${ side }` ,
 			{
 				query : { side },
@@ -128,7 +128,7 @@ const safeLoadURL = async(
 	context:string,
 ) => {
 	try {
-		await view.webContents.loadURL( url , getFreshLoadURLOptions( url ) );
+		await view.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
 		return true;
 	} catch ( error ) {
 		console.warn( `[Views] ${ context } loadURL failed:` , url , error );
@@ -149,22 +149,6 @@ const safeLoadFile = async(
 		console.warn( `[Views] ${ context } loadFile failed:` , filePath , error );
 		return false;
 	}
-};
-
-const createDevRendererURL = (entry:string) => {
-	return `https://localhost:${ __DEV_PORT__ }/${ entry }?t=${ Date.now() }`;
-};
-
-const getFreshLoadURLOptions = (url:string) => {
-	if( !dev() || !url.startsWith( `https://localhost:${ __DEV_PORT__ }/` ) ) {
-		return undefined;
-	}
-	return {
-		extraHeaders : [
-			'Cache-Control: no-cache',
-			'Pragma: no-cache',
-		].join( '\n' ),
-	};
 };
 
 const normalizeViewOptions = (options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
@@ -222,6 +206,11 @@ import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 import { applyAIProxyToView } from "#main/services/settings/proxy-service";
 import { handleAISwitchShortcutInput } from '#main/services/shortcuts/ai-switch';
 import { installWebContentsKeyboardGuard } from '#main/services/shortcuts/window-keyboard';
+import {
+	createDevRendererEntryURL ,
+	getFreshRendererLoadURLOptions ,
+	getRendererEntryFilePath,
+} from '#main/services/dev/renderer-entry';
 import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {

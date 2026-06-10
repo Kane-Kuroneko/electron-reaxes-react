@@ -40,22 +40,19 @@ export const main = (
 
 
 export const renderer = (repoRootPath: string, subProjectRootPath: string): Configuration => {
+	const rendererEntryConfig = createElectronRendererEntryConfig( {
+		projectRootPath : subProjectRootPath ,
+		entries : AI_WEBAPP_RENDERER_ENTRY_POINTS ,
+		template : path.join( subProjectRootPath , 'engine/index.template.html' ) ,
+		outputPath : path.join( subProjectRootPath , 'dist/renderer' ) ,
+		filename : '[name]/main.js',
+	} );
 	return {
 		// stats:"verbose",
 		experiments: {
 			topLevelAwait: true,  // 启用顶层 await
 		},
-		entry: {
-			"SettingsView" : path.resolve(subProjectRootPath, "src/Views/SettingsView/index.tsx"),
-			"FloatingView" : path.resolve(subProjectRootPath, "src/Views/FloatingView/index.tsx"),
-			"GuidingView" : path.resolve(subProjectRootPath, "src/Views/GuidingView/index.tsx"),
-			"PromptView" : path.resolve(subProjectRootPath, "src/Views/PromptView/index.tsx"),
-		},
-		
-		output: {
-			path: path.join(subProjectRootPath, "dist/renderer"),
-			filename : '[name]/main.js'
-		},
+		...rendererEntryConfig,
 		resolve :{
 			alias : {
 				'#main' : path.join(subProjectRootPath,'src/Main'),
@@ -65,35 +62,7 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 			},
 		},
 		plugins : [
-			new HtmlWebpackPlugin( {
-				chunks:["SettingsView"],
-				filename : 'SettingsView/index.html' ,
-				template : path.join( subProjectRootPath , "engine/index.template.html" ) ,
-				minify : false ,
-				hash : true ,
-				// inject: false,
-			} ) ,
-			new HtmlWebpackPlugin( {
-				chunks:["FloatingView"],
-				filename : 'FloatingView/index.html' ,
-				template : path.join( subProjectRootPath , "engine/index.template.html" ) ,
-				minify : false ,
-				hash : true,
-			} ) ,
-			new HtmlWebpackPlugin( {
-				chunks:["GuidingView"],
-				filename : 'GuidingView/index.html' ,
-				template : path.join( subProjectRootPath , "engine/index.template.html" ) ,
-				minify : false ,
-				hash : true,
-			} ) ,
-			new HtmlWebpackPlugin( {
-				chunks:["PromptView"],
-				filename : 'PromptView/index.html' ,
-				template : path.join( subProjectRootPath , "engine/index.template.html" ) ,
-				minify : false ,
-				hash : true,
-			} ) ,
+			...( rendererEntryConfig.plugins ?? [] ) ,
 			new ProvidePlugin( {
 				
 				'I18n' : [ '#src/Views/SettingsView/reaxels/exports' , 'I18n' ] ,
@@ -123,8 +92,7 @@ export const preload = ( repoRootPath: string , subProjectRootPath: string ): Co
 		watch:true
 	};
 };
-import path,{} from 'path';
-import WatchFilePlugin from 'webpack-watch-files-plugin';
-import HtmlWebpackPlugin from 'html-webpack-plugin';
-import webpack , { type Configuration , DefinePlugin } from 'webpack';
-import CopyPlugin from 'copy-webpack-plugin';
+import { createElectronRendererEntryConfig } from '../../engine/webpack/electron-renderer-entries';
+import { AI_WEBAPP_RENDERER_ENTRY_POINTS } from './src/shared/renderer-entries';
+import path from 'path';
+import webpack , { type Configuration } from 'webpack';

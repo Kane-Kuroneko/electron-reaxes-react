@@ -159,9 +159,10 @@ export const reaxel_FloatingView = reaxel( () => {
 		} );
 
 		if( dev() ) {
-			floatingWindow.webContents.loadURL( createDevRendererURL( 'FloatingView' ) , getFreshLoadURLOptions() );
+			const url = createDevRendererEntryURL( 'FloatingView' );
+			floatingWindow.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
 		} else {
-			floatingWindow.webContents.loadFile( path.join( absAppRunningPath , './renderer/FloatingView/index.html' ) );
+			floatingWindow.webContents.loadFile( getRendererEntryFilePath( absAppRunningPath , 'FloatingView' ) );
 		}
 
 		return floatingWindow;
@@ -200,20 +201,12 @@ export const reaxel_FloatingView = reaxel( () => {
 	} );
 } );
 
-const createDevRendererURL = (entry:string) => {
-	return `https://localhost:${ __DEV_PORT__ }/${ entry }?t=${ Date.now() }`;
-};
-
-const getFreshLoadURLOptions = () => {
-	return {
-		extraHeaders : [
-			'Cache-Control: no-cache',
-			'Pragma: no-cache',
-		].join( '\n' ),
-	};
-};
-
 import { mainWindow } from '#main/mainWindow';
+import {
+	createDevRendererEntryURL ,
+	getFreshRendererLoadURLOptions ,
+	getRendererEntryFilePath,
+} from '#main/services/dev/renderer-entry';
 import { useIpcMainToRenderer } from '#main/services/ipc';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
 import type { FloatingView } from '#src/Types/FloatingView';
