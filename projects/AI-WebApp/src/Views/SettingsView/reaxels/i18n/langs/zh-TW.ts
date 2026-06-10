@@ -1,4 +1,4 @@
-export default {
+﻿export default {
 	// Menu - Application
 	"Application" : "應用程式" ,
 	"Settings" : "設定" ,
@@ -168,5 +168,11 @@ export default {
 	"This will permanently reset all AI page configurations to factory defaults and clear page data including cookies, login state, localStorage, cache, and auth cache. All your custom AI pages, URL overrides, and proxy settings will be lost." : "此操作會將所有 AI 頁面設定永久重置為出廠預設值，並清除頁面資料，包括 Cookie、登入狀態、localStorage、快取和認證快取。所有自訂 AI 頁面、URL 覆蓋和代理設定都將遺失。" ,
 	"Hold the button below to confirm reset." : "長按下方按鈕確認重置。" ,
 	
+	"About" : "關於" ,
+	"Version" : "版本" ,
+	"Description" : "描述" ,
+	"Developer" : "開發者" ,
+	"Tech Stack" : "技術栈" ,
+	"Unified desktop client for multiple AI services" : "多AI服務統一桌面用戶端" ,
 	"" : "" ,
 } as any;

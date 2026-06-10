@@ -15,6 +15,10 @@ export const reaxel_SettingsView = reaxel( () => {
 					label : 'Manage AIs' ,
 					value : checkAs<Menus>( 'mngeai' ),
 				},
+				{
+					label : 'About' ,
+					value : checkAs<Menus>( 'about' ),
+				},
 			],
 		} ,
 		UIControls : {

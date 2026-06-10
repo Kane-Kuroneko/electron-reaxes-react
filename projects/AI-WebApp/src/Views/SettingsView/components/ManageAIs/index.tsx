@@ -14,14 +14,14 @@ const AIEnabledCheckbox = reaxper( ( { id }:{ id:string } ) => {
 const columns:TableColumnType<AI.AIItem>[] = [
 	{
 		title : <I18n>Drag</I18n> ,
-		width : 60 ,
+		width : 40 ,
 		render() {
 			return <DragHandle/>;
 		},
 	} ,
 	{
 		title : <I18n>Enabled</I18n> ,
-		width : 80 ,
+		width : 44 ,
 		render( _value , record ) {
 			return <AIEnabledCheckbox id={ record.id }/>;
 		},
@@ -29,6 +29,8 @@ const columns:TableColumnType<AI.AIItem>[] = [
 	{
 		title : <I18n>AI name</I18n> ,
 		dataIndex : 'label' ,
+		ellipsis : true,
+		minWidth : 100,
 		render( _value , record ) {
 			const { isNewAI , isModifiedAI } = reaxel_SettingsView();
 			const isNew = isNewAI( record.id );
@@ -47,21 +49,24 @@ const columns:TableColumnType<AI.AIItem>[] = [
 	{
 		title : <I18n>AI family</I18n> ,
 		dataIndex : 'AI_family',
+		ellipsis : true,
+		minWidth : 72,
 	} ,
 	{
 		title : <I18n>AI URL</I18n> ,
 		dataIndex : 'url' ,
 		ellipsis : true,
+		minWidth : 140,
 	} ,
 	{
 		title : <I18n>Operations</I18n> ,
-		width : 220 ,
+		width : 144 ,
 		render : ( _text , record ) => {
 			const {
 				changeEditAIModalVisible ,
 				changeCloneAIModalVisible,
 			} = reaxel_SettingsView();
-			return <Space size={ 4 }>
+			return <Space size={ 2 }>
 				<Button
 					type="link"
 					size="small"
@@ -182,7 +187,9 @@ export const RCManageAIsPanel = reaxper( () => {
 				items={ reaxel_SettingsView.store.Data.AIs.map( ai => ai.id ) }
 				strategy={ verticalListSortingStrategy }
 			>
-				<Table
+				<div style={ { overflowX: 'auto' } }>
+					<Table
+					style={ { width: '100%' , minWidth: 540 } }
 					components={ {
 						body : {
 							row : SortableRow,
@@ -200,6 +207,7 @@ export const RCManageAIsPanel = reaxper( () => {
 						return '';
 					} }
 				/>
+				</div>
 			</SortableContext>
 		</DndContext>
 		<div style={ { marginTop : 16 , display : 'flex' , justifyContent : 'flex-end' } }>

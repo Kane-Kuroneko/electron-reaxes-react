@@ -12,6 +12,7 @@ export const App = reaxper( () => {
 		general : RCGeneralPanel ,
 		net : RCNetworkPanel ,
 		mngeai : RCManageAIsPanel ,
+		about : RCAboutPanel ,
 	}[store.current];
 	
 	// 触发响应式依赖收集 - 让按钮状态随 UIControls 变化而更新
@@ -164,6 +165,7 @@ const showApplyResult = (result:SettingsApplyResult) => {
 };
 
 import { RCGeneralPanel } from './components/General';
+import { RCAboutPanel } from './components/About';
 import { RCManageAIsPanel } from './components/ManageAIs';
 import { RCNetworkPanel } from './components/Network';
 import { devCleanStart } from './services/Settings';

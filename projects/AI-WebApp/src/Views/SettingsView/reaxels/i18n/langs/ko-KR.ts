@@ -1,4 +1,4 @@
-export default {
+﻿export default {
 	// Menu - Application
 	"Application" : "애플리케이션" ,
 	"Settings" : "설정" ,
@@ -168,5 +168,11 @@ export default {
 	"This will permanently reset all AI page configurations to factory defaults and clear page data including cookies, login state, localStorage, cache, and auth cache. All your custom AI pages, URL overrides, and proxy settings will be lost." : "이 작업은 모든 AI 페이지 구성을 공장 기본값으로 영구적으로 초기화하고 쿠키, 로그인 상태, localStorage, 캐시 및 인증 캐시를 포함한 페이지 데이터를 삭제합니다. 모든 사용자 지정 AI 페이지, URL 재정의 및 프록시 설정이 손실됩니다." ,
 	"Hold the button below to confirm reset." : "아래 버튼을 길게 눌러 초기화를 확인하세요." ,
 	
+	"About" : "정보" ,
+	"Version" : "버전" ,
+	"Description" : "설명" ,
+	"Developer" : "개발자" ,
+	"Tech Stack" : "기술 스택" ,
+	"Unified desktop client for multiple AI services" : "여러 AI 서비스를 위한 통합 데스크톱 클라이언트" ,
 	"" : "" ,
 } as any;
