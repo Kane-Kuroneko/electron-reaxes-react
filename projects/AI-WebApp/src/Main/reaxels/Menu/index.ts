@@ -24,10 +24,11 @@ export const reaxel_Menu = reaxel( () => {
 		const settings = getRuntimeSettings();
 		const enabledAIs = settings.AIs.filter( ai => !ai.disabled );
 		const { currentAIViewKey } = Reaxel_View.store;
-		const nextAI = resolveAdjacentMenuAI( enabledAIs , currentAIViewKey , 1 );
-		const previousAI = resolveAdjacentMenuAI( enabledAIs , currentAIViewKey , -1 );
 		const instantiatedAIViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
 		const canSwitchInstantiatedAI = instantiatedAIViews.length > 1;
+		// 顶部相邻按钮基于已实例化的 AI Views
+		const nextInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , 1 );
+		const previousInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , -1 );
 		const promptViewLeftVisible = reaxel_PromptViews.store.left.visible || reaxel_PromptViews.store.left.width > 0;
 		const promptViewRightVisible = reaxel_PromptViews.store.right.visible || reaxel_PromptViews.store.right.width > 0;
 		
@@ -224,24 +225,24 @@ export const reaxel_Menu = reaxel( () => {
 						},
 					],
 			},
-			{
-				label : createAdjacentAIMenuLabel( '⏮️' , t( 'Previous' ) , previousAI ) ,
-				accelerator : 'CmdOrCtrl+[' ,
-				registerAccelerator : false ,
-				enabled : enabledAIs.length > 1 ,
-				click : () => {
-					void Reaxel_View().turnToPreviousAiPage();
-				},
+		{
+			label : createAdjacentAIMenuLabel( '⏮️' , t( 'Previous' ) , previousInstantiatedAI ) ,
+			accelerator : 'CmdOrCtrl+[' ,
+			registerAccelerator : false ,
+			enabled : canSwitchInstantiatedAI ,
+			click : () => {
+				void Reaxel_View().turnToPreviousInstantiatedAiPage();
 			},
-			{
-				label : createAdjacentAIMenuLabel( '⏭️' , t( 'Next' ) , nextAI ) ,
-				accelerator : 'CmdOrCtrl+]' ,
-				registerAccelerator : false ,
-				enabled : enabledAIs.length > 1 ,
-				click : () => {
-					void Reaxel_View().turnToNextAiPage();
-				},
-			} ,
+		},
+		{
+			label : createAdjacentAIMenuLabel( '⏭️' , t( 'Next' ) , nextInstantiatedAI ) ,
+			accelerator : 'CmdOrCtrl+]' ,
+			registerAccelerator : false ,
+			enabled : canSwitchInstantiatedAI ,
+			click : () => {
+				void Reaxel_View().turnToNextInstantiatedAiPage();
+			},
+		} ,
 		] );
 	}
 	
@@ -319,12 +320,32 @@ const createPlainMenuLabel = (label:string) => {
 const createAdjacentAIMenuLabel = (
 	emoji:string ,
 	label:string ,
-	ai:Settings['AIs'][number] | null,
+	ai:Settings['AIs'][number] | RuntimeAIView | null,
 ) => {
 	if( !ai ) {
 		return escapeElectronMenuBarLabel( `${ emoji } ${ label }` );
 	}
-	return escapeElectronMenuBarLabel( `${ emoji } ${ label } ${ fitMenuAIName( ai.label || ai.id ) }` );
+	// 获取 AI 显示名称：优先使用 label，否则使用 id
+	const displayName = ai.label || ai.id;
+	return escapeElectronMenuBarLabel( `${ emoji } ${ label } ${ fitMenuAIName( displayName ) }` );
+};
+
+/**
+ * 基于已实例化的 AI Views 解析相邻 AI
+ */
+const resolveAdjacentInstantiatedAI = (
+	instantiatedViews:RuntimeAIView[] ,
+	currentAIViewKey:string ,
+	offset:number,
+) => {
+	if( instantiatedViews.length === 0 ) {
+		return null;
+	}
+	const currentIndex = instantiatedViews.findIndex( view => view.id === currentAIViewKey );
+	const baseIndex = currentIndex === -1
+		? offset > 0 ? -1 : 0
+		: currentIndex;
+	return instantiatedViews[getWrappedIndex( baseIndex + offset , instantiatedViews.length )];
 };
 
 import { Reaxel_View } from '../Views';
@@ -339,7 +360,7 @@ import {
 } from 'electron';
 import { mainWindow } from "#main/mainWindow";
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
-import { reaxel_AIViews } from "#main/reaxels/Views/AI-Views";
+import { reaxel_AIViews , type RuntimeAIView } from "#main/reaxels/Views/AI-Views";
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import { getAIConfigService } from "#main/services/settings/ai-config-service";
 import { getSettingsConfigService } from "#main/services/settings/settings-config-service";

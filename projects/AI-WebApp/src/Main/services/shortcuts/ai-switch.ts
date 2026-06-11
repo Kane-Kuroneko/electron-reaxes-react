@@ -4,6 +4,8 @@ type AISwitchShortcutHandlers = {
 	nextInstantiated?: () => void;
 	previousInstantiated?: () => void;
 	closeCurrent?: () => void;
+	nextInstantiatedTab?: () => void;
+	previousInstantiatedTab?: () => void;
 };
 
 type AISwitchShortcutAction = keyof AISwitchShortcutHandlers;
@@ -17,6 +19,8 @@ const globalShortcutAccelerators:Record<AISwitchShortcutAction , string> = {
 	previousInstantiated : 'Alt+[' ,
 	nextInstantiated : 'Alt+]' ,
 	closeCurrent : 'CommandOrControl+W',
+	nextInstantiatedTab : 'CommandOrControl+Tab',
+	previousInstantiatedTab : 'CommandOrControl+Shift+Tab',
 };
 
 const shortcutActions:AISwitchShortcutAction[] = [
@@ -25,6 +29,8 @@ const shortcutActions:AISwitchShortcutAction[] = [
 	'previousInstantiated' ,
 	'nextInstantiated' ,
 	'closeCurrent',
+	'nextInstantiatedTab' ,
+	'previousInstantiatedTab',
 ];
 
 export const setAISwitchShortcutHandlers = (nextHandlers:AISwitchShortcutHandlers) => {
@@ -85,6 +91,11 @@ const resolveShortcutAction = (
 	key:string ,
 	code:string,
 ):AISwitchShortcutAction | null => {
+	// 处理 Tab 键切换（基于已实例化的 AI Views）
+	if( ( input.control || input.meta ) && !input.alt && ( key === 'tab' || code === 'Tab' ) ) {
+		return input.shift ? 'previousInstantiatedTab' : 'nextInstantiatedTab';
+	}
+	
 	const bracketDirection = key === '[' || code === 'BracketLeft'
 		? 'previous'
 		: key === ']' || code === 'BracketRight'

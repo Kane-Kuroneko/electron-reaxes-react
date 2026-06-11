@@ -246,6 +246,12 @@ export const Reaxel_View = reaxel( () => {
 			closeCurrent : () => {
 				closeCurrentAIView();
 			},
+ 			nextInstantiatedTab : () => {
+ 				turnToNextInstantiatedAiPage();
+ 			} ,
+ 			previousInstantiatedTab : () => {
+ 				turnToPreviousInstantiatedAiPage();
+ 			},
 		} );
 		registerAISwitchGlobalShortcuts();
 		reaxel_FloatingView().initFloatingView();
