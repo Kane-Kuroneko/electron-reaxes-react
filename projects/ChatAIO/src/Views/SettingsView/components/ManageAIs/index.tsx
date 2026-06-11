@@ -11,17 +11,30 @@ const AIEnabledCheckbox = reaxper( ( { id }:{ id:string } ) => {
 	/>;
 } );
 
+const compactTableHeader = (label:React.ReactNode) => (
+	<span className="manage-ais-table__header-nowrap">{ label }</span>
+);
+
+const compactTableHeaderCell = () => ( {
+	className : 'manage-ais-table__th-compact' ,
+	style : { whiteSpace : 'nowrap' as const },
+} );
+
 const columns:TableColumnType<AI.AIItem>[] = [
 	{
-		title : <I18n>Drag</I18n> ,
-		width : 40 ,
+		title : compactTableHeader( <I18n>Drag</I18n> ) ,
+		width : 48 ,
+		align : 'center' ,
+		onHeaderCell : compactTableHeaderCell ,
 		render() {
 			return <DragHandle/>;
 		},
 	} ,
 	{
-		title : <I18n>Enabled</I18n> ,
-		width : 44 ,
+		title : compactTableHeader( <I18n>Enabled</I18n> ) ,
+		width : 68 ,
+		align : 'center' ,
+		onHeaderCell : compactTableHeaderCell ,
 		render( _value , record ) {
 			return <AIEnabledCheckbox id={ record.id }/>;
 		},
@@ -189,6 +202,7 @@ export const RCManageAIsPanel = reaxper( () => {
 			>
 				<div style={ { overflowX: 'auto' } }>
 					<Table
+					className="manage-ais-table"
 					style={ { width: '100%' , minWidth: 540 } }
 					components={ {
 						body : {

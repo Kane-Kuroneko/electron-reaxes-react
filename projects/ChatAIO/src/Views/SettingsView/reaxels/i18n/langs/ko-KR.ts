@@ -19,6 +19,7 @@
 	// Menu - Switch AI
 	"Switch AI" : "AI 전환" ,
 	"Previous" : "이전" ,
+	"Prev" : "이전" ,
 	"Next" : "다음" ,
 	"Previous AI" : "이전 AI" ,
 	"Next AI" : "다음 AI" ,

@@ -31,6 +31,26 @@ export const reaxel_Menu = reaxel( () => {
 		const previousInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , -1 );
 		const promptViewLeftVisible = reaxel_PromptViews.store.left.visible || reaxel_PromptViews.store.left.width > 0;
 		const promptViewRightVisible = reaxel_PromptViews.store.right.visible || reaxel_PromptViews.store.right.width > 0;
+		const adjacentAIMenuItems:MenuItemConstructorOptions[] = canSwitchInstantiatedAI
+			? [
+				{
+					label : createAdjacentAIMenuLabel( '⏮️' , t( 'Prev' ) , previousInstantiatedAI ) ,
+					accelerator : 'CmdOrCtrl+[' ,
+					registerAccelerator : false ,
+					click : () => {
+						void Reaxel_View().turnToPreviousInstantiatedAiPage();
+					},
+				} ,
+				{
+					label : createAdjacentAIMenuLabel( '⏭️' , t( 'Next' ) , nextInstantiatedAI ) ,
+					accelerator : 'CmdOrCtrl+]' ,
+					registerAccelerator : false ,
+					click : () => {
+						void Reaxel_View().turnToNextInstantiatedAiPage();
+					},
+				} ,
+			]
+			: [];
 		
 		return Menu.buildFromTemplate( [
 			{
@@ -225,24 +245,7 @@ export const reaxel_Menu = reaxel( () => {
 						},
 					],
 			},
-		{
-			label : createAdjacentAIMenuLabel( '⏮️' , t( 'Previous' ) , previousInstantiatedAI ) ,
-			accelerator : 'CmdOrCtrl+[' ,
-			registerAccelerator : false ,
-			enabled : canSwitchInstantiatedAI ,
-			click : () => {
-				void Reaxel_View().turnToPreviousInstantiatedAiPage();
-			},
-		},
-		{
-			label : createAdjacentAIMenuLabel( '⏭️' , t( 'Next' ) , nextInstantiatedAI ) ,
-			accelerator : 'CmdOrCtrl+]' ,
-			registerAccelerator : false ,
-			enabled : canSwitchInstantiatedAI ,
-			click : () => {
-				void Reaxel_View().turnToNextInstantiatedAiPage();
-			},
-		} ,
+			...adjacentAIMenuItems,
 		] );
 	}
 	
@@ -327,7 +330,7 @@ const createAdjacentAIMenuLabel = (
 	}
 	// 获取 AI 显示名称：优先使用 label，否则使用 id
 	const displayName = ai.label || ai.id;
-	return escapeElectronMenuBarLabel( `${ emoji } ${ label } ${ fitMenuAIName( displayName ) }` );
+	return escapeElectronMenuBarLabel( `${ emoji } ${ label }: ${ fitMenuAIName( displayName ) }` );
 };
 
 /**
@@ -357,6 +360,7 @@ import {
 	autoUpdater ,
 	dialog ,
 	Menu,
+	type MenuItemConstructorOptions,
 } from 'electron';
 import { mainWindow } from "#main/mainWindow";
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
