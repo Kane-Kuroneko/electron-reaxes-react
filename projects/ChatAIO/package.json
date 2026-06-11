@@ -1,0 +1,20 @@
+{
+	"name": "chataio",
+	"version": "1.0.0",
+	"main": "dist/main.js",
+	"keywords": [],
+	"author": "",
+	"license": "WTFPL",
+	"scripts": {
+		"start:webpack": "yarn --cwd ../.. tsx scripts/webpack.start/index.ts ChatAIO 4444",
+		"start:electron": "yarn --cwd ../.. tsx scripts/electron.start/index.ts ChatAIO",
+		"build:webpack": "yarn --cwd ../.. tsx scripts/webpack.build/index.ts ChatAIO production",
+		"build:electron": "yarn --cwd ../.. tsx scripts/electron.build/index.ts ChatAIO"
+	},
+	"type": "commonjs",
+	"description": "Unified desktop client for multiple AI services",
+	"dependencies": {
+		"electron-store": "^11.0.2"
+	},
+	"devDependencies": {}
+}

@@ -1,6 +1,6 @@
 ---
 name: electron-reaxes-react
-description: Work safely in the Z:\electron-reaxes-react Electron/Reaxes monorepo. Use when editing or reviewing project code, especially AI-WebApp settings, Electron main/preload/renderer IPC, Reaxes reaxels, bottom-import style, .qoder rules, or code that depends on the local Reaxes source at Z:\reaxes.
+description: Work safely in the Z:\electron-reaxes-react Electron/Reaxes monorepo. Use when editing or reviewing project code, especially ChatAIO settings, Electron main/preload/renderer IPC, Reaxes reaxels, bottom-import style, .qoder rules, or code that depends on the local Reaxes source at Z:\reaxes.
 ---
 
 # Electron Reaxes React
@@ -12,7 +12,7 @@ Read these files before changing behavior:
 - `.qoder/rules/ipc-coding.md`
 - `CODING_STANDARD.md`
 - `AGENTS.md`
-- The target subproject docs such as `projects/AI-WebApp/AI-CONFIG-ARCHITECTURE.md` and `projects/AI-WebApp/todo.md`
+- The target subproject docs such as `projects/ChatAIO/AI-CONFIG-ARCHITECTURE.md` and `projects/ChatAIO/todo.md`
 
 Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with npm. The local Reaxes implementation is available at `Z:\reaxes` when library behavior is unclear.
 
@@ -24,7 +24,7 @@ Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with n
 - Reaxel modules use `reaxel_` names and usually return `Object.assign(() => rtn, { store, setState, mutate })`.
 - React components should use `reaxper` when matching existing SettingsView/Main patterns.
 - Hooks are globally provided in this repo; existing code often uses `useEffect`, `useState`, etc. without React imports.
-- If a function or utility is broadly reusable and business-agnostic, place it in the appropriate host `utils` or `toolkits` directory instead of keeping local copies in feature modules, for example `projects/AI-WebApp/src/shared/utils/clone-for-ipc.utility.ts`.
+- If a function or utility is broadly reusable and business-agnostic, place it in the appropriate host `utils` or `toolkits` directory instead of keeping local copies in feature modules, for example `projects/ChatAIO/src/shared/utils/clone-for-ipc.utility.ts`.
 - Avoid unrelated cleanup. Many files have existing loose typing and commented debug code; only change it when needed for the task.
 
 ## Git Commit Messages
@@ -38,12 +38,12 @@ Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with n
 - Renderer code must call `window.api`/`api` exposed by `src/preload.ts`.
 - Do not import `createIpc`, `ipcRenderer`, `ipcMain`, or use raw `webContents.send` in renderer components.
 - Main process IPC goes through `src/Main/services/ipc/index.ts` via `useIpcRpc`, `useIpcRendererToMain`, or `useIpcMainToRenderer`.
-- Every new channel must be typed in `projects/AI-WebApp/src/Types/IpcSchema.d.ts`, exposed in `src/preload.ts`, and wrapped in `Views/SettingsView/services/Settings` if the Settings UI needs it.
+- Every new channel must be typed in `projects/ChatAIO/src/Types/IpcSchema.d.ts`, exposed in `src/preload.ts`, and wrapped in `Views/SettingsView/services/Settings` if the Settings UI needs it.
 
-## AI-WebApp Runtime Model
+## ChatAIO Runtime Model
 
-- Settings UI lives under `projects/AI-WebApp/src/Views/SettingsView`.
-- Electron main runtime lives under `projects/AI-WebApp/src/Main`.
+- Settings UI lives under `projects/ChatAIO/src/Views/SettingsView`.
+- Electron main runtime lives under `projects/ChatAIO/src/Main`.
 - Settings persistence belongs in `src/Main/services/settings`; avoid persisting UI-only fields unless the runtime needs them.
 - AI page identity should use `AI.AIItem.id`, not `AI_family`. Family describes service type; id describes a user-visible page instance.
 - Menu order should follow the persisted `AIs` array order. Disabled AIs should not appear in `Application > Switch AI`.
@@ -54,8 +54,8 @@ Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with n
 ## Validation
 
 Useful checks:
-- `.\node_modules\.bin\tsc.cmd -p projects\AI-WebApp\tsconfig.json --noEmit`
-- `.\node_modules\.bin\tsc.cmd -p projects\AI-WebApp\src\Views\SettingsView\tsconfig.json --noEmit`
+- `.\node_modules\.bin\tsc.cmd -p projects\ChatAIO\tsconfig.json --noEmit`
+- `.\node_modules\.bin\tsc.cmd -p projects\ChatAIO\src\Views\SettingsView\tsconfig.json --noEmit`
 - `yarn build:webpack`
 
-Known caveat: the current tsconfigs can surface pre-existing `typeRoots`, generic-services, and dependency declaration errors unrelated to AI-WebApp changes. If that happens, rerun with narrower overrides such as `--typeRoots .\node_modules\@types --skipLibCheck`, then report the remaining pre-existing blockers separately.
+Known caveat: the current tsconfigs can surface pre-existing `typeRoots`, generic-services, and dependency declaration errors unrelated to ChatAIO changes. If that happens, rerun with narrower overrides such as `--typeRoots .\node_modules\@types --skipLibCheck`, then report the remaining pre-existing blockers separately.

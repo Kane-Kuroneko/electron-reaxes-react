@@ -1,0 +1,17 @@
+{
+   appId: "com.reaxes.chataio",
+   productName: "ChatAIO",
+   icon: "statics/gpt",
+   directories: {
+      output : "__Bin"
+   },
+   files: ["dist/"],
+   extraResources: [
+      {
+         from: "statics",
+         to: "statics"
+      }
+   ],
+   electronVersion: "41.0.3",
+   asar: true,
+}

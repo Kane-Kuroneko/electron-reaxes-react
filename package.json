@@ -5,8 +5,8 @@
 	"scripts": {
 		"start:webpack": "tsx scripts/webpack.start/index.ts",
 		"start:electron": "tsx scripts/electron.start/index.ts",
-		"build:webpack": "tsx ./scripts/webpack.build/index.ts AI-WebApp production",
-		"build:electron": "tsx scripts/electron.build/index.ts AI-WebApp",
+		"build:webpack": "tsx ./scripts/webpack.build/index.ts ChatAIO production",
+		"build:electron": "tsx scripts/electron.build/index.ts ChatAIO",
 		"webpack-start:ahk-war3": "tsx scripts/webpack.start/index.ts Autohotkey-GUI/War3 4444 ",
 		"electron-start:ahk-war3": "tsx scripts/electron.start/index.ts Autohotkey-GUI/War3",
 		"webpack-build:ahk-war3": "tsx scripts/webpack.build/index.ts Autohotkey-GUI/War3 production",

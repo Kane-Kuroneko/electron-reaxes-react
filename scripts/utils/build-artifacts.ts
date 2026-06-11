@@ -162,7 +162,7 @@ export const assertFreshElectronStartupArtifacts = (options:FreshArtifactOptions
 		}
 		lines.push( `  newest source: ${ artifact.newestSource ? `${ artifact.newestSource.path } (${ new Date( artifact.newestSource.mtimeMs ).toLocaleString() })` : 'not found' }` );
 	}
-	lines.push( 'Run yarn start:webpack AI-WebApp first, or run yarn build:webpack for a production build.' );
+	lines.push( 'Run yarn start:webpack ChatAIO first, or run yarn build:webpack for a production build.' );
 	throw new Error( lines.join( '\n' ) );
 };
 

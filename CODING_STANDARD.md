@@ -207,7 +207,7 @@ export const functionName = <T>(param: T): ReturnType => {
 ### 3.4 通用工具归位
 
 - 如果函数或工具可能被广泛复用、业务无关，应根据宿主环境放入相应目录的 `utils` 或 `toolkits` 中，而不是散落在业务模块内。
-- 工具函数文件使用 `.utility.ts` 后缀；例如 AI-WebApp 里的 IPC/observable plain clone 放在 `src/shared/utils/clone-for-ipc.utility.ts`。
+- 工具函数文件使用 `.utility.ts` 后缀；例如 ChatAIO 里的 IPC/observable plain clone 放在 `src/shared/utils/clone-for-ipc.utility.ts`。
 
 ---
 
