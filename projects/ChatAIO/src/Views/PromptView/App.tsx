@@ -35,6 +35,8 @@ export const App = reaxper( () => {
 		reorderPrompts( String( active.id ) , String( over.id ) );
 	};
 
+	const hasItems = store.items.length > 0;
+
 	return <ConfigProvider
 		theme={ {
 			algorithm : resolvedTheme === 'dark'
@@ -43,55 +45,55 @@ export const App = reaxper( () => {
 		} }
 	>
 		<main className="prompt-view-root">
+			{/* ═══ Header：左侧模块名 + 侧标识，右侧仅关闭按钮 ═══ */}
 			<header className="prompt-view-header">
 				<div className="prompt-view-heading">
-					<div className="prompt-view-kicker">
-						<FileText size={ 14 } />
-						<span><I18n>Prompt Shelf</I18n></span>
-					</div>
-					<div className="prompt-view-title-row">
-						<h1><I18n>Prompts</I18n></h1>
-						<span className="prompt-view-side-pill">
-							<I18n>{ store.side === 'left' ? 'Left' : 'Right' }</I18n>
-						</span>
-					</div>
+					<FileText size={ 14 } />
+					<span className="prompt-view-title"><I18n>Prompt Shelf</I18n></span>
+					<span className="prompt-view-side-pill">
+						<I18n>{ store.side === 'left' ? 'Left' : 'Right' }</I18n>
+					</span>
 				</div>
-				<div className="prompt-view-header-actions">
-					<Tooltip title={ <I18n>New Prompt</I18n> }>
-						<Button
-							type="primary"
-							className="prompt-view-add-button"
-							shape="circle"
-							icon={ <Plus size={ 18 } /> }
-							aria-label={ i18n( 'New Prompt' ) }
-							onClick={ addPrompt }
-						/>
-					</Tooltip>
-					<Tooltip title={ <I18n>Close</I18n> }>
-						<Button
-							type="text"
-							className="prompt-view-close-button"
-							shape="circle"
-							icon={ <X size={ 16 } /> }
-							aria-label={ i18n( 'Close' ) }
-							onClick={ closePromptView }
-						/>
-					</Tooltip>
-				</div>
+				<Tooltip title={ <I18n>Close</I18n> }>
+					<Button
+						type="text"
+						className="prompt-view-close-button"
+						shape="circle"
+						icon={ <X size={ 16 } /> }
+						aria-label={ i18n( 'Close' ) }
+						onClick={ closePromptView }
+					/>
+				</Tooltip>
 			</header>
-			<div className="prompt-view-statusline">
-				<span>{ store.items.length } <I18n>prompts</I18n></span>
-				<span className={ `prompt-view-save-state ${ store.status.saving ? 'is-saving' : '' }` }>
-					{ store.status.saving
-						? <Loader2
-							size={ 13 }
-							className="prompt-spin"
-						/>
-						: <CircleCheck size={ 13 } />
-					}
-					<I18n>{ store.status.saving ? 'Saving' : 'Saved' }</I18n>
-				</span>
+
+			{/* ═══ Toolbar：状态信息 + 新建按钮（从 header 移至此）═══ */}
+			<div className="prompt-view-toolbar">
+				<div className="prompt-view-status">
+					<span className="prompt-view-count">{ store.items.length } <I18n>prompts</I18n></span>
+					<span className={ `prompt-view-save-state ${ store.status.saving ? 'is-saving' : '' }` }>
+						{ store.status.saving
+							? <Loader2
+								size={ 13 }
+								className="prompt-spin"
+							/>
+							: <CircleCheck size={ 13 } />
+						}
+						<I18n>{ store.status.saving ? 'Saving' : 'Saved' }</I18n>
+					</span>
+				</div>
+				<Tooltip title={ <I18n>New Prompt</I18n> }>
+					<Button
+						type="primary"
+						className="prompt-view-add-button"
+						shape="circle"
+						icon={ <Plus size={ 18 } /> }
+						aria-label={ i18n( 'New Prompt' ) }
+						onClick={ addPrompt }
+					/>
+				</Tooltip>
 			</div>
+
+			{/* ═══ Body：卡片列表（SortableContext 结构不变）═══ */}
 			<section className="prompt-view-body">
 				{ store.status.error ? <Alert
 					className="prompt-view-error"
@@ -100,7 +102,7 @@ export const App = reaxper( () => {
 					message={ store.status.error }
 				/> : null }
 				{ store.status.loading ? <div className="prompt-view-loading"><Spin /></div> : null }
-				{ !store.status.loading && store.items.length === 0 ? <div className="prompt-view-empty">
+				{ !store.status.loading && !hasItems ? <div className="prompt-view-empty">
 					<div className="prompt-view-empty-mark"><FileText size={ 24 } /></div>
 					<div className="prompt-view-empty-title"><I18n>No prompts</I18n></div>
 					<Button
@@ -109,7 +111,7 @@ export const App = reaxper( () => {
 						onClick={ addPrompt }
 					><I18n>New Prompt</I18n></Button>
 				</div> : null }
-				{ !store.status.loading && store.items.length > 0 ? <DndContext
+				{ !store.status.loading && hasItems ? <DndContext
 					sensors={ sensors }
 					modifiers={ [ restrictToVerticalAxis ] }
 					onDragEnd={ onDragEnd }

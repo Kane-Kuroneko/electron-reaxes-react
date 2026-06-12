@@ -1,320 +1,309 @@
 /* ═══ Design tokens ═══ */
 :root {
-   --prompt-bg: #faf8f5;
-   --prompt-panel: #ffffff;
-   --prompt-surface: #ffffff;
-   --prompt-surface-soft: #f5f4f1;
-   --prompt-border: rgba(0, 0, 0, 0.04);
-   --prompt-border-strong: rgba(0, 0, 0, 0.07);
-   --prompt-text: #1c1917;
-   --prompt-muted: #78716c;
-   --prompt-subtle: #a8a29e;
-   --prompt-accent: #d97706;
-   --prompt-accent-soft: rgba(217, 119, 6, 0.06);
-   --prompt-accent-ring: rgba(217, 119, 6, 0.12);
-   --prompt-shadow-sm: 0 1px 2px rgba(0,0,0,0.02);
-   --prompt-shadow-md: 0 2px 8px rgba(0,0,0,0.03), 0 6px 20px rgba(0,0,0,0.03);
-   --prompt-shadow-lg: 0 4px 16px rgba(0,0,0,0.05), 0 14px 36px rgba(0,0,0,0.04);
-   --prompt-radius-sm: 5px;
-   --prompt-radius-md: 8px;
-   --prompt-radius-lg: 12px;
-   --prompt-scrollbar-thumb: rgba(28, 25, 23, 0.14);
-   --prompt-scrollbar-thumb-hover: rgba(28, 25, 23, 0.26);
-   color-scheme: light;
+	--prompt-bg: #faf8f5;
+	--prompt-panel: #ffffff;
+	--prompt-surface: #ffffff;
+	--prompt-surface-soft: #f5f4f1;
+	--prompt-border: rgba(0, 0, 0, 0.04);
+	--prompt-border-strong: rgba(0, 0, 0, 0.07);
+	--prompt-text: #1c1917;
+	--prompt-muted: #78716c;
+	--prompt-subtle: #a8a29e;
+	--prompt-accent: #d97706;
+	--prompt-accent-soft: rgba(217, 119, 6, 0.06);
+	--prompt-accent-ring: rgba(217, 119, 6, 0.12);
+	--prompt-shadow-sm: 0 1px 2px rgba(0,0,0,0.02);
+	--prompt-shadow-md: 0 2px 8px rgba(0,0,0,0.03), 0 6px 20px rgba(0,0,0,0.03);
+	--prompt-shadow-lg: 0 4px 16px rgba(0,0,0,0.05), 0 14px 36px rgba(0,0,0,0.04);
+	--prompt-radius-sm: 5px;
+	--prompt-radius-md: 8px;
+	--prompt-radius-lg: 12px;
+	--prompt-scrollbar-thumb: rgba(28, 25, 23, 0.14);
+	--prompt-scrollbar-thumb-hover: rgba(28, 25, 23, 0.26);
+	color-scheme: light;
 }
 
 :root[data-chataio-theme="dark"] {
-   --prompt-bg: #0c0a09;
-   --prompt-panel: #12100e;
-   --prompt-surface: #1a1715;
-   --prompt-surface-soft: #1f1c19;
-   --prompt-border: rgba(255, 255, 255, 0.04);
-   --prompt-border-strong: rgba(255, 255, 255, 0.07);
-   --prompt-text: #e7e5e4;
-   --prompt-muted: #a8a29e;
-   --prompt-subtle: #78716c;
-   --prompt-accent: #f59e0b;
-   --prompt-accent-soft: rgba(245, 158, 11, 0.06);
-   --prompt-accent-ring: rgba(245, 158, 11, 0.14);
-   --prompt-shadow-sm: 0 1px 2px rgba(0,0,0,0.14);
-   --prompt-shadow-md: 0 3px 10px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.14);
-   --prompt-shadow-lg: 0 6px 20px rgba(0,0,0,0.26), 0 18px 44px rgba(0,0,0,0.18);
-   --prompt-scrollbar-thumb: rgba(231, 229, 228, 0.16);
-   --prompt-scrollbar-thumb-hover: rgba(231, 229, 228, 0.28);
-   color-scheme: dark;
+	--prompt-bg: #0c0a09;
+	--prompt-panel: #12100e;
+	--prompt-surface: #1a1715;
+	--prompt-surface-soft: #1f1c19;
+	--prompt-border: rgba(255, 255, 255, 0.04);
+	--prompt-border-strong: rgba(255, 255, 255, 0.07);
+	--prompt-text: #e7e5e4;
+	--prompt-muted: #a8a29e;
+	--prompt-subtle: #78716c;
+	--prompt-accent: #f59e0b;
+	--prompt-accent-soft: rgba(245, 158, 11, 0.06);
+	--prompt-accent-ring: rgba(245, 158, 11, 0.14);
+	--prompt-shadow-sm: 0 1px 2px rgba(0,0,0,0.14);
+	--prompt-shadow-md: 0 3px 10px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.14);
+	--prompt-shadow-lg: 0 6px 20px rgba(0,0,0,0.26), 0 18px 44px rgba(0,0,0,0.18);
+	--prompt-scrollbar-thumb: rgba(231, 229, 228, 0.16);
+	--prompt-scrollbar-thumb-hover: rgba(231, 229, 228, 0.28);
+	color-scheme: dark;
 }
 
 html, body, #react-app-root {
-   width: 100%; height: 100%; margin: 0;
+	width: 100%; height: 100%; margin: 0;
 }
 
 body {
-   background: var(--prompt-bg);
-   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-   overflow: hidden;
-   -webkit-font-smoothing: antialiased;
-   -moz-osx-font-smoothing: grayscale;
+	background: var(--prompt-bg);
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+	overflow: hidden;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 .prompt-view-root {
-   position: relative;
-   height: 100vh; min-width: 240px;
-   display: grid;
-   grid-template-rows: auto auto 1fr;
-   background: var(--prompt-bg);
-   color: var(--prompt-text);
-   box-sizing: border-box;
-   overflow: hidden;
+	position: relative;
+	height: 100vh; min-width: 240px;
+	display: grid;
+	grid-template-rows: auto auto 1fr;
+	background: var(--prompt-bg);
+	color: var(--prompt-text);
+	box-sizing: border-box;
+	overflow: hidden;
 }
 
-/* ═══ Header ═══ */
+/* ═══ Header：单行 — 标题 + 侧标识 居左，关闭按钮 居右 ═══ */
 .prompt-view-header {
-   padding: 18px 16px 12px;
-   display: flex;
-   align-items: flex-start;
-   justify-content: space-between;
-   gap: 12px;
-   background: var(--prompt-panel);
-   box-sizing: border-box;
+	padding: 14px 12px 10px 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	background: var(--prompt-panel);
+	box-sizing: border-box;
 }
 
 .prompt-view-heading {
-   min-width: 0;
-   display: flex;
-   flex-direction: column;
-   gap: 2px;
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
-.prompt-view-kicker {
-   min-width: 0;
-   display: flex;
-   align-items: center;
-   gap: 6px;
-   color: var(--prompt-accent);
-   font-size: 10.5px;
-   line-height: 16px;
-   font-weight: 650;
-   letter-spacing: 0.02em;
-   text-transform: uppercase;
-}
-.prompt-view-kicker svg { width: 14px; height: 14px; }
-
-.prompt-view-title-row {
-   min-width: 0;
-   display: flex;
-   align-items: baseline;
-   gap: 10px;
+/* 模块图标 */
+.prompt-view-heading > svg {
+	flex: 0 0 auto;
+	width: 14px; height: 14px;
+	color: var(--prompt-accent);
 }
 
-.prompt-view-title-row h1 {
-   margin: 0; min-width: 0;
-   font-size: 22px; line-height: 28px;
-   font-weight: 700;
-   letter-spacing: -0.02em;
-   color: var(--prompt-text);
-   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+/* "Prompt Shelf" 标题文字 */
+.prompt-view-title {
+	min-width: 0;
+	font-size: 15px; line-height: 20px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	color: var(--prompt-text);
+	white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
+/* 左/右侧标识 pill */
 .prompt-view-side-pill {
-   height: 20px; padding: 0 7px;
-   display: inline-flex; align-items: center; justify-content: center;
-   border-radius: 999px;
-   border: 1px solid var(--prompt-accent-soft);
-   background: var(--prompt-accent-soft);
-   color: var(--prompt-accent);
-   font-size: 10px; line-height: 18px; font-weight: 650;
-   box-sizing: border-box;
-   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+	height: 20px; padding: 0 7px;
+	display: inline-flex; align-items: center; justify-content: center;
+	border-radius: 999px;
+	border: 1px solid var(--prompt-accent-soft);
+	background: var(--prompt-accent-soft);
+	color: var(--prompt-accent);
+	font-size: 10px; line-height: 18px; font-weight: 650;
+	box-sizing: border-box;
+	white-space: nowrap; flex-shrink: 0;
 }
 
-/* Header actions: 关闭按钮与新建按钮并排，无重叠 */
-.prompt-view-header-actions {
-   flex: 0 0 auto;
-   display: flex;
-   align-items: flex-start;
-   gap: 6px;
-}
-
-.prompt-view-add-button.ant-btn {
-   flex: 0 0 auto;
-   width: 36px; height: 36px; margin-top: 2px;
-   border-radius: var(--prompt-radius-md);
-   box-shadow: none;
-   background: var(--prompt-accent);
-   border-color: var(--prompt-accent);
-   transition: background .12s ease;
-}
-.prompt-view-add-button.ant-btn:hover,
-.prompt-view-add-button.ant-btn:focus-visible {
-   background: var(--prompt-accent) !important;
-   border-color: var(--prompt-accent) !important;
-   opacity: 0.88;
-}
-.prompt-view-add-button.ant-btn:active {
-   background: var(--prompt-accent) !important;
-   opacity: 0.82;
-}
-.prompt-view-add-button svg { width: 18px; height: 18px; }
-
-.prompt-view-close-button.ant-btn {
-   width: 30px; height: 30px; margin-top: 4px;
-   border-radius: var(--prompt-radius-sm);
-   color: var(--prompt-muted);
-   transition: color .12s ease, background .12s ease;
+/* 关闭按钮 — header 内唯一右侧元素 */
+.prompt-view-header .prompt-view-close-button.ant-btn {
+	width: 30px; height: 30px; flex: 0 0 auto;
+	border-radius: var(--prompt-radius-sm);
+	color: var(--prompt-muted);
+	transition: color .12s ease, background .12s ease;
 }
 .prompt-view-close-button.ant-btn:hover,
 .prompt-view-close-button.ant-btn:focus-visible {
-   color: var(--prompt-text);
-   background: var(--prompt-surface-soft);
+	color: var(--prompt-text);
+	background: var(--prompt-surface-soft);
 }
 .prompt-view-close-button svg { width: 16px; height: 16px; }
 
-/* ═══ Status line ═══ */
-.prompt-view-statusline {
-   height: 32px; padding: 0 16px;
-   display: flex; align-items: center; justify-content: space-between;
-   gap: 10px;
-   background: var(--prompt-panel);
-   border-bottom: 1px solid var(--prompt-border);
-   box-sizing: border-box;
-   color: var(--prompt-muted);
-   font-size: 11.5px; line-height: 16px;
+/* ═══ Toolbar：状态信息 + 新建按钮（原 header-actions 的 add 移至此）═══ */
+.prompt-view-toolbar {
+	height: 36px; padding: 0 12px 0 16px;
+	display: flex; align-items: center; justify-content: space-between;
+	gap: 10px;
+	background: var(--prompt-panel);
+	border-bottom: 1px solid var(--prompt-border);
+	box-sizing: border-box;
 }
 
-.prompt-view-statusline > span:first-child {
-   font-weight: 580;
-   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.prompt-view-status {
+	min-width: 0;
+	display: flex; align-items: center;
+	gap: 10px;
+	color: var(--prompt-muted);
+	font-size: 11.5px; line-height: 16px;
+}
+
+.prompt-view-count {
+	font-weight: 580;
+	white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .prompt-view-save-state {
-   display: inline-flex; align-items: center; justify-content: flex-end;
-   gap: 5px;
-   color: var(--prompt-subtle);
-   font-size: 11.5px;
-   transition: color .2s ease;
+	display: inline-flex; align-items: center; justify-content: flex-end;
+	gap: 5px;
+	color: var(--prompt-subtle);
+	font-size: 11.5px;
+	transition: color .2s ease;
+	flex-shrink: 0;
 }
 .prompt-view-save-state.is-saving { color: var(--prompt-accent); }
 .prompt-view-save-state svg { width: 13px; height: 13px; }
 
+/* 新建按钮 — 位于 toolbar 右侧 */
+.prompt-view-toolbar .prompt-view-add-button.ant-btn {
+	flex: 0 0 auto;
+	width: 30px; height: 30px;
+	border-radius: var(--prompt-radius-sm);
+	box-shadow: none;
+	background: var(--prompt-accent);
+	border-color: var(--prompt-accent);
+	transition: background .12s ease;
+}
+.prompt-view-add-button.ant-btn:hover,
+.prompt-view-add-button.ant-btn:focus-visible {
+	background: var(--prompt-accent) !important;
+	border-color: var(--prompt-accent) !important;
+	opacity: 0.88;
+}
+.prompt-view-add-button.ant-btn:active {
+	background: var(--prompt-accent) !important;
+	opacity: 0.82;
+}
+.prompt-view-add-button svg { width: 16px; height: 16px; }
+
 /* ═══ Body ═══ */
 .prompt-view-body {
-   min-height: 0;
-   overflow-x: hidden;
-   overflow-y: auto;
-   scrollbar-gutter: stable; /* 按需预留滚动条宽度，避免无滚动条时过宽的空白区 */
-   padding: 10px 3px 14px 10px;
-   box-sizing: border-box;
-   /* 细滚动条 + 透明轨道，参考 shadcn globals / VS Code 低饱和 thumb */
-   &::-webkit-scrollbar {
-      width: 6px;
-   }
-   &::-webkit-scrollbar-track {
-      background: transparent;
-   }
-   &::-webkit-scrollbar-thumb {
-      background-color: var(--prompt-scrollbar-thumb);
-      border-radius: 999px;
-      border: 2px solid transparent;
-      background-clip: padding-box;
-   }
-   &::-webkit-scrollbar-thumb:hover {
-      background-color: var(--prompt-scrollbar-thumb-hover);
-   }
-   /* Firefox 后备：细滚动条 + 透明轨道 */
-   scrollbar-width: thin;
-   scrollbar-color: var(--prompt-scrollbar-thumb) transparent;
+	min-height: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+	scrollbar-gutter: stable; /* 按需预留滚动条宽度，避免无滚动条时过宽的空白区 */
+	padding: 10px 3px 14px 10px;
+	box-sizing: border-box;
+	/* 细滚动条 + 透明轨道，参考 shadcn globals / VS Code 低饱和 thumb */
+	&::-webkit-scrollbar {
+		width: 6px;
+	}
+	&::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	&::-webkit-scrollbar-thumb {
+		background-color: var(--prompt-scrollbar-thumb);
+		border-radius: 999px;
+		border: 2px solid transparent;
+		background-clip: padding-box;
+	}
+	&::-webkit-scrollbar-thumb:hover {
+		background-color: var(--prompt-scrollbar-thumb-hover);
+	}
+	/* Firefox 后备：细滚动条 + 透明轨道 */
+	scrollbar-width: thin;
+	scrollbar-color: var(--prompt-scrollbar-thumb) transparent;
 }
 
 .prompt-view-error { margin-bottom: 10px; border-radius: var(--prompt-radius-md); }
 
 .prompt-view-loading, .prompt-view-empty {
-   height: 100%; min-height: 190px;
-   display: flex; align-items: center; justify-content: center;
+	height: 100%; min-height: 190px;
+	display: flex; align-items: center; justify-content: center;
 }
 
 .prompt-view-empty {
-   flex-direction: column; gap: 16px;
-   color: var(--prompt-muted);
+	flex-direction: column; gap: 16px;
+	color: var(--prompt-muted);
 }
 
 .prompt-view-empty-mark {
-   width: 48px; height: 48px;
-   display: flex; align-items: center; justify-content: center;
-   border-radius: var(--prompt-radius-lg);
-   background: var(--prompt-accent-soft);
-   color: var(--prompt-accent);
+	width: 48px; height: 48px;
+	display: flex; align-items: center; justify-content: center;
+	border-radius: var(--prompt-radius-lg);
+	background: var(--prompt-accent-soft);
+	color: var(--prompt-accent);
 }
 .prompt-view-empty-mark svg { width: 22px; height: 22px; }
 
 .prompt-view-empty-title {
-   font-size: 12.5px; line-height: 18px;
-   font-weight: 600;
-   color: var(--prompt-subtle);
+	font-size: 12.5px; line-height: 18px;
+	font-weight: 600;
+	color: var(--prompt-subtle);
 }
 
 /* ═══ Card list ═══ */
 .prompt-card-list {
-   display: flex; flex-direction: column;
-   gap: 10px;
+	display: flex; flex-direction: column;
+	gap: 10px;
 }
 
 .prompt-card {
-   border-radius: var(--prompt-radius-lg);
-   border: 1px solid var(--prompt-border);
-   background: var(--prompt-surface);
-   box-shadow: var(--prompt-shadow-sm);
-   padding: 10px;
-   box-sizing: border-box; overflow: hidden;
-   transition: border-color .15s ease, box-shadow .15s ease;
-   will-change: transform;
+	border-radius: var(--prompt-radius-lg);
+	border: 1px solid var(--prompt-border);
+	background: var(--prompt-surface);
+	box-shadow: var(--prompt-shadow-sm);
+	padding: 10px;
+	box-sizing: border-box; overflow: hidden;
+	transition: border-color .15s ease, box-shadow .15s ease;
+	will-change: transform;
 }
 .prompt-card:hover {
-   border-color: var(--prompt-border-strong);
-   box-shadow: var(--prompt-shadow-md);
+	border-color: var(--prompt-border-strong);
+	box-shadow: var(--prompt-shadow-md);
 }
 .prompt-card.is-dragging {
-   border-color: var(--prompt-accent);
-   box-shadow: var(--prompt-shadow-lg);
-   transition: none;
+	border-color: var(--prompt-accent);
+	box-shadow: var(--prompt-shadow-lg);
+	transition: none;
 }
 
 .prompt-card-topbar {
-   height: 32px;
-   display: flex; align-items: center; justify-content: space-between;
-   gap: 8px;
+	height: 32px;
+	display: flex; align-items: center; justify-content: space-between;
+	gap: 8px;
 }
 
 .prompt-card-identity, .prompt-card-actions {
-   min-width: 0;
-   display: flex; align-items: center;
-   gap: 4px;
+	min-width: 0;
+	display: flex; align-items: center;
+	gap: 4px;
 }
 .prompt-card-actions { flex: 0 0 auto; justify-content: flex-end; }
 
 .prompt-card-title {
-   min-width: 0;
-   color: var(--prompt-muted);
-   font-size: 11px; line-height: 18px;
-   font-weight: 600;
-   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+	min-width: 0;
+	color: var(--prompt-muted);
+	font-size: 11px; line-height: 18px;
+	font-weight: 600;
+	white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .prompt-card-icon-button.ant-btn {
-   width: 30px; height: 30px; min-width: 30px;
-   padding: 0;
-   border-radius: var(--prompt-radius-sm);
-   color: var(--prompt-subtle);
-   transition: color .12s ease, background .12s ease;
+	width: 30px; height: 30px; min-width: 30px;
+	padding: 0;
+	border-radius: var(--prompt-radius-sm);
+	color: var(--prompt-subtle);
+	transition: color .12s ease, background .12s ease;
 }
 .prompt-card-icon-button svg { width: 15px; height: 15px; }
 .prompt-card-icon-button.ant-btn:hover,
 .prompt-card-icon-button.ant-btn:focus-visible {
-   color: var(--prompt-text);
-   background: var(--prompt-surface-soft);
+	color: var(--prompt-text);
+	background: var(--prompt-surface-soft);
 }
 .prompt-card-icon-button.ant-btn.ant-btn-dangerous:hover {
-   color: #dc2626;
-   background: rgba(220,38,38,0.06);
+	color: #dc2626;
+	background: rgba(220,38,38,0.06);
 }
 
 .prompt-card-drag-handle { cursor: grab; touch-action: none; }
@@ -322,49 +311,49 @@ body {
 
 /* ═══ Composer — no glow, clean border focus ═══ */
 .prompt-composer {
-   margin-top: 8px;
-   border-radius: var(--prompt-radius-md);
-   border: 1px solid var(--prompt-border);
-   background: var(--prompt-surface-soft);
-   overflow: hidden;
-   transition: border-color .2s ease, background .2s ease;
+	margin-top: 8px;
+	border-radius: var(--prompt-radius-md);
+	border: 1px solid var(--prompt-border);
+	background: var(--prompt-surface-soft);
+	overflow: hidden;
+	transition: border-color .2s ease, background .2s ease;
 }
 .prompt-composer:focus-within {
-   border-color: var(--prompt-accent);
-   background: var(--prompt-surface);
+	border-color: var(--prompt-accent);
+	background: var(--prompt-surface);
 }
 
 .prompt-card-textarea.ant-input {
-   display: block; width: 100%;
-   border: none; box-shadow: none;
-   background: transparent;
-   color: var(--prompt-text);
-   resize: none;
-   padding: 10px 12px 8px;
-   font-size: 13px; line-height: 1.6;
+	display: block; width: 100%;
+	border: none; box-shadow: none;
+	background: transparent;
+	color: var(--prompt-text);
+	resize: none;
+	padding: 10px 12px 8px;
+	font-size: 13px; line-height: 1.6;
 }
 .prompt-card-textarea.ant-input:focus {
-   border: none; box-shadow: none; background: transparent;
-   outline: none;
+	border: none; box-shadow: none; background: transparent;
+	outline: none;
 }
 .prompt-card-textarea.ant-input::placeholder { color: var(--prompt-subtle); }
 
 .prompt-composer-footer {
-   height: 26px;
-   padding: 0 10px;
-   display: flex; align-items: center; justify-content: flex-end;
-   border-top: 1px solid var(--prompt-border);
-   box-sizing: border-box;
-   color: var(--prompt-subtle);
-   font-size: 10.5px; line-height: 16px;
+	height: 26px;
+	padding: 0 10px;
+	display: flex; align-items: center; justify-content: flex-end;
+	border-top: 1px solid var(--prompt-border);
+	box-sizing: border-box;
+	color: var(--prompt-subtle);
+	font-size: 10.5px; line-height: 16px;
 }
 .prompt-composer-footer .is-empty { color: var(--prompt-muted); }
 
 /* ═══ Spin animation ═══ */
 @keyframes prompt-spin {
-   from { transform: rotate(0deg); }
-   to { transform: rotate(360deg); }
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
 }
 .prompt-spin {
-   animation: prompt-spin 0.9s linear infinite;
+	animation: prompt-spin 0.9s linear infinite;
 }

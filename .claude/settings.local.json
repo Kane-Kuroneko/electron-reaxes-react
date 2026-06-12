@@ -7,7 +7,11 @@
       "Bash(./node_modules/.bin/tsc.cmd -p projects/ChatAIO/src/Views/PromptView/tsconfig.json --noEmit)",
       "Bash(./node_modules/.bin/tsc.cmd -p projects/ChatAIO/src/Views/SettingsView/tsconfig.json --noEmit)",
       "Bash(git add *)",
-      "Bash(git commit -m '@ *)"
+      "Bash(git commit -m '@ *)",
+      "WebSearch",
+      "WebFetch(domain:developers.raycast.com)",
+      "WebFetch(domain:github.com)",
+      "PowerShell($env:Path = \"Z:\\\\electron-reaxes-react\\\\node_modules\\\\.bin;$env:Path\"; cd Z:\\\\electron-reaxes-react\\\\projects\\\\ChatAIO\\\\src\\\\Views\\\\PromptView; npx tsc --noEmit --project tsconfig.json 2>&1)"
     ]
   }
 }
