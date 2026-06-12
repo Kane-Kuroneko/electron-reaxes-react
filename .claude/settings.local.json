@@ -11,7 +11,16 @@
       "WebSearch",
       "WebFetch(domain:developers.raycast.com)",
       "WebFetch(domain:github.com)",
-      "PowerShell($env:Path = \"Z:\\\\electron-reaxes-react\\\\node_modules\\\\.bin;$env:Path\"; cd Z:\\\\electron-reaxes-react\\\\projects\\\\ChatAIO\\\\src\\\\Views\\\\PromptView; npx tsc --noEmit --project tsconfig.json 2>&1)"
+      "PowerShell($env:Path = \"Z:\\\\electron-reaxes-react\\\\node_modules\\\\.bin;$env:Path\"; cd Z:\\\\electron-reaxes-react\\\\projects\\\\ChatAIO\\\\src\\\\Views\\\\PromptView; npx tsc --noEmit --project tsconfig.json 2>&1)",
+      "Bash(sed -i '106s/previousConfigured/previousInstantiated/' projects/ChatAIO/src/Main/services/shortcuts/ai-switch.ts)",
+      "Bash(sed -i '106s/nextConfigured/nextInstantiated/' projects/ChatAIO/src/Main/services/shortcuts/ai-switch.ts)",
+      "Bash(sed -i '109s/previousInstantiated/previousConfigured/' projects/ChatAIO/src/Main/services/shortcuts/ai-switch.ts)",
+      "Bash(sed -i '109s/nextInstantiated/nextConfigured/' projects/ChatAIO/src/Main/services/shortcuts/ai-switch.ts)",
+      "Bash(sed -i '107s/previousConfigured/previousInstantiated/' projects/ChatAIO/src/Main/services/shortcuts/ai-switch.ts)",
+      "Bash(sed -i '107s/nextConfigured/nextInstantiated/' projects/ChatAIO/src/Main/services/shortcuts/ai-switch.ts)",
+      "Bash(sed -i '110s/previousInstantiated/previousConfigured/' projects/ChatAIO/src/Main/services/shortcuts/ai-switch.ts)",
+      "Bash(sed -i '110s/nextInstantiated/nextConfigured/' projects/ChatAIO/src/Main/services/shortcuts/ai-switch.ts)",
+      "Bash(git commit *)"
     ]
   }
 }
