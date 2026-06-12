@@ -14,10 +14,12 @@ let handlers:AISwitchShortcutHandlers = {};
 let globalShortcutsRegistered = false;
 
 const globalShortcutAccelerators:Record<AISwitchShortcutAction , string> = {
-	previousConfigured : 'CommandOrControl+[' ,
-	nextConfigured : 'CommandOrControl+]' ,
-	previousInstantiated : 'Alt+[' ,
-	nextInstantiated : 'Alt+]' ,
+	/* Ctrl+[] now switches instantiated AI views */
+	previousInstantiated : 'CommandOrControl+[' ,
+	nextInstantiated : 'CommandOrControl+]' ,
+	/* Alt+[] now switches all enabled (configured) AI views */
+	previousConfigured : 'Alt+[' ,
+	nextConfigured : 'Alt+]' ,
 	closeCurrent : 'CommandOrControl+W',
 	nextInstantiatedTab : 'CommandOrControl+Tab',
 	previousInstantiatedTab : 'CommandOrControl+Shift+Tab',
@@ -102,10 +104,10 @@ const resolveShortcutAction = (
 			? 'next'
 			: null;
 	if( bracketDirection && ( input.control || input.meta ) ) {
-		return bracketDirection === 'previous' ? 'previousConfigured' : 'nextConfigured';
+		return bracketDirection === 'previous' ? 'previousInstantiated' : 'nextInstantiated';
 	}
 	if( bracketDirection && input.alt && !input.control && !input.meta ) {
-		return bracketDirection === 'previous' ? 'previousInstantiated' : 'nextInstantiated';
+		return bracketDirection === 'previous' ? 'previousConfigured' : 'nextConfigured';
 	}
 	if( ( input.control || input.meta ) && !input.alt && ( key === 'w' || code === 'KeyW' ) ) {
 		return 'closeCurrent';

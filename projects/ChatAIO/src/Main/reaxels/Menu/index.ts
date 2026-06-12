@@ -4,9 +4,9 @@ export const reaxel_Menu = reaxel( () => {
 		setState ,
 		mutate,
 	} = createReaxable( {} );
-	
+
 	let i18nInstance: (() => { i18n: (text: string) => string }) | null = null;
-	
+
 	const t = (text: string) => {
 		if (!i18nInstance) {
 			console.warn('[Menu] t() called but i18nInstance is null, returning raw text:', text);
@@ -14,12 +14,12 @@ export const reaxel_Menu = reaxel( () => {
 		}
 		return i18nInstance().i18n(text);
 	};
-	
+
 	function setI18nInstance(i18n: () => { i18n: (text: string) => string }) {
 		console.log('[Menu] setI18nInstance called, i18n =', typeof i18n);
 		i18nInstance = i18n;
 	}
-	
+
 	function createMenu() {
 		const settings = getRuntimeSettings();
 		const enabledAIs = settings.AIs.filter( ai => !ai.disabled );
@@ -51,7 +51,7 @@ export const reaxel_Menu = reaxel( () => {
 				} ,
 			]
 			: [];
-		
+
 		return Menu.buildFromTemplate( [
 			{
 				label : t('Application') ,
@@ -146,13 +146,13 @@ export const reaxel_Menu = reaxel( () => {
 								cancelId : 1 ,
 								defaultId : 0,
 							} );
-									
+
 							if( result.response !== 0 ) return;
-									
+
 							const { currentAIView } = reaxel_AIViews();
 							if( !currentAIView ) return;
 							const { origin } = new URL( currentAIView.view.webContents.getURL() );
-									
+
 							await currentAIView.view.webContents.clearHistory();
 							await currentAIView.view.webContents.session.clearStorageData( { origin } );
 							await currentAIView.view.webContents.session.clearCache();
@@ -162,13 +162,36 @@ export const reaxel_Menu = reaxel( () => {
 						} ,
 					} ,
 					{ type : 'separator' } ,
-					{ label : t('Actual Size') , role : 'resetZoom' } ,
+					{
+						label : t('Actual Size') ,
+						click : () => {
+							const view = reaxel_AIViews().currentAIView?.view;
+							if( view && !view.webContents.isDestroyed() ) {
+								view.webContents.setZoomLevel( 0 );
+							}
+						},
+					} ,
 					{
 						label : t('Zoom In') ,
 						accelerator : 'CmdOrCtrl+=' ,
-						role : 'zoomIn',
+						click : () => {
+							const view = reaxel_AIViews().currentAIView?.view;
+							if( view && !view.webContents.isDestroyed() ) {
+								const currentZoom = view.webContents.getZoomLevel();
+								view.webContents.setZoomLevel( currentZoom + 0.5 );
+							}
+						},
 					} ,
-					{ label : t('Zoom Out') , role : 'zoomOut' } ,
+					{
+						label : t('Zoom Out') ,
+						click : () => {
+							const view = reaxel_AIViews().currentAIView?.view;
+							if( view && !view.webContents.isDestroyed() ) {
+								const currentZoom = view.webContents.getZoomLevel();
+								view.webContents.setZoomLevel( currentZoom - 0.5 );
+							}
+						},
+					} ,
 					{ type : 'separator' } ,
 					{ label : t('Toggle Fullscreen') , role : 'togglefullscreen' } ,
 					{ type : 'separator' } ,
@@ -190,7 +213,9 @@ export const reaxel_Menu = reaxel( () => {
 				submenu : enabledAIs.length
 					? [
 						...enabledAIs.map( ai => ( {
-							label : ai.label ,
+							label : isAIInstantiated( ai.id )
+								? `${ ai.label } ✅️`
+								: ai.label ,
 							type : 'radio' as const ,
 							checked : currentAIViewKey === ai.id ,
 							click : createClickMenuHandler( ai.id ),
@@ -199,7 +224,7 @@ export const reaxel_Menu = reaxel( () => {
 						{
 							label : createPlainMenuLabel( t('Previous Opened AI') ) ,
 							type : 'normal' as const ,
-							accelerator : 'Alt+[' ,
+							accelerator : 'CmdOrCtrl+[' ,
 							registerAccelerator : false ,
 							enabled : canSwitchInstantiatedAI ,
 							click : () => {
@@ -209,7 +234,7 @@ export const reaxel_Menu = reaxel( () => {
 						{
 							label : createPlainMenuLabel( t('Next Opened AI') ) ,
 							type : 'normal' as const ,
-							accelerator : 'Alt+]' ,
+							accelerator : 'CmdOrCtrl+]' ,
 							registerAccelerator : false ,
 							enabled : canSwitchInstantiatedAI ,
 							click : () => {
@@ -220,7 +245,7 @@ export const reaxel_Menu = reaxel( () => {
 						{
 							label : createPlainMenuLabel( t('Previous AI Page') ) ,
 							type : 'normal' as const ,
-							accelerator : 'CmdOrCtrl+[' ,
+							accelerator : 'Alt+[' ,
 							registerAccelerator : false ,
 							enabled : enabledAIs.length > 1 ,
 							click : () => {
@@ -230,7 +255,7 @@ export const reaxel_Menu = reaxel( () => {
 						{
 							label : createPlainMenuLabel( t('Next AI Page') ) ,
 							type : 'normal' as const ,
-							accelerator : 'CmdOrCtrl+]' ,
+							accelerator : 'Alt+]' ,
 							registerAccelerator : false ,
 							enabled : enabledAIs.length > 1 ,
 							click : () => {
@@ -248,22 +273,29 @@ export const reaxel_Menu = reaxel( () => {
 			...adjacentAIMenuItems,
 		] );
 	}
-	
+
 	function createClickMenuHandler( aiId:string ) {
 		return () => {
 			reaxel_AIViews().showAIView( aiId , getRuntimeSettings() );
 			rebuildMenu();
 		};
 	}
-	
+
 	function rebuildMenu() {
 		console.log('[Menu] rebuildMenu called, i18nInstance =', i18nInstance ? 'SET' : 'NULL');
 		if( !mainWindow || mainWindow.isDestroyed() ) return;
 		mainWindow.setMenu( createMenu() );
 	}
-	
+
+	/**
+	 * 检查给定 AI ID 是否已经被实例化（WebContentsView 已创建）
+	 */
+	const isAIInstantiated = (aiId:string) => {
+		return reaxel_AIViews.store.AIViews.some( rv => rv.id === aiId );
+	};
+
 	const menuReady = Promise.resolve();
-	
+
 	obsReaction( ( first ) => {
 		if( first ) return;
 		rebuildMenu();
@@ -273,14 +305,14 @@ export const reaxel_Menu = reaxel( () => {
 		reaxel_PromptViews.store.left.visible ,
 		reaxel_PromptViews.store.right.visible,
 	] );
-	
+
 	const rtn = {
 		menuReady ,
 		createMenu ,
 		rebuildMenu,
 		setI18nInstance,
 	};
-	
+
 	return Object.assign( () => rtn , {
 		store ,
 		setState ,
