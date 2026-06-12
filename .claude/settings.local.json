@@ -1,6 +1,5 @@
 {
   "permissions": {
-    "defaultMode": "acceptEdits",
     "allow": [
       "Read",
       "Glob",
@@ -148,7 +147,8 @@
       "PowerShell(Resolve-Path *)",
       "PowerShell(Split-Path *)",
       "PowerShell(Join-Path *)",
-      "PowerShell([Environment]::GetEnvironmentVariable *)"
+      "PowerShell([Environment]::GetEnvironmentVariable *)",
+      "Bash(New-Item *)"
     ],
     "deny": [],
     "ask": [
@@ -182,6 +182,7 @@
       "Bash(pnpm upgrade *)",
       "Bash(pnpm link *)",
       "Bash(pnpm unlink *)"
-    ]
+    ],
+    "defaultMode": "acceptEdits"
   }
 }

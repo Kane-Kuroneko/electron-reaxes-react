@@ -11,8 +11,7 @@ Read these files before changing behavior:
 - `.qoder/rules/coding-standard.md`
 - `.qoder/rules/ipc-coding.md`
 - `CODING_STANDARD.md`
-- `AGENTS.md`
-- The target subproject docs such as `projects/ChatAIO/AI-CONFIG-ARCHITECTURE.md` and `projects/ChatAIO/todo.md`
+- The target subproject docs such as `projects/ChatAIO/docs/architecture/ai-config.md` and `projects/ChatAIO/todo.md`
 
 Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with npm. The local Reaxes implementation is available at `Z:\reaxes` when library behavior is unclear.
 
