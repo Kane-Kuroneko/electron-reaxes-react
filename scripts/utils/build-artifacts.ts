@@ -1,3 +1,19 @@
+/**
+ * BuildArtifacts — 构建产物生命周期管理
+ *
+ * 架构职责分层：
+ *   - BuildStateWebpackPlugin   : webpack watch 运行时写入编译状态（诊断用，非 gating）
+ *   - assertFreshElectronStartupArtifacts : Electron 启动前的产物完整性校验（dev 模式仅校验存在性）
+ *
+ * Dev 模式设计决策：
+ *   产物缺失 → 致命错误（未跑过 webpack:start）
+ *   产物过期 → 警告但不阻止（用户自行判断是否需要重编译）
+ *   BuildState status → 仅用于诊断消息，不作为启动 gating 条件
+ *
+ * 动机：BuildState 由 webpack watch 进程写入，若 watch 进程死亡，
+ *   status 会永久残留 'building'/'error' → 若作为 gating 条件，
+ *   将导致 Electron 永远无法启动，必须重新 webpack:start 来 resetBuildState。
+ */
 const BUILD_STATE_VERSION = 1;
 const BUILD_STATE_PLUGIN_NAME = 'BuildStateWebpackPlugin';
 
@@ -115,55 +131,77 @@ export const updateBuildStateTarget = (statePath:string , target:string , patch:
 	} );
 };
 
+/**
+ * Electron 启动前的产物完整性校验（dev 模式专用）
+ *
+ * Dev 模式 gating 策略：
+ *   - 产物缺失 → throw Error（未跑过 webpack:start，必须阻塞）
+ *   - 产物过期（源码 mtime > 产物 mtime）→ console.warn 诊断信息，不阻塞启动
+ *   - BuildState status → 仅附加到诊断消息中，不作为 gating 条件
+ *
+ * 不再依赖 BuildState 做启动 gating 的原因：
+ *   BuildState 由 webpack watch 进程写入，若 watch 进程死亡或文件损坏，
+ *   status 永久残留 'building'/'error' 将导致 Electron 永远无法启动。
+ *   Dev 模式下用户主动执行 start:electron，理应自行判断产物是否足够新鲜。
+ */
 export const assertFreshElectronStartupArtifacts = (options:FreshArtifactOptions) => {
 	const defaultSourcePaths = resolveSourcePaths( options.sourcePaths ?? [] );
-	const buildState = options.buildStatePath ? readBuildStateFileStrict( options.buildStatePath ) : null;
+	const buildState = options.buildStatePath ? readBuildStateFile( options.buildStatePath ) : null;
+
 	const artifactStates = options.artifacts.map( artifact => {
 		const sourcePaths = artifact.sourcePaths ? resolveSourcePaths( artifact.sourcePaths ) : defaultSourcePaths;
 		const artifactPath = path.resolve( artifact.path );
 		const newestSource = findNewestSource( sourcePaths );
 		const artifactExists = fs.existsSync( artifactPath );
-		const stale = artifactExists && newestSource ? fs.statSync( artifactPath ).mtimeMs < newestSource.mtimeMs : false;
+		const artifactMtime = artifactExists ? fs.statSync( artifactPath ).mtimeMs : null;
 		const buildStateTarget = artifact.buildStateTarget ? buildState?.targets?.[artifact.buildStateTarget] : null;
-		const buildStateFailure = getBuildStateFailure( buildStateTarget );
+
+		/*仅基于文件 mtime 判断过期，不受 BuildState status 影响*/
+		const stale = artifactExists && newestSource && artifactMtime < newestSource.mtimeMs;
+
+		/*提取 BuildState 诊断信息（仅用于日志，不参与 gating）*/
+		const buildStateDiagnostic = getBuildStateDiagnostic( buildStateTarget );
+
 		return {
 			...artifact ,
 			path : artifactPath ,
 			newestSource ,
 			missing : !artifactExists ,
-			stale,
+			stale ,
+			artifactMtime ,
 			buildStateTarget ,
-			buildStateFailure,
+			buildStateDiagnostic ,
 		};
 	} );
-	const failedArtifacts = artifactStates.filter( artifact => artifact.missing || artifact.stale || artifact.buildStateFailure );
 
-	if( failedArtifacts.length === 0 ) {
-		return;
+	const missingArtifacts = artifactStates.filter( a => a.missing );
+
+	/*致命：产物缺失，必须阻塞启动*/
+	if( missingArtifacts.length > 0 ) {
+		const lines = [ '[BuildArtifacts] Electron 启动产物缺失，请先运行 webpack:start。' ];
+		for( const a of missingArtifacts ) {
+			lines.push( `  ${ a.label }: ${ a.path } 未找到` );
+		}
+		lines.push( '请执行 yarn start:webpack <project> 完成首次构建。' );
+		throw new Error( lines.join( '\n' ) );
 	}
 
-	const lines = [
-		'[BuildArtifacts] Electron startup artifacts are not fresh.',
-	];
-	for( const artifact of failedArtifacts ) {
-		lines.push( `${ artifact.label }:` );
-		if( artifact.missing ) {
-			lines.push( `  missing artifact: ${ artifact.path }` );
-		}
-		if( artifact.stale ) {
-			const stat = fs.statSync( artifact.path );
-			lines.push( `  stale artifact: ${ artifact.path } (${ stat.mtime.toLocaleString() })` );
-		}
-		if( artifact.buildStateFailure ) {
-			lines.push( `  build state: ${ artifact.buildStateFailure }` );
-			if( artifact.buildStateTarget?.errors?.length ) {
-				lines.push( ...artifact.buildStateTarget.errors.slice( 0 , 5 ).map( error => `    - ${ error }` ) );
+	/*非致命：产物可能过期，仅输出诊断警告，不阻塞启动*/
+	const staleArtifacts = artifactStates.filter( a => a.stale );
+	if( staleArtifacts.length > 0 ) {
+		const lines = [ '[BuildArtifacts] ⚠ 部分产物可能不是最新版本（源码已被修改）：' ];
+		for( const a of staleArtifacts ) {
+			const artifactTime = new Date( a.artifactMtime ).toLocaleString();
+			const sourceTime = a.newestSource ? new Date( a.newestSource.mtimeMs ).toLocaleString() : '未知';
+			lines.push( `  ${ a.label }: 产物构建于 ${ artifactTime }，源码修改于 ${ sourceTime }` );
+
+			if( a.buildStateDiagnostic ) {
+				lines.push( `    → ${ a.buildStateDiagnostic }` );
 			}
 		}
-		lines.push( `  newest source: ${ artifact.newestSource ? `${ artifact.newestSource.path } (${ new Date( artifact.newestSource.mtimeMs ).toLocaleString() })` : 'not found' }` );
+		lines.push( '  若 webpack watch 未运行，请执行 yarn start:webpack <project>。' );
+		console.warn( lines.join( '\n' ) );
 	}
-	lines.push( 'Run yarn start:webpack ChatAIO first, or run yarn build:webpack for a production build.' );
-	throw new Error( lines.join( '\n' ) );
 };
 
 const resolveSourcePaths = (sourcePaths:string[]) => {
@@ -192,17 +230,6 @@ const readBuildStateFile = (statePath:string):BuildState | null => {
 	}
 };
 
-const readBuildStateFileStrict = (statePath:string):BuildState | null => {
-	if( !fs.existsSync( statePath ) ) {
-		return null;
-	}
-	try {
-		return JSON.parse( fs.readFileSync( statePath , 'utf8' ) ) as BuildState;
-	} catch( error ) {
-		throw new Error( `[BuildArtifacts] Failed to read build state: ${ statePath }\n${ formatWebpackError( error ) }` );
-	}
-};
-
 const writeBuildState = (statePath:string , state:BuildState) => {
 	const resolvedStatePath = path.resolve( statePath );
 	fs.mkdirSync( path.dirname( resolvedStatePath ) , {
@@ -213,16 +240,25 @@ const writeBuildState = (statePath:string , state:BuildState) => {
 	fs.renameSync( tempPath , resolvedStatePath );
 };
 
-const getBuildStateFailure = (target:BuildStateTarget | null) => {
+/**
+ * 将 BuildState target 状态翻译为用户可读的诊断消息
+ * 仅用于 dev 模式下的提示信息，不参与 gating 决策
+ */
+const getBuildStateDiagnostic = (target:BuildStateTarget | null) => {
 	if( !target ) {
 		return '';
 	}
 	if( target.status === 'building' ) {
-		return `${ target.label } is still building since ${ target.startedAt ?? target.updatedAt }`;
+		return `webpack 正在重新编译中（自 ${ target.startedAt ?? target.updatedAt }），请稍等片刻后重试 Electron`;
 	}
 	if( target.status === 'error' ) {
-		return `${ target.label } failed at ${ target.endedAt ?? target.updatedAt }`;
+		let msg = `上次编译失败（${ target.endedAt ?? target.updatedAt }），产物可能不完整`;
+		if( target.errors?.length ) {
+			msg += `，错误: ${ target.errors[0] }`;
+		}
+		return msg;
 	}
+	/* status === 'success' — webpack 进程可能已停止但 BuildState 仍为 success */
 	return '';
 };
 
