@@ -212,15 +212,26 @@ class AIConfigService {
 		return `ai-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 , 11 ) }`;
 	}
 	
+	/**
+	 * 返回需要启动预加载的 AI 实例 ID 列表（替代旧版 family 粒度 API）。
+	 * Family 粒度无法区分同 family 多实例，详情见 fixme.md P2-03。
+	 */
+	getPreloadAIIds():string[] {
+		return this.getEffectiveAIs()
+			.filter( ai => !ai.disabled && ai.preloadOnStartup )
+			.map( ai => ai.id );
+	}
+
+	/** @deprecated 使用 getPreloadAIIds() 替代，原因见 fixme.md P2-03 */
 	getPreloadAIFamilies():AI.AIFamily[] {
 		const preloadFamilies = new Set<AI.AIFamily>();
-		
+
 		this.getEffectiveAIs().forEach( ai => {
 			if( !ai.disabled && ai.preloadOnStartup ) {
 				preloadFamilies.add( ai.AI_family );
 			}
 		} );
-		
+
 		return Array.from( preloadFamilies );
 	}
 }

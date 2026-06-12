@@ -40,6 +40,10 @@ export const reaxel_PromptViews = reaxel( () => {
 		useIpcRendererToMain( 'prompt-view-appearance-preview-change' ).on( ( _ , appearance ) => {
 			broadcastPromptViewAppearanceState( getPromptViewAppearanceState( appearance ) );
 		} );
+
+		useIpcRendererToMain( 'close-prompt-view' ).on( ( _ , side ) => {
+			hidePromptView( side );
+		} );
 	};
 	
 	const initPromptView = (side:PromptView.Side) => {

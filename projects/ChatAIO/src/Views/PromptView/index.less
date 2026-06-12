@@ -57,6 +57,7 @@ body {
 }
 
 .prompt-view-root {
+   position: relative;
    height: 100vh; min-width: 240px;
    display: grid;
    grid-template-rows: auto auto 1fr;
@@ -126,6 +127,14 @@ body {
    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
+/* Header actions: 关闭按钮与新建按钮并排，无重叠 */
+.prompt-view-header-actions {
+   flex: 0 0 auto;
+   display: flex;
+   align-items: flex-start;
+   gap: 6px;
+}
+
 .prompt-view-add-button.ant-btn {
    flex: 0 0 auto;
    width: 36px; height: 36px; margin-top: 2px;
@@ -146,6 +155,19 @@ body {
    opacity: 0.82;
 }
 .prompt-view-add-button svg { width: 18px; height: 18px; }
+
+.prompt-view-close-button.ant-btn {
+   width: 30px; height: 30px; margin-top: 4px;
+   border-radius: var(--prompt-radius-sm);
+   color: var(--prompt-muted);
+   transition: color .12s ease, background .12s ease;
+}
+.prompt-view-close-button.ant-btn:hover,
+.prompt-view-close-button.ant-btn:focus-visible {
+   color: var(--prompt-text);
+   background: var(--prompt-surface-soft);
+}
+.prompt-view-close-button svg { width: 16px; height: 16px; }
 
 /* ═══ Status line ═══ */
 .prompt-view-statusline {
@@ -179,7 +201,8 @@ body {
    min-height: 0;
    overflow-x: hidden;
    overflow-y: auto;
-   padding: 10px 14px 14px;
+   scrollbar-gutter: stable; /* 按需预留滚动条宽度，避免无滚动条时过宽的空白区 */
+   padding: 10px 3px 14px 10px;
    box-sizing: border-box;
    /* 细滚动条 + 透明轨道，参考 shadcn globals / VS Code 低饱和 thumb */
    &::-webkit-scrollbar {
@@ -197,6 +220,9 @@ body {
    &::-webkit-scrollbar-thumb:hover {
       background-color: var(--prompt-scrollbar-thumb-hover);
    }
+   /* Firefox 后备：细滚动条 + 透明轨道 */
+   scrollbar-width: thin;
+   scrollbar-color: var(--prompt-scrollbar-thumb) transparent;
 }
 
 .prompt-view-error { margin-bottom: 10px; border-radius: var(--prompt-radius-md); }

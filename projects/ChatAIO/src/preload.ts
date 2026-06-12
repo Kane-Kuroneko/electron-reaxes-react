@@ -11,6 +11,7 @@ const updatePreloadAIConfig = useRtm('update-preload-ai-config');
 const languageChange = useRtm('language-change');
 const turnToNextAiPage = useRtm('turn-to-next-ai-page');
 const turnToPreviousAiPage = useRtm('turn-to-previous-ai-page');
+const closePromptView = useRtm('close-prompt-view');
 const previewPromptViewAppearance = useRtm('prompt-view-appearance-preview-change');
 const onFloatingViewCommand = (callback:(command:FloatingView.Command) => void) => {
 	return useMtr( 'floating-view-command' )( ( _ , command ) => {
@@ -30,7 +31,7 @@ const updateAI = useRpc('update-ai');
 const addAI = useRpc('add-ai');
 const deleteAI = useRpc('delete-ai');
 const resetAIsToDefaults = useRpc('reset-ais-to-defaults');
-const getPreloadAIFamilies = useRpc('get-preload-ai-families');
+const getPreloadAIIds = useRpc('get-preload-ai-families'); /* 返回预加载 AI 的 ID 列表 */
 const getAppearanceEnvironment = useRpc('get-appearance-environment');
 const setStartupAIPageLoadMode = useRpc('set-startup-ai-page-load-mode');
 const testProxyServer = useRpc('test-proxy-server');
@@ -52,6 +53,7 @@ const api = {
 	languageChange,
 	turnToNextAiPage,
 	turnToPreviousAiPage,
+	closePromptView,
 	previewPromptViewAppearance,
 	onFloatingViewCommand,
 	onPromptViewAppearanceChange,
@@ -62,7 +64,7 @@ const api = {
 	addAI,
 	deleteAI,
 	resetAIsToDefaults,
-	getPreloadAIFamilies,
+	getPreloadAIIds,
 	getAppearanceEnvironment,
 	setStartupAIPageLoadMode,
 	testProxyServer,

@@ -6,6 +6,7 @@ export interface RendererToMainEvents extends Record<string , IpcStructure.Rende
 	'turn-to-next-ai-page' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
 	'turn-to-previous-ai-page' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
 	'prompt-view-appearance-preview-change' : IpcStructure.RendererToMainEvent<[appearance: PromptView.Appearance] , {channel:void,args:void[]}>;
+	'close-prompt-view' : IpcStructure.RendererToMainEvent<[side: PromptView.Side] , {channel:void,args:void[]}>;
 }
 
 export interface MainToRendererEvents extends Record<string , IpcStructure.MainToRendererEvent<unknown[]>> {
@@ -32,7 +33,7 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	'add-ai': IpcStructure.IpcRpc<[ai: Omit<AI.AIItem, 'id'> & { id?: string }], AI.AIItem>;
 	'delete-ai': IpcStructure.IpcRpc<[id: string], boolean>;
 	'reset-ais-to-defaults': IpcStructure.IpcRpc<[void], { success: boolean, error?: string }>;
-	'get-preload-ai-families': IpcStructure.IpcRpc<[void], AI.AIFamily[]>;
+	'get-preload-ai-families': IpcStructure.IpcRpc<[void], string[]>; /* 返回预加载 AI 的 ID 列表而非 family 列表 */
 	'get-appearance-environment': IpcStructure.IpcRpc<[void], AppearanceEnvironment>;
 	'set-startup-ai-page-load-mode': IpcStructure.IpcRpc<[mode: Startup.AIPageLoadMode], SettingsApplyResult>;
 	'test-proxy-server': IpcStructure.IpcRpc<[proxyConf: NetworkProxy.ProxyConfFields, url: string], NetworkProxy.ProxyTestResult>;

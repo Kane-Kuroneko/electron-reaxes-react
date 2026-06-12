@@ -230,7 +230,7 @@ export const reaxel_Settings = reaxel( () => {
 	} );
 	
 	useIpcRpc( 'get-preload-ai-families' ).handle( async() => {
-		return aiConfigService.getPreloadAIFamilies();
+		return aiConfigService.getPreloadAIIds();
 	} );
 
 	useIpcRpc( 'dev-clean-start' ).handle( async() => {

@@ -39,8 +39,13 @@ export const resetAIsToDefaults = () => {
 	return api.resetAIsToDefaults();
 }
 
+export const getPreloadAIIds = () => {
+	return api.getPreloadAIIds();
+}
+
+/** @deprecated 使用 getPreloadAIIds() 替代 */
 export const getPreloadAIFamilies = () => {
-	return api.getPreloadAIFamilies();
+	return api.getPreloadAIIds();
 }
 
 export const getAppearanceEnvironment = () => {
