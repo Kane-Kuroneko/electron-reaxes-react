@@ -288,6 +288,18 @@ export const reaxel_SettingsView = reaxel( () => {
 		return cloneForIPC( raw );
 	}
 	
+	/**
+	 * 放弃未保存编辑并关闭设置页。先 reload 磁盘配置以复位 reaxel 状态与 PromptView 预览，再 exit。
+	 */
+	async function exitWithoutSave() {
+		try {
+			await reloadSettings();
+		} catch ( error ) {
+			console.error( '[SettingsView] Failed to discard changes on exit:' , error );
+		}
+		exitSettings();
+	}
+
 	async function applySettings() {
 		setState.submit_settings_status( {
 			pending : true ,
@@ -406,6 +418,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		setProxyTestURL ,
 		submitSettings ,
 		exitSettings ,
+		exitWithoutSave ,
 		turnToNextAiPage ,
 		turnToPreviousAiPage ,
 		/**

@@ -6,7 +6,7 @@ export const App = reaxper( () => {
 		reaxel_SettingsView.store.Environment.systemTheme,
 	);
 	
-	const { applySettings , exitSettings , reloadSettings , isDirty } = reaxel_SettingsView();
+	const { applySettings , exitSettings , exitWithoutSave , reloadSettings , isDirty } = reaxel_SettingsView();
 	
 	const MenuContentComponent = {
 		general : RCGeneralPanel ,
@@ -66,8 +66,8 @@ export const App = reaxper( () => {
 
 				<Button
 					danger
-					onClick={ () => {
-						exitSettings();
+					onClick={ async() => {
+						await exitWithoutSave();
 					} }
 				><I18n>Exit Without Save</I18n></Button>
 
