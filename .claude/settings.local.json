@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xxd)",
+      "Bash(npx tsc *)",
+      "Bash(./node_modules/.bin/tsc.cmd -p projects/ChatAIO/tsconfig.json --noEmit)",
+      "Bash(./node_modules/.bin/tsc.cmd -p projects/ChatAIO/src/Views/PromptView/tsconfig.json --noEmit)",
+      "Bash(./node_modules/.bin/tsc.cmd -p projects/ChatAIO/src/Views/SettingsView/tsconfig.json --noEmit)",
+      "Bash(git add *)",
+      "Bash(git commit -m '@ *)"
+    ]
+  }
+}
