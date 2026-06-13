@@ -376,6 +376,84 @@ body {
 }
 .prompt-composer-footer .is-empty { color: var(--prompt-muted); }
 
+/* ═══ Prompt card enter animation ═══ */
+/* 外层包裹器：通过 max-height 动画平滑撑开空间，将兄弟元素向下推开 */
+.prompt-card-enter-wrapper {
+	overflow: hidden;
+}
+.prompt-card-enter-wrapper.is-entering {
+	animation: prompt-card-expand 380ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+@keyframes prompt-card-expand {
+	0% {
+		max-height: 0;
+		opacity: 0;
+	}
+	12% {
+		opacity: 0;
+	}
+	100% {
+		/* 安全上限：TextArea maxRows=14 时卡片约 500px，留足余量 */
+		max-height: 700px;
+		opacity: 1;
+	}
+}
+
+/* 卡片本身的气泡弹开动画 — 延迟 40ms 在高度展开到可见时触发 */
+.prompt-card--popping {
+	animation: prompt-card-pop 320ms ease-out 40ms both;
+}
+
+@keyframes prompt-card-pop {
+	0% {
+		transform: scale(0.82);
+		opacity: 0;
+	}
+	55% {
+		transform: scale(1.025);
+		opacity: 1;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+/* ═══ Prompt card exit animation ═══ */
+/* 外层包裹器折叠：压缩空间使兄弟元素平滑上移 */
+.prompt-card-enter-wrapper.is-exiting {
+	animation: prompt-card-collapse 260ms ease-in forwards;
+}
+
+@keyframes prompt-card-collapse {
+	0% {
+		max-height: 700px;
+		opacity: 1;
+	}
+	100% {
+		max-height: 0;
+		opacity: 0;
+	}
+}
+
+/* 卡片本体缩退：缩小 + 淡出，禁止交互防止连点 */
+.prompt-card--exiting {
+	animation: prompt-card-shrink 220ms ease-in forwards;
+	pointer-events: none;
+}
+
+@keyframes prompt-card-shrink {
+	0% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	100% {
+		transform: scale(0.82);
+		opacity: 0;
+	}
+}
+
 /* ═══ Spin animation ═══ */
 @keyframes prompt-spin {
 	from { transform: rotate(0deg); }

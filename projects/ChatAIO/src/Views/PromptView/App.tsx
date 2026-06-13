@@ -5,6 +5,7 @@ export const App = reaxper( () => {
 		init ,
 		addPrompt ,
 		reorderPrompts ,
+		deletePrompt ,
 	} = reaxel_PromptView();
 
 	const closePromptView = () => {
@@ -121,11 +122,21 @@ export const App = reaxper( () => {
 						strategy={ verticalListSortingStrategy }
 					>
 						<div className="prompt-card-list">
-							{ store.items.map( ( item , index ) => <PromptCard
-								key={ item.id }
-								item={ item }
-								index={ index }
-							/> ) }
+							{ store.items.map( ( item , index ) => {
+								/* 通过 createdAt 时间戳判断是否为刚创建的新卡片 */
+								const isNew = Date.now() - item.createdAt < 800;
+								return <PromptCardEnterWrapper
+									key={ item.id }
+									isNew={ isNew }
+									onDelete={ () => deletePrompt( item.id ) }
+								>
+									<PromptCard
+										item={ item }
+										index={ index }
+										isNew={ isNew }
+									/>
+								</PromptCardEnterWrapper>;
+							} ) }
 						</div>
 					</SortableContext>
 				</DndContext> : null }
@@ -134,9 +145,50 @@ export const App = reaxper( () => {
 	</ConfigProvider>;
 } );
 
+/* 卡片进入/退出动画包裹器 — 统一管理卡片的进场展开与退场折叠动画 */
+const PromptCardEnterWrapper = reaxper( ( props: {
+	isNew: boolean;
+	children: React.ReactNode;
+	onDelete: () => void;
+} ) => {
+	/* 进入动画：播放一次后标记已进入 */
+	const [ hasEntered , setHasEntered ] = useState( false );
+	/* 退出动画：删除请求到达后标记退出中，动画完成后真正移除 */
+	const [ isExiting , setIsExiting ] = useState( false );
+	const shouldEnter = props.isNew && !hasEntered && !isExiting;
+
+	const handleDeleteRequest = () => {
+		/* 避免重复触发 */
+		if( isExiting ) return;
+		setIsExiting( true );
+	};
+
+	return <div
+		className={ `prompt-card-enter-wrapper ${ shouldEnter ? 'is-entering' : '' } ${ isExiting ? 'is-exiting' : '' }` }
+		onAnimationEnd={ ( e: React.AnimationEvent ) => {
+			if( e.animationName === 'prompt-card-expand' && shouldEnter ) {
+				setHasEntered( true );
+			}
+			/* 退场动画结束后真正从 store 中移除 */
+			if( e.animationName === 'prompt-card-collapse' && isExiting ) {
+				props.onDelete();
+			}
+		} }
+	>
+		{/* 将删除请求回调与退出状态注入子组件 */}
+		{ React.cloneElement( props.children as React.ReactElement<any> , {
+			onRequestDelete : handleDeleteRequest,
+			isExiting,
+		} ) }
+	</div>;
+} );
+
 const PromptCard = reaxper( ( props: {
 	item: PromptView.Item;
 	index: number;
+	isNew?: boolean;
+	onRequestDelete?: () => void;
+	isExiting?: boolean;
 } ) => {
 	const {
 		persistNow ,
@@ -166,11 +218,19 @@ const PromptCard = reaxper( ( props: {
 		) ,
 	};
 	const isEmpty = props.item.content.trim().length === 0;
+	/* 新卡片气泡弹开动画：初次渲染时播放一次 */
+	const [ isPopping , setIsPopping ] = useState( () => props.isNew || false );
 
 	return <article
 		ref={ setNodeRef }
 		style={ style }
-		className={ `prompt-card ${ isDragging ? 'is-dragging' : '' }` }
+		className={ `prompt-card ${ isDragging ? 'is-dragging' : '' } ${ isPopping ? 'prompt-card--popping' : '' } ${ props.isExiting ? 'prompt-card--exiting' : '' }` }
+		onAnimationEnd={ ( e: React.AnimationEvent ) => {
+			/* 仅响应气泡弹开动画结束，清理状态避免重复播放 */
+			if( e.animationName === 'prompt-card-pop' ) {
+				setIsPopping( false );
+			}
+		} }
 	>
 		<div className="prompt-card-topbar">
 			<div className="prompt-card-identity">
@@ -218,7 +278,14 @@ const PromptCard = reaxper( ( props: {
 						className="prompt-card-icon-button"
 						icon={ <Trash2 size={ 15 } /> }
 						aria-label={ i18n( 'Delete' ) }
-						onClick={ () => deletePrompt( props.item.id ) }
+						onClick={ () => {
+							/* 若外层包裹器提供了退场回调，委托其播放动画后再移除 */
+							if( props.onRequestDelete ) {
+								props.onRequestDelete();
+							} else {
+								deletePrompt( props.item.id );
+							}
+						} }
 					/>
 				</Tooltip>
 			</div>
