@@ -159,7 +159,9 @@
       "Bash(./node_modules/.bin/tsc.cmd -p projects/ChatAIO/src/Views/PromptView/tsconfig.json --noEmit)",
       "Bash(awk 'NR==146{print \"\\\\t/* 卡片进入动画包裹器 — 通过 max-height 动画平滑撑开空间，将兄弟元素向下推开 */\"; print \"\\\\tconst PromptCardEnterWrapper = reaxper\\( \\( props: {\"; print \"\\\\t\\\\tisNew: boolean;\"; print \"\\\\t\\\\tchildren: React.ReactNode;\"; print \"\\\\t} \\) => {\"; print \"\\\\t\\\\t/* 动画播放一次后即标记为已进入，避免重渲染时重复播放 */\"; print \"\\\\t\\\\tconst [ hasEntered , setHasEntered ] = useState\\( false \\);\"; print \"\\\\t\\\\tconst shouldAnimate = props.isNew && !hasEntered;\"; print \"\"; print \"\\\\t\\\\treturn <div\"; print \"\\\\t\\\\t\\\\tclassName={ `prompt-card-enter-wrapper ${ shouldAnimate ? '\\\\\"'\\\\\"'is-entering'\\\\\"'\\\\\"' : '\\\\\"'\\\\\"''\\\\\"'\\\\\"' }` }\"; print \"\\\\t\\\\t\\\\tonAnimationEnd={ \\(\\) => {\"; print \"\\\\t\\\\t\\\\t\\\\tif\\( shouldAnimate \\) {\"; print \"\\\\t\\\\t\\\\t\\\\t\\\\tsetHasEntered\\( true \\);\"; print \"\\\\t\\\\t\\\\t\\\\t}\"; print \"\\\\t\\\\t\\\\t} }\"; print \"\\\\t\\\\t>\"; print \"\\\\t\\\\t\\\\t{ props.children }\"; print \"\\\\t\\\\t</div>;\"; print \"\\\\t} \\);\"; print \"\"} 1' projects/ChatAIO/src/Views/PromptView/App.tsx)",
       "Bash(mv /tmp/app_tsx_new projects/ChatAIO/src/Views/PromptView/App.tsx)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(python3 *)",
+      "PowerShell(try { $json = Get-Content 'Z:\\\\electron-reaxes-react\\\\.claude\\\\settings.local.json' -Raw | ConvertFrom-Json; Write-Output \"JSON 语法正确\"; Write-Output \"sandbox 配置: $\\($json.sandbox | ConvertTo-Json -Compress\\)\" } catch { Write-Output \"JSON 错误: $_\" })"
     ],
     "deny": [],
     "ask": [
@@ -195,5 +197,8 @@
       "Bash(pnpm unlink *)"
     ],
     "defaultMode": "acceptEdits"
+  },
+  "sandbox": {
+    "autoAllowBashIfSandboxed": true
   }
 }
