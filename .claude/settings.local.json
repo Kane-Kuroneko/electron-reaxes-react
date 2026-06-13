@@ -150,7 +150,13 @@
       "PowerShell([Environment]::GetEnvironmentVariable *)",
       "Bash(New-Item *)",
       "Bash(.\\\\node_modules\\\\.bin\\\\tsc.cmd -p projects\\\\ChatAIO\\\\src\\\\Views\\\\PromptView\\\\tsconfig.json --noEmit)",
-      "PowerShell(.\\\\node_modules\\\\.bin\\\\tsc.cmd -p projects\\\\ChatAIO\\\\src\\\\Views\\\\PromptView\\\\tsconfig.json --noEmit 2>&1)"
+      "PowerShell(.\\\\node_modules\\\\.bin\\\\tsc.cmd -p projects\\\\ChatAIO\\\\src\\\\Views\\\\PromptView\\\\tsconfig.json --noEmit 2>&1)",
+      "Bash(awk '{ *)",
+      "Bash(mv /tmp/App_tsx_new \"Z:/electron-reaxes-react/projects/ChatAIO/src/Views/PromptView/App.tsx\")",
+      "PowerShell(Format-Hex *)",
+      "PowerShell($content = Get-Content 'Z:\\\\electron-reaxes-react\\\\projects\\\\ChatAIO\\\\src\\\\Views\\\\PromptView\\\\index.less' -Raw; $lines = $content -split '\\\\r?\\\\n'; for \\($i = 378; $i -lt 399; $i++\\) { $line = $lines[$i]; $hex = [System.BitConverter]::ToString\\([System.Text.Encoding]::UTF8.GetBytes\\($line.Substring\\(0, [Math]::Min\\(4, $line.Length\\)\\)\\)\\); Write-Output \\(\"Line $\\($i+1\\): hex=$hex | text='$line'\"\\) })",
+      "PowerShell($content = Get-Content 'Z:\\\\electron-reaxes-react\\\\projects\\\\ChatAIO\\\\src\\\\Views\\\\PromptView\\\\App.tsx' -Raw; $lines = $content -split '\\\\r?\\\\n'; for \\($i = 172; $i -lt 178; $i++\\) { $line = $lines[$i]; $bytes = [System.Text.Encoding]::UTF8.GetBytes\\($line\\); $hex = \\($bytes[0..\\([Math]::Min\\(7, $bytes.Length-1\\)\\)] | ForEach-Object { $_.ToString\\('X2'\\) }\\) -join '-'; Write-Output \"L$\\($i+1\\): hex=$hex | '$line'\" })",
+      "Bash(./node_modules/.bin/tsc.cmd -p projects/ChatAIO/src/Views/PromptView/tsconfig.json --noEmit)"
     ],
     "deny": [],
     "ask": [
