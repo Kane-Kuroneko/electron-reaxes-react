@@ -148,7 +148,9 @@
       "PowerShell(Split-Path *)",
       "PowerShell(Join-Path *)",
       "PowerShell([Environment]::GetEnvironmentVariable *)",
-      "Bash(New-Item *)"
+      "Bash(New-Item *)",
+      "Bash(.\\\\node_modules\\\\.bin\\\\tsc.cmd -p projects\\\\ChatAIO\\\\src\\\\Views\\\\PromptView\\\\tsconfig.json --noEmit)",
+      "PowerShell(.\\\\node_modules\\\\.bin\\\\tsc.cmd -p projects\\\\ChatAIO\\\\src\\\\Views\\\\PromptView\\\\tsconfig.json --noEmit 2>&1)"
     ],
     "deny": [],
     "ask": [
