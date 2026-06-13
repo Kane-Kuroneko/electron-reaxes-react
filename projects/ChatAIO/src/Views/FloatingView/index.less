@@ -50,38 +50,58 @@ body {
 /* ── Viewport (frosted glass backdrop) ──
    Very light warm cream — airy and soft, harmonises with the
    pink‑blue card accents.  The top‑to‑bottom luminance shift
-   gives depth so the backdrop‑blur has texture to work with. */
+   gives depth so the backdrop‑blur has texture to work with.
+   position: relative anchors the absolutely-positioned exit
+   track during card‑switch transitions. */
 .switch-ai-bar__viewport {
+	position: relative;
 	width: 100%;
 	overflow: hidden;
 	border-radius: 10px;
-	border: 1px solid rgba(0, 0, 0, 0.06);
+	border: 1px solid rgba(0, 0, 0, 0.08);
 	background: linear-gradient(
 		180deg,
-		rgba(254, 252, 246, 0.78),
-		rgba(244, 240, 232, 0.82)
+		rgba(254, 252, 246, 0.94),
+		rgba(242, 236, 226, 0.96)
 	);
-	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.10);
 	backdrop-filter: blur(14px) saturate(1.2);
+
+	/* One card‑slot width: item + gap.  Used by exit/enter
+	   keyframes so both tracks slide by exactly one position. */
+	--slide-distance: 116px;   /* 110px card + 6px gap */
 }
 
 /* ── Track ──
-   Flex row, 5 slots, centred.  Remounts on every sequence change
-   which fires the directional translateX keyframe. */
+   Flex row, 5 slots, centred.  The enter track stays in normal
+   flow to drive the viewport height; the exit track is absolutely
+   positioned on top during transitions. */
 .switch-ai-bar__track {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	gap: 4px;
+	gap: 6px;
 	padding: 10px 4px;
 	min-height: 76px;
 }
 
+/* Exit track: overlaid on the enter track during transitions,
+   slides out in the direction of travel while fading away. */
+.switch-ai-bar__track--exit-next,
+.switch-ai-bar__track--exit-previous {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	z-index: 1;
+	pointer-events: none;
+}
+
 /* ── Item (card) ──
    Fixed‑width slot.  Scale transforms produce the centre‑large /
-   sides‑small carousel silhouette.  Because the animation lives on
-   the parent track (translateX only), the card's scale is never
-   overwritten.
+   sides‑small carousel silhouette.  Card scale is independent of
+   the track‑level slide — it stays consistent throughout the
+   300 ms transition.
 
    Base card: white‑ish with a whisper of warmth, delicate shadow.
    Far / near positions overlay pink‑blue tints at varying opacity;
@@ -100,25 +120,26 @@ body {
 	overflow: hidden;
 	background: linear-gradient(
 		135deg,
-		rgba(255, 255, 255, 0.68),
-		rgba(250, 248, 242, 0.72)
+		rgba(255, 255, 255, 0.88),
+		rgba(250, 248, 242, 0.90)
 	);
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 /* ── Position: scale + opacity ──
-   Wider spread: far items at ~55 % create a clear depth‑of‑field
-   falloff from the centre. */
+   Tighter scale spread (0.72 → 0.86 → 1.0) keeps visual gaps
+   between cards perceptually even while preserving the
+   centre‑focused depth‑of‑field silhouette. */
 .switch-ai-bar__item--far-prev,
 .switch-ai-bar__item--far-next {
-	transform: scale(0.55);
-	opacity: 0.6;
+	transform: scale(0.72);
+	opacity: 0.68;
 }
 
 .switch-ai-bar__item--near-prev,
 .switch-ai-bar__item--near-next {
-	transform: scale(0.78);
-	opacity: 0.82;
+	transform: scale(0.86);
+	opacity: 0.88;
 }
 
 .switch-ai-bar__item--current {
@@ -211,50 +232,50 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════
-   Horizontal-slide animation (Swiper‑style)
+   Dual‑track slide animation (Swiper‑style)
    ═══════════════════════════════════════════════════════
 
-   The entire track remounts on every sequence change
-   (key={sequence}) and receives a fresh data-direction
-   attribute.  The track as a whole shifts horizontally —
-   items don't animate individually.  This is the same
-   principle Swiper uses: one container translateX per
-   transition.
+   Instead of remounting the track, both the old (exit) and
+   new (enter) tracks coexist during the 300 ms transition.
+   The exit track slides out in the direction of travel while
+   the enter track slides in from the opposite edge — each
+   moving by exactly one card‑slot width.  The viewport clips
+   both, so the frosted‑glass backdrop stays visually fixed.
 
-   translateX offset ≈ 1 slot width (110 px item + 4 px gap),
-   clamped slightly so items at the far edge don't fly in
-   from completely outside the viewport. */
+   --slide-distance is set on .switch-ai-bar__viewport and
+   equals the card width + gap (116 px desktop, 85 px mobile). */
 
-/* ── "Next": track slides left (items shift right‑to‑left) ── */
-[data-direction="next"] {
-	animation: track-slide-next 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+/* ── "Next": exit slides left, enter slides in from right ── */
+.switch-ai-bar__track--exit-next {
+	animation: track-exit-next 300ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.switch-ai-bar__track--enter-next {
+	animation: track-enter-next 300ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-/* ── "Previous": track slides right (items shift left‑to‑right) ── */
-[data-direction="previous"] {
-	animation: track-slide-previous 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+/* ── "Previous": exit slides right, enter slides in from left ── */
+.switch-ai-bar__track--exit-previous {
+	animation: track-exit-previous 300ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.switch-ai-bar__track--enter-previous {
+	animation: track-enter-previous 300ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-@keyframes track-slide-next {
-	from {
-		transform: translateX(90px);
-		opacity: 0.65;
-	}
-	to {
-		transform: translateX(0);
-		opacity: 1;
-	}
+@keyframes track-exit-next {
+	from { transform: translateX(0);               opacity: 1; }
+	to   { transform: translateX(calc(-1 * var(--slide-distance))); opacity: 0; }
 }
-
-@keyframes track-slide-previous {
-	from {
-		transform: translateX(-90px);
-		opacity: 0.65;
-	}
-	to {
-		transform: translateX(0);
-		opacity: 1;
-	}
+@keyframes track-enter-next {
+	from { transform: translateX(var(--slide-distance)); opacity: 0; }
+	to   { transform: translateX(0);               opacity: 1; }
+}
+@keyframes track-exit-previous {
+	from { transform: translateX(0);               opacity: 1; }
+	to   { transform: translateX(var(--slide-distance)); opacity: 0; }
+}
+@keyframes track-enter-previous {
+	from { transform: translateX(calc(-1 * var(--slide-distance))); opacity: 0; }
+	to   { transform: translateX(0);               opacity: 1; }
 }
 
 /* ── Responsive: narrow viewports ── */
@@ -264,8 +285,12 @@ body {
 		width: calc(100vw - 20px);
 	}
 
+	.switch-ai-bar__viewport {
+		--slide-distance: 85px;   /* 80px card + 5px gap */
+	}
+
 	.switch-ai-bar__track {
-		gap: 3px;
+		gap: 5px;
 		padding: 8px 3px;
 		min-height: 62px;
 	}

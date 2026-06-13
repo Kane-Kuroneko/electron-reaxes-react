@@ -12,12 +12,12 @@ export const Reaxel_View = reaxel( () => {
 		currentAIViewKey : previouslyUsedAI ,
 		settingsViewOpened : false,
 	} );
-	
+
 	function fitWindow(target?:string) {
 		const { width , height } = mainWindow.getContentBounds();
 		const centerBounds = getCenterBounds( { x : 0 , y : 0 , width , height } );
 		const viewSetBounds = (view:WebContentsView) => setViewBoundsIfChanged( view , centerBounds );
-		
+
 		if( target ) {
 			const runtimeView = reaxel_AIViews.store.AIViews.find( item => item.id === target );
 			viewSetBounds( runtimeView?.view );
@@ -79,7 +79,7 @@ export const Reaxel_View = reaxel( () => {
 		const settings = getRuntimeSettings();
 		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
 		const targetAI = resolveStartupAI( activeAIs , settings , store.currentAIViewKey );
-		
+
 		if( targetAI ) {
 			setState( { currentAIViewKey : targetAI.id } );
 			await reaxel_AIViews().syncAIViewsWithConfig( settings );
@@ -96,33 +96,55 @@ export const Reaxel_View = reaxel( () => {
 		direction:FloatingView.SwitchAiBarDirection,
 	):FloatingView.SwitchAiBarPayload => {
 		const total = items.length;
-		const usedIds = new Set<string>();
 
-		/* Build 5-position carousel slot list.
-		   When total < 5 the wrapped indices would produce duplicate ids
-		   (e.g. with 3 items offset -2 wraps to the same index as +1).
-		   We deduplicate so React reconciliation keyed by item.id stays stable. */
-		const positionSlots:Array<{offset:number , position:FloatingView.SwitchAiBarItemPosition}> = [
-			{ offset : -2 , position : 'far-prev' } ,
-			{ offset : -1 , position : 'near-prev' } ,
-			{ offset : 0 , position : 'current' } ,
-			{ offset : 1 , position : 'near-next' } ,
-			{ offset : 2 , position : 'far-next' },
-		];
+		/* Swiper-style loop position selection:
+		   N = 1  ->  [current]                        (1 card)
+		   N = 2  ->  [near-prev, current, near-next]  (3 cards,
+		               the lone peer flanks both sides)
+		   N = 3  ->  [near-prev, current, near-next]  (3 cards,
+		               all unique, perfectly symmetric)
+		   N >= 4 ->  all 5 positions; wrapping offsets
+		               naturally produce a loop duplicate
+		               at the far edges when N = 4. */
+		let positions: FloatingView.SwitchAiBarItemPosition[];
+		if( total === 1 ) {
+			positions = [ 'current' ];
+		} else if( total === 2 || total === 3 ) {
+			positions = [ 'near-prev' , 'current' , 'near-next' ];
+		} else {
+			positions = [ 'far-prev' , 'near-prev' , 'current' , 'near-next' , 'far-next' ];
+		}
 
-		const payloadItems = positionSlots
-			.map( ({offset , position}) => ({
-				...items[getWrappedIndex( currentIndex + offset , total )] ,
-				position,
-			}) )
-			.filter( item => {
-				if( usedIds.has( item.id ) ) return false;
-				usedIds.add( item.id );
-				return true;
-			} )
-			.map( ({id , label , family , position}) => ({
-				id , label , family , position,
-			}) );
+		/* Map each position to a wrapped offset from currentIndex.
+		   prev positions count upward from -1; next from +1. */
+		let prevN = 0;
+		let nextN = 0;
+		const positionOffsets = new Map<FloatingView.SwitchAiBarItemPosition , number>();
+		for( const pos of positions ) {
+			if( pos === 'current' ) {
+				positionOffsets.set( pos , 0 );
+			} else if( pos.endsWith( 'prev' ) ) {
+				prevN++;
+				positionOffsets.set( pos , -prevN );
+			} else {
+				nextN++;
+				positionOffsets.set( pos , nextN );
+			}
+		}
+
+		const payloadItems = positions
+			.map( position => {
+				const offset = positionOffsets.get( position )!;
+				const { id , label , family } = items[getWrappedIndex( currentIndex + offset , total )];
+				return { id , label , family , position };
+			} );
+
+		/* Sort to visual display order: far-prev ... far-next. */
+		const POS_ORDER: Record<FloatingView.SwitchAiBarItemPosition , number> = {
+			'far-prev' : 0 , 'near-prev' : 1 , 'current' : 2 ,
+			'near-next' : 3 , 'far-next' : 4,
+		};
+		payloadItems.sort( ( a , b ) => POS_ORDER[ a.position ] - POS_ORDER[ b.position ] );
 
 		return {
 			direction ,
@@ -294,17 +316,17 @@ export const Reaxel_View = reaxel( () => {
 			void turnToPreviousAiPage();
 		} );
 	};
-	
+
 	obsReaction( ( first ) => {
 		if( first ) return;
 		if( store.currentAIViewKey ) {
 			electronStore.set( "previously_used_ai" , store.currentAIViewKey );
 		}
 	} , () => [ store.currentAIViewKey ] );
-	
+
 	obsReaction( ( first ) => {
 		if( first ) return;
-		
+
 		fitWindow();
 		reaxel_SettingsView.store.settingsView.view?.setVisible( store.settingsViewOpened );
 		reaxel_AIViews().applyVisibility();
@@ -312,7 +334,7 @@ export const Reaxel_View = reaxel( () => {
 		store.settingsViewOpened ,
 		store.currentAIViewKey,
 	] );
-	
+
 	const rtn = {
 		initRuntimeViews ,
 		fitWindow,
@@ -325,7 +347,7 @@ export const Reaxel_View = reaxel( () => {
 		turnToPreviousInstantiatedAiPage ,
 		closeCurrentAIView,
 	};
-	
+
 	return Object.assign( () => rtn , {
 		store ,
 		setState ,
