@@ -76,6 +76,7 @@ body {
 	gap: 12px;
 	background: var(--prompt-panel);
 	box-sizing: border-box;
+	cursor: default;
 }
 
 .prompt-view-heading {
@@ -83,6 +84,8 @@ body {
 	display: flex;
 	align-items: center;
 	gap: 8px;
+	cursor: default;
+	user-select: none;
 }
 
 /* 模块图标 */
@@ -121,6 +124,7 @@ body {
 	border-radius: var(--prompt-radius-sm);
 	color: var(--prompt-muted);
 	transition: color .12s ease, background .12s ease;
+	cursor: pointer;
 }
 .prompt-view-close-button.ant-btn:hover,
 .prompt-view-close-button.ant-btn:focus-visible {
@@ -137,6 +141,7 @@ body {
 	background: var(--prompt-panel);
 	border-bottom: 1px solid var(--prompt-border);
 	box-sizing: border-box;
+	cursor: default;
 }
 
 .prompt-view-status {
@@ -145,6 +150,8 @@ body {
 	gap: 10px;
 	color: var(--prompt-muted);
 	font-size: 11.5px; line-height: 16px;
+	cursor: default;
+	user-select: none;
 }
 
 .prompt-view-count {
@@ -172,6 +179,7 @@ body {
 	background: var(--prompt-accent);
 	border-color: var(--prompt-accent);
 	transition: background .12s ease;
+	cursor: pointer;
 }
 .prompt-view-add-button.ant-btn:hover,
 .prompt-view-add-button.ant-btn:focus-visible {
@@ -255,7 +263,8 @@ body {
 	padding: 10px;
 	box-sizing: border-box; overflow: hidden;
 	transition: border-color .15s ease, box-shadow .15s ease;
-	will-change: transform;
+	/* 光标：卡片整体默认箭头，避免浏览器 auto 在元素边界处反复切换光标导致抖动 */
+	cursor: default;
 }
 .prompt-card:hover {
 	border-color: var(--prompt-border-strong);
@@ -265,18 +274,23 @@ body {
 	border-color: var(--prompt-accent);
 	box-shadow: var(--prompt-shadow-lg);
 	transition: none;
+	/* will-change 仅在拖拽期间启用，避免静态卡片因 GPU 合成层导致光标跨层闪烁 */
+	will-change: transform;
 }
 
 .prompt-card-topbar {
 	height: 32px;
 	display: flex; align-items: center; justify-content: space-between;
 	gap: 8px;
+	/* 光标：顶栏非文本区域，显式 default 防止 auto 在按钮间隙处抖动 */
+	cursor: default;
 }
 
 .prompt-card-identity, .prompt-card-actions {
 	min-width: 0;
 	display: flex; align-items: center;
 	gap: 4px;
+	cursor: default;
 }
 .prompt-card-actions { flex: 0 0 auto; justify-content: flex-end; }
 
@@ -286,6 +300,9 @@ body {
 	font-size: 11px; line-height: 18px;
 	font-weight: 600;
 	white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+	/* 光标：标题虽含文字但非可编辑区，显式 default 防止浏览器 auto 误判为 text */
+	cursor: default;
+	user-select: none;
 }
 
 .prompt-card-icon-button.ant-btn {
@@ -294,6 +311,8 @@ body {
 	border-radius: var(--prompt-radius-sm);
 	color: var(--prompt-subtle);
 	transition: color .12s ease, background .12s ease;
+	/* 光标：显式 pointer，确保不被父级 default 覆盖 */
+	cursor: pointer;
 }
 .prompt-card-icon-button svg { width: 15px; height: 15px; }
 .prompt-card-icon-button.ant-btn:hover,
@@ -306,8 +325,9 @@ body {
 	background: rgba(220,38,38,0.06);
 }
 
-.prompt-card-drag-handle { cursor: grab; touch-action: none; }
-.prompt-card-drag-handle:active { cursor: grabbing; }
+/* 拖拽把手光标：grab 表示可拖拽，grabbing 表示拖拽中；显式声明避免与父级 default 冲突 */
+.prompt-card-drag-handle.ant-btn { cursor: grab; touch-action: none; }
+.prompt-card-drag-handle.ant-btn:active { cursor: grabbing; }
 
 /* ═══ Composer — no glow, clean border focus ═══ */
 .prompt-composer {
@@ -317,6 +337,8 @@ body {
 	background: var(--prompt-surface-soft);
 	overflow: hidden;
 	transition: border-color .2s ease, background .2s ease;
+	/* 光标：composer 外壳默认箭头，内部 textarea 自备 text 光标，避免边界处 text↔default 抖动 */
+	cursor: default;
 }
 .prompt-composer:focus-within {
 	border-color: var(--prompt-accent);
@@ -331,6 +353,8 @@ body {
 	resize: none;
 	padding: 10px 12px 8px;
 	font-size: 13px; line-height: 1.6;
+	/* 光标：显式 text，确保不被父级 default 覆盖 */
+	cursor: text;
 }
 .prompt-card-textarea.ant-input:focus {
 	border: none; box-shadow: none; background: transparent;
@@ -346,6 +370,9 @@ body {
 	box-sizing: border-box;
 	color: var(--prompt-subtle);
 	font-size: 10.5px; line-height: 16px;
+	/* 光标：footer 显示字数统计，非可编辑文本 */
+	cursor: default;
+	user-select: none;
 }
 .prompt-composer-footer .is-empty { color: var(--prompt-muted); }
 
