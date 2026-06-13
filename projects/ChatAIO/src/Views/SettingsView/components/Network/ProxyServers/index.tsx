@@ -32,22 +32,25 @@ export const ProxyServers = reaxper( () => {
 		>
 			<I18n>Add Server</I18n>
 		</Button>
-		<Table
-			dataSource={ reaxel_SettingsView.store.UIControls.networks.proxy_server_list.map( it => {
-				return {
-					...it ,
-					key : it.proxy_server_id,
-				};
-			} ) }
-			columns={ createColumns( server => {
-				setProxyTestModal( {
-					visible : true ,
-					server,
-				} );
-			} ) }
-			pagination={false}
-			size="small"
-		/>
+		<div style={ { overflowX : 'auto' } }>
+			<Table
+				style={ { minWidth : 620 } }
+				dataSource={ reaxel_SettingsView.store.UIControls.networks.proxy_server_list.map( it => {
+					return {
+						...it ,
+						key : it.proxy_server_id,
+					};
+				} ) }
+				columns={ createColumns( server => {
+					setProxyTestModal( {
+						visible : true ,
+						server,
+					} );
+				} ) }
+				pagination={false}
+				size="small"
+			/>
+		</div>
 		<ProxyServerTestModal
 			visible={ proxyTestModal.visible }
 			server={ proxyTestModal.server }
@@ -67,6 +70,8 @@ const createColumns = (openProxyTestModal:(server:NetworkProxy.ProxyServer.Serve
 		title : <I18n>Server Name</I18n> ,
 		dataIndex : 'server_name' ,
 		key : 'server_name' ,
+		ellipsis : true ,
+		minWidth : 120,
 	} ,
 	{
 		title : <I18n>Enabled</I18n> ,
@@ -92,6 +97,8 @@ const createColumns = (openProxyTestModal:(server:NetworkProxy.ProxyServer.Serve
 	} ,
 	{
 		title : <I18n>Address</I18n> ,
+		ellipsis : true ,
+		minWidth : 180,
 		render(value,{proxy_conf:{protocol,hostname,port}},index){
 			return <span>{protocol}://{hostname}:{port}</span>
 		}
