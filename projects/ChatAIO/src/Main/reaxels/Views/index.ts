@@ -96,23 +96,37 @@ export const Reaxel_View = reaxel( () => {
 		direction:FloatingView.SwitchAiBarDirection,
 	):FloatingView.SwitchAiBarPayload => {
 		const total = items.length;
-		const createItem = (offset:number , position:FloatingView.SwitchAiBarItemPosition) => {
-			const ai = items[getWrappedIndex( currentIndex + offset , total )];
-			return {
-				id : ai.id ,
-				label : ai.label ,
-				family : ai.family ,
+		const usedIds = new Set<string>();
+
+		/* Build 5-position carousel slot list.
+		   When total < 5 the wrapped indices would produce duplicate ids
+		   (e.g. with 3 items offset -2 wraps to the same index as +1).
+		   We deduplicate so React reconciliation keyed by item.id stays stable. */
+		const positionSlots:Array<{offset:number , position:FloatingView.SwitchAiBarItemPosition}> = [
+			{ offset : -2 , position : 'far-prev' } ,
+			{ offset : -1 , position : 'near-prev' } ,
+			{ offset : 0 , position : 'current' } ,
+			{ offset : 1 , position : 'near-next' } ,
+			{ offset : 2 , position : 'far-next' },
+		];
+
+		const payloadItems = positionSlots
+			.map( ({offset , position}) => ({
+				...items[getWrappedIndex( currentIndex + offset , total )] ,
 				position,
-			};
-		};
+			}) )
+			.filter( item => {
+				if( usedIds.has( item.id ) ) return false;
+				usedIds.add( item.id );
+				return true;
+			} )
+			.map( ({id , label , family , position}) => ({
+				id , label , family , position,
+			}) );
 
 		return {
 			direction ,
-			items : [
-				createItem( -1 , 'prev' ) ,
-				createItem( 0 , 'current' ) ,
-				createItem( 1 , 'next' ),
-			] ,
+			items : payloadItems ,
 			currentId : items[currentIndex].id ,
 			sequence : Date.now() ,
 			total,

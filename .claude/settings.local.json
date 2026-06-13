@@ -241,7 +241,17 @@
       "PowerShell(foreach *)",
       "PowerShell(try *)",
       "PowerShell(try { $json = Get-Content 'Z:\\\\electron-reaxes-react\\\\.claude\\\\settings.local.json' -Raw | ConvertFrom-Json; Write-Output \"JSON valid\"; Write-Output \"allow count: $\\($json.permissions.allow.Count\\)\"; Write-Output \"ask count: $\\($json.permissions.ask.Count\\)\"; Write-Output \"defaultMode: $\\($json.permissions.defaultMode\\)\" } catch { Write-Output \"JSON error: $_\" })",
-      "PowerShell(Write-Host \"PowerShell works — version: $\\($PSVersionTable.PSVersion\\)\")"
+      "PowerShell(Write-Host \"PowerShell works — version: $\\($PSVersionTable.PSVersion\\)\")",
+      "PowerShell(Get-ChildItem Z:\\\\electron-reaxes-react\\\\.qoder -Recurse -Depth 4 | ForEach-Object { Write-Output \"$\\($_.Mode\\) $\\($_.FullName\\)\" })",
+      "PowerShell(Get-ChildItem Z:\\\\electron-reaxes-react\\\\.codex -Recurse -Depth 4 | ForEach-Object { Write-Output \"$\\($_.Mode\\) $\\($_.FullName\\)\" })",
+      "PowerShell(Get-ChildItem Z:\\\\electron-reaxes-react\\\\.cursor -Recurse -Depth 4 | ForEach-Object { Write-Output \"$\\($_.Mode\\) $\\($_.FullName\\)\" })",
+      "PowerShell(Get-ChildItem Z:\\\\electron-reaxes-react\\\\.cursor -Recurse -Depth 5 | ForEach-Object { Write-Output \"$\\($_.Mode\\) $\\($_.FullName\\)\" })",
+      "PowerShell(if \\(Test-Path \"Z:\\\\electron-reaxes-react\\\\.cursor\"\\) { Get-ChildItem Z:\\\\electron-reaxes-react\\\\.cursor -Recurse -Depth 5 | ForEach-Object { Write-Output \"$\\($_.Mode\\) $\\($_.FullName\\)\" } } else { Write-Output \".cursor NOT found\" })",
+      "PowerShell(Get-ChildItem Z:\\\\electron-reaxes-react\\\\.claude -Depth 2 | ForEach-Object { Write-Output \"$\\($_.Mode\\) $\\($_.FullName\\)\" })",
+      "Bash(git --no-pager diff --stat)",
+      "Bash(git --no-pager diff -- projects/ChatAIO/src/Types/FloatingView.d.ts projects/ChatAIO/src/Main/reaxels/Views/index.ts projects/ChatAIO/src/Views/FloatingView/components/SwitchAiBar/index.tsx projects/ChatAIO/src/Views/FloatingView/index.less)",
+      "Bash(git --no-pager diff --stat -- projects/ChatAIO/src/Types/FloatingView.d.ts projects/ChatAIO/src/Main/reaxels/Views/index.ts projects/ChatAIO/src/Views/FloatingView/)",
+      "Bash(git --no-pager diff --cached --stat)"
     ],
     "deny": [],
     "ask": [

@@ -1,7 +1,7 @@
 export namespace FloatingView {
 	export type SwitchAiBarDirection = 'next' | 'previous';
 
-	export type SwitchAiBarItemPosition = 'prev' | 'current' | 'next';
+	export type SwitchAiBarItemPosition = 'far-prev' | 'near-prev' | 'current' | 'near-next' | 'far-next';
 
 	export type SwitchAiBarItem = {
 		id: string;
