@@ -379,6 +379,11 @@ body {
 /* ═══ Prompt card enter animation ═══ */
 /* 外层包裹器：通过 max-height 动画平滑撑开空间，将兄弟元素向下推开 */
 .prompt-card-enter-wrapper {
+	/* overflow visible by default — 避免裁剪 @dnd-kit 拖拽时的 transform 位移 */
+}
+/* overflow:hidden 仅在入场/退场动画期间生效，防止 max-height 动画时内容溢出 */
+.prompt-card-enter-wrapper.is-entering,
+.prompt-card-enter-wrapper.is-exiting {
 	overflow: hidden;
 }
 .prompt-card-enter-wrapper.is-entering {
