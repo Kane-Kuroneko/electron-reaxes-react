@@ -302,6 +302,7 @@ export const reaxel_Menu = reaxel( () => {
 	} , () => [
 		Reaxel_View.store.currentAIViewKey ,
 		Reaxel_View.store.settingsViewOpened,
+		reaxel_AIViews.store.AIViews.length ,
 		reaxel_PromptViews.store.left.visible ,
 		reaxel_PromptViews.store.right.visible,
 	] );

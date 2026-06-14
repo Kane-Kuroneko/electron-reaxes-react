@@ -89,7 +89,16 @@ export const reaxel_AIViews = reaxel( () => {
 				continue;
 			}
 			if( ai.preloadOnStartup || ai.id === Reaxel_View.store.currentAIViewKey ) {
-				initAIView( ai , settings );
+				try {
+					const isPreload = ai.preloadOnStartup && ai.id !== Reaxel_View.store.currentAIViewKey;
+					console.log( `[AIViews] ${ isPreload ? 'Preloading' : 'Showing' } AI view: ${ ai.id } (${ ai.label })` );
+					const view = initAIView( ai , settings );
+					if( view ) {
+						console.log( `[AIViews] AI view init done: ${ ai.id }` );
+					}
+				} catch ( error ) {
+					console.error( `[AIViews] Failed to init AI view: ${ ai.id } (${ ai.label })` , error );
+				}
 			}
 		}
 		

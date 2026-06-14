@@ -511,6 +511,7 @@ const AINameSuffixPool = [
 	'Ginevra',
 ] as const;
 
+/* 新增国内 AI 服务商 (doubao/qianwen/kimi) 的 family 前缀名 */
 const AINameFamilyPrefix:Record<AI.AIFamily , string> = {
 	chatgpt : 'ChatGPT' ,
 	grok : 'Grok' ,
@@ -519,7 +520,10 @@ const AINameFamilyPrefix:Record<AI.AIFamily , string> = {
 	perplexity : 'Perplexity' ,
 	claude : 'Claude' ,
 	custom : 'Custom AI' ,
-	'dev-proxy-test' : 'Proxy Test',
+	'dev-proxy-test' : 'Proxy Test' ,
+	doubao : 'Doubao' ,
+	qianwen : 'Qianwen' ,
+	kimi : 'Kimi',
 };
 
 function buildDefaultAIName(family:AI.AIFamily , AIs:AI.AIItem[] , excludeId?:string | null) {

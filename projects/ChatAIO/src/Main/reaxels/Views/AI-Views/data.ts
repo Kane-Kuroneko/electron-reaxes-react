@@ -8,6 +8,9 @@ export const AIKeys: AI.AIFamily[] = [
 	"claude",
 	"custom",
 	"dev-proxy-test",
+	"doubao",
+	"qianwen",
+	"kimi",
 ];
 
 // Legacy AIData - kept for backward compatibility with view initialization
@@ -17,7 +20,7 @@ export const AIData = [
 		label : "ChatGPT" as const,
 		AIName : checkAs<AI.AIFamily>('chatgpt'),
 		domain : "https://chatgpt.com",
-		browser_name : "chatgpt_window" as const,	
+		browser_name : "chatgpt_window" as const,
 	},
 	{
 		label : "Grok" as const,
@@ -48,6 +51,24 @@ export const AIData = [
 		AIName : checkAs<AI.AIFamily>('claude'),
 		domain : "https://claude.ai",
 		browser_name : "claude_window" as const,
+	},
+	{
+		label : "豆包" as const,
+		AIName : checkAs<AI.AIFamily>('doubao'),
+		domain : "https://www.doubao.com",
+		browser_name : "doubao_window" as const,
+	},
+	{
+		label : "通义千问" as const,
+		AIName : checkAs<AI.AIFamily>('qianwen'),
+		domain : "https://tongyi.aliyun.com",
+		browser_name : "qianwen_window" as const,
+	},
+	{
+		label : "Kimi" as const,
+		AIName : checkAs<AI.AIFamily>('kimi'),
+		domain : "https://kimi.moonshot.cn",
+		browser_name : "kimi_window" as const,
 	},
 	{
 		label : "Custom AI" as const,

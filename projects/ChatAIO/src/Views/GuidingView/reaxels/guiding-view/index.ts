@@ -275,9 +275,7 @@ export const reaxel_GuidingView = reaxel( () => {
 		}
 		if( store.Page.current === 1 ) {
 			await saveProgress();
-			if( getCanDirectConnect() ) {
-				setState.Page( { current : 2 } );
-			}
+			setState.Page( { current : 2 } );
 		}
 	}
 	

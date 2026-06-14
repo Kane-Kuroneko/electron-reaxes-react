@@ -20,7 +20,7 @@ export const RCGuidingFooter = reaxper( () => {
 			loading={ store.Status.finishing }
 			onConfirm={ () => finish( { openSettings : true } ) }
 		><I18n>Save and open Settings</I18n></LongPressButton> }
-		{ page < 2 && canDirectConnect !== false && <Button
+		{ page < 2 && <Button
 			type="primary"
 			disabled={ page === 1 && store.UIControls.network.status === 'unknown' }
 			onClick={ goNext }

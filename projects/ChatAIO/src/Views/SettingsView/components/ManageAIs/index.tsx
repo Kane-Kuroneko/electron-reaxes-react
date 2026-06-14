@@ -719,7 +719,10 @@
 			perplexity : 'https://www.perplexity.ai' ,
 			claude : 'https://claude.ai' ,
 			custom : '' ,
-			'dev-proxy-test' : 'https://whatismyipaddress.com/',
+			'dev-proxy-test' : 'https://whatismyipaddress.com/' ,
+			doubao : 'https://www.doubao.com' ,
+			qianwen : 'https://tongyi.aliyun.com' ,
+			kimi : 'https://kimi.moonshot.cn',
 		}[family] ?? 'https://chatgpt.com';
 	};
 

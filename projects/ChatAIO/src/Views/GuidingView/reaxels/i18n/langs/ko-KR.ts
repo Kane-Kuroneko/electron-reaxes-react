@@ -35,4 +35,7 @@ export default {
 	'Back' : '이전' ,
 	'Next' : '다음' ,
 	'Remove' : '제거',
+	'International AI Providers' : '해외 AI 서비스' ,
+	'Domestic AI Providers' : '중국 국내 AI 서비스' ,
+	'Your network may have trouble reaching services outside China. Consider enabling Domestic AI Providers first — they work without a proxy.' : '현재 네트워크에서 중국 외 서비스 접속이 원활하지 않을 수 있습니다. 프록시 없이 이용 가능한 국내 AI 서비스를 먼저 활성화해 보세요.',
 } as Record<string , string>;
