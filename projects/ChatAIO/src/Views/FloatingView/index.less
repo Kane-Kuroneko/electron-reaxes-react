@@ -1,3 +1,27 @@
+/* ═════════════════════════════════════════════════════════
+   ANIM — 动画参数（在此集中调试）
+   标注 "⇄ TSX" 的参数需与 SwitchAiBar/index.tsx 顶部 ANIM 常量保持同步
+   ═════════════════════════════════════════════════════════ */
+
+/* ── 容器显隐过渡 ── */
+@show-hide-duration: 180ms;
+@show-hide-easing: ease;
+
+/* ── 卡片滑到位后放大过渡（⇄ TSX ANIM.SETTLE_DURATION / SETTLE_EASING）── */
+@settle-duration: 300ms;
+@settle-easing: cubic-bezier(0.25, 0.8, 0.25, 1);
+
+/* ── 卡片缩放 ── */
+@scale-far: 0.6;
+@scale-near: 0.8;
+@scale-current: 1;
+
+/* ── 卡片透明度 ── */
+@opacity-far: 0.82;
+@opacity-near: 0.92;
+@opacity-current: 1;
+
+
 html,
 body {
 	width: 100%;
@@ -24,16 +48,16 @@ body {
 	overflow: hidden;
 }
 
-/* ── SwitchAiBar container ── */
+/* ── SwitchAiBar 容器（显隐过渡） ── */
 .switch-ai-bar {
 	position: absolute;
 	top: 24px;
 	left: 50%;
-	width: min(620px, calc(100vw - 48px));
+	width: min(700px, calc(100vw - 48px));
 	transform: translateX(-50%);
 	transition:
-		opacity 180ms ease,
-		transform 180ms ease;
+		opacity @show-hide-duration @show-hide-easing,
+		transform @show-hide-duration @show-hide-easing;
 	pointer-events: none;
 }
 
@@ -47,12 +71,9 @@ body {
 	transform: translateX(-50%) translateY(-10px) scale(0.98);
 }
 
-/* ── Viewport (frosted glass backdrop) ──
-   Very light warm cream — airy and soft, harmonises with the
-   pink‑blue card accents.  The top‑to‑bottom luminance shift
-   gives depth so the backdrop‑blur has texture to work with.
-   position: relative anchors the absolutely-positioned exit
-   track during card‑switch transitions. */
+/* ── 视口（毛玻璃背景） ──
+   Swiper 容器位于视口内部，视口提供固定的毛玻璃背景，
+   Swiper 的 translate3d 滑动在视口范围内被 overflow: hidden 裁剪。 */
 .switch-ai-bar__viewport {
 	position: relative;
 	width: 100%;
@@ -66,51 +87,33 @@ body {
 	);
 	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.10);
 	backdrop-filter: blur(14px) saturate(1.2);
-
-	/* One card‑slot width: item + gap.  Used by exit/enter
-	   keyframes so both tracks slide by exactly one position. */
-	--slide-distance: 116px;   /* 110px card + 6px gap */
 }
 
-/* ── Track ──
-   Flex row, 5 slots, centred.  The enter track stays in normal
-   flow to drive the viewport height; the exit track is absolutely
-   positioned on top during transitions. */
-.switch-ai-bar__track {
+/* ── Swiper 容器：overflow 默认 hidden（Swiper 内置），卡片 scale<1 向内收缩不会溢出 ── */
+
+/* ── Swiper wrapper：弹性布局由 centeredSlides 控制 ── */
+.switch-ai-bar__viewport .swiper-wrapper {
+	padding: 10px 0;
+	align-items: center;  /* 垂直居中卡片 */
+}
+
+/* ── Swiper slide：尺寸由内部卡片决定 ── */
+.switch-ai-bar__viewport .swiper-slide {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	gap: 6px;
-	padding: 10px 4px;
-	min-height: 76px;
+	width: 130px;          /* 桌面端卡片宽度 */
+	height: auto;
+	flex-shrink: 0;
 }
 
-/* Exit track: overlaid on the enter track during transitions,
-   slides out in the direction of travel while fading away. */
-.switch-ai-bar__track--exit-next,
-.switch-ai-bar__track--exit-previous {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	z-index: 1;
-	pointer-events: none;
-}
+/* ═══════════════════════════════════════════════════════
+   卡片 item 样式（与旧版设计保持一致）
+   ═══════════════════════════════════════════════════════ */
 
-/* ── Item (card) ──
-   Fixed‑width slot.  Scale transforms produce the centre‑large /
-   sides‑small carousel silhouette.  Card scale is independent of
-   the track‑level slide — it stays consistent throughout the
-   300 ms transition.
-
-   Base card: white‑ish with a whisper of warmth, delicate shadow.
-   Far / near positions overlay pink‑blue tints at varying opacity;
-   current gets the full‑saturation gradient. */
 .switch-ai-bar__item {
-	flex: 0 0 auto;
-	width: 110px;
-	min-width: 0;
-	height: 60px;
+	width: 100%;
+	height: 64px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -124,35 +127,38 @@ body {
 		rgba(250, 248, 242, 0.90)
 	);
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+	/* scale 过渡 — 仅在 transitionEnd 后触发（不在滑动过程中更新 data-position），做 arrive-settle 效果 */
+	transition:
+		transform @settle-duration @settle-easing,
+		opacity @settle-duration @settle-easing,
+		background @settle-duration @settle-easing,
+		border-color @settle-duration @settle-easing,
+		box-shadow @settle-duration @settle-easing;
 }
 
-/* ── Position: scale + opacity ──
-   Tighter scale spread (0.72 → 0.86 → 1.0) keeps visual gaps
-   between cards perceptually even while preserving the
-   centre‑focused depth‑of‑field silhouette. */
-.switch-ai-bar__item--far-prev,
-.switch-ai-bar__item--far-next {
-	transform: scale(0.72);
-	opacity: 0.68;
+/* ── 位置：缩放 + 透明度（通过 data-position 属性驱动） ── */
+.swiper-slide[data-position="far-prev"] .switch-ai-bar__item,
+.swiper-slide[data-position="far-next"] .switch-ai-bar__item {
+	transform: scale(@scale-far);
+	opacity: @opacity-far;
 }
 
-.switch-ai-bar__item--near-prev,
-.switch-ai-bar__item--near-next {
-	transform: scale(0.86);
-	opacity: 0.88;
+.swiper-slide[data-position="near-prev"] .switch-ai-bar__item,
+.swiper-slide[data-position="near-next"] .switch-ai-bar__item {
+	transform: scale(@scale-near);
+	opacity: @opacity-near;
 }
 
-.switch-ai-bar__item--current {
-	transform: scale(1);
-	opacity: 1;
+.swiper-slide[data-position="current"] .switch-ai-bar__item {
+	transform: scale(@scale-current);
+	opacity: @opacity-current;
 }
 
-/* ── Position: card tint (pink → indigo → blue overlay) ──
-   Far items get a barely‑there tint; near items a gentle wash;
-   the current card takes the full vibrant gradient. */
+/* ── 位置：卡片色彩与阴影 ── */
 
-.switch-ai-bar__item--far-prev,
-.switch-ai-bar__item--far-next {
+/* far: 微弱粉靛蓝渐变 */
+.swiper-slide[data-position="far-prev"] .switch-ai-bar__item,
+.swiper-slide[data-position="far-next"] .switch-ai-bar__item {
 	background: linear-gradient(
 		135deg,
 		rgba(236, 72, 153, 0.06),
@@ -163,8 +169,9 @@ body {
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
-.switch-ai-bar__item--near-prev,
-.switch-ai-bar__item--near-next {
+/* near: 中度粉靛蓝渐变 */
+.swiper-slide[data-position="near-prev"] .switch-ai-bar__item,
+.swiper-slide[data-position="near-next"] .switch-ai-bar__item {
 	background: linear-gradient(
 		135deg,
 		rgba(236, 72, 153, 0.15),
@@ -175,7 +182,8 @@ body {
 	box-shadow: 0 2px 10px rgba(139, 92, 246, 0.08);
 }
 
-.switch-ai-bar__item--current {
+/* current: 饱满粉靛蓝渐变 + 发光阴影 */
+.swiper-slide[data-position="current"] .switch-ai-bar__item {
 	background: linear-gradient(
 		135deg,
 		rgba(236, 72, 153, 0.8),
@@ -188,17 +196,15 @@ body {
 		inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
 
-/* ── Label ──
-   Dark warm‑grey on light cards for readability;
-   white on the current card where the gradient provides contrast. */
+/* ── 标签文字 ── */
 .switch-ai-bar__label {
 	display: block;
 	width: 100%;
-	padding: 0 10px;
+	padding: 0 8px;
 	box-sizing: border-box;
 	font-size: 15px;
 	line-height: 20px;
-	font-weight: 650;
+	font-weight: 400;
 	text-align: center;
 	white-space: nowrap;
 	overflow: hidden;
@@ -206,107 +212,57 @@ body {
 	color: rgba(38, 36, 46, 0.82);
 }
 
-.switch-ai-bar__item--current .switch-ai-bar__label {
+.swiper-slide[data-position="current"] .switch-ai-bar__label {
 	color: #f8fbff;
 }
 
-/* ── Family tag ── */
+/* ── Family 标签 ── */
 .switch-ai-bar__family {
 	display: block;
 	width: 100%;
-	padding: 0 10px;
+	padding: 0 8px;
 	box-sizing: border-box;
 	margin-top: 2px;
 	font-size: 10px;
 	line-height: 14px;
 	text-align: center;
-	text-transform: uppercase;
 	color: rgba(38, 36, 46, 0.42);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
-.switch-ai-bar__item--current .switch-ai-bar__family {
+.swiper-slide[data-position="current"] .switch-ai-bar__family {
 	color: rgba(255, 255, 255, 0.72);
 }
 
 /* ═══════════════════════════════════════════════════════
-   Dual‑track slide animation (Swiper‑style)
-   ═══════════════════════════════════════════════════════
+   响应式：移动端（窗口宽度 < 520px）
+   ═══════════════════════════════════════════════════════ */
 
-   Instead of remounting the track, both the old (exit) and
-   new (enter) tracks coexist during the 300 ms transition.
-   The exit track slides out in the direction of travel while
-   the enter track slides in from the opposite edge — each
-   moving by exactly one card‑slot width.  The viewport clips
-   both, so the frosted‑glass backdrop stays visually fixed.
-
-   --slide-distance is set on .switch-ai-bar__viewport and
-   equals the card width + gap (116 px desktop, 85 px mobile). */
-
-/* ── "Next": exit slides left, enter slides in from right ── */
-.switch-ai-bar__track--exit-next {
-	animation: track-exit-next 300ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-.switch-ai-bar__track--enter-next {
-	animation: track-enter-next 300ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-
-/* ── "Previous": exit slides right, enter slides in from left ── */
-.switch-ai-bar__track--exit-previous {
-	animation: track-exit-previous 300ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-.switch-ai-bar__track--enter-previous {
-	animation: track-enter-previous 300ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-
-@keyframes track-exit-next {
-	from { transform: translateX(0);               opacity: 1; }
-	to   { transform: translateX(calc(-1 * var(--slide-distance))); opacity: 0; }
-}
-@keyframes track-enter-next {
-	from { transform: translateX(var(--slide-distance)); opacity: 0; }
-	to   { transform: translateX(0);               opacity: 1; }
-}
-@keyframes track-exit-previous {
-	from { transform: translateX(0);               opacity: 1; }
-	to   { transform: translateX(var(--slide-distance)); opacity: 0; }
-}
-@keyframes track-enter-previous {
-	from { transform: translateX(calc(-1 * var(--slide-distance))); opacity: 0; }
-	to   { transform: translateX(0);               opacity: 1; }
-}
-
-/* ── Responsive: narrow viewports ── */
 @media (max-width: 520px) {
 	.switch-ai-bar {
 		top: 14px;
 		width: calc(100vw - 20px);
 	}
 
-	.switch-ai-bar__viewport {
-		--slide-distance: 85px;   /* 80px card + 5px gap */
-	}
-
-	.switch-ai-bar__track {
-		gap: 5px;
-		padding: 8px 3px;
-		min-height: 62px;
+	.switch-ai-bar__viewport .swiper-slide {
+		width: 95px;       /* 移动端卡片宽度 */
 	}
 
 	.switch-ai-bar__item {
-		width: 80px;
-		height: 50px;
+		height: 54px;
 	}
 
 	.switch-ai-bar__label {
 		font-size: 13px;
+		padding: 0 6px;
 		line-height: 18px;
 	}
 
 	.switch-ai-bar__family {
 		font-size: 9px;
+		padding: 0 6px;
 		line-height: 12px;
 	}
 }

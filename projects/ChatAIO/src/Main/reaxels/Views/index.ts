@@ -90,68 +90,19 @@ export const Reaxel_View = reaxel( () => {
 		return ( index + length ) % length;
 	};
 
+	/* 构造 SwitchAiBar 显示载荷。
+	   items 为全部活跃 AI（保持用户顺序），activeIndex 为当前 AI 的索引，
+	   direction 告知组件滑动方向以保证"向前=卡片永远向左"的契约。
+	   Swiper 以 items 为稳定 slide 列表，通过 slideNext/slidePrev 驱动方向正确的过渡。 */
 	const createSwitchAiBarPayload = (
 		items:SwitchAiBarPayloadItem[] ,
-		currentIndex:number ,
+		activeIndex:number ,
 		direction:FloatingView.SwitchAiBarDirection,
 	):FloatingView.SwitchAiBarPayload => {
-		const total = items.length;
-
-		/* Swiper-style loop position selection:
-		   N = 1  ->  [current]                        (1 card)
-		   N = 2  ->  [near-prev, current, near-next]  (3 cards,
-		               the lone peer flanks both sides)
-		   N = 3  ->  [near-prev, current, near-next]  (3 cards,
-		               all unique, perfectly symmetric)
-		   N >= 4 ->  all 5 positions; wrapping offsets
-		               naturally produce a loop duplicate
-		               at the far edges when N = 4. */
-		let positions: FloatingView.SwitchAiBarItemPosition[];
-		if( total === 1 ) {
-			positions = [ 'current' ];
-		} else if( total === 2 || total === 3 ) {
-			positions = [ 'near-prev' , 'current' , 'near-next' ];
-		} else {
-			positions = [ 'far-prev' , 'near-prev' , 'current' , 'near-next' , 'far-next' ];
-		}
-
-		/* Map each position to a wrapped offset from currentIndex.
-		   prev positions count upward from -1; next from +1. */
-		let prevN = 0;
-		let nextN = 0;
-		const positionOffsets = new Map<FloatingView.SwitchAiBarItemPosition , number>();
-		for( const pos of positions ) {
-			if( pos === 'current' ) {
-				positionOffsets.set( pos , 0 );
-			} else if( pos.endsWith( 'prev' ) ) {
-				prevN++;
-				positionOffsets.set( pos , -prevN );
-			} else {
-				nextN++;
-				positionOffsets.set( pos , nextN );
-			}
-		}
-
-		const payloadItems = positions
-			.map( position => {
-				const offset = positionOffsets.get( position )!;
-				const { id , label , family } = items[getWrappedIndex( currentIndex + offset , total )];
-				return { id , label , family , position };
-			} );
-
-		/* Sort to visual display order: far-prev ... far-next. */
-		const POS_ORDER: Record<FloatingView.SwitchAiBarItemPosition , number> = {
-			'far-prev' : 0 , 'near-prev' : 1 , 'current' : 2 ,
-			'near-next' : 3 , 'far-next' : 4,
-		};
-		payloadItems.sort( ( a , b ) => POS_ORDER[ a.position ] - POS_ORDER[ b.position ] );
-
 		return {
-			direction ,
-			items : payloadItems ,
-			currentId : items[currentIndex].id ,
-			sequence : Date.now() ,
-			total,
+			items : items.map( ( { id , label , family } ) => ( { id , label , family } ) ) ,
+			activeIndex ,
+			direction,
 		};
 	};
 
