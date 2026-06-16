@@ -127,7 +127,7 @@ body {
 		rgba(250, 248, 242, 0.90)
 	);
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-	/* scale 过渡 — 仅在 transitionEnd 后触发（不在滑动过程中更新 data-position），做 arrive-settle 效果 */
+	/* scale 过渡 — 在 onSlideChange 中即时更新 data-position，卡片缩放随滑动同步过渡 */
 	transition:
 		transform @settle-duration @settle-easing,
 		opacity @settle-duration @settle-easing,
