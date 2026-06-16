@@ -19,17 +19,17 @@ export const reaxel_AIViews = reaxel( () => {
 			Reaxel_View().fitWindow( ai.id );
 			return existingRuntimeView.view;
 		}
-		
+
 		const nextRuntimeView = createRuntimeAIView( ai , settings );
-		
+
 		mutate( s => {
 			s.AIViews.push( nextRuntimeView );
 		} );
 		Reaxel_View().fitWindow( ai.id );
-		
+
 		return nextRuntimeView.view;
 	};
-	
+
 	const destroyAIView = (id:string) => {
 		const runtimeView = store.AIViews.find( item => item.id === id );
 		if( !runtimeView?.view ) {
@@ -40,48 +40,48 @@ export const reaxel_AIViews = reaxel( () => {
 			s.AIViews = s.AIViews.filter( item => item.id !== id );
 		} );
 	};
-	
+
 	/**
 	 * 销毁所有AI Views并清除其session/storage数据
 	 * 用于 Reset All AI Pages
 	 */
 	const destroyAllAndClearData = async(aiIds:string[] = []) => {
 		const viewsCopy = store.AIViews.slice();
-		
+
 		// reset 需要覆盖未在本次运行期创建 view、但磁盘上已存在的历史 AI partition。
 		const collectResult = collectResetPartitions( aiIds , viewsCopy );
 		if( !collectResult.success ) {
 			return collectResult;
 		}
-		
+
 		// 销毁所有view
 		viewsCopy.forEach( rv => {
 			closeRuntimeWebContentsView( rv.view , rv.id , 'reset' );
 		} );
-		
+
 		mutate( s => {
 			s.AIViews = [];
 		} );
-		
+
 		return await clearSessionPartitions( collectResult.partitions );
 	};
-	
+
 	const syncAIViewsWithConfig = async( settings:Settings ) => {
 		console.log( '[AIViews] syncAIViewsWithConfig start. AI count:' , settings.AIs.length );
 		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
 		const activeIds = new Set( activeAIs.map( ai => ai.id ) );
-		
+
 		store.AIViews.slice().forEach( runtimeView => {
 			if( !activeIds.has( runtimeView.id ) ) {
 				destroyAIView( runtimeView.id );
 			}
 		} );
-		
+
 		const currentAI = resolveCurrentAI( settings );
 		if( currentAI && Reaxel_View.store.currentAIViewKey !== currentAI.id ) {
 			Reaxel_View.setState( { currentAIViewKey : currentAI.id } );
 		}
-		
+
 		for( const ai of activeAIs ) {
 			const runtimeView = store.AIViews.find( item => item.id === ai.id );
 			if( runtimeView ) {
@@ -101,10 +101,10 @@ export const reaxel_AIViews = reaxel( () => {
 				}
 			}
 		}
-		
+
 		applyVisibility();
 	};
-	
+
 	const showAIView = ( aiId:string , settings:Settings ) => {
 		const ai = settings.AIs.find( item => item.id === aiId && !item.disabled );
 		if( !ai ) {
@@ -165,21 +165,52 @@ export const reaxel_AIViews = reaxel( () => {
 		applyVisibility();
 		return true;
 	};
-	
+
+	/* 上一次已应用的可见性状态，用于跳过 obsReaction 引发的冗余 applyVisibility() 调用。
+	   showAIView / turnToInstantiatedAiPageByOffset 已同步调用 applyVisibility()，
+	   obsReaction 在 microtask 中二次触发时状态未变，早期退出避免遍历全部 views。
+
+	   必须同时追踪 currentAIViewKey、settingsOpened 和 AIViews 数量：
+	   仅凭 key 判断会遗漏 syncAIViewsWithConfig 预加载新 view 但未切换 key 的场景——
+	   新 WebContentsView 默认可见，若早期退出则不会隐藏它，导致多个 view 同时显示。 */
+	let lastAppliedVisibilityKey: string | null = null;
+	let lastAppliedSettingsOpened: boolean | null = null;
+	let lastAppliedViewCount: number = -1;
+
 	const applyVisibility = () => {
 		const currentAIViewKey = Reaxel_View.store.currentAIViewKey;
+		const settingsOpened = Reaxel_View.store.settingsViewOpened;
+		const viewCount = store.AIViews.length;
+
+		/* 早期退出：当前 key、settings 状态、view 数量均与上次一致 → 跳过 */
+		if(
+			currentAIViewKey === lastAppliedVisibilityKey
+			&& settingsOpened === lastAppliedSettingsOpened
+			&& viewCount === lastAppliedViewCount
+		) {
+			return;
+		}
+		lastAppliedVisibilityKey = currentAIViewKey;
+		lastAppliedSettingsOpened = settingsOpened;
+		lastAppliedViewCount = viewCount;
+
 		store.AIViews.forEach( runtimeView => {
 			if( !runtimeView.view ) {
 				return;
 			}
-			const visible = !Reaxel_View.store.settingsViewOpened && runtimeView.id === currentAIViewKey;
+			const visible = !settingsOpened && runtimeView.id === currentAIViewKey;
+			if( visible ) {
+				/* 显式置顶：addChildView 对已添加的 view 幂等——先移除再追加到 contentView 末尾（顶层）。
+				   与 openSettingsView() 中对 settingsView 的处理方式一致。 */
+				mainWindow.contentView.addChildView( runtimeView.view );
+			}
 			runtimeView.view.setVisible( visible );
 			if( visible ) {
 				focusRuntimeAIViewIfReady( runtimeView );
 			}
 		} );
 	};
-	
+
 	const rtn = {
 		get currentAIView() {
 			return store.AIViews.find( item => item.id === Reaxel_View.store.currentAIViewKey ) || null;
@@ -280,7 +311,7 @@ export const reaxel_AIViews = reaxel( () => {
 			runtimeView.view.webContents.reloadIgnoringCache();
 		}
 	};
-	
+
 	return Object.assign( () => rtn , {
 		store ,
 		setState ,

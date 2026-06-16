@@ -23,12 +23,30 @@ export const reaxel_FloatingView = reaxel( () => {
 		floatingWindow.setBounds( getFloatingViewBounds() , false );
 	};
 
+	/* 轻量显示：仅 showInactive()，无 syncBounds/moveTop。
+	   syncBounds 由 mainWindow move/resize 事件监听接管；
+	   moveTop 不需要——FloatingView 已设置 alwaysOnTop:true + 'floating' 级别，
+	   在主窗口上方自动保持层级。
+	   用于 SwitchAiBar 显示（每次切换 AI page 调用）。 */
 	const showLayerWindow = () => {
 		const floatingWindow = store.floatingView.window;
 		if( !floatingWindow || floatingWindow.isDestroyed() ) {
 			return;
 		}
+		if( mainWindow.isVisible() && !mainWindow.isMinimized() ) {
+			floatingWindow.showInactive();
+		}
+	};
+
+	/* 完整置顶：syncBounds + showInactive + moveTop。
+	   仅用于窗口从最小化/隐藏恢复时——此时可能有其他应用窗口覆盖。
+	   不在每次 AI page 切换时调用，避免 moveTop() OS 级开销。 */
+	const bringFloatingViewToTop = () => {
 		syncBounds();
+		const floatingWindow = store.floatingView.window;
+		if( !floatingWindow || floatingWindow.isDestroyed() ) {
+			return;
+		}
 		if( mainWindow.isVisible() && !mainWindow.isMinimized() ) {
 			floatingWindow.showInactive();
 			floatingWindow.moveTop();
@@ -86,8 +104,10 @@ export const reaxel_FloatingView = reaxel( () => {
 		mainWindow.on( 'resize' , syncBounds );
 		mainWindow.on( 'maximize' , syncBounds );
 		mainWindow.on( 'unmaximize' , syncBounds );
-		mainWindow.on( 'restore' , showLayerWindow );
-		mainWindow.on( 'show' , showLayerWindow );
+		/* restore / show / focus 使用 bringFloatingViewToTop：
+		   从最小化/隐藏恢复时可能需要重新抢占顶层。 */
+		mainWindow.on( 'restore' , bringFloatingViewToTop );
+		mainWindow.on( 'show' , bringFloatingViewToTop );
 		mainWindow.on( 'focus' , showLayerWindow );
 		mainWindow.on( 'blur' , hideLayerWindow );
 		mainWindow.on( 'hide' , hideLayerWindow );

@@ -275,10 +275,13 @@ export const Reaxel_View = reaxel( () => {
 		}
 	} , () => [ store.currentAIViewKey ] );
 
+	/* 切换 AI page / Settings 时仅更新当前中心视图的 bounds。
+	   全量 fitWindow()（遍历所有 views）由 mainWindow resize 事件独立驱动，
+	   切换操作无需为隐藏视图重复计算布局。 */
 	obsReaction( ( first ) => {
 		if( first ) return;
 
-		fitWindow();
+		fitCurrentCenterView( getCenterBounds() );
 		reaxel_SettingsView.store.settingsView.view?.setVisible( store.settingsViewOpened );
 		reaxel_AIViews().applyVisibility();
 	} , () => [
