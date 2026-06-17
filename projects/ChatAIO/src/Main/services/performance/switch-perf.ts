@@ -88,10 +88,10 @@ function writeEvents( events: PerfEvent[] ): void {
 
 /** 定位 ChatAIO 子工程根目录（兼容 dev 和 packaged 两种运行模式） */
 function getProjectRoot(): string {
-	/* packaged 模式: resources/app.asar/projects/ChatAIO */
+	/* packaged 模式: 日志写入 userData 目录，不在 resources/app.asar 中写 */
 	const appPath = app.getAppPath();
 	if( appPath.endsWith( 'app.asar' ) ) {
-		return path.join( path.dirname( appPath ) , 'projects' , 'ChatAIO' );
+		return app.getPath( 'userData' );
 	}
 	/* dev 模式: 项目根即 ChatAIO */
 	return appPath;

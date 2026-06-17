@@ -25,6 +25,8 @@ export namespace FloatingView {
 		activeIndex: number;
 		/** 用户切换方向 */
 		direction: SwitchAiBarDirection;
+		/** 性能记录上下文 ID（用于关联主进程与渲染进程的 perf 事件） */
+		ctxId?: string;
 	};
 
 	export type GlobalMessagePayload = {

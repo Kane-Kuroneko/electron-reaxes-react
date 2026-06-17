@@ -98,11 +98,13 @@ export const Reaxel_View = reaxel( () => {
 		items:SwitchAiBarPayloadItem[] ,
 		activeIndex:number ,
 		direction:FloatingView.SwitchAiBarDirection,
+		ctxId?: string,
 	):FloatingView.SwitchAiBarPayload => {
 		return {
 			items : items.map( ( { id , label , family } ) => ( { id , label , family } ) ) ,
 			activeIndex ,
 			direction,
+			ctxId,
 		};
 	};
 
@@ -138,7 +140,7 @@ export const Reaxel_View = reaxel( () => {
 		const view = reaxel_AIViews().showAIView( nextAI.id , settings );
 
 		reaxel_FloatingView().api.showSwitchAiBar(
-			createSwitchAiBarPayload( activeAIs.map( createPayloadItemFromAI ) , nextIndex , direction ),
+			createSwitchAiBarPayload( activeAIs.map( createPayloadItemFromAI ) , nextIndex , direction , ctxId ),
 		);
 
 		perf.mark( 'switch:ipc-sent' , 'main' , ctxId , {
@@ -185,7 +187,7 @@ export const Reaxel_View = reaxel( () => {
 		reaxel_AIViews().applyVisibility();
 
 		reaxel_FloatingView().api.showSwitchAiBar(
-			createSwitchAiBarPayload( runtimeViews.map( createPayloadItemFromRuntimeView ) , nextIndex , direction ),
+			createSwitchAiBarPayload( runtimeViews.map( createPayloadItemFromRuntimeView ) , nextIndex , direction , ctxId ),
 		);
 
 		perf.mark( 'switch:ipc-sent' , 'main' , ctxId , {
@@ -248,6 +250,7 @@ export const Reaxel_View = reaxel( () => {
 					updatedRuntimeViews.map( createPayloadItemFromRuntimeView ) ,
 					nextIndex >= 0 ? nextIndex : 0 ,
 					'next',
+					ctxId,
 				),
 			);
 

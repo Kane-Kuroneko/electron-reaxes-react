@@ -69,8 +69,16 @@ export const SwitchAiBar = reaxper( () => {
 		pendingStepsRef.current--;
 		const dir = pendingDirectionRef.current;
 		if( dir === 'next' ) {
+			perf.mark( 'switch:swiper-begin' , 'renderer' , getCurrentPerfCtxId() , {
+				direction : 'next' ,
+				remainingSteps : pendingStepsRef.current,
+			} );
 			swiper.slideNext( ANIM.SWIPER_SPEED );
 		} else {
+			perf.mark( 'switch:swiper-begin' , 'renderer' , getCurrentPerfCtxId() , {
+				direction : 'previous' ,
+				remainingSteps : pendingStepsRef.current,
+			} );
 			swiper.slidePrev( ANIM.SWIPER_SPEED );
 		}
 	} , [] );
@@ -150,20 +158,31 @@ export const SwitchAiBar = reaxper( () => {
 		updateSlidePositions( swiper );
 	} , [] );
 
-	/* ════════════════════════════════════════════════════════
-	   transition 结束：处理挂起队列 */
-	const handleTransitionEnd = useCallback( ( swiper : SwiperClass ) => {
-		processPendingStep( swiper );
-	} , [ processPendingStep ] );
+/* ════════════════════════════════════════════════════════
+   transition 结束：处理挂起队列 */
+const handleTransitionEnd = useCallback( ( swiper : SwiperClass ) => {
+	perf.mark( 'switch:swiper-end' , 'renderer' , getCurrentPerfCtxId() , {
+		pendingRemaining : pendingStepsRef.current,
+	} );
+	processPendingStep( swiper );
+	if( pendingStepsRef.current <= 0 ) {
+		perf.mark( 'switch:complete' , 'renderer' , getCurrentPerfCtxId() , {
+			activeIndex : activeIndexRef.current,
+		} );
+	}
+} , [ processPendingStep ] );
 
-	/* ── Swiper 实例就绪 ──
-	   同步 prevActiveIndexRef 到当前 activeIndex，避免 useEffect
-	   误把 initialSlide 定位当作「activeIndex 变化」而追加额外 slide。 */
-	const handleSwiper = useCallback( ( swiper : SwiperClass ) => {
-		swiperRef.current = swiper;
-		prevActiveIndexRef.current = activeIndexRef.current;
-		updateSlidePositions( swiper );
-	} , [] );
+/* ── Swiper 实例就绪 ──
+  同步 prevActiveIndexRef 到当前 activeIndex，避免 useEffect
+  误把 initialSlide 定位当作「activeIndex 变化」而追加额外 slide。 */
+const handleSwiper = useCallback( ( swiper : SwiperClass ) => {
+	swiperRef.current = swiper;
+	prevActiveIndexRef.current = activeIndexRef.current;
+	updateSlidePositions( swiper );
+	perf.mark( 'switch:render-done' , 'renderer' , getCurrentPerfCtxId() , {
+		totalSlides : swiper.slides.length,
+	} );
+} , [] );
 
 	/* ═════════════════════════════════════════════════════════
 	   检测 activeIndex 变化 → 入队 + 尝试执行
@@ -173,6 +192,15 @@ export const SwitchAiBar = reaxper( () => {
 		if( prevActiveIndexRef.current === activeIndex ) return;
 		const prevIndex = prevActiveIndexRef.current;
 		prevActiveIndexRef.current = activeIndex;
+
+		perf.mark( 'switch:active-index-changed' , 'renderer' , getCurrentPerfCtxId() , {
+			prevIndex ,
+			activeIndex ,
+			direction ,
+			stepCount : direction === 'next'
+				? ( activeIndex - prevIndex + items.length ) % items.length
+				: ( prevIndex - activeIndex + items.length ) % items.length,
+		} );
 
 		const swiper = swiperRef.current;
 		if( !swiper || swiper.destroyed ) return;
@@ -266,6 +294,8 @@ export const SwitchAiBar = reaxper( () => {
 import { Swiper , SwiperSlide } from 'swiper/react';
 import type { SwiperClass } from 'swiper/react';
 import { reaxel_FloatingView } from '../../reaxels/floating-view';
+import { getCurrentPerfCtxId } from '../../reaxels/floating-view';
 import type { FloatingView } from '#src/Types/FloatingView';
 import { reaxper } from 'reaxes-react';
+import { perf } from '#src/shared/utils/switch-perf-recorder.utility';
 import 'swiper/swiper.css';

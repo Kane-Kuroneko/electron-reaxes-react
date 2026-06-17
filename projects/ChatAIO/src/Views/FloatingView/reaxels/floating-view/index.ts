@@ -1,3 +1,9 @@
+
+/* 当前性能记录上下文 ID，供 SwitchAiBar 组件关联主进程与渲染进程的 perf 事件 */
+let currentPerfCtxId = '';
+
+export const getCurrentPerfCtxId = () => currentPerfCtxId;
+
 export const reaxel_FloatingView = reaxel( () => {
 	const { store , setState , mutate } = createReaxable( {
 		switchAiBar : {
@@ -30,11 +36,16 @@ export const reaxel_FloatingView = reaxel( () => {
 
 	const showSwitchAiBar = (payload:FloatingView.SwitchAiBarPayload) => {
 		clearHideTimer();
+		currentPerfCtxId = payload.ctxId || '';
 		setState.switchAiBar( {
 			visible : true ,
 			items : payload.items ,
 			activeIndex : payload.activeIndex ,
 			direction : payload.direction,
+		} );
+		perf.mark( 'switch:ui-state-updated' , 'renderer' , currentPerfCtxId , {
+			itemCount : payload.items.length ,
+			activeIndex : payload.activeIndex,
 		} );
 		hideTimer = setTimeout( hideSwitchAiBar , AUTO_HIDE_MS );
 	};
@@ -46,6 +57,10 @@ export const reaxel_FloatingView = reaxel( () => {
 
 	const handleCommand = (command:FloatingView.Command) => {
 		if( command.type === 'switch-ai-bar:show' ) {
+			perf.mark( 'switch:ipc-received' , 'renderer' , command.payload.ctxId || '' , {
+				action : command.payload.ctxId ? 'switch' : 'unknown' ,
+				itemCount : command.payload.items.length,
+			} );
 			showSwitchAiBar( command.payload );
 			return;
 		}
@@ -74,6 +89,7 @@ export const reaxel_FloatingView = reaxel( () => {
 
 import type { FloatingView } from '#src/Types/FloatingView';
 import { message } from 'antd';
+import { perf } from '#src/shared/utils/switch-perf-recorder.utility';
 import {
 	createReaxable ,
 	reaxel,
