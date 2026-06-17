@@ -43,6 +43,7 @@ const devCleanStart = useRpc('dev-clean-start');
 const getPromptViewState = useRpc('get-prompt-view-state');
 const savePromptViewItems = useRpc('save-prompt-view-items');
 const copyPromptViewText = useRpc('copy-prompt-view-text');
+const sendPerfEvent = useRtm('perf-event');
 
 const api = {
 	fetchSettings ,
@@ -76,6 +77,7 @@ const api = {
 	getPromptViewState,
 	savePromptViewItems,
 	copyPromptViewText,
+	sendPerfEvent,
 };
 export type API = typeof api;
 

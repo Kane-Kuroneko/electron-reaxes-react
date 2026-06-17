@@ -7,6 +7,7 @@ export interface RendererToMainEvents extends Record<string , IpcStructure.Rende
 	'turn-to-previous-ai-page' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
 	'prompt-view-appearance-preview-change' : IpcStructure.RendererToMainEvent<[appearance: PromptView.Appearance] , {channel:void,args:void[]}>;
 	'close-prompt-view' : IpcStructure.RendererToMainEvent<[side: PromptView.Side] , {channel:void,args:void[]}>;
+	'perf-event' : IpcStructure.RendererToMainEvent<[events: import('#src/shared/utils/switch-perf-recorder.utility').PerfEvent[]] , {channel:void,args:void[]}>;
 }
 
 export interface MainToRendererEvents extends Record<string , IpcStructure.MainToRendererEvent<unknown[]>> {

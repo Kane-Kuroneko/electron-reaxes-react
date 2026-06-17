@@ -59,6 +59,7 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 			} );
 		}
 		
+		initSwitchPerformanceLogging();
 		await Reaxel_View().initRuntimeViews();
 		console.log( '[Runtime] runtime views initialized.' );
 	}
@@ -113,6 +114,7 @@ import {
 	resolveLanguagePreference,
 } from '#src/shared/appearance';
 import { dev } from 'electron-is';
+import { initSwitchPerformanceLogging } from '#main/services/performance/switch-perf';
 import {
 	app ,
 	nativeTheme,

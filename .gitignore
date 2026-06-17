@@ -5,3 +5,4 @@ __Bin
 .env.json
 .pem
 .cer
+performance-logs
