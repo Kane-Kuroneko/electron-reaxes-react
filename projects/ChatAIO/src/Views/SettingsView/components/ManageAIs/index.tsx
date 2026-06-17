@@ -721,7 +721,7 @@
 			custom : '' ,
 			'dev-proxy-test' : 'https://whatismyipaddress.com/' ,
 			doubao : 'https://www.doubao.com' ,
-			qianwen : 'https://tongyi.aliyun.com' ,
+			qianwen : 'https://www.qianwen.com/' ,
 			kimi : 'https://kimi.moonshot.cn',
 		}[family] ?? 'https://chatgpt.com';
 	};

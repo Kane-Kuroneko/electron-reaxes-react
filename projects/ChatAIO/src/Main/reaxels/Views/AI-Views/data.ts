@@ -61,7 +61,7 @@ export const AIData = [
 	{
 		label : "通义千问" as const,
 		AIName : checkAs<AI.AIFamily>('qianwen'),
-		domain : "https://tongyi.aliyun.com",
+		domain : "https://www.qianwen.com/",
 		browser_name : "qianwen_window" as const,
 	},
 	{
