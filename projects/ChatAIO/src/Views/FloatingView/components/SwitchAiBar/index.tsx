@@ -1,5 +1,6 @@
-/* ── SwitchAiBar (Swiper 重写) ──
-   以 Swiper 12 替代原有双轨 CSS 动画的 AI 切换卡片轮播。
+/* ── SwitchAiBar (Swiper + Interrupt & Redirect 策略) ──
+   以 Swiper 12 实现 AI 切换卡片轮播，通过「中断重定向 + 方向短动画」策略
+   解决高频切换时的卡顿与方向感知问题。
 
    核心契约：
    - 向前（next）→ 卡片永远向左移动
@@ -7,10 +8,17 @@
    - 到边界时通过 Swiper loop 无缝循环，永不跳卡
    - 3 或 5 个视觉位置始终占满
 
-   快速切换防吞（pending queue）：
-   Swiper 的 loopPreventsSliding（默认 true）会在过渡进行中阻断 slideNext/slidePrev。
-   被阻断的步骤入队，在 onTransitionEnd handler 出队执行，保证连续 Ctrl+] / Ctrl+[ 时
-   每一条切换指令都不丢失。
+   Interrupt & Redirect 策略：
+   - loopPreventsSliding: false → 动画进行中仍允许 slideNext/slidePrev
+   - 慢速切换（间隔 > RAPID_THRESHOLD）：300ms 标准动画，方向清晰
+   - 快速切换（间隔 ≤ RAPID_THRESHOLD）：120ms 短动画，方向清晰
+   - 每次新切换的 slideNext/slidePrev 调用会让 CSS transition 从当前位置
+     重新开始向新目标动画——浏览器原生 transition 中断重定向，零排队零丢帧
+   - 彻底消除 pending 队列——不需要排队，每次切换直接执行
+
+   方向保证：
+   始终使用 slideNext() / slidePrev() 而非 slideToLoop()，
+   这两个方法在 loop 模式下永远沿指定方向滑动，到边界通过 clone 无缝循环。
 
    loop 缓冲翻倍（loopAdditionalSlides）：
    centeredSlides 下 Swiper 默认 loopedSlides = ceil(slidesPerView/2)；追加等量
@@ -32,10 +40,16 @@
 const ANIM = {
 	/* loop clone 缓冲追加量：centeredSlides 默认 loopedSlides 翻倍 */
 	LOOP_ADD_SLIDES      : Math.ceil( /* slidesPerView */ 5 / 2 ) /* = 3 */ ,
-	/* Swiper 滑动过渡时长 (ms) */
+	/* Swiper 滑动过渡时长 (ms) — 慢速单步切换使用 */
 	SWIPER_SPEED         : 300 ,
 	/* 卡片间距 (px) */
 	CARD_GAP             : 2 ,
+	/* 快速切换检测阈值 (ms)：两次 activeIndex 变化间隔 ≤ 此值时进入快速模式。
+	   设为略小于 SWIPER_SPEED，确保"上一动画还没结束就来新指令"时触发快速模式。 */
+	RAPID_THRESHOLD      : 250 ,
+	/* 快速模式 Swiper 滑动速度 (ms)：足够短以避免排队，足够长以看到方向
+	   ⇄ CSS @rapid-transition-duration */
+	RAPID_SPEED          : 120 ,
 	/* ↓ 以下仅作文档参考，实际生效值在 index.less 顶部 LESS 变量 */
 	/* ⇄ CSS @settle-duration — 卡片缩放过渡时长 (ms) */
 	SETTLE_DURATION      : 300 ,
@@ -54,34 +68,13 @@ export const SwitchAiBar = reaxper( () => {
 	activeIndexRef.current = activeIndex;
 
 	/* ═════════════════════════════════════════════════════════
-	   挂起步骤队列 — 防止快速切换吞指令
+	   快速切换检测 — 跟踪最近一次 activeIndex 变化的时间
 	   ═════════════════════════════════════════════════════════ */
-	const pendingStepsRef = useRef( 0 );
-	const pendingDirectionRef = useRef<FloatingView.SwitchAiBarDirection | null>( null );
-
-	/* 从队列中取一步执行；若 Swiper 仍在过渡中则 slideNext/slidePrev 会再次
-	   返回 false → 会由 onTransitionEnd handler 再次入队，形成自动重试链。
-	   注：Swiper 在 animating 状态且 loopPreventsSliding=true 时，
-	   slideNext/slidePrev 调用本身不会抛出——但实际滑动会被 Swiper 内部拦截；
-	   此时下一帧的 transitionEnd 会再次触发 processPendingStep 继续消费。 */
-	const processPendingStep = useCallback( ( swiper : SwiperClass ) => {
-		if( pendingStepsRef.current <= 0 || !pendingDirectionRef.current ) return;
-		pendingStepsRef.current--;
-		const dir = pendingDirectionRef.current;
-		if( dir === 'next' ) {
-			perf.mark( 'switch:swiper-begin' , 'renderer' , getCurrentPerfCtxId() , {
-				direction : 'next' ,
-				remainingSteps : pendingStepsRef.current,
-			} );
-			swiper.slideNext( ANIM.SWIPER_SPEED );
-		} else {
-			perf.mark( 'switch:swiper-begin' , 'renderer' , getCurrentPerfCtxId() , {
-				direction : 'previous' ,
-				remainingSteps : pendingStepsRef.current,
-			} );
-			swiper.slidePrev( ANIM.SWIPER_SPEED );
-		}
-	} , [] );
+	const lastSwitchTimeRef = useRef( 0 );
+	/* rapid 模式标识：控制 CSS class 切换卡片过渡时长 */
+	const [ isRapidMode , setIsRapidMode ] = useState( false );
+	/* rapid 模式退出定时器：在最后一次快速切换后等待一段时间退出 */
+	const rapidExitTimerRef = useRef<ReturnType<typeof setTimeout>>( null );
 
 	/* ═════════════════════════════════════════════════════════
 	   slidesPerView — 与旧实现一致
@@ -119,9 +112,7 @@ export const SwitchAiBar = reaxper( () => {
 	   data-position 驱动 CSS 缩放 / 透明度 / 渐变色
 	   以 swiper.activeIndex 为基准计算偏移——loop 模式下 activeIndex
 	   指向 clone 扩充后 slide 数组中的实际位置，loopFix 重排 DOM 后
-	   Swiper 内部会同步修正 activeIndex，始终指向居中的活跃卡片。
-	   注意：不能用 swiper-slide-active class 反查——loop 下所有 clone
-	   都有该 class，findIndex 会取到边缘 clone 而非居中那张。 */
+	   Swiper 内部会同步修正 activeIndex，始终指向居中的活跃卡片。 */
 	const updateSlidePositions = ( swiper : SwiperClass ) => {
 		const slides = swiper.slides;
 		const totalSlides = slides.length;
@@ -158,34 +149,32 @@ export const SwitchAiBar = reaxper( () => {
 		updateSlidePositions( swiper );
 	} , [] );
 
-/* ════════════════════════════════════════════════════════
-   transition 结束：处理挂起队列 */
-const handleTransitionEnd = useCallback( ( swiper : SwiperClass ) => {
-	perf.mark( 'switch:swiper-end' , 'renderer' , getCurrentPerfCtxId() , {
-		pendingRemaining : pendingStepsRef.current,
-	} );
-	processPendingStep( swiper );
-	if( pendingStepsRef.current <= 0 ) {
+	/* ════════════════════════════════════════════════════════
+	   transition 结束：记录性能标记 */
+	const handleTransitionEnd = useCallback( ( swiper : SwiperClass ) => {
+		perf.mark( 'switch:swiper-end' , 'renderer' , getCurrentPerfCtxId() , {
+			realIndex : swiper.realIndex,
+		} );
 		perf.mark( 'switch:complete' , 'renderer' , getCurrentPerfCtxId() , {
 			activeIndex : activeIndexRef.current,
 		} );
-	}
-} , [ processPendingStep ] );
+	} , [] );
 
-/* ── Swiper 实例就绪 ──
-  同步 prevActiveIndexRef 到当前 activeIndex，避免 useEffect
-  误把 initialSlide 定位当作「activeIndex 变化」而追加额外 slide。 */
-const handleSwiper = useCallback( ( swiper : SwiperClass ) => {
-	swiperRef.current = swiper;
-	prevActiveIndexRef.current = activeIndexRef.current;
-	updateSlidePositions( swiper );
-	perf.mark( 'switch:render-done' , 'renderer' , getCurrentPerfCtxId() , {
-		totalSlides : swiper.slides.length,
-	} );
-} , [] );
+	/* ── Swiper 实例就绪 ──
+	   同步 prevActiveIndexRef 到当前 activeIndex，避免 useEffect
+	   误把 initialSlide 定位当作「activeIndex 变化」而追加额外 slide。 */
+	const handleSwiper = useCallback( ( swiper : SwiperClass ) => {
+		swiperRef.current = swiper;
+		prevActiveIndexRef.current = activeIndexRef.current;
+		updateSlidePositions( swiper );
+		perf.mark( 'switch:render-done' , 'renderer' , getCurrentPerfCtxId() , {
+			totalSlides : swiper.slides.length,
+		} );
+	} , [] );
 
 	/* ═════════════════════════════════════════════════════════
-	   检测 activeIndex 变化 → 入队 + 尝试执行
+	   检测 activeIndex 变化 → 执行 slideNext/slidePrev
+	   Interrupt & Redirect：每次切换直接执行，CSS transition 自动中断重定向
 	   ═════════════════════════════════════════════════════════ */
 	const prevActiveIndexRef = useRef( activeIndex );
 	useEffect( () => {
@@ -193,28 +182,22 @@ const handleSwiper = useCallback( ( swiper : SwiperClass ) => {
 		const prevIndex = prevActiveIndexRef.current;
 		prevActiveIndexRef.current = activeIndex;
 
-		perf.mark( 'switch:active-index-changed' , 'renderer' , getCurrentPerfCtxId() , {
-			prevIndex ,
-			activeIndex ,
-			direction ,
-			stepCount : direction === 'next'
-				? ( activeIndex - prevIndex + items.length ) % items.length
-				: ( prevIndex - activeIndex + items.length ) % items.length,
-		} );
+		const now = performance.now();
+		const elapsed = now - lastSwitchTimeRef.current;
+		lastSwitchTimeRef.current = now;
 
-		const swiper = swiperRef.current;
-		if( !swiper || swiper.destroyed ) return;
-
-		/* 方向翻转：清空旧队列，避免前后拉扯 */
-		if( pendingDirectionRef.current && pendingDirectionRef.current !== direction ) {
-			pendingStepsRef.current = 0;
+		/* 启动性能采样会话（首次切换时触发） */
+		if( !switchProfiler.isActive ) {
+			switchProfiler.startSession();
 		}
 
-		/* 基于实际索引差计算步数（带 wrap-around），而非总是 +1。
-		   MobX 同步更新 + React effect 异步执行时 activeIndex 可能跨越多位置，
-		   仅 +1 会导致 Swiper 滞后于 store 的真实 activeIndex，引起卡片显示错位。 */
-		const total = items.length;
-		let steps: number;
+		/* 判定是否为快速切换 */
+		const isRapid = elapsed <= ANIM.RAPID_THRESHOLD && elapsed > 0;
+		/* 选择动画速度：快速模式 120ms，普通模式 300ms */
+		const speed = isRapid ? ANIM.RAPID_SPEED : ANIM.SWIPER_SPEED;
+
+		/* 基于实际索引差计算步数（带 wrap-around） */
+		let steps : number;
 		if( direction === 'next' ) {
 			steps = ( activeIndex - prevIndex + total ) % total;
 		} else {
@@ -225,21 +208,76 @@ const handleSwiper = useCallback( ( swiper : SwiperClass ) => {
 			steps = total;
 		}
 
-		pendingStepsRef.current += steps;
-		pendingDirectionRef.current = direction;
+		perf.mark( 'switch:active-index-changed' , 'renderer' , getCurrentPerfCtxId() , {
+			prevIndex ,
+			activeIndex ,
+			direction ,
+			isRapid ,
+			speed ,
+			elapsed : Math.round( elapsed ),
+			steps ,
+		} );
 
-		/* 若当前未在过渡中，立即执行第一步 */
-		if( !swiper.animating ) {
-			processPendingStep( swiper );
+		const swiper = swiperRef.current;
+		if( !swiper || swiper.destroyed ) return;
+
+		/* ═══ 统一执行：slideNext/slidePrev 保证方向 ═══
+		   loopPreventsSliding: false 允许动画中继续调用。
+		   CSS transition 天然中断重定向：新调用设置新 translate，
+		   浏览器从当前视觉位置开始向新目标动画——无排队、无丢帧。 */
+		for( let i = 0 ; i < steps ; i++ ) {
+			if( direction === 'next' ) {
+				swiper.slideNext( speed );
+			} else {
+				swiper.slidePrev( speed );
+			}
 		}
-		/* 若正在过渡中 → onTransitionEnd handler 会依次出队执行 */
+
+		/* rapid 模式 CSS class 管理 */
+		if( isRapid ) {
+			if( !isRapidMode ) {
+				setIsRapidMode( true );
+			}
+			/* 重置退出定时器：最后一次快速切换后等待退出 */
+			if( rapidExitTimerRef.current ) {
+				clearTimeout( rapidExitTimerRef.current );
+			}
+			rapidExitTimerRef.current = setTimeout( () => {
+				setIsRapidMode( false );
+				rapidExitTimerRef.current = null;
+			} , ANIM.SWIPER_SPEED );
+
+			/* profiler 统计 */
+			switchProfiler.recordRapidJump();
+		} else {
+			/* 退出 rapid 模式 */
+			if( isRapidMode ) {
+				setIsRapidMode( false );
+				if( rapidExitTimerRef.current ) {
+					clearTimeout( rapidExitTimerRef.current );
+					rapidExitTimerRef.current = null;
+				}
+			}
+		}
+
+		perf.mark( 'switch:swiper-begin' , 'renderer' , getCurrentPerfCtxId() , {
+			direction ,
+			speed ,
+			steps ,
+			isRapid ,
+		} );
 	} , [ activeIndex , direction ] );
 
-	/* ── 隐藏时清空挂起队列 ── */
+	/* ── 隐藏时退出 rapid 模式 + 结束 profiler 采样 ── */
 	useEffect( () => {
 		if( !visible ) {
-			pendingStepsRef.current = 0;
-			pendingDirectionRef.current = null;
+			if( rapidExitTimerRef.current ) {
+				clearTimeout( rapidExitTimerRef.current );
+				rapidExitTimerRef.current = null;
+			}
+			setIsRapidMode( false );
+			/* 结束性能采样会话 */
+			switchProfiler.endSession();
 		}
 	} , [ visible ] );
 
@@ -251,8 +289,11 @@ const handleSwiper = useCallback( ( swiper : SwiperClass ) => {
 		/>;
 	}
 
+	/* rapid 模式 CSS class：缩短卡片过渡为快速动画时长 */
+	const rapidClassName = isRapidMode ? 'switch-ai-bar--rapid' : '';
+
 	return <section
-		className={ `switch-ai-bar ${ visibilityClassName }` }
+		className={ `switch-ai-bar ${ visibilityClassName } ${ rapidClassName }` }
 		aria-hidden={ !visible }
 	>
 		<div className="switch-ai-bar__viewport">
@@ -266,9 +307,12 @@ const handleSwiper = useCallback( ( swiper : SwiperClass ) => {
 				spaceBetween={ ANIM.CARD_GAP }
 				speed={ ANIM.SWIPER_SPEED }
 				loop={ true }
-				/* Swiper 默认 centeredSlides 下 loopedSlides = ceil(slidesPerView/2)。
-				   追加等量 loopAdditionalSlides → clone 缓冲翻倍，
-				   减少 loopFix 边界重排频率，防止 DOM 位置突变导致 data-position 错位。 */
+				/* ═══ 关键配置 ═══
+				   loopPreventsSliding: false 允许动画进行中继续调用 slideNext/slidePrev。
+				   这是 Interrupt & Redirect 策略的基础——新调用覆盖旧动画目标，
+				   CSS transition 自动从当前位置重定向到新目标。 */
+				loopPreventsSliding={ false }
+				/* clone 缓冲翻倍：减少 loopFix 边界重排频率 */
 				loopAdditionalSlides={ Math.ceil( slidesPerView / 2 ) }
 				allowTouchMove={ false }
 				watchSlidesProgress={ true }
@@ -291,11 +335,12 @@ const handleSwiper = useCallback( ( swiper : SwiperClass ) => {
 	</section>;
 } );
 
-import { Swiper , SwiperSlide } from 'swiper/react';
-import type { SwiperClass } from 'swiper/react';
 import { reaxel_FloatingView } from '../../reaxels/floating-view';
 import { getCurrentPerfCtxId } from '../../reaxels/floating-view';
 import type { FloatingView } from '#src/Types/FloatingView';
+import { perf , switchProfiler } from '#src/shared/utils/switch-perf-recorder.utility';
+import { useState , useCallback , useEffect , useRef } from 'react';
+import { Swiper , SwiperSlide } from 'swiper/react';
+import type { SwiperClass } from 'swiper/react';
 import { reaxper } from 'reaxes-react';
-import { perf } from '#src/shared/utils/switch-perf-recorder.utility';
 import 'swiper/swiper.css';

@@ -11,6 +11,10 @@
 @settle-duration: 300ms;
 @settle-easing: cubic-bezier(0.25, 0.8, 0.25, 1);
 
+/* ── 快速切换动画时长（⇄ TSX ANIM.RAPID_SPEED）── */
+@rapid-transition-duration: 120ms;
+@rapid-transition-easing: cubic-bezier(0.25, 0.8, 0.25, 1);
+
 /* ── 卡片缩放 ── */
 @scale-far: 0.6;
 @scale-near: 0.8;
@@ -234,6 +238,19 @@ body {
 
 .swiper-slide[data-position="current"] .switch-ai-bar__family {
 	color: rgba(255, 255, 255, 0.72);
+}
+
+/* ═══════════════════════════════════════════════════════
+   快速切换模式（Rapid Mode）
+   当连续高频切换时，组件添加 .switch-ai-bar--rapid class，
+   将卡片缩放/颜色过渡从 300ms 缩短为 120ms，与 Swiper 滑动同步。
+   Interrupt & Redirect 策略下 Swiper 120ms 短动画提供方向感知，
+   卡片 scale/color 过渡匹配此时长，视觉完全同步。
+   ═══════════════════════════════════════════════════════ */
+
+.switch-ai-bar--rapid .switch-ai-bar__item {
+	transition-duration: @rapid-transition-duration !important;
+	transition-timing-function: @rapid-transition-easing !important;
 }
 
 /* ═══════════════════════════════════════════════════════
