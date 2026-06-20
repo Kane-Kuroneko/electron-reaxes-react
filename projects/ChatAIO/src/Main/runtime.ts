@@ -59,6 +59,25 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 			} );
 		}
 		
+		// macOS 应用生命周期处理
+		// 窗口全部关闭时的行为
+		app.on( 'window-all-closed' , () => {
+			// macOS：保持应用运行（标准 macOS 行为，应用留在 Dock 中）
+			// Windows/Linux：退出应用（标准行为）
+			if( process.platform !== 'darwin' ) {
+				app.quit();
+			}
+		} );
+		// Dock 图标点击：恢复或重建主窗口
+		app.on( 'activate' , () => {
+			if( mainWindow && !mainWindow.isDestroyed() ) {
+				showMainWindow();
+			} else {
+				void createMainWindow().then( () => {
+					reaxel_Menu().rebuildMenu();
+				} );
+			}
+		} );
 		initSwitchPerformanceLogging();
 		await Reaxel_View().initRuntimeViews();
 		console.log( '[Runtime] runtime views initialized.' );

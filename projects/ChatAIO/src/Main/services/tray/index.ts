@@ -21,17 +21,35 @@ export function initTray(): Tray | null {
 		? path.join( process.resourcesPath , 'statics' )
 		: path.join( app.getAppPath() , 'statics' );
 	const iconPath = nativeImage.createFromPath(
-		path.join( staticsDir , 'gpt.ico' ),
+		path.join( staticsDir , process.platform === 'darwin' ? 'tray-icon.png' : 'gpt.ico' ),
 	);
 	
+	// macOS Template Image: 深色菜单栏自动反色，浅色菜单栏保留黑色
+	if( process.platform === 'darwin' ) {
+		iconPath.setTemplateImage( true );
+	}
 	trayInstance = new Tray( iconPath );
 	trayInstance.setToolTip( 'ChatAIO' );
 	
 	updateTrayMenu();
 	
-	trayInstance.on( 'double-click' , () => {
-		showMainWindow();
-	} );
+	// macOS 菜单栏 extra：单击切换窗口显示/隐藏
+	// Windows/Linux 系统托盘：双击显示窗口
+	if( process.platform === 'darwin' ) {
+		trayInstance.on( 'mouse-down' , () => {
+			if( mainWindow && !mainWindow.isDestroyed() ) {
+				if( mainWindow.isVisible() && !mainWindow.isMinimized() ) {
+					mainWindow.hide();
+				} else {
+					showMainWindow();
+				}
+			}
+		} );
+	} else {
+		trayInstance.on( 'double-click' , () => {
+			showMainWindow();
+		} );
+	}
 	
 	return trayInstance;
 }
@@ -89,6 +107,7 @@ export function syncTrayState( enabled: boolean ) {
 }
 
 import {
+	mainWindow ,
 	showMainWindow,
 } from '#main/mainWindow';
 import {

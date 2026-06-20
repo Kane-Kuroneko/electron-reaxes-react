@@ -33,6 +33,10 @@ export const createMainWindow = async() => {
 			contextIsolation : true ,
 			preload : path.join( absAppRunningPath , 'preload.js' ),
 		},
+		// macOS 原生标题栏样式：内容区域延伸到标题栏，保留红绿灯按钮
+		...( process.platform === 'darwin' && {
+			titleBarStyle : 'hiddenInset' as const,
+		} ),
 	};
 	
 	mainWindow = new BrowserWindow( _.merge( {} , defaultOptions ) );

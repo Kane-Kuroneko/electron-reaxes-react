@@ -92,13 +92,15 @@ const splitMenuTextSegments = (text:string) => {
 };
 
 const getMenuSegmentWidth = (segment:string) => {
+	let baseWidth:number;
 	if( MENU_MEASURED_TEXT_WIDTHS[segment] !== undefined ) {
-		return MENU_MEASURED_TEXT_WIDTHS[segment];
+		baseWidth = MENU_MEASURED_TEXT_WIDTHS[segment];
+	} else {
+		baseWidth = Array.from( segment ).reduce( ( width , char ) => {
+			return width + getMenuCharWidth( char );
+		} , 0 );
 	}
-	
-	return Array.from( segment ).reduce( ( width , char ) => {
-		return width + getMenuCharWidth( char );
-	} , 0 );
+	return baseWidth * MENU_WIDTH_PLATFORM_SCALE;
 };
 
 const getMenuCharWidth = (char:string) => {
@@ -139,7 +141,10 @@ const menuTextSegmenter = typeof Intl !== 'undefined' && 'Segmenter' in Intl
 const MENU_WIDTH_SEARCH_SCALE = 100;
 const MENU_PADDING_MAX_OVERSHOOT = 0.75;
 
-// 基于 Windows Segoe UI 9pt 菜单字体的 GenericTypographic 测量值; 其他平台会有少量偏差,但比字符数模型稳定.
+// 基于 Windows Segoe UI 9pt 菜单字体的 GenericTypographic 测量值.
+// macOS San Francisco 字体略宽于 Segoe UI，通过平台缩放因子近似补偿。
+// 如需像素级精度，应针对 SF Pro 13pt 重新采样字符宽度。
+const MENU_WIDTH_PLATFORM_SCALE = process.platform === 'darwin' ? 1.08 : 1.0;
 const MENU_MEASURED_TEXT_WIDTHS:Record<string , number> = {
 	' ' : 3.29 ,
 	'\u00A0' : 3.29 ,

@@ -27,7 +27,13 @@ function getElectronBuilderArgs() {
 			return forwardedArgs;
 		}
 	}
-	return [ 'build' , '-w' ];
+	// 默认构建当前宿主平台；可通过 -- --mac / --win / --linux 显式指定
+	const platformFlag = process.platform === 'win32'
+		? '-w'
+		: process.platform === 'darwin'
+			? '-m'
+			: '-l';
+	return [ 'build' , platformFlag ];
 }
 
 function resetElectronBuildOutput() {

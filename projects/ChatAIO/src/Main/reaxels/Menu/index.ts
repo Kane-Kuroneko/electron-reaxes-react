@@ -75,7 +75,7 @@ export const reaxel_Menu = reaxel( () => {
 					} ,
 					{ type : 'separator' } ,
 					{
-						label : t('Exit') ,
+						label : process.platform === 'darwin' ? t('Quit') : t('Exit') ,
 						role : 'quit',
 					},
 				],
@@ -85,7 +85,7 @@ export const reaxel_Menu = reaxel( () => {
 				submenu : [
 					{
 						label : t('Reload') ,
-						accelerator : 'ctrl+r' ,
+						accelerator : 'CmdOrCtrl+R' ,
 						click : () => {
 							const view = Reaxel_View.store.settingsViewOpened
 								? reaxel_SettingsView.store.settingsView.view
@@ -95,7 +95,7 @@ export const reaxel_Menu = reaxel( () => {
 					} ,
 					{
 						label : t('Force Reload') ,
-						accelerator : 'ctrl+shift+r' ,
+						accelerator : 'CmdOrCtrl+Shift+R' ,
 						click : () => {
 							if( Reaxel_View.store.settingsViewOpened ) {
 								reaxel_SettingsView.store.settingsView.view?.webContents.reloadIgnoringCache();
@@ -109,7 +109,8 @@ export const reaxel_Menu = reaxel( () => {
 					} ,
 					{
 						label : t('Developer Tools') ,
-						accelerator : 'f12' ,
+						// Windows: F12（Chrome 标准），macOS: Cmd+Option+I（Chrome 标准）
+							accelerator : process.platform === 'darwin' ? 'Cmd+Option+I' : 'F12' ,
 						click : () => {
 							const view = Reaxel_View.store.settingsViewOpened
 								? reaxel_SettingsView.store.settingsView.view
@@ -283,8 +284,15 @@ export const reaxel_Menu = reaxel( () => {
 
 	function rebuildMenu() {
 		console.log('[Menu] rebuildMenu called, i18nInstance =', i18nInstance ? 'SET' : 'NULL');
-		if( !mainWindow || mainWindow.isDestroyed() ) return;
-		mainWindow.setMenu( createMenu() );
+		const menu = createMenu();
+		// macOS：全局应用菜单（始终在屏幕顶部菜单栏可见）
+		// Windows/Linux：每窗口菜单
+		if( process.platform === 'darwin' ) {
+			Menu.setApplicationMenu( menu );
+		} else {
+			if( !mainWindow || mainWindow.isDestroyed() ) return;
+			mainWindow.setMenu( menu );
+		}
 	}
 
 	/**
