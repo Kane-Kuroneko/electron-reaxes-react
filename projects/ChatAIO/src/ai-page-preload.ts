@@ -96,6 +96,21 @@ const applyAIPageEnvironment = (environment:AIPageEnvironment) => {
 installNavigatorEnvironment();
 applyAIPageEnvironment( currentEnvironment );
 
+/* FocusMonitor: 焦点状态追踪（通过 IPC 推送状态变化到主进程） */
+{
+	const pushFocusState = ( state: import( './ai-page-preload-focus' ).FocusState ) => {
+		try {
+			ipcRenderer.send( 'JSON' , { channel : 'focus-state-change' } , {
+				hasFocusedElement : state.hasFocusedElement,
+				activeElement : state.activeElement,
+				lastFocusChange : state.lastFocusChange ,
+				reportedAt : Date.now(),
+			} );
+		} catch { /* 观测层静默处理 */ }
+	};
+	initFocusTracker( pushFocusState );
+}
+
 if( document.readyState === 'loading' ) {
 	document.addEventListener( 'DOMContentLoaded' , () => {
 		applyAIPageEnvironment( currentEnvironment );
@@ -117,5 +132,6 @@ import type {
 	MainToRendererEvents,
 } from './Types/IpcSchema';
 import type { AIPageEnvironment } from '#src/Types/AIPageEnvironment';
+import { initFocusTracker } from './ai-page-preload-focus';
 import { createIpc } from '#generics/toolkit/electron/preload.ipc';
 import { ipcRenderer } from 'electron';

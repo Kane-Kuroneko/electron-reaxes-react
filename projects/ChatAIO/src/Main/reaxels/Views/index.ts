@@ -1,4 +1,3 @@
-
 export const Reaxel_View = reaxel( () => {
 	const electronStore = new ElectronStore<{
 		previously_used_ai: string,
@@ -65,7 +64,12 @@ export const Reaxel_View = reaxel( () => {
 		if( !view || view.webContents.isDestroyed() ) {
 			return;
 		}
-		view.webContents.focus();
+		/* FocusMonitor: 通过 safeFocusViewWithMonitor 包装 focus() 调用 */
+		try {
+			safeFocusViewWithMonitor( view , 'focus-current-content-view' );
+		} catch {
+			view.webContents.focus();
+		}
 	}
 
 	function getCurrentCenterView() {
@@ -296,12 +300,12 @@ export const Reaxel_View = reaxel( () => {
 			closeCurrent : () => {
 				closeCurrentAIView();
 			},
- 			nextInstantiatedTab : () => {
- 				turnToNextInstantiatedAiPage();
- 			} ,
- 			previousInstantiatedTab : () => {
- 				turnToPreviousInstantiatedAiPage();
- 			},
+				nextInstantiatedTab : () => {
+					turnToNextInstantiatedAiPage();
+				} ,
+				previousInstantiatedTab : () => {
+					turnToPreviousInstantiatedAiPage();
+				},
 		} );
 		registerAISwitchGlobalShortcuts();
 		reaxel_FloatingView().initFloatingView();
@@ -435,6 +439,7 @@ import {
 import ElectronStore from "electron-store";
 import { mainWindow } from "#main/mainWindow";
 import { reaxel_AIViews } from "#main/reaxels/Views/AI-Views";
+import { safeFocusViewWithMonitor } from "#main/reaxels/Views/AI-Views";
 import {
 	reaxel_FloatingView ,
 } from "#main/reaxels/Views/FloatingView";

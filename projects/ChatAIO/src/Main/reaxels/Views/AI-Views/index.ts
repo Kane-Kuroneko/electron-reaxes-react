@@ -250,6 +250,8 @@ export const reaxel_AIViews = reaxel( () => {
 		if( typeof options.visible === 'boolean' ) {
 			view.setVisible( options.visible );
 		}
+		/* FocusMonitor: 注册新创建的 AI view 到监控器 */
+		instrumentViewWithMonitor( view , ai.id );
 		bindRuntimeAIViewReadyHandlers( ai.id , view );
 		return {
 			id : ai.id ,
@@ -499,18 +501,100 @@ const closeRuntimeWebContentsView = (
 	}
 };
 
+/* =================================================================
+   FocusMonitor 集成层
+   模块级 WebContents → viewId 映射 + focus() 调用包装
+   ================================================================= */
+
+/* 模块加载时提前初始化 FocusMonitor 并注册 IPC 监听 */
+try {
+	const mod = require( './focus-monitor.retexel' );
+	if( mod && mod.getFocusMonitor ) {
+		mod.getFocusMonitor( { enabled : true } );
+	}
+} catch {
+	/* 非 dev 环境或模块未编译时静默降级 */
+}
+
+/** WebContents → AI view ID 映射（由 instrumentViewWithMonitor 注册） */
+const focusViewIdByWebContents = new WeakMap<WebContents , string>();
+
+/** FocusMonitor 实例引用 */
+let focusMonitorInstance: { instrumentView: (view: WebContentsView, viewId: string) => void; wrapFocus: (view: WebContentsView, viewId: string, source: string, fn: () => void) => void; } | null = null;
+
+/**
+ * 确保 FocusMonitor 实例已就绪
+ * 实例在模块加载时由模块级代码初始化，此函数仅获取引用
+ */
+function ensureFocusMonitor(): void {
+	if( focusMonitorInstance !== undefined ) return;
+
+	/* 尝试在运行时再次初始化（模块级初始化可能因 require 失败未生效） */
+	try {
+		const mod = require( './focus-monitor.retexel' );
+		if( mod && mod.getFocusMonitor ) {
+			const monitor = mod.getFocusMonitor( { enabled : true } );
+			if( monitor && typeof monitor.instrumentView === 'function' ) {
+				focusMonitorInstance = monitor;
+				return;
+			}
+		}
+	} catch {
+		/* 静默降级 */
+	}
+	focusMonitorInstance = null;
+}
+
+/**
+ * 注册 view 到 FocusMonitor（由 createRuntimeAIView 调用）
+ */
+function instrumentViewWithMonitor( view: WebContentsView, viewId: string ): void {
+	focusViewIdByWebContents.set( view.webContents, viewId );
+	ensureFocusMonitor();
+	if( focusMonitorInstance ) {
+		focusMonitorInstance.instrumentView( view, viewId );
+	}
+}
+
+/**
+ * 通过 view.webContents 反向查询 viewId
+ */
+function getViewIdByWebContents( webContents: WebContents ): string {
+	return focusViewIdByWebContents.get( webContents ) || 'unknown';
+}
+
+/**
+ * 包装后的 focus() 调用 — 在调用前后检测焦点窃取
+ */
+function focusViewWithMonitor( view: WebContentsView, source: string ): void {
+	ensureFocusMonitor();
+	const viewId = getViewIdByWebContents( view.webContents );
+
+	if( focusMonitorInstance ) {
+		focusMonitorInstance.wrapFocus( view, viewId, source, () => {
+			view.webContents.focus();
+		} );
+	} else {
+		view.webContents.focus();
+	}
+}
+
+/* =================================================================
+   AI 视图焦点管理函数
+   ================================================================= */
+
 const focusRuntimeAIViewIfReady = (runtimeView:RuntimeAIView) => {
 	if( !runtimeView.ready ) {
 		return;
 	}
-	focusAIViewIfReady( runtimeView.view );
+	focusAIViewIfReady( runtimeView.view , 'apply-visibility' );
 };
 
-const focusAIViewIfReady = (view:WebContentsView) => {
+const focusAIViewIfReady = (view:WebContentsView , source:string = 'unknown') => {
 	if( view.webContents.isDestroyed() || view.webContents.isLoading() ) {
 		return;
 	}
-	view.webContents.focus();
+	focusViewWithMonitor( view , source );
 };
 
 const focusAIViewIfCurrent = (aiId:string , view:WebContentsView) => {
@@ -521,9 +605,35 @@ const focusAIViewIfCurrent = (aiId:string , view:WebContentsView) => {
 	) {
 		return;
 	}
-	focusAIViewIfReady( view );
+	focusAIViewIfReady( view , 'did-stop-loading' );
 };
 
+export type FocusMonitorFocusSource =
+	| 'did-stop-loading'
+	| 'apply-visibility'
+	| 'focus-current-content-view'
+	| 'prompt-view-close'
+	| 'explicit'
+	| 'unknown';
+
+/* Export: 供 Views/index.ts 等外部模块使用的 focus 包装函数 */
+export function safeFocusViewWithMonitor(
+	view: WebContentsView,
+	source: FocusMonitorFocusSource = 'unknown',
+): void {
+	ensureFocusMonitor();
+	const viewId = getViewIdByWebContents( view.webContents );
+
+	if( focusMonitorInstance && viewId !== 'unknown' ) {
+		focusMonitorInstance.wrapFocus( view, viewId, source, () => {
+			if( !view.webContents.isDestroyed() ) {
+				view.webContents.focus();
+			}
+		} );
+	} else if( !view.webContents.isDestroyed() ) {
+		view.webContents.focus();
+	}
+}
 export type RuntimeAIView = {
 	id: string;
 	label: string;

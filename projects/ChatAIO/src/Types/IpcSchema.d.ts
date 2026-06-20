@@ -8,6 +8,7 @@ export interface RendererToMainEvents extends Record<string , IpcStructure.Rende
 	'prompt-view-appearance-preview-change' : IpcStructure.RendererToMainEvent<[appearance: PromptView.Appearance] , {channel:void,args:void[]}>;
 	'close-prompt-view' : IpcStructure.RendererToMainEvent<[side: PromptView.Side] , {channel:void,args:void[]}>;
 	'perf-event' : IpcStructure.RendererToMainEvent<[events: import('#src/shared/utils/switch-perf-recorder.utility').PerfEvent[]] , {channel:void,args:void[]}>;
+	'focus-state-change' : IpcStructure.RendererToMainEvent<[import('#src/Types/FocusMonitor').FocusMonitor.FocusState] , {channel:void,args:void[]}>;
 }
 
 export interface MainToRendererEvents extends Record<string , IpcStructure.MainToRendererEvent<unknown[]>> {
@@ -26,7 +27,7 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	'fetch-settings' : IpcStructure.IpcRpc<[void] , SettingsFetchResult>;
 	'apply-settings' : IpcStructure.IpcRpc<[settings: Settings], SettingsApplyResult>;
 	'submit-settings' : IpcStructure.IpcRpc<[path: PatchPath<Settings>, data: PatchData<PatchPath<Settings>, Settings>], {success: boolean, error?: string}>;
-	
+
 	// AI Configuration Management RPCs
 	'get-ais': IpcStructure.IpcRpc<[void], AI.AIItem[]>;
 	'get-default-ais': IpcStructure.IpcRpc<[void], AI.AIItem[]>;
@@ -47,6 +48,7 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	'save-prompt-view-items': IpcStructure.IpcRpc<[side: PromptView.Side, items: PromptView.Item[]], PromptView.SaveResult>;
 	'copy-prompt-view-text': IpcStructure.IpcRpc<[text: string], PromptView.CopyResult>;
 }
+
 type MainToRendererReply<K extends keyof MainToRendererEvents> = ReplyFromMtrEvents<MainToRendererEvents , K>;
 type AppearanceEnvironment = {
 	systemLanguage: Languages;
