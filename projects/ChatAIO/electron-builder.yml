@@ -1,17 +1,45 @@
 {
-   appId: "com.reaxes.chataio",
-   productName: "ChatAIO",
-   icon: "statics/gpt",
-   directories: {
-      output : "__Bin"
-   },
-   files: ["dist/"],
-   extraResources: [
-      {
-         from: "statics",
-         to: "statics"
-      }
-   ],
-   electronVersion: "41.0.3",
-   asar: true,
+	appId: "com.reaxes.chataio",
+	productName: "ChatAIO",
+	icon: "statics/gpt",
+	directories: {
+		output : "__Bin"
+	},
+	files: ["dist/"],
+	extraResources: [
+		{
+			from: "statics",
+			to: "statics"
+		}
+	],
+	electronVersion: "41.0.3",
+	asar: true,
+
+	mac: {
+		target: [
+			{
+				target: "dmg",
+				arch: ["x64", "arm64"]
+			}
+		],
+		category: "public.app-category.productivity",
+	},
+
+	win: {
+		target: [
+			{
+				target: "nsis",
+				arch: ["x64"]
+			}
+		],
+	},
+
+	linux: {
+		target: [
+			{
+				target: "AppImage",
+				arch: ["x64"]
+			}
+		],
+	},
 }

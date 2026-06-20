@@ -3,7 +3,20 @@ const {
 	absolutelyPath_subprojectDist,
 } = getProjectPaths.default;
 
-const absolutelyElectronExe = path.join( absolutelyPath_RepositoryRoot , 'node_modules/electron/dist/electron.exe' );
+// 根据平台解析 Electron 二进制文件路径
+// macOS: node_modules/electron/dist/Electron.app/Contents/MacOS/Electron
+// Windows: node_modules/electron/dist/electron.exe
+// Linux: node_modules/electron/dist/electron
+const electronPackageDir = path.dirname(
+	createRequire( import.meta.url ).resolve( 'electron/package.json' ),
+);
+const electronDistDir = path.join( electronPackageDir , 'dist' );
+const electronBinaryName = process.platform === 'win32'
+	? 'electron.exe'
+	: process.platform === 'darwin'
+		? path.join( 'Electron.app' , 'Contents' , 'MacOS' , 'Electron' )
+		: 'electron';
+const absolutelyElectronExe = path.join( electronDistDir , electronBinaryName );
 const buildStatePath = getBuildStatePath( absolutelyPath_subprojectDist );
 
 const sharedBuildSourcePaths = [
@@ -99,4 +112,5 @@ import { assertFreshElectronStartupArtifacts , getBuildStatePath } from '../util
 import { absolutelyPath_RepositoryRoot } from '../../engine/toolkit/repo-paths';
 import { getProjectPaths } from '../../engine/toolkit/project-paths';
 import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
 import path from 'node:path';
