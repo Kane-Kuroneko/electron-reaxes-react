@@ -27,7 +27,18 @@ function getElectronBuilderArgs() {
 			return forwardedArgs;
 		}
 	}
-	// 默认构建当前宿主平台；可通过 -- --mac / --win / --linux 显式指定
+	// yarn 1.x 会吃掉 -- 分隔符，导致 --mac/--win/--linux 直接出现在 process.argv 中
+	// 因此也检查除 project name 之外的显式平台参数
+	const knownPlatformFlags = [ '--mac' , '--win' , '--linux' , '-m' , '-w' , '-l' , '--arm64' , '--x64' ];
+	// 从第四个参数开始（0=node,1=script,2=projectName）检查是否有已知平台标志
+	const extraArgs = process.argv.slice( 3 ).filter( ( arg ) =>
+		knownPlatformFlags.some( ( flag ) => arg.startsWith( flag ) )
+	);
+	if( extraArgs.length > 0 ) {
+		// 如果同时出现 --mac --arm64 等参数，直接透传给 electron-builder
+		return extraArgs;
+	}
+	// 默认构建当前宿主平台
 	const platformFlag = process.platform === 'win32'
 		? '-w'
 		: process.platform === 'darwin'
