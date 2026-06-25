@@ -31,7 +31,7 @@ jobs:
 
          # electron-reaxes-react 依赖 file:../reaxes/xxx/dist
          # 这些 dist 产物未跟踪到 git 中，需先检出源码并构建
-         - name: Checkout Reaxes (file: dependency)
+         - name: "Checkout Reaxes (file: dependency)"
            uses: actions/checkout@v4
            with:
               repository: CainKane/Reaxes
