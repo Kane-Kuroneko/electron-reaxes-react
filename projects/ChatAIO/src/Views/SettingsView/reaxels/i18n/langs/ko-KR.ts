@@ -148,6 +148,8 @@
 	"Add AI Page" : "AI 페이지 추가" ,
 	"Edit AI Page" : "AI 페이지 편집" ,
 	"Delete AI page" : "AI 페이지 삭제" ,
+	"Undo Delete" : "삭제 취소" ,
+	"Are you sure you want to delete this AI page?" : "이 AI 페이지를 삭제하시겠습니까？" ,
 	"Clone" : "복제" ,
 	"Reset All AI Pages" : "모든 AI 페이지 초기화" ,
 	"App family" : "앱 패밀리" ,

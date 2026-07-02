@@ -1,10 +1,11 @@
 	const AIEnabledCheckbox = reaxper( ( { id }:{ id:string } ) => {
 		const target = reaxel_SettingsView.store.Data.AIs.find( ai => ai.id === id );
-		const { setAIEnabled } = reaxel_SettingsView();
+		const { setAIEnabled , isAIPendingDeletion } = reaxel_SettingsView();
+		const isPendingDelete = isAIPendingDeletion( id );
 
 		return <Checkbox
 			checked={ target ? !target.disabled : false }
-			disabled={ !target }
+			disabled={ !target || isPendingDelete }
 			onChange={ e => {
 				setAIEnabled( id , e.target.checked );
 			} }
@@ -20,12 +21,14 @@
 		const target = reaxel_SettingsView.store.Data.AIs.find( ai => ai.id === id );
 		const isFirstAI = reaxel_SettingsView.store.Data.AIs[0]?.id === id;
 		const isFirstAIForcedPreload = reaxel_SettingsView.store.UIControls.manage_AIs.startupAIPageLoadMode === 'first-ai' && isFirstAI;
+			const { isAIPendingDeletion } = reaxel_SettingsView();
+		const isPendingDelete = isAIPendingDeletion( id );
 		const checked = isFirstAIForcedPreload || ( target?.preloadOnStartup ?? false );
 
 		return <Switch
 			size="small"
 			checked={ checked }
-			disabled={ isFirstAIForcedPreload || !target }
+			disabled={ isFirstAIForcedPreload || !target || isPendingDelete }
 			onChange={ value => {
 				reaxel_SettingsView.mutate.Data( state => {
 					state.AIs = state.AIs.map( ai => ai.id === id
@@ -44,6 +47,75 @@
 		className : 'manage-ais-table__th-compact' ,
 		style : { whiteSpace : 'nowrap' as const },
 	} );
+
+	
+/**
+ * 删除确认 Popover 组件 — 替代全局 Modal.confirm
+ * - 待删除状态：显示 [撤销删除] 按钮
+ * - 正常状态：显示 [删除] 按钮，点击弹出 Popover 二次确认
+ */
+const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
+	const { markAIForDeletion , undoMarkAIForDeletion , isAIPendingDeletion } = reaxel_SettingsView();
+	const [ popoverOpen , setPopoverOpen ] = React.useState( false );
+	const isPendingDelete = isAIPendingDeletion( record.id );
+
+	if( isPendingDelete ) {
+		return <Button
+			type="link"
+			size="small"
+			onClick={ () => {
+				undoMarkAIForDeletion( record.id );
+			} }
+		><I18n>Undo Delete</I18n></Button>;
+	}
+
+	return <Popover
+		open={ popoverOpen }
+		onOpenChange={ setPopoverOpen }
+		trigger="click"
+		placement="top"
+		overlayClassName="delete-ai-popover"
+		content={
+			<div style={ { maxWidth : 220 , textAlign : 'center' } }>
+				<p style={ { margin:'2px 0 8px 0' , fontSize : 13 } }><I18n>Are you sure you want to delete this AI page?</I18n></p>
+				<div style={ { display : "flex" , justifyContent : "center" , gap : 8 } }>
+					<Button size="small" onClick={ () => setPopoverOpen( false ) }><I18n>Cancel</I18n></Button>
+					<Button size="small" danger type="primary" onClick={ () => {
+						markAIForDeletion( record.id );
+						setPopoverOpen( false );
+					} }><I18n>Delete</I18n></Button>
+				</div>
+			</div>
+		}
+	>
+		<Button
+			type="link"
+			size="small"
+			danger
+			onClick={ e => {
+				e.stopPropagation();
+				setPopoverOpen( true );
+			} }
+		><I18n>Delete</I18n></Button>
+	</Popover>;
+} );
+
+	/**
+ * AI family → Ant Design Tag color 映射
+ */
+const AI_FAMILY_TAG_COLORS: Record<string , string> = {
+	chatgpt : 'green' ,
+	claude : 'blue' ,
+	gemini : 'cyan' ,
+	grok : 'orange' ,
+	deepseek : 'purple' ,
+	perplexity : 'magenta' ,
+	doubao : 'red' ,
+	qianwen : 'geekblue' ,
+	kimi : 'gold' ,
+	'dev-proxy-test' : 'lime' ,
+	custom : 'default',
+};
 
 	const columns:TableColumnType<AI.AIItem>[] = [
 		{
@@ -79,7 +151,7 @@
 			ellipsis : true,
 			minWidth : 100,
 			render( _value , record ) {
-				const { isNewAI , isModifiedAI } = reaxel_SettingsView();
+				const { isNewAI , isModifiedAI , isAIPendingDeletion } = reaxel_SettingsView();
 				const isNew = isNewAI( record.id );
 				const isModified = isModifiedAI( record.id );
 				return <span style={ { display : 'inline-flex' , alignItems : 'center' , gap : 6 } }>
@@ -98,6 +170,10 @@
 			dataIndex : 'AI_family',
 			ellipsis : true,
 			minWidth : 72,
+			render( value: AI.AIFamily ) {
+				const color = AI_FAMILY_TAG_COLORS[value] || 'default';
+				return <Tag color={ color }>{ value }</Tag>;
+			},
 		} ,
 		{
 			title : <I18n>AI URL</I18n> ,
@@ -107,13 +183,16 @@
 		} ,
 		{
 			title : <I18n>Operations</I18n> ,
-			width : 144 ,
+			width : 160 ,
 			render : ( _text , record ) => {
 				const {
 					changeEditAIModalVisible ,
 					changeCloneAIModalVisible,
+					isAIPendingDeletion,
 				} = reaxel_SettingsView();
+				const isPendingDelete = isAIPendingDeletion( record.id );
 				return <Space size={ 2 }>
+					{ !isPendingDelete && <>
 					<Button
 						type="link"
 						size="small"
@@ -128,22 +207,8 @@
 							changeCloneAIModalVisible( record.id );
 						} }
 					><I18n>Clone</I18n></Button>
-					<Button
-						type="link"
-						size="small"
-						danger
-						onClick={ () => {
-							Modal.confirm( {
-								title : <I18n>Delete AI page</I18n> ,
-								content : `Delete ${ record.label } from Switch AI menu and settings.`,
-								onOk() {
-									reaxel_SettingsView.mutate.Data( state => {
-										state.AIs = state.AIs.filter( ai => ai.id !== record.id );
-									} );
-								},
-							} );
-						} }
-					><I18n>Delete</I18n></Button>
+					</> }
+					<DeleteAICell record={ record } />
 				</Space>;
 			},
 		},
@@ -155,6 +220,7 @@
 			reloadSettings ,
 			setStartupAIPageLoadMode,
 		} = reaxel_SettingsView();
+		const pendingDeleteAIIds = reaxel_SettingsView.store.UIControls.manage_AIs.pendingDeleteAIIds;
 		const [resetModalVisible , setResetModalVisible] = React.useState( false );
 		const sensors = useSensors(
 			useSensor( PointerSensor , {
@@ -236,6 +302,7 @@
 				>
 					<div style={ { overflowX: 'auto' } }>
 						<Table
+						key={ `ais-table-${ pendingDeleteAIIds.join(',') || 'none' }` }
 						className="manage-ais-table"
 						style={ { width: '100%' , minWidth: 600 } }
 						components={ {
@@ -249,7 +316,8 @@
 						pagination={ false }
 						size="small"
 						rowClassName={ record => {
-							const { isNewAI , isModifiedAI } = reaxel_SettingsView();
+							const { isNewAI , isModifiedAI , isAIPendingDeletion } = reaxel_SettingsView();
+							if( isAIPendingDeletion( record.id ) ) return 'ai-row--pending-delete';
 							if( isNewAI( record.id ) ) return 'ai-row--new';
 							if( isModifiedAI( record.id ) ) return 'ai-row--modified';
 							return '';
@@ -280,14 +348,15 @@
 	const DragHandleContext = React.createContext<{
 		listeners?: ReturnType<typeof useSortable>['listeners'];
 		attributes?: ReturnType<typeof useSortable>['attributes'];
+			disabled?: boolean;
 	}>( {} );
 
 	const DragHandle:React.FC = () => {
-		const { listeners , attributes } = React.useContext( DragHandleContext );
+		const { listeners , attributes , disabled } = React.useContext( DragHandleContext );
 		return <span
-			style={ { display : 'inline-flex' , alignItems : 'center' , cursor : 'move' } }
-			{ ...attributes }
-			{ ...listeners }
+			style={ { display : 'inline-flex' , alignItems : 'center' , cursor : disabled ? 'not-allowed' : 'move' , opacity : disabled ? 0.4 : 1 } }
+			{ ...( disabled ? {} : attributes ) }
+			{ ...( disabled ? {} : listeners ) }
 		>
 			<DragIconSvg
 				style={ { fontSize : 24 , userSelect : 'none' , cursor : 'move' , color : '#bfbfbf' } }
@@ -314,7 +383,13 @@
 			...( isDragging ? { position : 'relative' , zIndex : 9999 } : {} ),
 		};
 
-		return <DragHandleContext.Provider value={ { listeners , attributes } }>
+		const { isAIPendingDeletion } = reaxel_SettingsView();
+	// 待删除行禁用拖拽 — 不传递 listeners/attributes
+	const dragContext = isAIPendingDeletion( props['data-row-key'] )
+			? { disabled : true }
+		: { listeners , attributes };
+
+	return <DragHandleContext.Provider value={ dragContext }>
 			<tr
 				{ ...props }
 				ref={ setNodeRef }
@@ -712,17 +787,17 @@
 
 	const defaultURLByFamily = (family:AI.AIFamily) => {
 		return {
-			chatgpt : 'https://chatgpt.com' ,
-			grok : 'https://grok.com' ,
-			gemini : 'https://gemini.google.com' ,
-			deepseek : 'https://chat.deepseek.com' ,
-			perplexity : 'https://www.perplexity.ai' ,
-			claude : 'https://claude.ai' ,
-			custom : '' ,
+				chatgpt : 'https://chatgpt.com' ,
+				grok : 'https://grok.com' ,
+				gemini : 'https://gemini.google.com' ,
+				deepseek : 'https://chat.deepseek.com' ,
+				perplexity : 'https://www.perplexity.ai' ,
+				claude : 'https://claude.ai' ,
+				custom : '' ,
 			'dev-proxy-test' : 'https://whatismyipaddress.com/' ,
-			doubao : 'https://www.doubao.com' ,
-			qianwen : 'https://www.qianwen.com/' ,
-			kimi : 'https://kimi.moonshot.cn',
+				doubao : 'https://www.doubao.com' ,
+				qianwen : 'https://www.qianwen.com/' ,
+				kimi : 'https://kimi.moonshot.cn',
 		}[family] ?? 'https://chatgpt.com';
 	};
 
@@ -886,6 +961,7 @@
 	import { reaxper } from 'reaxes-react';
 	import {
 		Button ,
+		Popover ,
 		Checkbox ,
 		Form ,
 		Input ,

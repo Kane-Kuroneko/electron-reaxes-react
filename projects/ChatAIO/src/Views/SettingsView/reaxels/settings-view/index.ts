@@ -48,6 +48,8 @@ export const reaxel_SettingsView = reaxel( () => {
 			} ,
 			manage_AIs : {
 				startupAIPageLoadMode : checkAs<Startup.AIPageLoadMode>( 'last-used-ai' ) ,
+				/** 待删除 AI ID 列表 — 标记后仅在 Apply/Save 时过滤持久化，UI 中仍可见（可撤销） */
+				pendingDeleteAIIds : checkAs<string[]>( [] ),
 				edit_AI_modal : {
 					visible : false ,
 					mode : checkAs<"edit" | "add">( 'edit' ) ,
@@ -103,6 +105,8 @@ export const reaxel_SettingsView = reaxel( () => {
 		_committedAISnapshot = new Map(
 			store.Data.AIs.map( ai => [ ai.id , JSON.stringify( ai ) ] ),
 		);
+			// 重置待删除标记 — 快照同步后所有标记已反映在磁盘/快照中
+			setState.UIControls.manage_AIs( { pendingDeleteAIIds : [] } );
 	}
 	
 	function isDirty(): boolean {
@@ -267,7 +271,7 @@ export const reaxel_SettingsView = reaxel( () => {
 				proxy_server_list : networks.proxy_server_list,
 				proxy_test_urls : networks.proxy_test_urls,
 			} ,
-			AIs : store.Data.AIs.map( ai => ( {
+			AIs : store.Data.AIs.filter( ai => !store.UIControls.manage_AIs.pendingDeleteAIIds.includes( ai.id ) ).map( ai => ( {
 				...ai ,
 				from_server_list_proxy : getEnabledProxyServerId(
 					ai.from_server_list_proxy ,
@@ -426,6 +430,29 @@ export const reaxel_SettingsView = reaxel( () => {
 		 */
 		isNewAI( id: string ): boolean {
 			return !_committedAIIds.has( id );
+		},
+		/**
+		 * 标记 AI 为待删除 — 仅在 Apply/Save 时真正移除并持久化
+		 */
+		markAIForDeletion( id: string ): void {
+			const current = store.UIControls.manage_AIs.pendingDeleteAIIds;
+			if( !current.includes( id ) ) {
+				setState.UIControls.manage_AIs( { pendingDeleteAIIds : [ ...current , id ] } );
+			}
+		},
+		/**
+		 * 撤销待删除标记
+		 */
+		undoMarkAIForDeletion( id: string ): void {
+			setState.UIControls.manage_AIs( {
+				pendingDeleteAIIds : store.UIControls.manage_AIs.pendingDeleteAIIds.filter( i => i !== id ),
+			} );
+		},
+		/**
+		 * 判断 AI 是否处于待删除状态
+		 */
+		isAIPendingDeletion( id: string ): boolean {
+			return store.UIControls.manage_AIs.pendingDeleteAIIds.includes( id );
 		},
 		/**
 		 * 判断某个 AI 是否已修改但未保存
