@@ -25,6 +25,10 @@ export namespace MenuView {
 		label : string;
 		submenu : Item[];
 		enabled : boolean;
+		action? : string;
+		actionPayload? : unknown;
+		accelerator? : string;
+		icon? : string;
 	}
 
 	/** 当前展开的菜单状态（渲染进程跟踪） */

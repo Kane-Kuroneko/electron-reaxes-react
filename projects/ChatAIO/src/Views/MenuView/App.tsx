@@ -121,24 +121,30 @@ export const App = reaxper( () => {
 
 			{/* 菜单栏 */}
 			<div className="menu-view-bar" role="menubar" aria-label="Application Menu">
-				{ store.structure.map( ( topItem , index ) => (
-					<MenuBarItem
-						key={ topItem.id }
-						item={ topItem }
-						index={ index }
-						isOpen={ store.openMenuIndex === index }
-						onToggle={ () => toggleMenu( index ) }
-						onHover={ () => {
-							if( store.openMenuIndex >= 0 ) {
-								setOpenMenuIndex( index );
-							}
-						} }
-						onItemAction={ triggerAction }
-						onCloseAll={ closeAllMenus }
-						focusedItemIndex={ store.openMenuIndex === index ? store.focusedItemIndex : -1 }
-						barHeight={ barHeight }
-					/>
-				) ) }
+				<div className="menu-view-bar__drag-layer" aria-hidden="true" />
+				<div className="menu-view-bar__items">
+					{ store.structure.map( ( topItem , index ) => (
+						<MenuBarItem
+							key={ topItem.id }
+							item={ topItem }
+							index={ index }
+							isOpen={ store.openMenuIndex === index }
+							onToggle={ () => toggleMenu( index ) }
+							onHover={ () => {
+								if( store.openMenuIndex >= 0 ) {
+									setOpenMenuIndex( index );
+								}
+							} }
+							onItemAction={ triggerAction }
+							onCloseAll={ closeAllMenus }
+							onMenuItemHover={ itemIndex => {
+								setState( { focusedItemIndex : itemIndex } );
+							} }
+							focusedItemIndex={ store.openMenuIndex === index ? store.focusedItemIndex : -1 }
+							barHeight={ barHeight }
+						/>
+					) ) }
+				</div>
 			</div>
 		</div>
 	);
@@ -155,6 +161,7 @@ const MenuBarItem = reaxper( ( {
 	onHover ,
 	onItemAction ,
 	onCloseAll ,
+	onMenuItemHover ,
 	focusedItemIndex ,
 	barHeight ,
 } : {
@@ -165,14 +172,16 @@ const MenuBarItem = reaxper( ( {
 	onHover : () => void;
 	onItemAction : ( action : MenuView.Action ) => void;
 	onCloseAll : () => void;
+	onMenuItemHover : ( itemIndex : number ) => void;
 	focusedItemIndex : number;
 	barHeight : number;
 } ) => {
 	const menuRef = useRef<HTMLDivElement>( null );
 	const [ dropdownStyle , setDropdownStyle ] = useState<React.CSSProperties>( {} );
+	const hasSubmenu = ( item.submenu?.length || 0 ) > 0;
 
 	/* 计算下拉菜单位置：防止超出窗口右边界 */
-	useEffect( () => {
+	useLayoutEffect( () => {
 		if( !isOpen || !menuRef.current ) return;
 
 		const rect = menuRef.current.getBoundingClientRect();
@@ -188,22 +197,36 @@ const MenuBarItem = reaxper( ( {
 	return (
 		<div
 			className={ `menu-bar-item ${ isOpen ? 'menu-bar-item--open' : '' }` }
-			onMouseEnter={ onHover }
+			onPointerEnter={ () => {
+				if( hasSubmenu ) {
+					onHover();
+				}
+			} }
 			ref={ menuRef }
 			role="none"
 		>
 			<button
-				className="menu-bar-item__button"
+				className={ `menu-bar-item__button ${ hasSubmenu ? '' : 'menu-bar-item__button--action' }` }
 				role="menuitem"
-				aria-haspopup="true"
-				aria-expanded={ isOpen }
+				aria-haspopup={ hasSubmenu ? 'true' : undefined }
+				aria-expanded={ hasSubmenu ? isOpen : undefined }
 				tabIndex={ index === 0 ? 0 : -1 }
 				disabled={ !item.enabled }
 				onMouseDown={ ( e ) => {
 					if( e.button !== 0 ) return;
 					e.preventDefault();
 					e.stopPropagation();
-					onToggle();
+					if( hasSubmenu ) {
+						onToggle();
+						return;
+					}
+					if( !item.action || !item.enabled ) return;
+					onItemAction( {
+						type : 'execute' ,
+						itemId : item.id ,
+						action : item.action ,
+						payload : item.actionPayload,
+					} );
 				} }
 				onClick={ ( e ) => {
 					e.preventDefault();
@@ -214,14 +237,16 @@ const MenuBarItem = reaxper( ( {
 			</button>
 
 			{/* 下拉子菜单 */}
-			{ isOpen && item.submenu.length > 0 && (
+			{ isOpen && hasSubmenu && (
 				<MenuDropdown
 					items={ item.submenu }
 					style={ dropdownStyle }
 					onItemAction={ onItemAction }
 					onCloseAll={ onCloseAll }
+					onItemHover={ onMenuItemHover }
 					focusedItemIndex={ focusedItemIndex }
 					barHeight={ barHeight }
+					level={ 0 }
 				/>
 			) }
 		</div>
@@ -236,15 +261,19 @@ const MenuDropdown = ( {
 	style ,
 	onItemAction ,
 	onCloseAll ,
+	onItemHover ,
 	focusedItemIndex ,
 	barHeight ,
+	level ,
 } : {
 	items : MenuView.Item[];
 	style : React.CSSProperties;
 	onItemAction : ( action : MenuView.Action ) => void;
 	onCloseAll : () => void;
+	onItemHover : ( itemIndex : number ) => void;
 	focusedItemIndex : number;
 	barHeight : number;
+	level : number;
 } ) => {
 	return (
 		<div
@@ -259,9 +288,12 @@ const MenuDropdown = ( {
 				<MenuItemComponent
 					key={ item.id }
 					item={ item }
-					focused={ focusedItemIndex === index }
+					focused={ level === 0 && focusedItemIndex === index }
+					itemIndex={ index }
 					onAction={ onItemAction }
 					onCloseAll={ onCloseAll }
+					onHoverItem={ onItemHover }
+					level={ level }
 				/>
 			) ) }
 		</div>
@@ -275,13 +307,17 @@ const MenuItemComponent = ( {
 	item ,
 	onAction ,
 	onCloseAll ,
+	onHoverItem ,
 	focused = false ,
+	itemIndex ,
 	level = 0,
 } : {
 	item : MenuView.Item;
 	onAction : ( action : MenuView.Action ) => void;
 	onCloseAll : () => void;
+	onHoverItem : ( itemIndex : number ) => void;
 	focused? : boolean;
+	itemIndex : number;
 	level? : number;
 } ) => {
 	const [ showSubmenu , setShowSubmenu ] = useState( false );
@@ -296,7 +332,7 @@ const MenuItemComponent = ( {
 	};
 
 	/* 计算子菜单位置 */
-	useEffect( () => {
+	useLayoutEffect( () => {
 		if( !showSubmenu || !itemRef.current ) return;
 		const rect = itemRef.current.getBoundingClientRect();
 		const subWidth = Math.min( 320 , Math.max( 220 , getMenuWidthEstimate( item.submenu || [] ) ) );
@@ -343,14 +379,17 @@ const MenuItemComponent = ( {
 		<div
 			className={ `menu-item ${ item.type === 'checkbox' || item.type === 'radio' ? 'menu-item--checkable' : '' } ${ !item.enabled ? 'menu-item--disabled' : '' } ${ focused ? 'menu-item--focused' : '' }` }
 			onClick={ handleClick }
-			onMouseEnter={ () => {
+			onPointerEnter={ () => {
 				clearCloseTimer();
+				if( level === 0 ) {
+					onHoverItem( itemIndex );
+				}
 				if( hasSubmenu ) setShowSubmenu( true );
 			} }
-			onMouseLeave={ () => {
+			onPointerLeave={ () => {
 				if( hasSubmenu ) {
 					clearCloseTimer();
-					closeTimerRef.current = window.setTimeout( () => setShowSubmenu( false ) , 120 );
+					closeTimerRef.current = window.setTimeout( () => setShowSubmenu( false ) , 180 );
 				}
 			} }
 			ref={ itemRef }
@@ -390,18 +429,20 @@ const MenuItemComponent = ( {
 					className="menu-dropdown menu-dropdown--nested"
 					style={ submenuStyle }
 					role="menu"
-					onMouseEnter={ clearCloseTimer }
-					onMouseLeave={ () => {
+					onPointerEnter={ clearCloseTimer }
+					onPointerLeave={ () => {
 						clearCloseTimer();
-						closeTimerRef.current = window.setTimeout( () => setShowSubmenu( false ) , 120 );
+						closeTimerRef.current = window.setTimeout( () => setShowSubmenu( false ) , 180 );
 					} }
 				>
-					{ item.submenu!.map( ( subItem ) => (
+					{ item.submenu!.map( ( subItem , subIndex ) => (
 						<MenuItemComponent
 							key={ subItem.id }
 							item={ subItem }
 							onAction={ onAction }
 							onCloseAll={ onCloseAll }
+							onHoverItem={ onHoverItem }
+							itemIndex={ subIndex }
 							level={ level + 1 }
 						/>
 					) ) }

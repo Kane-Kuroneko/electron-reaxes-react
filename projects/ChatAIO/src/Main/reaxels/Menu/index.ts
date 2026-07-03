@@ -31,6 +31,8 @@ export const reaxel_Menu = reaxel( () => {
 		const { currentAIViewKey } = Reaxel_View.store;
 		const instantiatedAIViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
 		const canSwitchInstantiatedAI = instantiatedAIViews.length > 1;
+		const nextInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , 1 );
+		const previousInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , -1 );
 		const promptViewLeftVisible = reaxel_PromptViews.store.left.visible || reaxel_PromptViews.store.left.width > 0;
 		const promptViewRightVisible = reaxel_PromptViews.store.right.visible || reaxel_PromptViews.store.right.width > 0;
 		const platform = process.platform;
@@ -223,6 +225,20 @@ export const reaxel_Menu = reaxel( () => {
 							enabled : false,
 						} ,
 					],
+			} ,
+			{
+				id : 'prev-instantiated' ,
+				label : createAdjacentAIMenuLabel( '⏮️' , t( 'Prev' ) , previousInstantiatedAI ) ,
+				submenu : [] ,
+				enabled : canSwitchInstantiatedAI ,
+				action : 'prev-instantiated',
+			} ,
+			{
+				id : 'next-instantiated' ,
+				label : createAdjacentAIMenuLabel( '⏭️' , t( 'Next' ) , nextInstantiatedAI ) ,
+				submenu : [] ,
+				enabled : canSwitchInstantiatedAI ,
+				action : 'next-instantiated',
 			} ,
 		];
 	}

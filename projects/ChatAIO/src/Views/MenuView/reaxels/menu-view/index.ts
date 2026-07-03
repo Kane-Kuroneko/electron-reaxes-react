@@ -30,7 +30,7 @@ export const reaxel_MenuView = reaxel( () => {
 		structure : checkAs<MenuView.Structure>( [] ) ,         // 完整菜单结构
 		openMenuIndex : -1 ,                                     // 当前展开的顶级菜单索引（-1=关闭）
 		hoveredPath : checkAs<string[]>( [] ) ,                  // 当前悬浮路径
-		focusedItemIndex : 0 ,
+		focusedItemIndex : -1 ,
 		menuBarHeight : 0 ,                                      // 菜单栏高度
 		platform : detectOS() as NodeJS.Platform ,               // 运行平台（通过 navigator.platform 检测）
 		theme : 'light' as 'light' | 'dark' ,                   // 当前主题
@@ -56,7 +56,7 @@ export const reaxel_MenuView = reaxel( () => {
 		}
 		setState( {
 			openMenuIndex : willOpen ? index : -1 ,
-			focusedItemIndex : 0 ,
+			focusedItemIndex : -1 ,
 			hoveredPath : [],
 		} );
 	};
@@ -65,7 +65,7 @@ export const reaxel_MenuView = reaxel( () => {
 	const setOpenMenuIndex = ( index : number ) => {
 		setState( {
 			openMenuIndex : index ,
-			focusedItemIndex : 0 ,
+			focusedItemIndex : -1 ,
 			hoveredPath : [],
 		} );
 	};
@@ -75,7 +75,7 @@ export const reaxel_MenuView = reaxel( () => {
 		resizeMenuView( getBarHeight( store.platform ) );
 		setState( {
 			openMenuIndex : -1 ,
-			focusedItemIndex : 0 ,
+			focusedItemIndex : -1 ,
 			hoveredPath : [],
 		} );
 	};
@@ -98,6 +98,9 @@ export const reaxel_MenuView = reaxel( () => {
 		const items = store.structure[store.openMenuIndex]?.submenu || [];
 		if( items.length === 0 ) return;
 		let nextIndex = store.focusedItemIndex;
+		if( nextIndex < 0 ) {
+			nextIndex = delta > 0 ? -1 : items.length;
+		}
 		for( let i = 0 ; i < items.length ; i++ ) {
 			nextIndex = ( nextIndex + delta + items.length ) % items.length;
 			const item = items[nextIndex];
@@ -109,7 +112,20 @@ export const reaxel_MenuView = reaxel( () => {
 	};
 
 	const triggerFocusedItem = () => {
-		const item = store.structure[store.openMenuIndex]?.submenu?.[store.focusedItemIndex];
+		const topItem = store.structure[store.openMenuIndex];
+		if( !topItem ) return;
+		if( !topItem.submenu?.length ) {
+			if( topItem.enabled && topItem.action ) {
+				triggerAction( {
+					type : 'execute' ,
+					itemId : topItem.id ,
+					action : topItem.action ,
+					payload : topItem.actionPayload,
+				} );
+			}
+			return;
+		}
+		const item = topItem.submenu?.[store.focusedItemIndex];
 		if( !item || !item.enabled || item.type === 'separator' || item.submenu?.length ) return;
 		triggerAction( {
 			type : item.type === 'checkbox' || item.type === 'radio' ? 'toggle' : 'execute' ,
