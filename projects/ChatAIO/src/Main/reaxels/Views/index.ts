@@ -40,11 +40,12 @@ export const Reaxel_View = reaxel( () => {
 
 	function getCenterBounds(bounds = mainWindow.getContentBounds()):Rectangle {
 		const promptInsets = reaxel_PromptViews().getLayoutInsets();
+		const menuBarHeight = getMenuBarHeight();
 		return {
 			x : promptInsets.left ,
-			y : 0 ,
+			y : menuBarHeight ,
 			width : Math.max( 1 , bounds.width - promptInsets.left - promptInsets.right ) ,
-			height : bounds.height,
+			height : Math.max( 1 , bounds.height - menuBarHeight ),
 		};
 	}
 
@@ -428,6 +429,15 @@ const resolveStartupAI = (
 	return activeAIs.find( ai => ai.id === currentAIViewKey )
 		|| activeAIs.find( ai => ai.AI_family === currentAIViewKey )
 		|| activeAIs[0];
+};
+
+/* ==========================================
+   菜单栏高度常量
+   ========================================== */
+const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 38 : 32;
+
+const getMenuBarHeight = () => {
+	return MENU_BAR_HEIGHT;
 };
 
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";

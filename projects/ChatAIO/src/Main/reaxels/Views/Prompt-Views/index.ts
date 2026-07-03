@@ -115,12 +115,13 @@ export const reaxel_PromptViews = reaxel( () => {
 		}
 		const width = Math.max( 0 , Math.round( sideState.width ) );
 		const visible = width > 0 || sideState.visible;
+		const menuBarHeight = getMenuBarHeight();
 		setViewVisibleIfChanged( view , visible );
 		setViewBoundsIfChanged( view , {
 			x : side === 'left' ? 0 : Math.max( 0 , bounds.width - width ) ,
-			y : 0 ,
+			y : menuBarHeight ,
 			width ,
-			height : bounds.height,
+			height : Math.max( 1 , bounds.height - menuBarHeight ),
 		} );
 	};
 	
@@ -207,6 +208,7 @@ export const reaxel_PromptViews = reaxel( () => {
 		expanding:boolean,
 	) => {
 		const bounds = mainWindow.getContentBounds();
+		const menuBarHeight = getMenuBarHeight();
 		const leftWidth = side === 'left'
 			? Math.max( 0 , nextWidth )
 			: Math.max( 0 , Math.round( store.left.width ) );
@@ -217,9 +219,9 @@ export const reaxel_PromptViews = reaxel( () => {
 		const syncCenterView = () => {
 			Reaxel_View().fitCurrentCenterView( {
 				x : leftWidth ,
-				y : 0 ,
+				y : menuBarHeight ,
 				width : Math.max( 1 , bounds.width - leftWidth - rightWidth ) ,
-				height : bounds.height,
+				height : Math.max( 1 , bounds.height - menuBarHeight ),
 			} );
 		};
 		const syncSideViews = () => {
@@ -297,12 +299,13 @@ const syncSideBoundsWithWidth = (
 	}
 	const roundedWidth = Math.max( 0 , Math.round( width ) );
 	const visible = roundedWidth > 0 || sideState.visible;
+	const menuBarHeight = getMenuBarHeight();
 	setViewVisibleIfChanged( view , visible );
 	setViewBoundsIfChanged( view , {
 		x : side === 'left' ? 0 : Math.max( 0 , bounds.width - roundedWidth ) ,
-		y : 0 ,
+		y : menuBarHeight ,
 		width : roundedWidth ,
-		height : bounds.height,
+		height : Math.max( 1 , bounds.height - menuBarHeight ),
 	} );
 };
 
@@ -374,6 +377,11 @@ const cubicBezierAxis = (t:number , p1:number , p2:number) => {
 
 const PROMPT_VIEW_ANIMATION_MS = 300;
 const PROMPT_VIEW_ANIMATION_FRAME_MS = 3;
+const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 38 : 32;
+
+const getMenuBarHeight = () => {
+	return MENU_BAR_HEIGHT;
+};
 
 type PromptSideState = {
 	name: 'PromptViewLeft' | 'PromptViewRight';

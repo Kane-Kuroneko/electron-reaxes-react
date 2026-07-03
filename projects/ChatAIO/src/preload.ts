@@ -44,6 +44,14 @@ const getPromptViewState = useRpc('get-prompt-view-state');
 const savePromptViewItems = useRpc('save-prompt-view-items');
 const copyPromptViewText = useRpc('copy-prompt-view-text');
 const sendPerfEvent = useRtm('perf-event');
+const menuViewAction = useRtm('menu-view:action');
+const menuViewReady = useRtm('menu-view:ready');
+const menuViewResize = useRtm('menu-view:resize');
+const onMenuViewCommand = (callback:(command:MenuView.MenuCommand) => void) => {
+	return useMtr( 'menu-view:command' )( ( _ , command ) => {
+		callback( command );
+	} );
+};
 
 const api = {
 	fetchSettings ,
@@ -78,6 +86,10 @@ const api = {
 	savePromptViewItems,
 	copyPromptViewText,
 	sendPerfEvent,
+	menuViewAction,
+	menuViewReady,
+	menuViewResize,
+	onMenuViewCommand,
 };
 export type API = typeof api;
 
@@ -109,3 +121,4 @@ import type {
 import { createIpc } from '#generics/toolkit/electron/preload.ipc';
 import type { FloatingView } from './Types/FloatingView';
 import type { PromptView } from './Types/PromptView';
+import type { MenuView } from './Types/MenuView';

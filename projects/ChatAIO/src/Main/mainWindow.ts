@@ -37,6 +37,15 @@ export const createMainWindow = async() => {
 		...( process.platform === 'darwin' && {
 			titleBarStyle : 'hiddenInset' as const,
 		} ),
+		// Windows/Linux：隐藏原生标题栏，使用 titleBarOverlay 保留窗口操作按钮
+		...( process.platform !== 'darwin' && {
+			titleBarStyle : 'hidden' as const,
+			titleBarOverlay : {
+				color : '#00000000' ,        // 透明背景，让 MenuView 背景透出
+				symbolColor : '#888888' ,    // 按钮图标颜色
+				height : 32 ,                // 与菜单栏高度一致
+			} as any,
+		} ),
 	};
 	
 	mainWindow = new BrowserWindow( _.merge( {} , defaultOptions ) );
