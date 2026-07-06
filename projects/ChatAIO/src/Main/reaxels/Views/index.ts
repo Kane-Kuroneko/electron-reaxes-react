@@ -224,14 +224,6 @@ export const Reaxel_View = reaxel( () => {
 		const runtimeViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
 		const currentRuntimeView = runtimeViews.find( runtimeView => runtimeView.id === store.currentAIViewKey );
 
-		if( !store.settingsViewOpened && currentRuntimeView && runtimeViews.length <= 1 ) {
-			reaxel_FloatingView().api.showGlobalMessage( {
-				type : 'warning' ,
-				content : reaxel_I18n().i18n( 'The last AI page cannot be closed' ),
-			} );
-			return false;
-		}
-
 		/* 性能记录：关闭开始 */
 		const ctxId = perf.newCtx();
 		perf.mark( 'switch:start' , 'main' , ctxId , {
@@ -246,26 +238,37 @@ export const Reaxel_View = reaxel( () => {
 			/* 关闭成功后，向 FloatingView 发送更新后的卡片载荷。
 			   Ctrl+W 销毁了当前 AI View，需同步刷新 SwitchAiBar 的 items 和 activeIndex。 */
 			const updatedRuntimeViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
-			const nextIndex = updatedRuntimeViews.findIndex(
-				rv => rv.id === store.currentAIViewKey,
-			);
 
-			reaxel_FloatingView().api.showSwitchAiBar(
-				createSwitchAiBarPayload(
-					updatedRuntimeViews.map( createPayloadItemFromRuntimeView ) ,
-					nextIndex >= 0 ? nextIndex : 0 ,
-					'next',
-					ctxId,
-				),
-			);
+			if( updatedRuntimeViews.length > 0 ) {
+				const nextIndex = updatedRuntimeViews.findIndex(
+					rv => rv.id === store.currentAIViewKey,
+				);
 
-			perf.mark( 'switch:ipc-sent' , 'main' , ctxId , {
-				action : 'close' ,
-				itemCount : updatedRuntimeViews.length ,
-				activeIndex : nextIndex,
-			} );
+				reaxel_FloatingView().api.showSwitchAiBar(
+					createSwitchAiBarPayload(
+						updatedRuntimeViews.map( createPayloadItemFromRuntimeView ) ,
+						nextIndex >= 0 ? nextIndex : 0 ,
+						'next' ,
+						ctxId,
+					),
+				);
+
+				perf.mark( 'switch:ipc-sent' , 'main' , ctxId , {
+					action : 'close' ,
+					itemCount : updatedRuntimeViews.length ,
+					activeIndex : nextIndex,
+				} );
+			} else {
+				reaxel_FloatingView().api.hideSwitchAiBar();
+
+				perf.mark( 'switch:ipc-sent' , 'main' , ctxId , {
+					action : 'close' ,
+					itemCount : 0 ,
+					activeIndex : -1,
+				} );
+			}
+
 		}
-
 		return result;
 	};
 

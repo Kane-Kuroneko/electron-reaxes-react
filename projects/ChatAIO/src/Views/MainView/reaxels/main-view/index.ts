@@ -1,14 +1,11 @@
 /**
- * @description MenuView 渲染进程 reaxel
+ * @description MainView 渲染进程 reaxel
  * 管理菜单结构数据、展开状态、悬浮路径等渲染进程侧状态。
  * 菜单结构通过 IPC 从主进程推送，操作事件通过 IPC 发回主进程执行。
- * 负责检测平台类型以正确设定菜单栏高度和 macOS traffic light spacer。
- * 负责在菜单展开时通知主进程调整 WebContentsView 高度，避免 dropdown 被裁剪。
+ * 没有 resizeMenuView IPC——因为 MainView 渲染在 mainWindow HTML 中，
+ * WebContentsViews 有 y=menuBarHeight 偏移，菜单栏固定在顶部。
  */
 
-export type MenuSide = 'client' | 'electron';
-
-/** 根据 navigator.platform 检测运行平台 */
 const detectOS = (): NodeJS.Platform => {
 	const p = typeof navigator !== 'undefined' ? ( navigator.platform || '' ) : '';
 	if( /mac/i.test( p ) ) return 'darwin';
@@ -16,12 +13,11 @@ const detectOS = (): NodeJS.Platform => {
 	return 'linux';
 };
 
-/** 获取当前平台的菜单栏高度 */
 export const getBarHeight = ( platform: NodeJS.Platform ): number => {
 	return platform === 'darwin' ? 38 : 32;
 };
 
-export const reaxel_MenuView = reaxel( () => {
+export const reaxel_MainView = reaxel( () => {
 	const {
 		store ,
 		setState ,
@@ -31,9 +27,8 @@ export const reaxel_MenuView = reaxel( () => {
 		openMenuIndex : -1 ,                                     // 当前展开的顶级菜单索引（-1=关闭）
 		hoveredPath : checkAs<string[]>( [] ) ,                  // 当前悬浮路径
 		focusedItemIndex : -1 ,
-		menuBarHeight : 0 ,                                      // 菜单栏高度
 		platform : detectOS() as NodeJS.Platform ,               // 运行平台（通过 navigator.platform 检测）
-		theme : 'light' as 'light' | 'dark' ,                   // 当前主题
+		theme : 'light' as 'light' | 'dark' ,                   // 当前主题（IPC 从主进程推送）
 	} );
 
 	/** 更新菜单结构（由 IPC 回调调用） */
@@ -41,27 +36,18 @@ export const reaxel_MenuView = reaxel( () => {
 		setState( { structure } );
 	};
 
-	/** 向主进程请求调整 MenuView WebContentsView 高度 */
-	const resizeMenuView = ( height: number ) => {
-		api.menuViewResize( height );
-	};
-
 	/** 展开/切换某顶级菜单 */
 	const toggleMenu = ( index : number ) => {
 		const willOpen = store.openMenuIndex !== index;
-		if( willOpen ) {
-			resizeMenuView( 9999 );
-		} else {
-			resizeMenuView( getBarHeight( store.platform ) );
-		}
 		setState( {
 			openMenuIndex : willOpen ? index : -1 ,
 			focusedItemIndex : -1 ,
 			hoveredPath : [],
 		} );
+		// TODO Phase 4: 请求主进程打开/关闭 DropdownView
 	};
 
-	/** 只切换当前顶级菜单，不改变展开高度 */
+	/** 只切换当前顶级菜单 */
 	const setOpenMenuIndex = ( index : number ) => {
 		setState( {
 			openMenuIndex : index ,
@@ -72,17 +58,16 @@ export const reaxel_MenuView = reaxel( () => {
 
 	/** 关闭所有展开的菜单 */
 	const closeAllMenus = () => {
-		resizeMenuView( getBarHeight( store.platform ) );
 		setState( {
 			openMenuIndex : -1 ,
 			focusedItemIndex : -1 ,
 			hoveredPath : [],
 		} );
+		// TODO Phase 4: 请求主进程关闭 DropdownView
 	};
 
 	const openFirstMenu = () => {
 		if( store.structure.length === 0 ) return;
-		resizeMenuView( 9999 );
 		setOpenMenuIndex( Math.max( 0 , store.openMenuIndex ) );
 	};
 
@@ -90,7 +75,6 @@ export const reaxel_MenuView = reaxel( () => {
 		if( store.structure.length === 0 ) return;
 		const currentIndex = store.openMenuIndex >= 0 ? store.openMenuIndex : 0;
 		const nextIndex = ( currentIndex + delta + store.structure.length ) % store.structure.length;
-		resizeMenuView( 9999 );
 		setOpenMenuIndex( nextIndex );
 	};
 
@@ -170,7 +154,6 @@ export const reaxel_MenuView = reaxel( () => {
 		setHoveredPath ,
 		triggerAction ,
 		handleCommand,
-		resizeMenuView,
 	};
 
 	return Object.assign( () => rtn , {
@@ -179,6 +162,7 @@ export const reaxel_MenuView = reaxel( () => {
 		mutate,
 	} );
 } );
+
 
 import { createReaxable , reaxel } from "reaxes";
 import type { MenuView } from "#src/Types/MenuView";

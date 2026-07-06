@@ -516,20 +516,16 @@ export const reaxel_Menu = reaxel( () => {
 	}
 
 	/**
-	 * 发送菜单结构数据到 MenuView 渲染进程
+	 * 发送菜单结构数据到 MainView 渲染进程
 	 */
 	function pushMenuUpdate() {
 		try {
-			const menuViewReaxel = reaxel_MenuView();
-			if( menuViewReaxel ) {
-				menuViewReaxel.sendMenuStructure();
-				menuViewReaxel.ensureLayerOrder();
-				setImmediate( () => {
-					menuViewReaxel.ensureLayerOrder();
-				} );
+			const mainViewReaxel = reaxel_MainView();
+			if( mainViewReaxel ) {
+				mainViewReaxel.sendMenuStructure();
 			}
 		} catch ( e ) {
-			// MenuView reaxel 可能尚未初始化，静默忽略
+			// MainView reaxel 可能尚未初始化，静默忽略
 		}
 	}
 
@@ -638,7 +634,7 @@ const resolveAdjacentInstantiatedAI = (
 };
 
 import { Reaxel_View } from '../Views';
-import { reaxel_MenuView } from '../Views/Menu-View';
+import { reaxel_MainView } from '../Views/Main-View';
 import {
 	escapeElectronMenuBarLabel ,
 	fitMenuAIName,

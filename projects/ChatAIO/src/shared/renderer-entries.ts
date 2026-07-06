@@ -3,7 +3,8 @@ export const AI_WEBAPP_RENDERER_ENTRY_POINTS = {
 	FloatingView : 'src/Views/FloatingView/index.tsx' ,
 	GuidingView : 'src/Views/GuidingView/index.tsx' ,
 	PromptView : 'src/Views/PromptView/index.tsx' ,
-	MenuView : 'src/Views/MenuView/index.tsx',
+	MainView : 'src/Views/MainView/index.tsx' ,
+	DropdownView : 'src/Views/DropdownView/index.tsx' ,
 } as const;
 
 export type AIWebAppRendererEntryName = keyof typeof AI_WEBAPP_RENDERER_ENTRY_POINTS;

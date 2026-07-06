@@ -52,6 +52,13 @@ const onMenuViewCommand = (callback:(command:MenuView.MenuCommand) => void) => {
 		callback( command );
 	} );
 };
+const openDropdownView = useRtm('dropdown-view:open');
+const closeDropdownView = useRtm('dropdown-view:close');
+const onDropdownViewCommand = (callback:(command:DropdownView.Command) => void) => {
+	return useMtr( 'dropdown-view:command' )( ( _ , command ) => {
+		callback( command );
+	} );
+};
 
 const api = {
 	fetchSettings ,
@@ -87,6 +94,9 @@ const api = {
 	copyPromptViewText,
 	sendPerfEvent,
 	menuViewAction,
+	openDropdownView,
+	closeDropdownView,
+	onDropdownViewCommand,
 	menuViewReady,
 	menuViewResize,
 	onMenuViewCommand,
@@ -122,3 +132,4 @@ import { createIpc } from '#generics/toolkit/electron/preload.ipc';
 import type { FloatingView } from './Types/FloatingView';
 import type { PromptView } from './Types/PromptView';
 import type { MenuView } from './Types/MenuView';
+import type { DropdownView } from './Types/DropdownView';

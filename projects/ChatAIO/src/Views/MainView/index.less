@@ -1,0 +1,137 @@
+﻿/**
+ * @description MainView 样式
+ * 菜单栏渲染在 mainWindow HTML 中，通过 -webkit-app-region 实现原生窗口拖拽。
+ * 菜单栏背景区域为拖拽区域，菜单按钮为 no-drag 保持可点。
+ * 内容区（菜单栏下方）透明——由 WebContentsViews 覆盖。
+ */
+
+/* ── Reset ──────────────────────────────────────────────── */
+html, body {
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	width: 100%;
+	height: 100%;
+		background: #f5f6f8;
+}
+
+/* ── MainView Root ──────────────────────────────────────── */
+.main-view-root {
+	display: flex;
+	align-items: flex-start;
+	width: 100%;
+	height: var(--menu-bar-height, 32px);
+	background: transparent;
+	user-select: none;
+	position: relative;
+	z-index: 100;
+	padding: 0;
+	margin: 0;
+	box-sizing: border-box;
+	-webkit-app-region: no-drag;
+}
+
+/* macOS traffic light 预留区域 */
+.main-view-traffic-light-spacer {
+	flex-shrink: 0;
+	width: 78px;
+	height: var(--menu-bar-height, 32px);
+	background: var(--menu-view-bg, #f5f6f8);
+	-webkit-app-region: drag;
+}
+
+/* ── Menu Bar ─────────────────────────────────────────── */
+.main-view-bar {
+	position: relative;
+	height: var(--menu-bar-height, 32px);
+	flex: 1;
+	background: var(--menu-view-bg, #f5f6f8);
+	border-bottom: 1px solid var(--menu-view-border, rgba(0, 0, 0, 0.08));
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.main-view-bar__drag-layer {
+	position: absolute;
+	inset: 0;
+	-webkit-app-region: drag;
+}
+
+.main-view-bar__items {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	height: 100%;
+	min-width: 0;
+}
+
+/* ── Menu Bar Item ────────────────────────────────────── */
+.main-view-bar-item {
+	position: relative;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	-webkit-app-region: no-drag;
+}
+
+.main-view-bar-item__button {
+	height: 24px;
+	margin: 4px 1px;
+	padding: 0 9px;
+	border: none;
+	background: transparent;
+	color: var(--menu-view-text, rgba(24, 24, 27, 0.9));
+	font-size: 13px;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	cursor: pointer;
+	white-space: nowrap;
+	display: flex;
+	align-items: center;
+	border-radius: 5px;
+	transition: background 0.08s ease, color 0.08s ease;
+	-webkit-app-region: no-drag;
+}
+
+.main-view-bar-item__button--action {
+	font-weight: 500;
+}
+
+.main-view-bar-item__button:hover {
+	background: var(--menu-view-hover-bg, rgba(128, 128, 128, 0.15));
+}
+
+.main-view-bar-item--open .main-view-bar-item__button {
+	background: var(--menu-view-active-bg, rgba(128, 128, 128, 0.2));
+}
+
+.main-view-bar-item__button:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+/* ── Theme Variables ──────────────────────────────────── */
+:root {
+	/* 默认使用浅色，避免菜单栏在亮色内容上显得突兀。 */
+	--menu-view-bg: #f5f6f8;
+	--menu-view-border: rgba(15, 23, 42, 0.08);
+	--menu-view-text: rgba(24, 24, 27, 0.9);
+	--menu-view-hover-bg: rgba(15, 23, 42, 0.06);
+	--menu-view-active-bg: rgba(15, 23, 42, 0.1);
+}
+
+[data-theme="light"] {
+	--menu-view-bg: #f5f6f8;
+	--menu-view-border: rgba(15, 23, 42, 0.08);
+	--menu-view-text: rgba(24, 24, 27, 0.9);
+	--menu-view-hover-bg: rgba(15, 23, 42, 0.06);
+	--menu-view-active-bg: rgba(15, 23, 42, 0.1);
+}
+
+[data-theme="dark"] {
+	--menu-view-bg: #f4f5f7;
+	--menu-view-border: rgba(15, 23, 42, 0.09);
+	--menu-view-text: rgba(24, 24, 27, 0.9);
+	--menu-view-hover-bg: rgba(15, 23, 42, 0.06);
+	--menu-view-active-bg: rgba(15, 23, 42, 0.1);
+}

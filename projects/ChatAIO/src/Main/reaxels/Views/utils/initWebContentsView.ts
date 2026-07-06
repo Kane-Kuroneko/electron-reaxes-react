@@ -26,8 +26,6 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 		? `AI-View-${options.domain || 'unknown'}`
 		: options.type === 'Prompt-View'
 			? options.promptSide === 'right' ? 'PromptViewRight' : 'PromptViewLeft'
-			: options.type === 'Menu-View'
-			? 'Menu-View'
 			: 'Settings-View';
 	new ViewCrashReporter(view, viewName);
 	
@@ -37,8 +35,6 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 		useAIView(view, viewOptions);
 	}else if(viewOptions.type==='Prompt-View'){
 		usePromptView(view, viewOptions);
-	}else if(viewOptions.type==='Menu-View'){
-		useMenuView(view);
 	}
 	
 	// 初始兜底布局；AI/Settings 等中心内容可通过 refreshBounds 接入 Reaxel_View 的 inset 布局。
@@ -100,26 +96,6 @@ const usePromptView = (view:WebContentsView,options:WebContentsViewConstructorOp
 			{
 				query : { side },
 			},
-		);
-	}
-}
-const useMenuView = (view:WebContentsView) => {
-	if(dev()){
-		~async function loadDevMenuView() {
-			const loaded = await safeLoadURL(
-				view ,
-				createDevRendererEntryURL( 'MenuView' ) ,
-				'Menu-View',
-			);
-			if( !loaded ) {
-				console.error( '[Views] Menu-View dev server is unavailable. Run webpack.start before electron.start.' );
-			}
-		}();
-	}else {
-		void safeLoadFile(
-			view ,
-			getRendererEntryFilePath( absAppRunningPath , 'MenuView' ) ,
-			'Menu-View',
 		);
 	}
 }
@@ -218,7 +194,7 @@ const shouldOpenInCurrentView = (currentURL:string , nextURL:string) => {
 type AI = "chatgpt"|"grok"|"gemini"|"deepseek"|"perplexity";
 type ExtraBrowserWindowOptions = {
 	domain? : string;
-	type : "AI-View"|"Settings-View"|"Prompt-View"|"Menu-View";
+	type : "AI-View"|"Settings-View"|"Prompt-View";
 	aiConfig?: AISettings.AIItem;
 	settings?: Settings;
 	promptSide?: PromptView.Side;

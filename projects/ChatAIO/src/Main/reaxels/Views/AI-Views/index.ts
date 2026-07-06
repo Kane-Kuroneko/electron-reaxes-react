@@ -143,7 +143,7 @@ export const reaxel_AIViews = reaxel( () => {
 		const currentIndex = runtimeViews.findIndex( runtimeView => {
 			return runtimeView.id === Reaxel_View.store.currentAIViewKey;
 		} );
-		return runtimeViews.length > 1 && currentIndex !== -1;
+		return runtimeViews.length >= 1 && currentIndex !== -1;
 	};
 
 	const closeCurrentAIViewAndShowNext = (settings:Settings) => {
@@ -155,13 +155,20 @@ export const reaxel_AIViews = reaxel( () => {
 			return runtimeView.id === Reaxel_View.store.currentAIViewKey;
 		} );
 		const currentRuntimeView = runtimeViews[currentIndex];
-		const nextRuntimeView = runtimeViews[( currentIndex + 1 ) % runtimeViews.length];
 
 		destroyAIView( currentRuntimeView.id );
-		Reaxel_View.setState( {
-			currentAIViewKey : nextRuntimeView.id ,
-			settingsViewOpened : false,
-		} );
+		if( runtimeViews.length > 1 ) {
+			const nextRuntimeView = runtimeViews[( currentIndex + 1 ) % runtimeViews.length];
+			Reaxel_View.setState( {
+				currentAIViewKey : nextRuntimeView.id ,
+				settingsViewOpened : false,
+			} );
+		} else {
+			Reaxel_View.setState( {
+				currentAIViewKey : '' ,
+				settingsViewOpened : false,
+			} );
+		}
 		applyVisibility();
 		return true;
 	};

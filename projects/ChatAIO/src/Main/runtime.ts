@@ -81,7 +81,7 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 		initSwitchPerformanceLogging();
 		await Reaxel_View().initRuntimeViews();
 		// 初始化自定义菜单视图（WebContentsView 方式，替代原生 Menu）
-		reaxel_MenuView().initMenuView();
+		reaxel_MainView().initMainView();
 		console.log( '[Runtime] runtime views initialized.' );
 	}
 	
@@ -117,7 +117,7 @@ import { reaxel_I18n } from '#main/reaxels/I18n';
 import { Reaxel_View } from "#main/reaxels/Views";
 import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
-import { reaxel_MenuView } from '#main/reaxels/Views/Menu-View';
+import { reaxel_MainView } from '#main/reaxels/Views/Main-View';
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
 import {
@@ -141,3 +141,4 @@ import {
 	app ,
 	nativeTheme,
 } from 'electron';
+

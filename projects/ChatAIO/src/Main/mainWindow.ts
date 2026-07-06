@@ -49,6 +49,10 @@ export const createMainWindow = async() => {
 	};
 	
 	mainWindow = new BrowserWindow( _.merge( {} , defaultOptions ) );
+
+	// 加载 MainView HTML（含 MenuBar 等全局组件）
+	loadMainViewHTML();
+
 	mainWindow.on( 'closed' , () => {
 		mainWindow = null;
 	} );
@@ -70,8 +74,29 @@ export const showMainWindow = () => {
 	return mainWindow;
 };
 
+/**
+ * 加载 MainView HTML 到 mainWindow（含 MenuBar 等全局组件）
+ */
+const loadMainViewHTML = () => {
+	if( !mainWindow || mainWindow.isDestroyed() ) return;
+
+	if( dev() ) {
+		const url = createDevRendererEntryURL( 'MainView' );
+		mainWindow.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
+	} else {
+		mainWindow.webContents.loadFile(
+			getRendererEntryFilePath( reaxel_ElectronENV().absAppRunningPath , 'MainView' )
+		);
+	}
+};
+
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import { dev } from 'electron-is';
+import {
+	createDevRendererEntryURL ,
+	getFreshRendererLoadURLOptions ,
+	getRendererEntryFilePath,
+} from '#main/services/dev/renderer-entry';
 import {
 	app ,
 	BrowserWindow ,

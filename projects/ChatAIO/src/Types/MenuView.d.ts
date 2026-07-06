@@ -35,7 +35,7 @@ export namespace MenuView {
 	export interface MenuState {
 		structure : Structure;
 		openMenuIndex : number;           // -1 表示全部关闭
-		hoveredPath : string[];           // 当前悬浮路径（eg. ['application','settings']）
+		hoveredPath : string[];           // 当前悬浮路径
 		focusedItemIndex : number;
 		menuBarHeight : number;
 	}
@@ -61,6 +61,19 @@ export namespace MenuView {
 		| {
 			type : 'menu-view:close';
 		};
+}
+
+export namespace MainView {
+	export type Command =
+		| { type : 'structure-update'; payload : MenuView.Structure }
+		| { type : 'theme-update'; payload : { theme : 'light' | 'dark' } }
+		| { type : 'close' };
+
+	export interface DropdownRequest {
+		items : MenuView.Item[];
+		position : { x : number; y : number };
+		barHeight : number;
+	}
 }
 
 import type {} from 'electron';
