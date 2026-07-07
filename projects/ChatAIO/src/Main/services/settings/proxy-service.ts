@@ -104,6 +104,13 @@ export const applyResolvedProxyToSession = async( ses:Session , resolvedProxy:Re
 		} );
 		return;
 	}
+	// 不显式调用 setProxy({mode:'direct'})，让 Chromium 使用默认行为（跟随系统代理配置）。
+	// 若显式设置 mode:'direct'，Chromium 将绕过系统代理（如 127.0.0.1:7890），
+	// 导致原始 TCP 连接中的 TLS SNI 被 GFW 检测并 RST 阻断 → ERR_CONNECTION_CLOSED。
+	// 不调用 setProxy 时，Chromium 默认跟随 macOS 系统代理 → 走本地代理加密隧道 → 正常连接。
+	if( resolvedProxy.mode === 'direct' ) {
+		return;
+	}
 	await ses.setProxy( {
 		mode : resolvedProxy.mode,
 	} );

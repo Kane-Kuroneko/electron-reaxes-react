@@ -115,12 +115,14 @@ export const reaxel_PromptViews = reaxel( () => {
 		}
 		const width = Math.max( 0 , Math.round( sideState.width ) );
 		const visible = width > 0 || sideState.visible;
+		// macOS hiddenInset: 红绿灯按钮悬浮在内容区域上方，需要预留顶部安全区
+		const topOffset = process.platform === 'darwin' ? 38 : 0;
 		setViewVisibleIfChanged( view , visible );
 		setViewBoundsIfChanged( view , {
 			x : side === 'left' ? 0 : Math.max( 0 , bounds.width - width ) ,
-			y : 0 ,
+			y : topOffset ,
 			width ,
-			height : bounds.height,
+			height : Math.max( 1 , bounds.height - topOffset ),
 		} );
 	};
 	

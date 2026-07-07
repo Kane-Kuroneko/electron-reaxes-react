@@ -40,11 +40,13 @@ export const Reaxel_View = reaxel( () => {
 
 	function getCenterBounds(bounds = mainWindow.getContentBounds()):Rectangle {
 		const promptInsets = reaxel_PromptViews().getLayoutInsets();
+		// macOS hiddenInset: 红绿灯按钮悬浮在内容区域上方，需要预留顶部安全区
+		const topOffset = process.platform === 'darwin' ? 38 : 0;
 		return {
 			x : promptInsets.left ,
-			y : 0 ,
+			y : topOffset ,
 			width : Math.max( 1 , bounds.width - promptInsets.left - promptInsets.right ) ,
-			height : bounds.height,
+			height : Math.max( 1 , bounds.height - topOffset ),
 		};
 	}
 

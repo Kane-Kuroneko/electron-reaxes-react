@@ -11,7 +11,8 @@
 		"build:webpack": "yarn --cwd ../.. tsx scripts/webpack.build/index.ts ChatAIO production",
 		"build:electron": "yarn --cwd ../.. tsx scripts/electron.build/index.ts ChatAIO",
 		"analyze:perf": "yarn --cwd ../.. tsx projects/ChatAIO/scripts/analyze-perf-logs.ts",
-		"analyze:perf:ci": "yarn --cwd ../.. tsx projects/ChatAIO/scripts/analyze-perf-logs.ts --ci"
+		"analyze:perf:ci": "yarn --cwd ../.. tsx projects/ChatAIO/scripts/analyze-perf-logs.ts --ci",
+		"generate-icons": "bash scripts/generate-icons.sh"
 	},
 	"type": "commonjs",
 	"description": "Unified desktop client for multiple AI services",

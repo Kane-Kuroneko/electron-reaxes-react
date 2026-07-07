@@ -107,7 +107,7 @@ export type StartMainRuntimeOptions = {
 	openDevTools?: boolean;
 };
 
-import { createMainWindow , mainWindow } from './mainWindow';
+import { createMainWindow , mainWindow , showMainWindow } from './mainWindow';
 import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import { reaxel_Settings } from "#main/reaxels/Settings";
 import { reaxel_Menu } from './reaxels/Menu';

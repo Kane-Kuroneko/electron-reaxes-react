@@ -21,7 +21,7 @@ export function initTray(): Tray | null {
 		? path.join( process.resourcesPath , 'statics' )
 		: path.join( app.getAppPath() , 'statics' );
 	const iconPath = nativeImage.createFromPath(
-		path.join( staticsDir , process.platform === 'darwin' ? 'tray-icon.png' : 'gpt.ico' ),
+		path.join( staticsDir , process.platform === 'darwin' ? 'tray-icon.macos.png' : 'gpt.ico' ),
 	);
 	
 	// macOS Template Image: 深色菜单栏自动反色，浅色菜单栏保留黑色
