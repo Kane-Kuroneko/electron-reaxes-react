@@ -304,6 +304,7 @@ export const reaxel_AIViews = reaxel( () => {
 		const resolvedProxy = await applyAIProxyToView( runtimeView.view , ai , settings );
 		const appliedProxyKey = JSON.stringify( resolvedProxy );
 		applyAIPageEnvironmentToView( runtimeView.view , nextEnvironment );
+		applyBrowserIdentityToView( runtimeView.view , nextDomain , nextEnvironment.acceptLanguages );
 		const appliedAppearanceKey = getAIPageAppearanceKey( nextEnvironment );
 		applyRuntimeAIViewConfig( runtimeView , ai , nextDomain , appliedProxyKey , appliedAppearanceKey );
 		setAIPageEnvironmentForView( runtimeView.view , nextEnvironment );
@@ -688,6 +689,7 @@ import {
 	getAIPageEnvironment ,
 	getAIPageAppearanceKey ,
 } from '#main/services/appearance';
+import { applyBrowserIdentityToView } from '#main/services/browser-identity';
 import {
 	useIpcMainToRenderer ,
 	useIpcSync,

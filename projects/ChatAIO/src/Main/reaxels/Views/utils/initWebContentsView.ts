@@ -111,11 +111,14 @@ const useAIView = (view:WebContentsView,options:WebContentsViewConstructorOption
 	~async function loadAIView() {
 		try {
 			console.log( '[Views] Loading AI view:' , options.aiConfig?.id , options.domain );
+			const domain = options.domain || 'https://chatgpt.com';
 			if( options.aiConfig && options.settings ) {
 				await applyAIProxyToView( view , options.aiConfig , options.settings );
 				applyAIPageAppearanceToView( view , options.settings.appearance );
+				const environment = getAIPageEnvironment( options.settings.appearance );
+				applyBrowserIdentityToView( view , domain , environment.acceptLanguages );
 			}
-			await safeLoadURL( view , options.domain || "https://chatgpt.com" , `AI-View:${ options.aiConfig?.id || 'unknown' }` );
+			await safeLoadURL( view , domain , `AI-View:${ options.aiConfig?.id || 'unknown' }` );
 		} catch ( error ) {
 			console.warn( '[Views] AI view load pipeline failed:' , options.aiConfig?.id , error );
 		}
@@ -216,7 +219,9 @@ import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {
 	applyAIPageAppearanceToView ,
 	getAIPageBackgroundColor ,
+	getAIPageEnvironment ,
 } from '#main/services/appearance';
+import { applyBrowserIdentityToView } from '#main/services/browser-identity';
 import type { Settings } from "#src/Types/SettingsTypes";
 import type { AI as AISettings } from "#src/Types/SettingsTypes/AI";
 import type { PromptView } from '#src/Types/PromptView';
