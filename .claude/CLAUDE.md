@@ -53,6 +53,12 @@ Broadly reusable, business-agnostic functions go in `utils/` or `toolkits/` of t
 - Concise subject + multiple body bullets covering: product/doc changes, implementation, bug fixes, i18n/config, verification
 - Single-line commits only for genuinely trivial changes
 
+### 10. Windows FloatingView Mouse Passthrough
+- Never change ChatAIO FloatingView to `setIgnoreMouseEvents(true, { forward: true })` on Windows.
+- Electron mouse forwarding conflicts with dragging another BrowserWindow and causes menubar jitter, flicker, and sticky lag even when FloatingView is hidden.
+- Keep `{ forward: false }`; if forwarded mouse movement ever becomes necessary, disable forwarding for the full window move/resize interval and rerun the regression matrix.
+- Read [`menubar-drag-investigation.md`](../projects/ChatAIO/docs/issues/menubar-drag-investigation.md) before changing FloatingView, menubar drag regions, transparent windows, or mouse passthrough.
+
 ## Path Aliases
 
 | Alias | Resolves to |
@@ -106,6 +112,7 @@ Known caveat: current tsconfigs may surface pre-existing `typeRoots`/generic-ser
 - `projects/ChatAIO/docs/architecture/ai-config.md` — AI config dual-layer system
 - `projects/ChatAIO/docs/architecture/build-pipeline-and-dev-refresh.md` — Build system
 - `projects/ChatAIO/docs/architecture/i18n.md` — i18n architecture
+- [`projects/ChatAIO/docs/issues/menubar-drag-investigation.md`](../projects/ChatAIO/docs/issues/menubar-drag-investigation.md) — Windows FloatingView mouse-forwarding drag bug, root cause, fix, and regression matrix
 - `projects/ChatAIO/fixme.md` — Prioritized bug/issue tracker (P0–P3)
 
 ## Reaxes Source

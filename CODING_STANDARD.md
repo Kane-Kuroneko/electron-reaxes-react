@@ -432,6 +432,13 @@ window.core_store = store;
 // });
 ```
 
+### 10.4 ChatAIO Windows FloatingView 鼠标穿透
+
+- 禁止将 FloatingView 改为 `setIgnoreMouseEvents(true, { forward: true })`。
+- Windows 上 Electron mouse forwarding 会干扰其它 BrowserWindow 的系统拖动，造成 Web menubar 抖动、闪烁和粘滞；FloatingView 即使 hidden 也可能触发。
+- 当前必须保留 `{ forward: false }`。若未来确需转发 `mousemove`，应在窗口移动/缩放期间关闭 forwarding，并完整回归。
+- 修改 FloatingView、menubar drag region、透明窗口或鼠标穿透前，必须阅读 [`projects/ChatAIO/docs/issues/menubar-drag-investigation.md`](projects/ChatAIO/docs/issues/menubar-drag-investigation.md)。
+
 ---
 
 ## 1️⃣1️⃣ 文件命名规范 📄
@@ -475,6 +482,7 @@ utils/
 - [ ] **是否优先使用路径别名（`#` 开头）？**
 - [ ] **组件是否使用 `reaxper` 包裹？**
 - [ ] **错误处理是否包含 `debugger`（可选）？**
+- [ ] **ChatAIO FloatingView 是否保持 `forward: false`，并检查了 Windows 拖拽回归文档？**
 
 ---
 

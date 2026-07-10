@@ -12,6 +12,7 @@ Read these files before changing behavior:
 - `.qoder/rules/ipc-coding.md`
 - `CODING_STANDARD.md`
 - The target subproject docs such as `projects/ChatAIO/docs/architecture/ai-config.md` and `projects/ChatAIO/todo.md`
+- Before changing ChatAIO FloatingView, menubar, transparent windows, or mouse passthrough, read [`menubar-drag-investigation.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md).
 
 Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with npm. The local Reaxes implementation is available at `Z:\reaxes` when library behavior is unclear.
 
@@ -49,6 +50,13 @@ Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with n
 - Each AI page needs an isolated persistent partition/session. Use stable partition names derived from `AIItem.id`.
 - Global proxy is the default only for AIs whose `proxy_mode` is `follow_global_setting`. Per-AI `direct`, `from_server_list`, and `user_fill` settings override global proxy entirely.
 - After settings apply/save, persist settings, sync existing AI views, update sessions/proxy, and rebuild the menu. Return a restart-required result only for settings that cannot be applied to existing Electron processes.
+
+## Windows FloatingView Mouse Passthrough
+
+- Do not change ChatAIO FloatingView to `setIgnoreMouseEvents(true, { forward: true })` on Windows.
+- Electron's mouse forwarding hook conflicts with dragging another BrowserWindow, including a `-webkit-app-region: drag` menubar, causing jitter, flicker, and sticky lag even when FloatingView is hidden.
+- Keep `{ forward: false }` unless a new feature demonstrably requires forwarded `mousemove`; then redesign or disable forwarding throughout window move/resize and rerun the documented regression matrix.
+- Canonical root-cause evidence and upstream Electron issues: [`menubar-drag-investigation.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md).
 
 ## Validation
 

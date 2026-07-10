@@ -179,3 +179,5 @@ api.testProxyServer(payload, url);
 - [ ] 渲染进程是否**没有**导入 `createIpc` 或 `ipcRenderer`？
 - [ ] 新增的 IPC 通道是否已在 `IpcSchema.d.ts` 中定义类型？
 - [ ] 跨 IPC 传递 store 数据前是否使用了 `cloneForIPC`？
+
+> ChatAIO FloatingView/menubar/窗口鼠标穿透改动还必须阅读 [`menubar-drag-investigation.md`](../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md)；Windows 上禁止启用 `setIgnoreMouseEvents(..., { forward: true })`。

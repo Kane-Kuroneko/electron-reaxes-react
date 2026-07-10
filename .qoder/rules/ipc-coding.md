@@ -194,3 +194,5 @@ window.api.exitSettings();
 - 🔒 渲染进程只能通过 preload 暴露的 API 与主进程通信
 - 🛠️ 主进程必须使用项目封装的 IPC 工具,统一管理事件注册和分发
 - 📝 所有 IPC 通道必须有明确的类型定义
+
+> ChatAIO FloatingView/menubar/窗口鼠标穿透改动还必须阅读 [`menubar-drag-investigation.md`](../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md)；Windows 上禁止启用 `setIgnoreMouseEvents(..., { forward: true })`。

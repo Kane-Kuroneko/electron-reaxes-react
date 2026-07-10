@@ -147,7 +147,7 @@ finishAnimation():
 ### 3.1 已确认安全的路径
 
 - ✅ **非当前视图的 `did-stop-loading`** → `focusAIViewIfCurrent()` 因 `currentAIViewKey !== aiId` 返回 → **无焦点窃取**
-- ✅ **FloatingView 创建/显示/隐藏** → `focusable: false` + `setIgnoreMouseEvents(true)` → **无焦点窃取**
+- ✅ **FloatingView 创建/显示/隐藏** → `focusable: false` + `setIgnoreMouseEvents(true, { forward: false })` → **无焦点窃取**。Windows 上禁止改为 `forward: true`，否则会触发另一窗口拖拽抖动；详见 [`menubar-drag-investigation.md`](../issues/menubar-drag-investigation.md)。
 - ✅ **Settings 打开时** → `focusAIViewIfCurrent()` 被 `settingsViewOpened` 阻挡 → **无焦点窃取**
 - ✅ **主窗口未聚焦时** → `focusAIViewIfCurrent()` 被 `!mainWindow.isFocused()` 阻挡 → **无焦点窃取**
 

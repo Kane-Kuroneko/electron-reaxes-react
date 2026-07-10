@@ -1455,3 +1455,5 @@ counterB.store.count;  // 100——完全独立
 | `refaxel-i18n` | 国际化支持 | Refaxel 多例工厂，支持多实例独立语言管理，提供 `i18n()` 函数和 `createI18nReactComponent` 视图组件 |
 | `reaxel-persist` | 状态持久化 | 基于 class 的持久化方案（支持 localStorage/sessionStorage），与 `rehance_BrowserPersist` 是不同实现 |
 | `reaxel-time-machine` | 时间旅行调试 | 提供撤销/重做、时间线导航等状态历史管理能力 |
+
+> ChatAIO FloatingView/menubar/窗口鼠标穿透改动还必须阅读 [`menubar-drag-investigation.md`](../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md)；Windows 上禁止启用 `setIgnoreMouseEvents(..., { forward: true })`。
