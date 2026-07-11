@@ -1,5 +1,7 @@
 // Before-Launch: app初始化前的同步逻辑
 
+applyGlobalBrowserIdentityFallback();
+
 // 安装source-map支持
 install();
 
@@ -71,6 +73,7 @@ function getPreLaunchSystemLanguage() {
 }
 
 import './foundation/electron.conf';
+import { applyGlobalBrowserIdentityFallback } from '#main/services/browser-identity';
 import { install } from 'source-map-support';
 import logger from 'electron-log/main';
 import { app, BrowserWindow, nativeTheme } from 'electron';

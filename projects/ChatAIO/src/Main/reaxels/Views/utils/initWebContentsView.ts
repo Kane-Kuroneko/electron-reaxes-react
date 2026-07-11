@@ -5,6 +5,7 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	
 	const viewOptions = normalizeViewOptions( options );
 	const view = new WebContentsView(viewOptions);
+	primeAIPageEnvironmentForView( view , viewOptions );
 	installWebContentsKeyboardGuard( view.webContents );
 	applyInitialViewBackground( view , viewOptions );
 	if( dev() ) {
@@ -111,11 +112,14 @@ const useAIView = (view:WebContentsView,options:WebContentsViewConstructorOption
 	~async function loadAIView() {
 		try {
 			console.log( '[Views] Loading AI view:' , options.aiConfig?.id , options.domain );
+			const domain = options.domain || 'https://chatgpt.com';
 			if( options.aiConfig && options.settings ) {
 				await applyAIProxyToView( view , options.aiConfig , options.settings );
 				applyAIPageAppearanceToView( view , options.settings.appearance );
+				const environment = getAIPageEnvironment( options.settings.appearance );
+				applyBrowserIdentityToView( view , domain , environment.acceptLanguages );
 			}
-			await safeLoadURL( view , options.domain || "https://chatgpt.com" , `AI-View:${ options.aiConfig?.id || 'unknown' }` );
+			await safeLoadURL( view , domain , `AI-View:${ options.aiConfig?.id || 'unknown' }` );
 		} catch ( error ) {
 			console.warn( '[Views] AI view load pipeline failed:' , options.aiConfig?.id , error );
 		}
@@ -183,9 +187,31 @@ const applyInitialViewBackground = (
 	view.setBackgroundColor( getAIPageBackgroundColor( options.settings.appearance ) );
 };
 
+const primeAIPageEnvironmentForView = (
+	view:WebContentsView ,
+	options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions,
+) => {
+	if( options.type !== 'AI-View' || !options.settings ) {
+		return;
+	}
+	const domain = options.domain || 'https://chatgpt.com';
+	const environment = getAIPageEnvironment( options.settings.appearance );
+	const identity = resolveBrowserIdentityState(
+		domain ,
+		view.webContents.session.getUserAgent(),
+	);
+	registerAIPageEnvironmentForWebContents(
+		view.webContents ,
+		mergeBrowserIdentityIntoEnvironment( environment , identity ),
+	);
+};
+
 const shouldOpenInCurrentView = (currentURL:string , nextURL:string) => {
 	try {
-		return new URL( currentURL ).origin === new URL( nextURL ).origin;
+		if( new URL( currentURL ).origin === new URL( nextURL ).origin ) {
+			return true;
+		}
+		return shouldOpenGoogleAuthInCurrentView( currentURL , nextURL );
 	} catch ( error ) {
 		return false;
 	}
@@ -216,7 +242,15 @@ import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {
 	applyAIPageAppearanceToView ,
 	getAIPageBackgroundColor ,
+	getAIPageEnvironment ,
 } from '#main/services/appearance';
+import {
+	applyBrowserIdentityToView ,
+	mergeBrowserIdentityIntoEnvironment ,
+	resolveBrowserIdentityState ,
+	shouldOpenGoogleAuthInCurrentView,
+} from '#main/services/browser-identity';
+import { registerAIPageEnvironmentForWebContents } from '#main/reaxels/Views/AI-Views/ai-page-environment';
 import type { Settings } from "#src/Types/SettingsTypes";
 import type { AI as AISettings } from "#src/Types/SettingsTypes/AI";
 import type { PromptView } from '#src/Types/PromptView';

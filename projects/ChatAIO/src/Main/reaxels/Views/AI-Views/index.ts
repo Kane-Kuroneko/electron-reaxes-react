@@ -8,7 +8,7 @@ export const reaxel_AIViews = reaxel( () => {
 	} );
 
 	useIpcSync( 'get-ai-page-environment' ).handle( ( { event } ) => {
-		return getAIPageEnvironmentForWebContents( event.sender );
+		return getRegisteredAIPageEnvironment( event.sender );
 	} );
 
 	const initAIView = ( ai:AI.AIItem , settings:Settings ) => {
@@ -232,11 +232,12 @@ export const reaxel_AIViews = reaxel( () => {
 		options:CreateRuntimeAIViewOptions = {},
 	):RuntimeAIView => {
 		const domain = ai.url || getAIDomainByFamily( ai.AI_family );
+		const loadDomain = options.loadURL || domain;
 		const partition = getAIPartition( ai.id );
 		const environment = getRuntimeAIPageEnvironment( settings );
 		const view = initWebContentsView( {
 			type : 'AI-View' ,
-			domain : options.loadURL || domain ,
+			domain : loadDomain ,
 			aiConfig : ai ,
 			settings ,
 			refreshBounds : view => {
@@ -246,7 +247,17 @@ export const reaxel_AIViews = reaxel( () => {
 				partition,
 			},
 		} );
-		setAIPageEnvironmentForView( view , environment );
+		const browserIdentity = applyBrowserIdentityToView(
+			view ,
+			loadDomain ,
+			environment.acceptLanguages,
+		);
+		const environmentWithIdentity = mergeBrowserIdentityIntoEnvironment(
+			environment ,
+			browserIdentity,
+		);
+		setAIPageEnvironmentForView( view , environmentWithIdentity );
+		sendAIPageEnvironmentToView( view , environmentWithIdentity , ai.id );
 		if( typeof options.visible === 'boolean' ) {
 			view.setVisible( options.visible );
 		}
@@ -296,13 +307,22 @@ export const reaxel_AIViews = reaxel( () => {
 
 		const resolvedProxy = await applyAIProxyToView( runtimeView.view , ai , settings );
 		const appliedProxyKey = JSON.stringify( resolvedProxy );
+		const browserIdentity = applyBrowserIdentityToView(
+			runtimeView.view ,
+			nextDomain ,
+			nextEnvironment.acceptLanguages,
+		);
+		const environmentWithIdentity = mergeBrowserIdentityIntoEnvironment(
+			nextEnvironment ,
+			browserIdentity,
+		);
 		applyAIPageEnvironmentToView( runtimeView.view , nextEnvironment );
 		const appliedAppearanceKey = getAIPageAppearanceKey( nextEnvironment );
 		applyRuntimeAIViewConfig( runtimeView , ai , nextDomain , appliedProxyKey , appliedAppearanceKey );
-		setAIPageEnvironmentForView( runtimeView.view , nextEnvironment );
+		setAIPageEnvironmentForView( runtimeView.view , environmentWithIdentity );
 
-		if( appearanceChanged ) {
-			sendAIPageEnvironmentToView( runtimeView.view , nextEnvironment , runtimeView.id );
+		if( appearanceChanged || domainChanged ) {
+			sendAIPageEnvironmentToView( runtimeView.view , environmentWithIdentity , runtimeView.id );
 		}
 
 		if( domainChanged ) {
@@ -320,8 +340,6 @@ export const reaxel_AIViews = reaxel( () => {
 		mutate,
 	} );
 } );
-
-const aiPageEnvironmentByWebContents = new WeakMap<WebContents , AIPageEnvironment>();
 
 const safeLoadAIURL = async(
 	view:WebContentsView ,
@@ -464,11 +482,7 @@ const setAIPageEnvironmentForView = (
 	view:WebContentsView ,
 	environment:AIPageEnvironment,
 ) => {
-	aiPageEnvironmentByWebContents.set( view.webContents , environment );
-};
-
-const getAIPageEnvironmentForWebContents = (webContents:WebContents) => {
-	return aiPageEnvironmentByWebContents.get( webContents ) || null;
+	registerAIPageEnvironmentForWebContents( view.webContents , environment );
 };
 
 const sendAIPageEnvironmentToView = (
@@ -492,7 +506,7 @@ const closeRuntimeWebContentsView = (
 ) => {
 	try {
 		mainWindow.contentView.removeChildView( view );
-		aiPageEnvironmentByWebContents.delete( view.webContents );
+		deleteRegisteredAIPageEnvironment( view.webContents );
 		if( !view.webContents.isDestroyed() ) {
 			view.webContents.close();
 		}
@@ -681,6 +695,15 @@ import {
 	getAIPageEnvironment ,
 	getAIPageAppearanceKey ,
 } from '#main/services/appearance';
+import {
+	applyBrowserIdentityToView ,
+	mergeBrowserIdentityIntoEnvironment,
+} from '#main/services/browser-identity';
+import {
+	deleteRegisteredAIPageEnvironment ,
+	getRegisteredAIPageEnvironment ,
+	registerAIPageEnvironmentForWebContents,
+} from './ai-page-environment';
 import {
 	useIpcMainToRenderer ,
 	useIpcSync,

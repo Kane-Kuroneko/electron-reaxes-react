@@ -90,13 +90,7 @@ export const applyAIPageEnvironmentToView = (
 	environment:AIPageEnvironment,
 ) => {
 	view.setBackgroundColor( environment.backgroundColor );
-	const ses = view.webContents.session;
-	installAcceptLanguageHeader( ses , environment.acceptLanguages );
-	try {
-		ses.setUserAgent( ses.getUserAgent() , environment.acceptLanguages );
-	} catch ( error ) {
-		console.warn( '[Appearance] Failed to set session accept languages:' , error );
-	}
+	installAcceptLanguageHeader( view.webContents.session , environment.acceptLanguages );
 };
 
 export const getAIPageEnvironment = (appearance:Settings['appearance']):AIPageEnvironment => {
@@ -122,10 +116,7 @@ const installAcceptLanguageHeader = (ses:Session , acceptLanguages:string) => {
 		return;
 	}
 	sessionLanguageHandlers.set( ses , acceptLanguages );
-	ses.webRequest.onBeforeSendHeaders( ( details , callback ) => {
-		details.requestHeaders['Accept-Language'] = acceptLanguages;
-		callback( { requestHeaders : details.requestHeaders } );
-	} );
+	applySessionAcceptLanguages( ses , acceptLanguages );
 };
 
 const getSystemTheme = ():'light' | 'dark' => {
@@ -163,6 +154,7 @@ import {
 	resolveLanguagePreference ,
 	resolveThemePreference,
 } from '#src/shared/appearance';
+import { applySessionAcceptLanguages } from '#main/services/browser-identity';
 import type { Settings } from '#src/Types/SettingsTypes';
 import type { Appearance } from '#src/Types/SettingsTypes/Appearance';
 import type { Languages } from '#src/Types/Languages';
