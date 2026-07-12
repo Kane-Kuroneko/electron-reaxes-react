@@ -33,10 +33,12 @@
 
 在同一 ChatAIO/Electron 壳内：
 
-| 场景 | 结果 |
-|------|------|
+
+| 场景                                         | 结果   |
+| ------------------------------------------ | ---- |
 | ChatGPT / Grok / Gemini 使用 Google OAuth 登录 | 通常正常 |
-| Google AI Studio 登录 / 生成 | 失败 |
+| Google AI Studio 登录 / 生成                   | 失败   |
+
 
 这说明 **不是 Google 账号体系对 Electron 的全域封禁**，而是 AI Studio 路径上有额外检测，且 ChatAIO 早期对 AI Studio 的处理策略不当。
 
@@ -46,12 +48,14 @@
 
 ### Google 登录 vs AI Studio 控制面
 
-| 层级 | 域名/服务 | 用途 |
-|------|-----------|------|
-| 标准 Google OAuth | `accounts.google.com` | 各站点通用的 Google 账号登录 |
-| Gemini Web | `gemini.google.com` | 消费端 Gemini 界面 |
-| AI Studio | `aistudio.google.com` | MakerSuite 开发者控制台 |
-| AI Studio RPC | `alkalimakersuite-pa.clients6.google.com` | 内部 `GenerateContent` 等控制面 RPC |
+
+| 层级              | 域名/服务                                     | 用途                            |
+| --------------- | ----------------------------------------- | ----------------------------- |
+| 标准 Google OAuth | `accounts.google.com`                     | 各站点通用的 Google 账号登录            |
+| Gemini Web      | `gemini.google.com`                       | 消费端 Gemini 界面                 |
+| AI Studio       | `aistudio.google.com`                     | MakerSuite 开发者控制台             |
+| AI Studio RPC   | `alkalimakersuite-pa.clients6.google.com` | 内部 `GenerateContent` 等控制面 RPC |
+
 
 Gemini 与 AI Studio **不是同一套后端**。AI Studio 文档与论坛案例表明，除 IAM/地区/ToS 外，还有 **Security checks / Trust & Safety / BotGuard** 等额外校验。
 
@@ -117,13 +121,15 @@ app.commandLine.appendSwitch('remote-debugging-port', '9222');
 
 ### 模块：`src/Main/services/browser-identity/index.ts`
 
-| 能力 | 说明 |
-|------|------|
-| `applyGlobalBrowserIdentityFallback()` | 启动时清理 `app.userAgentFallback` 中的 `Electron/`、`ChatAIO/` |
-| `applyBrowserIdentityToView()` | 对每个 AI view 的 session + webContents 设置清理后的 UA |
-| `webRequest.onBeforeSendHeaders` | 统一覆盖 session 全部请求的 `User-Agent` 与 `Accept-Language` |
-| `shouldOpenGoogleAuthInCurrentView()` | Google 域内 OAuth 跳转保留在当前 view，避免 session 断裂 |
-| `resolveBrowserIdentityMode('google-ai-studio')` | 标记 AI Studio 页面，供环境同步与未来扩展 |
+
+| 能力                                               | 说明                                                      |
+| ------------------------------------------------ | ------------------------------------------------------- |
+| `applyGlobalBrowserIdentityFallback()`           | 启动时清理 `app.userAgentFallback` 中的 `Electron/`、`ChatAIO/` |
+| `applyBrowserIdentityToView()`                   | 对每个 AI view 的 session + webContents 设置清理后的 UA           |
+| `webRequest.onBeforeSendHeaders`                 | 统一覆盖 session 全部请求的 `User-Agent` 与 `Accept-Language`     |
+| `shouldOpenGoogleAuthInCurrentView()`            | Google 域内 OAuth 跳转保留在当前 view，避免 session 断裂              |
+| `resolveBrowserIdentityMode('google-ai-studio')` | 标记 AI Studio 页面，供环境同步与未来扩展                              |
+
 
 **刻意不做**：
 
@@ -133,13 +139,15 @@ app.commandLine.appendSwitch('remote-debugging-port', '9222');
 
 ### 其他改动
 
-| 文件 | 改动 |
-|------|------|
-| `before-launch.ts` | 最早时机调用 `applyGlobalBrowserIdentityFallback()` |
-| `electron.conf.ts` | 全局 `disable-blink-features=AutomationControlled` |
-| `ai-page-preload.ts` | 屏蔽 `navigator.webdriver`（轻量，不伪造 Chrome） |
-| `ai-page-environment.ts` | WebContents → AIPageEnvironment 注册，修复 preload 读取时序 |
-| `appearance/index.ts` | Accept-Language 与 UA 请求头合并到 browser-identity 单 handler |
+
+| 文件                       | 改动                                                     |
+| ------------------------ | ------------------------------------------------------ |
+| `before-launch.ts`       | 最早时机调用 `applyGlobalBrowserIdentityFallback()`          |
+| `electron.conf.ts`       | 全局 `disable-blink-features=AutomationControlled`       |
+| `ai-page-preload.ts`     | 屏蔽 `navigator.webdriver`（轻量，不伪造 Chrome）                |
+| `ai-page-environment.ts` | WebContents → AIPageEnvironment 注册，修复 preload 读取时序     |
+| `appearance/index.ts`    | Accept-Language 与 UA 请求头合并到 browser-identity 单 handler |
+
 
 ### 策略原则
 
@@ -152,12 +160,14 @@ app.commandLine.appendSwitch('remote-debugging-port', '9222');
 
 ## 无效或高风险尝试（勿重复）
 
-| 尝试 | 结果 |
-|------|------|
-| 完整 Chrome UA + 手工 Sec-CH-UA | 登录仍 `not secure`，可能加剧指纹不一致 |
-| Preload 覆盖 `navigator.userAgent` | 与 HTTP 头 / userAgentData 更易失配 |
-| 仅 per-webContents UA，不清理 session/global | 子资源请求仍带 Electron 标记 |
-| Dev 模式 + remote-debugging 下测试 | 易误判为方案无效 |
+
+| 尝试                                      | 结果                            |
+| --------------------------------------- | ----------------------------- |
+| 完整 Chrome UA + 手工 Sec-CH-UA             | 登录仍 `not secure`，可能加剧指纹不一致    |
+| Preload 覆盖 `navigator.userAgent`        | 与 HTTP 头 / userAgentData 更易失配 |
+| 仅 per-webContents UA，不清理 session/global | 子资源请求仍带 Electron 标记           |
+| Dev 模式 + remote-debugging 下测试           | 易误判为方案无效                      |
+
 
 ---
 
@@ -201,8 +211,8 @@ navigator.userAgentData?.brands
 3. **检查 popup 策略**：OAuth/passkey 是否需要独立 BrowserWindow（同 partition、无 preload）
 4. **账号/地区/ToS**：AI Studio 独立的风控与 IAM（与 Gemini 登录成功不矛盾）
 5. **外部浏览器登录 + Session 导入**（社区 fallback）：
-   - [Google-AI-Studio-Desktop](https://github.com/Augus1217/Google-AI-Studio-Desktop) 的 External Login + Cookie 注入
-   - 注意：AI Studio 后续 RPC 还可能需要 BotGuard snapshot，单纯 cookie 可能不足以支撑 API 级调用
+  - [Google-AI-Studio-Desktop](https://github.com/Augus1217/Google-AI-Studio-Desktop) 的 External Login + Cookie 注入
+  - 注意：AI Studio 后续 RPC 还可能需要 BotGuard snapshot，单纯 cookie 可能不足以支撑 API 级调用
 6. **Chrome CDP 后端**（重量级）：驱动真实 Chrome 而非 Electron WebContents（[Agentify v0.1.0](https://github.com/agentify-sh/desktop/releases/tag/v0.1.0)）
 
 ---
@@ -239,6 +249,9 @@ projects/ChatAIO/
 
 ## 变更历史
 
-| 日期 | 说明 |
-|------|------|
+
+| 日期         | 说明                 |
+| ---------- | ------------------ |
 | 2026-07-11 | 初始文档；生产环境登录与生成验证通过 |
+
+
