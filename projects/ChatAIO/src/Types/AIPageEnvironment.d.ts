@@ -5,6 +5,8 @@ export type AIPageEnvironment = {
 	themeSource: Appearance.Theme;
 	backgroundColor: string;
 	acceptLanguages: string;
+	browserIdentityMode?: 'default' | 'google-ai-studio';
+	browserUserAgent?: string | null;
 };
 
 import type { Languages } from '#src/Types/Languages';

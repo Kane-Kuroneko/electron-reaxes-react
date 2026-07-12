@@ -57,6 +57,18 @@ const defineNavigatorGetter = (key:'language' | 'languages' , getter:() => unkno
 const installNavigatorEnvironment = () => {
 	defineNavigatorGetter( 'language' , () => currentEnvironment.language );
 	defineNavigatorGetter( 'languages' , () => currentEnvironment.languages.slice() );
+	installBrowserIdentitySpoofing();
+};
+
+const installBrowserIdentitySpoofing = () => {
+	try {
+		Object.defineProperty( navigator , 'webdriver' , {
+			get : () => undefined ,
+			configurable : true,
+		} );
+	} catch ( error ) {
+		console.warn( '[AIPagePreload] Failed to mask navigator.webdriver:' , error );
+	}
 };
 
 const applyThemeToDocument = () => {
@@ -91,6 +103,7 @@ const applyAIPageEnvironment = (environment:AIPageEnvironment) => {
 	currentEnvironment = environment;
 	applyThemeToDocument();
 	syncLoadingThemeStyle();
+	installBrowserIdentitySpoofing();
 };
 
 installNavigatorEnvironment();
