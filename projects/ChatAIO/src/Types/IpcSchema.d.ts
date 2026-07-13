@@ -12,8 +12,10 @@ export interface RendererToMainEvents extends Record<string , IpcStructure.Rende
 	'menu-view:action' : IpcStructure.RendererToMainEvent<[MenuView.Action] , {channel:void,args:void[]}>;
 	'menu-view:ready' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
 	'menu-view:resize' : IpcStructure.RendererToMainEvent<[height: number] , {channel:void,args:void[]}>;
-	'dropdown-view:open' : IpcStructure.RendererToMainEvent<[{ items: MenuView.Item[]; anchorRect: { x: number; y: number; width: number; height: number }; menuIndex: number }] , {channel:void,args:void[]}>;
+	'dropdown-view:open' : IpcStructure.RendererToMainEvent<[MainView.DropdownRequest] , {channel:void,args:void[]}>;
 	'dropdown-view:close' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
+	'dropdown-view:focus-item' : IpcStructure.RendererToMainEvent<[index: number] , {channel:void,args:void[]}>;
+	'menubar:error-report' : IpcStructure.RendererToMainEvent<[MenubarErrorReport] , {channel:void,args:void[]}>;
 }
 
 export interface MainToRendererEvents extends Record<string , IpcStructure.MainToRendererEvent<unknown[]>> {
@@ -87,5 +89,6 @@ import type { Languages } from '#src/Types/Languages';
 import type { Guiding } from '#src/Types/Guiding';
 import type { AIPageEnvironment } from '#src/Types/AIPageEnvironment';
 import type { PromptView } from '#src/Types/PromptView';
-import type { MenuView } from '#src/Types/MenuView';
+import type { MenubarErrorReport } from '#main/services/menubar-error-log.utility';
+import type { MenuView , MainView } from '#src/Types/MenuView';
 import type { DropdownView } from '#src/Types/DropdownView';

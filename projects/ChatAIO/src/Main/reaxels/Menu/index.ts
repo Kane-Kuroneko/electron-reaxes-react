@@ -25,10 +25,28 @@ export const reaxel_Menu = reaxel( () => {
 	 * 生成可序列化的菜单结构数据（替代 createMenu 的 native Menu 构建）
 	 * 供 MenuView WebContentsView 使用，通过 IPC 下发到渲染进程。
 	 */
+	function createMenuChrome(): MenuView.Chrome {
+		const settingsViewOpened = Reaxel_View.store.settingsViewOpened;
+		if( settingsViewOpened ) {
+			return {
+				currentContextLabel : t( 'Settings' ) ,
+				settingsViewOpened : true ,
+			};
+		}
+		const currentAI = reaxel_AIViews().currentAIView;
+		const settings = getRuntimeSettings();
+		const fallbackAI = settings.AIs.find( ai => ai.id === Reaxel_View.store.currentAIViewKey );
+		const label = currentAI?.label || currentAI?.id || fallbackAI?.label || fallbackAI?.id || '';
+		return {
+			currentContextLabel : label ,
+			settingsViewOpened : false ,
+		};
+	}
+
 	function createMenuData(): MenuView.Structure {
 		const settings = getRuntimeSettings();
 		const enabledAIs = settings.AIs.filter( ai => !ai.disabled );
-		const { currentAIViewKey } = Reaxel_View.store;
+		const { currentAIViewKey , settingsViewOpened } = Reaxel_View.store;
 		const instantiatedAIViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
 		const canSwitchInstantiatedAI = instantiatedAIViews.length > 1;
 		const nextInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , 1 );
@@ -37,7 +55,7 @@ export const reaxel_Menu = reaxel( () => {
 		const promptViewRightVisible = reaxel_PromptViews.store.right.visible || reaxel_PromptViews.store.right.width > 0;
 		const platform = process.platform;
 
-		return [
+		const topLevelItems: MenuView.Structure = [
 			{
 				id : 'application' ,
 				label : t('Application') ,
@@ -46,7 +64,8 @@ export const reaxel_Menu = reaxel( () => {
 					{
 						id : 'settings' ,
 						label : t('Settings') ,
-						type : 'normal' ,
+						type : 'checkbox' ,
+						checked : settingsViewOpened ,
 						enabled : true ,
 						action : 'open-settings',
 					} ,
@@ -178,7 +197,7 @@ export const reaxel_Menu = reaxel( () => {
 							type : 'radio' as const ,
 							checked : currentAIViewKey === ai.id ,
 							enabled : true ,
-							icon : isAIInstantiated( ai.id ) ? '✅' : undefined ,
+							loadState : isAIInstantiated( ai.id ) ? 'instantiated' as const : 'unloaded' as const ,
 							action : 'switch-ai' as const ,
 							actionPayload : ai.id,
 						} ) ) ,
@@ -226,21 +245,36 @@ export const reaxel_Menu = reaxel( () => {
 						} ,
 					],
 			} ,
-			{
-				id : 'prev-instantiated' ,
-				label : createAdjacentAIMenuLabel( '⏮️' , t( 'Prev' ) , previousInstantiatedAI ) ,
-				submenu : [] ,
-				enabled : canSwitchInstantiatedAI ,
-				action : 'prev-instantiated',
-			} ,
-			{
-				id : 'next-instantiated' ,
-				label : createAdjacentAIMenuLabel( '⏭️' , t( 'Next' ) , nextInstantiatedAI ) ,
-				submenu : [] ,
-				enabled : canSwitchInstantiatedAI ,
-				action : 'next-instantiated',
-			} ,
 		];
+
+		if( canSwitchInstantiatedAI ) {
+			const prevName = previousInstantiatedAI?.label || previousInstantiatedAI?.id || '';
+			const nextName = nextInstantiatedAI?.label || nextInstantiatedAI?.id || '';
+			topLevelItems.push(
+				{
+					id : 'prev-instantiated' ,
+					label : t( 'Prev' ) ,
+					submenu : [] ,
+					enabled : true ,
+					icon : 'chevron-left' ,
+					adjacentLabel : prevName || undefined ,
+					tooltip : prevName ? `${ t( 'Prev' ) }: ${ prevName }` : t( 'Prev' ) ,
+					action : 'prev-instantiated',
+				} ,
+				{
+					id : 'next-instantiated' ,
+					label : t( 'Next' ) ,
+					submenu : [] ,
+					enabled : true ,
+					icon : 'chevron-right' ,
+					adjacentLabel : nextName || undefined ,
+					tooltip : nextName ? `${ t( 'Next' ) }: ${ nextName }` : t( 'Next' ) ,
+					action : 'next-instantiated',
+				} ,
+			);
+		}
+
+		return topLevelItems;
 	}
 
 	function createMenu() {
@@ -562,6 +596,7 @@ export const reaxel_Menu = reaxel( () => {
 		menuReady ,
 		createMenu ,
 		createMenuData ,
+		createMenuChrome ,
 		rebuildMenu,
 		scheduleMenuUpdate,
 		setI18nInstance,

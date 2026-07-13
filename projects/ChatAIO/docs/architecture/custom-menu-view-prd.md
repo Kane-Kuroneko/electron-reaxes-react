@@ -525,7 +525,7 @@ obsReaction((first) => {
 | **reaxper 包装** | ✅ 所有组件用 `reaxper()` |
 | **WebContentsView** | ✅ 使用 `initWebContentsView()` 基础设施 |
 | **preload 隔离** | ✅ 渲染进程通过 `window.api` 通信 |
-| **cloneForIPC** | ✅ 菜单数据是纯 JSON，IPC 不需要 cloneForIPC；但 MobX observable 需要先 `toJS()` 再发送 |
+| **cloneForIPC** | ✅ 主进程 `createMenuData()` 首次下发为 plain JSON；**进入 `reaxel_MainView.store` 后变为 observable**。凡 Renderer → Main（`openDropdownView`、`menuViewAction` 等）及主进程转发 DropdownView 前，**必须** `cloneForIPC`。详见 `.qoder/rules/ipc-coding.md`「Store 往返」 |
 | **React hooks** | ✅ 通过 ProvidePlugin 全局注入，无需显式 import |
 | **Way A 业务逻辑** | ✅ 菜单 action 使用 Way A（命令式），主进程 `reaxel_MenuView` 显式处理 action → setState → follow-up |
 

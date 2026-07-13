@@ -54,6 +54,8 @@ const onMenuViewCommand = (callback:(command:MenuView.MenuCommand) => void) => {
 };
 const openDropdownView = useRtm('dropdown-view:open');
 const closeDropdownView = useRtm('dropdown-view:close');
+const focusDropdownViewItem = useRtm('dropdown-view:focus-item');
+const reportMenubarError = useRtm('menubar:error-report');
 const onDropdownViewCommand = (callback:(command:DropdownView.Command) => void) => {
 	return useMtr( 'dropdown-view:command' )( ( _ , command ) => {
 		callback( command );
@@ -96,6 +98,8 @@ const api = {
 	menuViewAction,
 	openDropdownView,
 	closeDropdownView,
+	focusDropdownViewItem,
+	reportMenubarError,
 	onDropdownViewCommand,
 	menuViewReady,
 	menuViewResize,

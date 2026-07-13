@@ -1,3 +1,5 @@
+installMenubarRendererErrorHandlers( 'dropdown-view-renderer' );
+
 const root = createRoot( document.getElementById( 'react-app-root' ) );
 
 root.render( <App /> );
@@ -5,3 +7,4 @@ root.render( <App /> );
 
 import { App } from './App';
 import { createRoot } from 'react-dom/client';
+import { installMenubarRendererErrorHandlers } from '#src/shared/utils/menubar-error-report.utility';

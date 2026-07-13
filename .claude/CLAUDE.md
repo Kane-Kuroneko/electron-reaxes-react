@@ -31,8 +31,8 @@ Single quotes preferred. Semicolons at statement ends.
 - **Renderer**: use `window.api.xxx()` — NEVER import `ipcRenderer` or `createIpc` in renderer code
 - **Main process**: use `useIpcRpc` / `useIpcRendererToMain` / `useIpcMainToRenderer` — NEVER raw `ipcMain.on` / `ipcMain.handle` / `webContents.send`
 - **New channels**: type in `IpcSchema.d.ts` → expose in `src/preload.ts` → wrap in Settings service if Settings UI needs it
-- **Before crossing IPC**: clone MobX observables with `cloneForIPC()` (from `src/shared/utils/clone-for-ipc.utility.ts`) — raw observables/proxies can't be structured-cloned
-- See `.claude/rules/ipc-coding.md` for full details and code examples
+- **Before crossing IPC**: `cloneForIPC()` on any payload from `reaxel_*.store` — including menubar menu structure after Main→Renderer push (store round-trip). Plain JSON from main **becomes observable in store**; Renderer→Main must clone again.
+- See `.claude/rules/ipc-coding.md` for full details, menubar examples, and review checklist
 
 ### 6. React + Reaxes
 - Wrap components with `reaxper()` for reactive rendering (like MobX `observer`)

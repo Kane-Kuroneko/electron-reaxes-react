@@ -5,6 +5,14 @@
  */
 
 const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 38 : 32;
+const DROPDOWN_MIN_WIDTH = 200;
+const DROPDOWN_MAX_WIDTH = 320;
+const DROPDOWN_CHAR_WIDTH = 7.2;
+const DROPDOWN_ITEM_EXTRA = 88;
+/** 为 CSS box-shadow / border 预留的窗口内边距，避免被透明窗口裁切 */
+const DROPDOWN_CHROME_PAD = 12;
+
+type DropdownOpenPayload = MainView.DropdownRequest;
 
 export const reaxel_MainView = reaxel( () => {
 	const {
@@ -15,50 +23,106 @@ export const reaxel_MainView = reaxel( () => {
 		dropdownWindow : checkAs<BrowserWindow>( null ) ,
 		dropdownLoaded : false ,
 		loaded : false ,
+		mainViewRendererReady : false ,
+		pendingDropdownPayload : checkAs<DropdownOpenPayload | null>( null ) ,
 	} );
 
 	let ipcRegistered = false;
+
+	const runMenubarHandler = (
+		scope : string ,
+		handler : () => void ,
+		context? : Record<string , unknown> ,
+	) => {
+		try {
+			handler();
+		} catch ( error ) {
+			logMenubarError( toMenubarErrorReport( scope , error , {
+				source : 'main' ,
+				context ,
+			} ) );
+		}
+	};
 
 	const registerIpc = () => {
 		if( ipcRegistered ) return;
 		ipcRegistered = true;
 
 		useIpcRendererToMain( 'menu-view:action' ).on( ( _ , action ) => {
-			executeMenuAction( action );
+			runMenubarHandler( 'menu-view:action' , () => {
+				executeMenuAction( action );
+			} , { action : action.action , itemId : action.itemId } );
 		} );
 
 		useIpcRendererToMain( 'menu-view:ready' ).on( () => {
-			sendMenuStructure();
+			runMenubarHandler( 'menu-view:ready' , () => {
+				setState( { mainViewRendererReady : true } );
+				preloadDropdownView();
+				sendMenuStructure();
+			} );
 		} );
 
 		useIpcRendererToMain( 'dropdown-view:open' ).on( ( _ , payload ) => {
-			showDropdownView( payload );
+			runMenubarHandler( 'dropdown-view:open' , () => {
+				showDropdownView( payload );
+			} , {
+				menuIndex : payload.menuIndex ,
+				itemCount : payload.items?.length ?? 0 ,
+			} );
 		} );
 
 		useIpcRendererToMain( 'dropdown-view:close' ).on( () => {
-			hideDropdownView();
+			runMenubarHandler( 'dropdown-view:close' , () => {
+				hideDropdownView( { syncMainView : false } );
+			} );
+		} );
+
+		useIpcRendererToMain( 'dropdown-view:focus-item' ).on( ( _ , index ) => {
+			runMenubarHandler( 'dropdown-view:focus-item' , () => {
+				sendDropdownCommand( {
+					type : 'focus-item' ,
+					index ,
+				} );
+			} , { index } );
+		} );
+
+		useIpcRendererToMain( 'menubar:error-report' ).on( ( _ , report ) => {
+			logMenubarError( report );
 		} );
 	};
 
 	const initMainView = () => {
 		registerIpc();
+		registerMenuShortcutHandlers();
 
-		// 发送菜单结构到 MainView（在 mainWindow.webContents 就绪后）
 		if( mainWindow && !mainWindow.isDestroyed() ) {
 			bindMainWindowEvents();
+			bindMenubarWebContentsLogging( mainWindow.webContents , 'main-view-renderer' );
+			preloadDropdownView();
 			setState( { loaded : true } );
+			console.log( '[Menubar] error log file:' , getMenubarErrorLogPath() );
 		}
 	};
 
+	const preloadDropdownView = () => {
+		if( !mainWindow || mainWindow.isDestroyed() ) return;
+		getOrCreateDropdownWindow();
+	};
+
 	const sendMenuStructure = () => {
+		if( !store.mainViewRendererReady ) return;
 		if( !mainWindow || mainWindow.isDestroyed() ) return;
 		if( mainWindow.webContents.isDestroyed() ) return;
 
+		const menu = reaxel_Menu();
 		useIpcMainToRenderer( 'menu-view:command' )
 			.targets( [ mainWindow.webContents ] )
 			.send( {
 				type : 'menu-view:structure-update' ,
-				payload : reaxel_Menu().createMenuData(),
+				payload : {
+					structure : menu.createMenuData() ,
+					chrome : menu.createMenuChrome(),
+				},
 			} );
 	};
 
@@ -72,6 +136,15 @@ export const reaxel_MainView = reaxel( () => {
 		mainWindow.on( 'unmaximize' , () => {
 			hideDropdownView();
 		} );
+		mainWindow.on( 'minimize' , () => {
+			hideDropdownView();
+		} );
+		mainWindow.on( 'hide' , () => {
+			hideDropdownView();
+		} );
+		mainWindow.on( 'blur' , () => {
+			hideDropdownViewIfAppUnfocused();
+		} );
 		mainWindow.on( 'enter-full-screen' , () => {
 			hideDropdownView();
 			sendCloseToMainView();
@@ -80,62 +153,100 @@ export const reaxel_MainView = reaxel( () => {
 			sendMenuStructure();
 		} );
 		mainWindow.on( 'move' , () => {
-			// 移动时不自动关闭下拉，但需要同步 DropdownView 位置
 			if( store.dropdownWindow && !store.dropdownWindow.isDestroyed() && store.dropdownWindow.isVisible() ) {
 				hideDropdownView();
 			}
 		} );
 	};
 
+	const hideDropdownViewIfAppUnfocused = () => {
+		setTimeout( () => {
+			if( !mainWindow || mainWindow.isDestroyed() ) return;
+
+			const dropdown = store.dropdownWindow;
+			const focusedWindow = BrowserWindow.getFocusedWindow();
+			if( dropdown && !dropdown.isDestroyed() && focusedWindow === dropdown ) {
+				return;
+			}
+			if( mainWindow.isFocused() ) {
+				return;
+			}
+			hideDropdownView();
+		} , 0 );
+	};
+
 	/* ==========================================
 	   DropdownView 管理
 	   ========================================== */
 
-	const showDropdownView = ( payload : {
-		items : MenuView.Item[];
-		anchorRect : { x : number; y : number; width : number; height : number };
-		menuIndex : number;
-	} ) => {
-		const window = getOrCreateDropdownWindow();
+	const showDropdownView = ( payload : DropdownOpenPayload ) => {
+		if( !mainWindow || mainWindow.isDestroyed() ) {
+			throw new Error( 'mainWindow is not available for dropdown positioning' );
+		}
 
-		// 计算下拉窗口位置
+		const window = getOrCreateDropdownWindow();
+		setState( { pendingDropdownPayload : payload } );
+
 		const contentBounds = mainWindow.getContentBounds();
-		// anchorRect 是相对于 mainWindow 内容区的坐标
-		const dropdownX = Math.max( 0 , Math.min( payload.anchorRect.x , contentBounds.width - 240 ) );
+		const dropdownWidth = estimateDropdownWidth( payload.items );
+		const dropdownX = Math.max( 0 , Math.min( payload.anchorRect.x , contentBounds.width - dropdownWidth ) );
 		const dropdownY = MENU_BAR_HEIGHT;
 
-		// 计算高度（根据 items 数量估算）
 		const itemCount = countMenuItems( payload.items );
 		const dropdownHeight = Math.min( Math.max( 60 , itemCount * 28 + 16 ) , contentBounds.height - dropdownY - 16 );
 
-		// 根据主窗口位置计算屏幕坐标
 		const windowPosition = mainWindow.getPosition();
-		const screenX = windowPosition[0] + dropdownX;
-		const screenY = windowPosition[1] + dropdownY;
+		const screenX = windowPosition[0] + dropdownX - DROPDOWN_CHROME_PAD;
+		const screenY = windowPosition[1] + dropdownY - DROPDOWN_CHROME_PAD;
 
 		window.setBounds( {
 			x : screenX ,
 			y : screenY ,
-			width : 240 ,
-			height : dropdownHeight,
+			width : dropdownWidth + DROPDOWN_CHROME_PAD * 2 ,
+			height : dropdownHeight + DROPDOWN_CHROME_PAD * 2 ,
 		} );
+
+		const showCommand : DropdownView.Command = {
+			type : 'show' ,
+			items : cloneForIPC( payload.items ) ,
+			theme : getCurrentTheme() ,
+			focusedIndex : payload.focusedIndex ?? -1 ,
+		};
+
+		if( store.dropdownLoaded ) {
+			sendDropdownCommand( showCommand );
+			window.showInactive();
+			setState( { pendingDropdownPayload : null } );
+		}
+	};
+
+	const hideDropdownView = ( options? : { syncMainView? : boolean } ) => {
+		const syncMainView = options?.syncMainView !== false;
+		setState( { pendingDropdownPayload : null } );
+		const window = store.dropdownWindow;
+		if( window && !window.isDestroyed() ) {
+			sendDropdownCommand( { type : 'hide' } );
+			window.hide();
+		}
+		if( syncMainView ) {
+			sendCloseToMainView();
+		}
+	};
+
+	const flushPendingDropdown = () => {
+		const pending = store.pendingDropdownPayload;
+		if( !pending ) return;
+		const window = store.dropdownWindow;
+		if( !window || window.isDestroyed() ) return;
 
 		sendDropdownCommand( {
 			type : 'show' ,
-			items : payload.items ,
+			items : cloneForIPC( pending.items ) ,
 			theme : getCurrentTheme() ,
-			focusedIndex : -1 ,
+			focusedIndex : pending.focusedIndex ?? -1 ,
 		} );
-
 		window.showInactive();
-	};
-
-	const hideDropdownView = () => {
-		const window = store.dropdownWindow;
-		if( window && !window.isDestroyed() ) {
-			window.hide();
-		}
-		sendCloseToMainView();
+		setState( { pendingDropdownPayload : null } );
 	};
 
 	const getOrCreateDropdownWindow = () => {
@@ -150,7 +261,7 @@ export const reaxel_MainView = reaxel( () => {
 			frame : false ,
 			transparent : true ,
 			backgroundColor : '#00000000' ,
-			hasShadow : true ,
+			hasShadow : false ,
 			resizable : false ,
 			movable : false ,
 			minimizable : false ,
@@ -170,6 +281,7 @@ export const reaxel_MainView = reaxel( () => {
 
 		dropdownWindow.setMenu( null );
 		dropdownWindow.setAlwaysOnTop( true , 'floating' );
+		bindMenubarWebContentsLogging( dropdownWindow.webContents , 'dropdown-view-renderer' );
 
 		setState( {
 			dropdownWindow ,
@@ -184,14 +296,24 @@ export const reaxel_MainView = reaxel( () => {
 			setState( {
 				dropdownWindow : null ,
 				dropdownLoaded : false ,
+				pendingDropdownPayload : null ,
 			} );
 		} );
 
 		dropdownWindow.webContents.once( 'did-finish-load' , () => {
 			setState( { dropdownLoaded : true } );
+			flushPendingDropdown();
 		} );
 
-		// 加载 DropdownView
+		dropdownWindow.webContents.on( 'did-fail-load' , ( _event , errorCode , errorDescription , validatedURL ) => {
+			logMenubarError( {
+				scope : 'dropdown-view:did-fail-load' ,
+				message : `${ errorDescription } (${ errorCode })` ,
+				context : JSON.stringify( { validatedURL } ) ,
+				source : 'main' ,
+			} );
+		} );
+
 		if( dev() ) {
 			const url = createDevRendererEntryURL( 'DropdownView' );
 			dropdownWindow.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
@@ -208,6 +330,7 @@ export const reaxel_MainView = reaxel( () => {
 	const sendDropdownCommand = ( command : DropdownView.Command ) => {
 		const window = store.dropdownWindow;
 		if( !window || window.isDestroyed() ) return;
+		if( window.webContents.isDestroyed() ) return;
 
 		useIpcMainToRenderer( 'dropdown-view:command' )
 			.targets( [ window.webContents ] )
@@ -215,6 +338,7 @@ export const reaxel_MainView = reaxel( () => {
 	};
 
 	const sendCloseToMainView = () => {
+		if( !store.mainViewRendererReady ) return;
 		if( !mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isDestroyed() ) return;
 
 		useIpcMainToRenderer( 'menu-view:command' )
@@ -342,6 +466,24 @@ export const reaxel_MainView = reaxel( () => {
 		}
 	};
 
+	let menuShortcutsRegistered = false;
+
+	const registerMenuShortcutHandlers = () => {
+		if( menuShortcutsRegistered ) return;
+		menuShortcutsRegistered = true;
+
+		setMenuShortcutHandlers( {
+			reload : () => handleReloadView() ,
+			forceReload : () => handleForceReloadView() ,
+			toggleDevTools : () => handleToggleDevTools() ,
+			togglePromptLeft : () => reaxel_PromptViews().togglePromptView( 'left' ) ,
+			togglePromptRight : () => reaxel_PromptViews().togglePromptView( 'right' ) ,
+			actualSize : () => handleZoom( 0 ) ,
+			zoomIn : () => handleZoomRelative( 0.5 ) ,
+			zoomOut : () => handleZoomRelative( -0.5 ) ,
+		} );
+	};
+
 	const handleWipeAndReload = async () => {
 		const result = await dialog.showMessageBox( {
 			type : 'warning' ,
@@ -400,6 +542,21 @@ const countMenuItems = ( items : MenuView.Item[] ): number => {
 	return count;
 };
 
+const estimateDropdownWidth = ( items : MenuView.Item[] ): number => {
+	let maxLabelLength = 0;
+	const walk = ( list : MenuView.Item[] ) => {
+		for( const item of list ) {
+			if( item.type === 'separator' ) continue;
+			const accelLen = item.accelerator ? item.accelerator.length + 4 : 0;
+			maxLabelLength = Math.max( maxLabelLength , ( item.label?.length || 0 ) + accelLen );
+			if( item.submenu ) walk( item.submenu );
+		}
+	};
+	walk( items );
+	const estimated = Math.ceil( maxLabelLength * DROPDOWN_CHAR_WIDTH + DROPDOWN_ITEM_EXTRA );
+	return Math.min( DROPDOWN_MAX_WIDTH , Math.max( DROPDOWN_MIN_WIDTH , estimated ) );
+};
+
 const getRuntimeSettings = ():Settings => {
 	const settingsConfigService = getSettingsConfigService();
 	const aiConfigService = getAIConfigService();
@@ -411,6 +568,84 @@ const getRuntimeSettings = ():Settings => {
 
 const getCurrentTheme = (): 'light' | 'dark' => {
 	return getAppearanceEnvironment().systemTheme;
+};
+
+const bindMenubarWebContentsLogging = (
+	webContents : Electron.WebContents ,
+	source : MenubarErrorReport['source'] ,
+) => {
+	if( webContents.isDestroyed() ) return;
+
+	webContents.on( 'console-message' , ( event , ...legacyArgs ) => {
+		const {
+			level ,
+			message ,
+			line ,
+			sourceId ,
+		} = resolveWebContentsConsoleMessage( event , legacyArgs );
+
+		if( level < 2 ) return;
+		if( isBenignMenubarConsoleMessage( message ) ) return;
+
+		logMenubarError( {
+			scope : 'webContents.console-message' ,
+			message ,
+			context : JSON.stringify( { line , sourceId , level } ) ,
+			source ,
+		} );
+	} );
+
+	webContents.on( 'render-process-gone' , ( _event , details ) => {
+		logMenubarError( {
+			scope : 'webContents.render-process-gone' ,
+			message : details.reason || 'render-process-gone' ,
+			context : JSON.stringify( details ) ,
+			source ,
+		} );
+	} );
+};
+
+type ConsoleMessageParams = {
+	level : number;
+	message : string;
+	line : number;
+	sourceId : string;
+};
+
+const resolveWebContentsConsoleMessage = (
+	event : Electron.Event ,
+	legacyArgs : unknown[] ,
+): ConsoleMessageParams => {
+	const eventParams = event as unknown as Partial<ConsoleMessageParams> & {
+		lineNumber? : number;
+	};
+	if( typeof eventParams.message === 'string' && typeof eventParams.level === 'number' ) {
+		return {
+			level : eventParams.level ,
+			message : eventParams.message ,
+			line : eventParams.lineNumber ?? eventParams.line ?? 0 ,
+			sourceId : eventParams.sourceId ?? '' ,
+		};
+	}
+
+	const [
+		level ,
+		message ,
+		line ,
+		sourceId ,
+	] = legacyArgs;
+	return {
+		level : typeof level === 'number' ? level : 0 ,
+		message : typeof message === 'string' ? message : String( message ?? '' ) ,
+		line : typeof line === 'number' ? line : 0 ,
+		sourceId : typeof sourceId === 'string' ? sourceId : '' ,
+	};
+};
+
+const isBenignMenubarConsoleMessage = ( message : string ) => {
+	return message.includes( 'ipc mtrEvent channel' )
+		&& message.includes( 'has no listeners' )
+		&& message.includes( 'menu-view:command' );
 };
 
 
@@ -431,7 +666,15 @@ import { getAIConfigService } from '#main/services/settings/ai-config-service';
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
 import { getAppearanceEnvironment } from '#main/services/appearance';
-import type { MenuView } from '#src/Types/MenuView';
+import {
+	getMenubarErrorLogPath ,
+	logMenubarError ,
+	toMenubarErrorReport ,
+} from '#main/services/menubar-error-log.utility';
+import { setMenuShortcutHandlers } from '#main/services/shortcuts/window-keyboard';
+import type { MenubarErrorReport } from '#main/services/menubar-error-log.utility';
+import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import type { MenuView , MainView } from '#src/Types/MenuView';
 import type { DropdownView } from '#src/Types/DropdownView';
 import type { Settings } from '#src/Types/SettingsTypes';
 import {

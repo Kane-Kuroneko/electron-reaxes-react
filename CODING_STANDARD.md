@@ -209,6 +209,13 @@ export const functionName = <T>(param: T): ReturnType => {
 - 如果函数或工具可能被广泛复用、业务无关，应根据宿主环境放入相应目录的 `utils` 或 `toolkits` 中，而不是散落在业务模块内。
 - 工具函数文件使用 `.utility.ts` 后缀；例如 ChatAIO 里的 IPC/observable plain clone 放在 `src/shared/utils/clone-for-ipc.utility.ts`。
 
+### 3.5 Electron IPC 与 `cloneForIPC`
+
+- 渲染进程只通过 `window.api` 调用 preload 暴露的 API；主进程使用 `useIpcRpc` / `useIpcRendererToMain` / `useIpcMainToRenderer`。完整规范见 [`.qoder/rules/ipc-coding.md`](.qoder/rules/ipc-coding.md)。
+- **跨 IPC 前必须 `cloneForIPC`**：参数若来自 `reaxel_*.store`（含主进程曾以 plain JSON 下发、写入 store 后的数据），Renderer → Main 发送前一律克隆。勿因「源头是纯 JSON」而跳过。
+- **Store 往返**：`Main plain JSON → store(observable) → api.xxx(...)` 的第二步仍要 `cloneForIPC`。Menubar：`openDropdownView` 的 `items`、`menuViewAction` 的 `action` 均为必检点。
+- Code Review 时 IPC checklist **第一条**即检查 `cloneForIPC`。
+
 ---
 
 ## 4️⃣ 注释规范 📝

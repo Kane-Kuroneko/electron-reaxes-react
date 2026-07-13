@@ -11,7 +11,7 @@ const MENU_BAR_HEIGHT: Record<string, number> = {
 };
 
 export const App = reaxper( () => {
-	const { store , setState } = reaxel_MainView;
+	const { store } = reaxel_MainView;
 	const {
 		closeAllMenus ,
 		openFirstMenu ,
@@ -19,25 +19,12 @@ export const App = reaxper( () => {
 		moveFocusedItem ,
 		triggerFocusedItem ,
 		triggerAction ,
-		handleCommand,
+		toggleMenu ,
+		setOpenMenuIndex ,
 	} = reaxel_MainView();
 
 	const platform = store.platform;
 	const barHeight = MENU_BAR_HEIGHT[platform] || 32;
-
-	/* IPC 监听：主进程推送菜单结构更新 */
-	useEffect( () => {
-		const disposable = api.onMenuViewCommand( command => {
-			handleCommand( command );
-		} );
-
-		// 通知主进程：渲染进程已就绪，可以发送菜单数据了
-		api.menuViewReady();
-
-		return () => {
-			disposable.dispose();
-		};
-	} , [] );
 
 	/* 键盘事件监听 */
 	useEffect( () => {
@@ -97,37 +84,48 @@ export const App = reaxper( () => {
 				'--menu-bar-height' : `${ barHeight }px`,
 			} as React.CSSProperties }
 		>
-			{/* macOS traffic light 预留区域 */}
 			{ isDarwin && <div className="main-view-traffic-light-spacer" /> }
 
-			{/* 菜单栏 */}
 			<div className="main-view-bar" role="menubar" aria-label="Application Menu">
-				{/* 拖拽层：覆盖整个菜单栏背景，支持窗口拖拽 */}
 				<div className="main-view-bar__drag-layer" aria-hidden="true" />
 				<div className="main-view-bar__items">
+					{ store.currentContextLabel ? (
+						<CurrentContextBadge label={ store.currentContextLabel } />
+					) : null }
 					{ store.structure.map( ( topItem , index ) => (
 						<MenuBarItem
 							key={ topItem.id }
 							item={ topItem }
 							index={ index }
 							isOpen={ store.openMenuIndex === index }
-							onToggle={ () => reaxel_MainView().toggleMenu( index ) }
+							onToggle={ () => toggleMenu( index ) }
 							onHover={ () => {
 								if( store.openMenuIndex >= 0 ) {
-									setState( { openMenuIndex : index } );
+									setOpenMenuIndex( index );
 								}
 							} }
 							onItemAction={ triggerAction }
-							onCloseAll={ closeAllMenus }
-							onMenuItemHover={ itemIndex => {
-								setState( { focusedItemIndex : itemIndex } );
-							} }
-							focusedItemIndex={ store.openMenuIndex === index ? store.focusedItemIndex : -1 }
-							barHeight={ barHeight }
 						/>
 					) ) }
 				</div>
 			</div>
+		</div>
+	);
+} );
+
+const CurrentContextBadge = reaxper( ( {
+	label ,
+} : {
+	label : string;
+} ) => {
+	return (
+		<div
+			className="main-view-context-badge"
+			title={ label }
+			role="status"
+			aria-label={ label }
+		>
+			<span className="main-view-context-badge__label">{ label }</span>
 		</div>
 	);
 } );
@@ -142,10 +140,6 @@ const MenuBarItem = reaxper( ( {
 	onToggle ,
 	onHover ,
 	onItemAction ,
-	onCloseAll ,
-	onMenuItemHover ,
-	focusedItemIndex ,
-	barHeight ,
 } : {
 	item : MenuView.TopLevelItem;
 	index : number;
@@ -153,12 +147,19 @@ const MenuBarItem = reaxper( ( {
 	onToggle : () => void;
 	onHover : () => void;
 	onItemAction : ( action : MenuView.Action ) => void;
-	onCloseAll : () => void;
-	onMenuItemHover : ( itemIndex : number ) => void;
-	focusedItemIndex : number;
-	barHeight : number;
 } ) => {
 	const hasSubmenu = ( item.submenu?.length || 0 ) > 0;
+	const isAdjacentNav = item.id === 'prev-instantiated' || item.id === 'next-instantiated';
+
+	if( isAdjacentNav ) {
+		return (
+			<AdjacentNavButton
+				item={ item }
+				index={ index }
+				onItemAction={ onItemAction }
+			/>
+		);
+	}
 
 	return (
 		<div
@@ -183,11 +184,9 @@ const MenuBarItem = reaxper( ( {
 					e.preventDefault();
 					e.stopPropagation();
 					if( hasSubmenu ) {
-						// 展开下拉菜单 → 请求主进程打开 DropdownView
 						onToggle();
 						return;
 					}
-					// 无子菜单的顶级操作项
 					if( item.action && item.enabled ) {
 						onItemAction( {
 							type : 'execute' ,
@@ -208,8 +207,64 @@ const MenuBarItem = reaxper( ( {
 	);
 } );
 
+const AdjacentNavButton = reaxper( ( {
+	item ,
+	index ,
+	onItemAction ,
+} : {
+	item : MenuView.TopLevelItem;
+	index : number;
+	onItemAction : ( action : MenuView.Action ) => void;
+} ) => {
+	const Icon = item.icon === 'chevron-right' ? ChevronRight : ChevronLeft;
+	const displayName = item.adjacentLabel || item.label;
+	const ariaLabel = item.adjacentLabel
+		? `${ item.label }: ${ item.adjacentLabel }`
+		: item.label;
+
+	return (
+		<div
+			className="main-view-bar-item main-view-bar-item--nav"
+			data-menu-index={ index }
+			role="none"
+		>
+			<button
+				className="main-view-bar-item__button main-view-bar-item__button--nav"
+				role="menuitem"
+				tabIndex={ -1 }
+				disabled={ !item.enabled }
+				aria-label={ ariaLabel }
+				title={ ariaLabel }
+				onMouseDown={ ( e ) => {
+					if( e.button !== 0 ) return;
+					e.preventDefault();
+					e.stopPropagation();
+					if( item.action && item.enabled ) {
+						onItemAction( {
+							type : 'execute' ,
+							itemId : item.id ,
+							action : item.action ,
+							payload : item.actionPayload,
+						} );
+					}
+				} }
+				onClick={ ( e ) => {
+					e.preventDefault();
+					e.stopPropagation();
+				} }
+			>
+				<span className="main-view-bar-item__nav-icon">
+					<Icon size={ 13 } strokeWidth={ 2.25 } aria-hidden="true" />
+				</span>
+				<span className="main-view-bar-item__nav-name">{ displayName }</span>
+			</button>
+		</div>
+	);
+} );
+
 
 import { reaxel_MainView } from './reaxels/main-view';
 import { reaxper } from 'reaxes-react';
+import { ChevronLeft , ChevronRight } from 'lucide-react';
 import type { MenuView } from '#src/Types/MenuView';
 import './index.less';

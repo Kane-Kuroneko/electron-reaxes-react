@@ -17,43 +17,106 @@ export const getBarHeight = ( platform: NodeJS.Platform ): number => {
 	return platform === 'darwin' ? 38 : 32;
 };
 
+const getMenuButtonRect = ( index : number ) => {
+	const el = document.querySelector( `[data-menu-index="${ index }"]` ) as HTMLElement | null;
+	if( !el ) {
+		return { x : 0 , y : 0 , width : 0 , height : getBarHeight( detectOS() ) };
+	}
+	const rect = el.getBoundingClientRect();
+	return {
+		x : rect.left ,
+		y : rect.top ,
+		width : rect.width ,
+		height : rect.height ,
+	};
+};
+
+const openDropdownForIndex = (
+	structure : MenuView.Structure ,
+	index : number ,
+	focusedIndex = -1 ,
+) => {
+	try {
+		const topItem = structure[index];
+		if( !topItem || !( topItem.submenu?.length > 0 ) ) {
+			api.closeDropdownView();
+			return;
+		}
+		api.openDropdownView( {
+			items : cloneForIPC( topItem.submenu ) ,
+			anchorRect : getMenuButtonRect( index ) ,
+			menuIndex : index ,
+			focusedIndex ,
+		} );
+	} catch ( error ) {
+		reportMenubarRendererError( 'openDropdownForIndex' , error , 'main-view-renderer' , {
+			index ,
+			focusedIndex ,
+		} );
+	}
+};
+
 export const reaxel_MainView = reaxel( () => {
 	const {
 		store ,
 		setState ,
 		mutate,
 	} = createReaxable( {
-		structure : checkAs<MenuView.Structure>( [] ) ,         // 完整菜单结构
-		openMenuIndex : -1 ,                                     // 当前展开的顶级菜单索引（-1=关闭）
-		hoveredPath : checkAs<string[]>( [] ) ,                  // 当前悬浮路径
+		structure : checkAs<MenuView.Structure>( [] ) ,
+		openMenuIndex : -1 ,
+		hoveredPath : checkAs<string[]>( [] ) ,
 		focusedItemIndex : -1 ,
-		platform : detectOS() as NodeJS.Platform ,               // 运行平台（通过 navigator.platform 检测）
-		theme : 'light' as 'light' | 'dark' ,                   // 当前主题（IPC 从主进程推送）
+		platform : detectOS() as NodeJS.Platform ,
+		theme : 'light' as 'light' | 'dark' ,
+		currentContextLabel : '' ,
+		settingsViewOpened : false ,
 	} );
 
 	/** 更新菜单结构（由 IPC 回调调用） */
 	const updateStructure = ( structure : MenuView.Structure ) => {
 		setState( { structure } );
+		if( store.openMenuIndex >= 0 ) {
+			if( store.openMenuIndex >= structure.length ) {
+				closeAllMenus();
+			} else {
+				openDropdownForIndex( structure , store.openMenuIndex , store.focusedItemIndex );
+			}
+		}
 	};
 
 	/** 展开/切换某顶级菜单 */
 	const toggleMenu = ( index : number ) => {
 		const willOpen = store.openMenuIndex !== index;
-		setState( {
-			openMenuIndex : willOpen ? index : -1 ,
-			focusedItemIndex : -1 ,
-			hoveredPath : [],
-		} );
-		// TODO Phase 4: 请求主进程打开/关闭 DropdownView
-	};
-
-	/** 只切换当前顶级菜单 */
-	const setOpenMenuIndex = ( index : number ) => {
+		if( !willOpen ) {
+			closeAllMenus();
+			return;
+		}
+		const topItem = store.structure[index];
+		if( !topItem || !( topItem.submenu?.length > 0 ) ) {
+			return;
+		}
 		setState( {
 			openMenuIndex : index ,
 			focusedItemIndex : -1 ,
 			hoveredPath : [],
 		} );
+		openDropdownForIndex( store.structure , index , -1 );
+	};
+
+	/** 只切换当前顶级菜单，并同步 DropdownView */
+	const setOpenMenuIndex = ( index : number ) => {
+		const topItem = store.structure[index];
+		if( !topItem ) return;
+		if( !( topItem.submenu?.length > 0 ) ) {
+			closeAllMenus();
+			return;
+		}
+		setState( {
+			openMenuIndex : index ,
+			focusedItemIndex : -1 ,
+			hoveredPath : [],
+		} );
+		openDropdownForIndex( store.structure , index , -1 );
 	};
 
 	/** 关闭所有展开的菜单 */
@@ -63,19 +126,31 @@ export const reaxel_MainView = reaxel( () => {
 			focusedItemIndex : -1 ,
 			hoveredPath : [],
 		} );
-		// TODO Phase 4: 请求主进程关闭 DropdownView
+		api.closeDropdownView();
 	};
 
 	const openFirstMenu = () => {
 		if( store.structure.length === 0 ) return;
-		setOpenMenuIndex( Math.max( 0 , store.openMenuIndex ) );
+		const start = Math.max( 0 , store.openMenuIndex );
+		for( let i = 0 ; i < store.structure.length ; i++ ) {
+			const index = ( start + i ) % store.structure.length;
+			if( store.structure[index]?.submenu?.length > 0 ) {
+				setOpenMenuIndex( index );
+				return;
+			}
+		}
 	};
 
 	const moveTopMenu = ( delta : number ) => {
 		if( store.structure.length === 0 ) return;
 		const currentIndex = store.openMenuIndex >= 0 ? store.openMenuIndex : 0;
-		const nextIndex = ( currentIndex + delta + store.structure.length ) % store.structure.length;
-		setOpenMenuIndex( nextIndex );
+		for( let i = 1 ; i <= store.structure.length ; i++ ) {
+			const nextIndex = ( currentIndex + delta * i + store.structure.length * 10 ) % store.structure.length;
+			if( store.structure[nextIndex]?.submenu?.length > 0 ) {
+				setOpenMenuIndex( nextIndex );
+				return;
+			}
+		}
 	};
 
 	const moveFocusedItem = ( delta : number ) => {
@@ -90,6 +165,11 @@ export const reaxel_MainView = reaxel( () => {
 			const item = items[nextIndex];
 			if( item.type !== 'separator' && item.enabled ) {
 				setState( { focusedItemIndex : nextIndex } );
+				try {
+					api.focusDropdownViewItem( nextIndex );
+				} catch ( error ) {
+					reportMenubarRendererError( 'moveFocusedItem' , error , 'main-view-renderer' , { nextIndex } );
+				}
 				return;
 			}
 		}
@@ -126,19 +206,34 @@ export const reaxel_MainView = reaxel( () => {
 
 	/** 触发菜单项操作 */
 	const triggerAction = ( action : MenuView.Action ) => {
-		closeAllMenus();
-		// 通过 IPC 将操作发送到主进程
-		api.menuViewAction( action );
+		try {
+			closeAllMenus();
+			api.menuViewAction( cloneForIPC( action ) );
+		} catch ( error ) {
+			reportMenubarRendererError( 'triggerAction' , error , 'main-view-renderer' , {
+				action : action.action ,
+				itemId : action.itemId ,
+			} );
+		}
 	};
 
 	/** 处理菜单命令（主进程→渲染进程） */
 	const handleCommand = ( command : MenuView.MenuCommand ) => {
 		if( command.type === 'menu-view:structure-update' ) {
-			updateStructure( command.payload );
+			setState( {
+				currentContextLabel : command.payload.chrome.currentContextLabel ,
+				settingsViewOpened : command.payload.chrome.settingsViewOpened ,
+			} );
+			updateStructure( command.payload.structure );
 		} else if( command.type === 'menu-view:theme-update' ) {
 			setState( { theme : command.payload.theme } );
 		} else if( command.type === 'menu-view:close' ) {
-			closeAllMenus();
+			setState( {
+				openMenuIndex : -1 ,
+				focusedItemIndex : -1 ,
+				hoveredPath : [],
+			} );
+			// 主进程已关闭 DropdownView，此处只同步本地状态，避免再次 close 形成回环
 		}
 	};
 
@@ -166,3 +261,5 @@ export const reaxel_MainView = reaxel( () => {
 
 import { createReaxable , reaxel } from "reaxes";
 import type { MenuView } from "#src/Types/MenuView";
+import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import { reportMenubarRendererError } from '#src/shared/utils/menubar-error-report.utility';
