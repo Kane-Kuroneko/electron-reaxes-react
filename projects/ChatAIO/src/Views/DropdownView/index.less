@@ -42,6 +42,9 @@ body {
 /* ── Dropdown ──────────────────────────────────────────── */
 .menu-dropdown {
 	flex-shrink: 0;
+	width: fit-content;
+	min-width: 100%;
+	height: auto;
 	overflow-x: hidden;
 	overflow-y: auto;
 	padding: 4px 0;
@@ -86,8 +89,9 @@ body {
 	display: flex;
 	align-items: center;
 	width: 100%;
-	min-height: 27px;
-	padding: 5px 4px 5px 12px;
+	box-sizing: border-box;
+	height: 27px;
+	padding: 0 4px 0 12px;
 	border: none;
 	background: transparent;
 	color: var(--menu-view-text, rgba(24, 24, 27, 0.9));

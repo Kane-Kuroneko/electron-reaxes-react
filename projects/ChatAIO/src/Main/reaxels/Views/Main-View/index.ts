@@ -16,7 +16,7 @@ const DROPDOWN_CHROME = {
 	left : 6 ,
 } as const;
 
-const DROPDOWN_ROW_HEIGHT = 37;
+const DROPDOWN_ROW_HEIGHT = 27;
 const DROPDOWN_SEPARATOR_HEIGHT = 9;
 const DROPDOWN_PANEL_VPAD = 8;
 
@@ -589,7 +589,7 @@ const estimateDropdownHeight = ( items : MenuView.Item[] ): number => {
 			height += DROPDOWN_ROW_HEIGHT;
 		}
 	}
-	return Math.max( 60 , height );
+	return height;
 };
 
 const estimateDropdownWidth = ( items : MenuView.Item[] ): number => {

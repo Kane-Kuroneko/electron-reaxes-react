@@ -64,7 +64,11 @@ export const App = reaxper( () => {
 
 	const windowSizeStyle = {
 		width : `${ store.windowWidth }px` ,
-		height : `${ store.windowHeight }px` ,
+	} as const;
+
+	const panelStyle = {
+		width : `${ store.panelWidth }px` ,
+		maxHeight : `${ store.panelHeight }px` ,
 	} as const;
 
 	return (
@@ -84,7 +88,7 @@ export const App = reaxper( () => {
 					items={ store.items }
 					focusedIndex={ store.focusedIndex }
 					panelWidth={ store.panelWidth }
-					panelHeight={ store.panelHeight }
+					panelStyle={ panelStyle }
 				/>
 			</div>
 		</div>
@@ -98,12 +102,12 @@ const MenuDropdown = ( {
 	items ,
 	focusedIndex ,
 	panelWidth ,
-	panelHeight ,
+	panelStyle ,
 } : {
 	items : MenuView.Item[];
 	focusedIndex : number;
 	panelWidth : number;
-	panelHeight : number;
+	panelStyle : React.CSSProperties;
 } ) => {
 	const listRef = useRef<HTMLDivElement | null>( null );
 
@@ -120,7 +124,7 @@ const MenuDropdown = ( {
 			ref={ listRef }
 			style={ {
 				width : `${ panelWidth }px` ,
-				height : `${ panelHeight }px` ,
+				...panelStyle ,
 			} as React.CSSProperties }
 		>
 			{ items.map( ( item , index ) => (
