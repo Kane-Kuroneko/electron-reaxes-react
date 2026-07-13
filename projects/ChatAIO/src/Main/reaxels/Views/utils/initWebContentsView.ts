@@ -46,6 +46,9 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	
 	//当用户ctrl+r时reload当前view;f12 devtools
 	view.webContents.on('before-input-event', (event, input) => {
+		if( input.type === 'mouseDown' ) {
+			dismissMenubarDropdownIfOpen();
+		}
 		if( handleAISwitchShortcutInput( event , input ) ) {
 			return;
 		}
@@ -232,6 +235,7 @@ import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 import { applyAIProxyToView } from "#main/services/settings/proxy-service";
 import { handleAISwitchShortcutInput } from '#main/services/shortcuts/ai-switch';
 import { installWebContentsKeyboardGuard } from '#main/services/shortcuts/window-keyboard';
+import { dismissMenubarDropdownIfOpen } from '#main/services/menubar-dropdown-dismiss.utility';
 import {
 	createDevRendererEntryURL ,
 	getFreshRendererLoadURLOptions ,

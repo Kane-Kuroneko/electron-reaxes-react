@@ -10,10 +10,14 @@ export const reaxel_DropdownView = reaxel( () => {
 		setState ,
 		mutate,
 	} = createReaxable( {
-		items : checkAs<MenuView.Item[]>( [] ) ,                // 当前显示的菜单项
-		theme : 'light' as 'light' | 'dark' ,                   // 当前主题
-		focusedIndex : -1 ,                                      // 聚焦项索引
-		visible : false ,                                        // 是否可见
+		items : checkAs<MenuView.Item[]>( [] ) ,
+		theme : 'light' as 'light' | 'dark' ,
+		focusedIndex : -1 ,
+		visible : false ,
+		panelWidth : 0 ,
+		panelHeight : 0 ,
+		windowWidth : 0 ,
+		windowHeight : 0 ,
 	} );
 
 	/** 处理主进程命令 */
@@ -23,12 +27,20 @@ export const reaxel_DropdownView = reaxel( () => {
 				items : command.items ,
 				theme : command.theme ,
 				focusedIndex : command.focusedIndex ,
+				panelWidth : command.panelWidth ,
+				panelHeight : command.panelHeight ,
+				windowWidth : command.windowWidth ,
+				windowHeight : command.windowHeight ,
 				visible : true ,
 			} );
 		} else if( command.type === 'hide' ) {
 			setState( {
 				items : [] ,
 				focusedIndex : -1 ,
+				panelWidth : 0 ,
+				panelHeight : 0 ,
+				windowWidth : 0 ,
+				windowHeight : 0 ,
 				visible : false ,
 			} );
 		} else if( command.type === 'focus-item' ) {

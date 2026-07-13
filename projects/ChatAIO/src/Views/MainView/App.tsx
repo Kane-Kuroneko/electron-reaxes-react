@@ -87,7 +87,16 @@ export const App = reaxper( () => {
 			{ isDarwin && <div className="main-view-traffic-light-spacer" /> }
 
 			<div className="main-view-bar" role="menubar" aria-label="Application Menu">
-				<div className="main-view-bar__drag-layer" aria-hidden="true" />
+				<div
+					className="main-view-bar__drag-layer"
+					aria-hidden="true"
+					onMouseDown={ ( e ) => {
+						if( e.button !== 0 ) return;
+						if( store.openMenuIndex >= 0 ) {
+							closeAllMenus();
+						}
+					} }
+				/>
 				<div className="main-view-bar__items">
 					{ store.currentContextLabel ? (
 						<CurrentContextBadge label={ store.currentContextLabel } />
@@ -216,7 +225,8 @@ const AdjacentNavButton = reaxper( ( {
 	index : number;
 	onItemAction : ( action : MenuView.Action ) => void;
 } ) => {
-	const Icon = item.icon === 'chevron-right' ? ChevronRight : ChevronLeft;
+	const isNext = item.icon === 'chevron-right';
+	const Icon = isNext ? ChevronRight : ChevronLeft;
 	const displayName = item.adjacentLabel || item.label;
 	const ariaLabel = item.adjacentLabel
 		? `${ item.label }: ${ item.adjacentLabel }`
@@ -229,7 +239,7 @@ const AdjacentNavButton = reaxper( ( {
 			role="none"
 		>
 			<button
-				className="main-view-bar-item__button main-view-bar-item__button--nav"
+				className={ `main-view-bar-item__button main-view-bar-item__button--nav ${ isNext ? 'main-view-bar-item__button--nav-next' : 'main-view-bar-item__button--nav-prev' }` }
 				role="menuitem"
 				tabIndex={ -1 }
 				disabled={ !item.enabled }
@@ -253,10 +263,17 @@ const AdjacentNavButton = reaxper( ( {
 					e.stopPropagation();
 				} }
 			>
-				<span className="main-view-bar-item__nav-icon">
-					<Icon size={ 13 } strokeWidth={ 2.25 } aria-hidden="true" />
-				</span>
+				{ !isNext ? (
+					<span className="main-view-bar-item__nav-icon">
+						<Icon size={ 13 } strokeWidth={ 2.25 } aria-hidden="true" />
+					</span>
+				) : null }
 				<span className="main-view-bar-item__nav-name">{ displayName }</span>
+				{ isNext ? (
+					<span className="main-view-bar-item__nav-icon">
+						<Icon size={ 13 } strokeWidth={ 2.25 } aria-hidden="true" />
+					</span>
+				) : null }
 			</button>
 		</div>
 	);

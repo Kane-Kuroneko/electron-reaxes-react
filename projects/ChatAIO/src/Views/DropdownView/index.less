@@ -1,40 +1,54 @@
 /**
  * @description DropdownView 样式
  * 渲染在独立 frameless BrowserWindow 中，内容透明背景、毛玻璃下拉菜单。
+ *
+ * padding 须与 Main-View/index.ts 中 DROPDOWN_CHROME 保持一致：
+ * top 0 / right 6 / bottom 8 / left 6
  */
 
 /* ── Reset ──────────────────────────────────────────────── */
-html, body {
+html, body, #react-app-root {
 	margin: 0;
 	padding: 0;
-	overflow: visible;
-	width: 100%;
-	height: 100%;
+	overflow: hidden;
+	box-sizing: border-box;
 	background: transparent;
+}
+
+/* 尺寸由 IPC windowWidth/windowHeight 在运行时锁定 */
+body {
+	/* Windows 透明窗：全窗口需极低 alpha 才能稳定合成（与 debug 黑框无关） */
+	background: rgba(255, 255, 255, 0.001);
 }
 
 /* ── Dropdown Root ─────────────────────────────────────── */
 .dropdown-view-root {
-	width: 100%;
-	height: 100%;
-	padding: 12px;
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 1;
 	box-sizing: border-box;
-	overflow: visible;
+	overflow: hidden;
+	padding: 0 6px 8px 6px;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.dropdown-view-shell {
+	flex-shrink: 0;
 }
 
 /* ── Dropdown ──────────────────────────────────────────── */
 .menu-dropdown {
-	min-width: 200px;
-	max-width: 320px;
-	width: 100%;
-	max-height: 100%;
+	flex-shrink: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
 	padding: 4px 0;
 	background: var(--menu-dropdown-bg, rgba(255, 255, 255, 0.98));
 	border: 1px solid var(--menu-dropdown-border, rgba(0, 0, 0, 0.1));
 	border-radius: 8px;
-	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.06);
+	box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1);
 	backdrop-filter: blur(14px) saturate(1.02);
 	-webkit-backdrop-filter: blur(14px) saturate(1.02);
 	-webkit-app-region: no-drag;
@@ -73,7 +87,7 @@ html, body {
 	align-items: center;
 	width: 100%;
 	min-height: 27px;
-	padding: 5px 12px;
+	padding: 5px 4px 5px 12px;
 	border: none;
 	background: transparent;
 	color: var(--menu-view-text, rgba(24, 24, 27, 0.9));
@@ -84,6 +98,7 @@ html, body {
 	gap: 8px;
 	white-space: nowrap;
 	-webkit-app-region: no-drag;
+	box-sizing: border-box;
 }
 
 .menu-item__button:hover,
@@ -146,19 +161,55 @@ html, body {
 	flex: 1;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	min-width: 0;
 }
 
 .menu-item__accelerator {
 	flex-shrink: 0;
-	margin-left: 24px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-end;
+	min-width: 72px;
+	margin-left: 16px;
 	color: var(--menu-view-accelerator, rgba(63, 63, 70, 0.6));
 	font-size: 12px;
+	line-height: 1;
+}
+
+.menu-item__accelerator--empty {
+	visibility: hidden;
+}
+
+.menu-item__accelerator-part {
+	display: inline-flex;
+	align-items: center;
+}
+
+.menu-item__accelerator-sep {
+	margin: 0 3px;
+	font-weight: 400;
+	opacity: 0.42;
+}
+
+.menu-item__accelerator-key {
+	font-weight: 600;
+	letter-spacing: 0.01em;
+}
+
+.menu-item__accelerator-key--sep {
+	font-weight: 500;
+	opacity: 0.72;
+}
+
+.menu-item__side-gutter {
+	flex-shrink: 0;
+	width: 16px;
 }
 
 .menu-item__arrow {
 	flex-shrink: 0;
 	font-size: 10px;
-	margin-left: 8px;
+	margin-left: 0;
 	opacity: 0.6;
 }
 

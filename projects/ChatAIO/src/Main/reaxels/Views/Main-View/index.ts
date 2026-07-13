@@ -8,9 +8,17 @@ const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 38 : 32;
 const DROPDOWN_MIN_WIDTH = 200;
 const DROPDOWN_MAX_WIDTH = 320;
 const DROPDOWN_CHAR_WIDTH = 7.2;
-const DROPDOWN_ITEM_EXTRA = 88;
-/** 为 CSS box-shadow / border 预留的窗口内边距，避免被透明窗口裁切 */
-const DROPDOWN_CHROME_PAD = 12;
+const DROPDOWN_ITEM_EXTRA = 104;
+const DROPDOWN_CHROME = {
+	top : 0 ,
+	right : 6 ,
+	bottom : 8 ,
+	left : 6 ,
+} as const;
+
+const DROPDOWN_ROW_HEIGHT = 37;
+const DROPDOWN_SEPARATOR_HEIGHT = 9;
+const DROPDOWN_PANEL_VPAD = 8;
 
 type DropdownOpenPayload = MainView.DropdownRequest;
 
@@ -94,6 +102,7 @@ export const reaxel_MainView = reaxel( () => {
 	const initMainView = () => {
 		registerIpc();
 		registerMenuShortcutHandlers();
+		setMenubarDropdownDismissHandler( () => hideDropdownView() );
 
 		if( mainWindow && !mainWindow.isDestroyed() ) {
 			bindMainWindowEvents();
@@ -188,22 +197,30 @@ export const reaxel_MainView = reaxel( () => {
 		setState( { pendingDropdownPayload : payload } );
 
 		const contentBounds = mainWindow.getContentBounds();
-		const dropdownWidth = estimateDropdownWidth( payload.items );
-		const dropdownX = Math.max( 0 , Math.min( payload.anchorRect.x , contentBounds.width - dropdownWidth ) );
-		const dropdownY = MENU_BAR_HEIGHT;
+		const anchor = payload.anchorRect;
+		const panelWidth = estimateDropdownWidth( payload.items );
+		const dropdownContentX = Math.max(
+			0 ,
+			Math.min( anchor.x , contentBounds.width - panelWidth ) ,
+		);
+		const dropdownContentY = anchor.y + anchor.height;
 
-		const itemCount = countMenuItems( payload.items );
-		const dropdownHeight = Math.min( Math.max( 60 , itemCount * 28 + 16 ) , contentBounds.height - dropdownY - 16 );
+		const panelHeight = Math.min(
+			estimateDropdownHeight( payload.items ) ,
+			contentBounds.height - dropdownContentY - 16 ,
+		);
 
-		const windowPosition = mainWindow.getPosition();
-		const screenX = windowPosition[0] + dropdownX - DROPDOWN_CHROME_PAD;
-		const screenY = windowPosition[1] + dropdownY - DROPDOWN_CHROME_PAD;
+		const windowWidth = panelWidth + DROPDOWN_CHROME.left + DROPDOWN_CHROME.right;
+		const windowHeight = panelHeight + DROPDOWN_CHROME.top + DROPDOWN_CHROME.bottom;
+
+		const screenX = contentBounds.x + dropdownContentX - DROPDOWN_CHROME.left;
+		const screenY = contentBounds.y + dropdownContentY - DROPDOWN_CHROME.top;
 
 		window.setBounds( {
 			x : screenX ,
 			y : screenY ,
-			width : dropdownWidth + DROPDOWN_CHROME_PAD * 2 ,
-			height : dropdownHeight + DROPDOWN_CHROME_PAD * 2 ,
+			width : windowWidth ,
+			height : windowHeight ,
 		} );
 
 		const showCommand : DropdownView.Command = {
@@ -211,6 +228,10 @@ export const reaxel_MainView = reaxel( () => {
 			items : cloneForIPC( payload.items ) ,
 			theme : getCurrentTheme() ,
 			focusedIndex : payload.focusedIndex ?? -1 ,
+			panelWidth ,
+			panelHeight ,
+			windowWidth ,
+			windowHeight ,
 		};
 
 		if( store.dropdownLoaded ) {
@@ -238,12 +259,28 @@ export const reaxel_MainView = reaxel( () => {
 		if( !pending ) return;
 		const window = store.dropdownWindow;
 		if( !window || window.isDestroyed() ) return;
+		if( !mainWindow || mainWindow.isDestroyed() ) return;
+
+		const contentBounds = mainWindow.getContentBounds();
+		const anchor = pending.anchorRect;
+		const panelWidth = estimateDropdownWidth( pending.items );
+		const dropdownContentY = anchor.y + anchor.height;
+		const panelHeight = Math.min(
+			estimateDropdownHeight( pending.items ) ,
+			contentBounds.height - dropdownContentY - 16 ,
+		);
+		const windowWidth = panelWidth + DROPDOWN_CHROME.left + DROPDOWN_CHROME.right;
+		const windowHeight = panelHeight + DROPDOWN_CHROME.top + DROPDOWN_CHROME.bottom;
 
 		sendDropdownCommand( {
 			type : 'show' ,
 			items : cloneForIPC( pending.items ) ,
 			theme : getCurrentTheme() ,
 			focusedIndex : pending.focusedIndex ?? -1 ,
+			panelWidth ,
+			panelHeight ,
+			windowWidth ,
+			windowHeight ,
 		} );
 		window.showInactive();
 		setState( { pendingDropdownPayload : null } );
@@ -262,6 +299,7 @@ export const reaxel_MainView = reaxel( () => {
 			transparent : true ,
 			backgroundColor : '#00000000' ,
 			hasShadow : false ,
+			useContentSize : true ,
 			resizable : false ,
 			movable : false ,
 			minimizable : false ,
@@ -542,19 +580,37 @@ const countMenuItems = ( items : MenuView.Item[] ): number => {
 	return count;
 };
 
+const estimateDropdownHeight = ( items : MenuView.Item[] ): number => {
+	let height = DROPDOWN_PANEL_VPAD;
+	for( const item of items ) {
+		if( item.type === 'separator' ) {
+			height += DROPDOWN_SEPARATOR_HEIGHT;
+		} else {
+			height += DROPDOWN_ROW_HEIGHT;
+		}
+	}
+	return Math.max( 60 , height );
+};
+
 const estimateDropdownWidth = ( items : MenuView.Item[] ): number => {
-	let maxLabelLength = 0;
+	let maxContentWidth = 0;
 	const walk = ( list : MenuView.Item[] ) => {
 		for( const item of list ) {
 			if( item.type === 'separator' ) continue;
-			const accelLen = item.accelerator ? item.accelerator.length + 4 : 0;
-			maxLabelLength = Math.max( maxLabelLength , ( item.label?.length || 0 ) + accelLen );
+			const labelWidth = Math.ceil( ( item.label?.length || 0 ) * DROPDOWN_CHAR_WIDTH );
+			const accelWidth = item.accelerator
+				? Math.ceil( item.accelerator.length * 6.5 ) + 24
+				: 0;
+			const loadDotWidth = item.loadState ? 11 : 0;
+			maxContentWidth = Math.max(
+				maxContentWidth ,
+				labelWidth + accelWidth + loadDotWidth + DROPDOWN_ITEM_EXTRA ,
+			);
 			if( item.submenu ) walk( item.submenu );
 		}
 	};
 	walk( items );
-	const estimated = Math.ceil( maxLabelLength * DROPDOWN_CHAR_WIDTH + DROPDOWN_ITEM_EXTRA );
-	return Math.min( DROPDOWN_MAX_WIDTH , Math.max( DROPDOWN_MIN_WIDTH , estimated ) );
+	return Math.min( DROPDOWN_MAX_WIDTH , Math.max( DROPDOWN_MIN_WIDTH , maxContentWidth ) );
 };
 
 const getRuntimeSettings = ():Settings => {
@@ -672,6 +728,7 @@ import {
 	toMenubarErrorReport ,
 } from '#main/services/menubar-error-log.utility';
 import { setMenuShortcutHandlers } from '#main/services/shortcuts/window-keyboard';
+import { setMenubarDropdownDismissHandler } from '#main/services/menubar-dropdown-dismiss.utility';
 import type { MenubarErrorReport } from '#main/services/menubar-error-log.utility';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import type { MenuView , MainView } from '#src/Types/MenuView';

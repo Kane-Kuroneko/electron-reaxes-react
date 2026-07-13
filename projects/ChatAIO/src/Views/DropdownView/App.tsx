@@ -19,19 +19,74 @@ export const App = reaxper( () => {
 		};
 	} , [] );
 
+	useEffect( () => {
+		if( !store.visible || store.windowWidth <= 0 || store.windowHeight <= 0 ) {
+			return;
+		}
+
+		const html = document.documentElement;
+		const body = document.body;
+		const root = document.getElementById( 'react-app-root' );
+		const width = `${ store.windowWidth }px`;
+		const height = `${ store.windowHeight }px`;
+
+		html.style.width = width;
+		html.style.height = height;
+		html.style.overflow = 'hidden';
+		body.style.width = width;
+		body.style.height = height;
+		body.style.overflow = 'hidden';
+		body.style.margin = '0';
+		if( root ) {
+			root.style.width = width;
+			root.style.height = height;
+			root.style.overflow = 'hidden';
+		}
+
+		return () => {
+			html.style.width = '';
+			html.style.height = '';
+			html.style.overflow = '';
+			body.style.width = '';
+			body.style.height = '';
+			body.style.overflow = '';
+			if( root ) {
+				root.style.width = '';
+				root.style.height = '';
+				root.style.overflow = '';
+			}
+		};
+	} , [ store.visible , store.windowWidth , store.windowHeight ] );
+
 	if( !store.visible || !store.items.length ) {
 		return null;
 	}
+
+	const windowSizeStyle = {
+		width : `${ store.windowWidth }px` ,
+		height : `${ store.windowHeight }px` ,
+	} as const;
 
 	return (
 		<div
 			className="dropdown-view-root"
 			data-theme={ store.theme }
+			style={ windowSizeStyle }
+			onMouseDown={ ( e ) => {
+				const target = e.target as HTMLElement;
+				if( !target.closest( '.menu-dropdown' ) ) {
+					api.closeDropdownView();
+				}
+			} }
 		>
-			<MenuDropdown
-				items={ store.items }
-				focusedIndex={ store.focusedIndex }
-			/>
+			<div className="dropdown-view-shell">
+				<MenuDropdown
+					items={ store.items }
+					focusedIndex={ store.focusedIndex }
+					panelWidth={ store.panelWidth }
+					panelHeight={ store.panelHeight }
+				/>
+			</div>
 		</div>
 	);
 } );
@@ -42,9 +97,13 @@ export const App = reaxper( () => {
 const MenuDropdown = ( {
 	items ,
 	focusedIndex ,
+	panelWidth ,
+	panelHeight ,
 } : {
 	items : MenuView.Item[];
 	focusedIndex : number;
+	panelWidth : number;
+	panelHeight : number;
 } ) => {
 	const listRef = useRef<HTMLDivElement | null>( null );
 
@@ -55,7 +114,15 @@ const MenuDropdown = ( {
 	} , [ focusedIndex ] );
 
 	return (
-		<div className="menu-dropdown" role="menu" ref={ listRef }>
+		<div
+			className="menu-dropdown"
+			role="menu"
+			ref={ listRef }
+			style={ {
+				width : `${ panelWidth }px` ,
+				height : `${ panelHeight }px` ,
+			} as React.CSSProperties }
+		>
 			{ items.map( ( item , index ) => (
 				<MenuItemComponent
 					key={ item.id }
@@ -175,9 +242,14 @@ const MenuItemComponent = ( {
 				<span className="menu-item__label">{ item.label }</span>
 
 				{/* 快捷键 */}
-				{ item.accelerator && (
-					<span className="menu-item__accelerator">{ item.accelerator }</span>
+				{ item.accelerator ? (
+					<MenuAccelerator accelerator={ item.accelerator } />
+				) : (
+					<span className="menu-item__accelerator menu-item__accelerator--empty" aria-hidden="true" />
 				) }
+
+				{/* 右侧留白，与左侧 checkmark 列对称 */}
+				<span className="menu-item__side-gutter" aria-hidden="true" />
 
 				{/* 子菜单箭头 */}
 				{ hasSubmenu && <span className="menu-item__arrow">▶</span> }
@@ -206,6 +278,45 @@ const MenuItemComponent = ( {
 			) }
 		</div>
 	);
+};
+
+/** 格式化并渲染菜单快捷键（按键加粗，组合符淡化） */
+const MenuAccelerator = ( { accelerator } : { accelerator : string } ) => {
+	const parts = formatAcceleratorParts( accelerator );
+	return (
+		<span className="menu-item__accelerator" aria-label={ accelerator }>
+			{ parts.map( ( part , index ) => (
+				<span key={ `${ part.token }-${ index }` } className="menu-item__accelerator-part">
+					{ index > 0 ? <span className="menu-item__accelerator-sep">+</span> : null }
+					<span className={ `menu-item__accelerator-key ${ part.isSeparator ? 'menu-item__accelerator-key--sep' : '' }` }>
+						{ part.label }
+					</span>
+				</span>
+			) ) }
+		</span>
+	);
+};
+
+const formatAcceleratorParts = ( accelerator : string ) => {
+	const isMac = /mac/i.test( typeof navigator !== 'undefined' ? navigator.platform : '' );
+	const tokenLabels:Record<string , string> = {
+		CmdOrCtrl : isMac ? '⌘' : 'Ctrl' ,
+		CommandOrControl : isMac ? '⌘' : 'Ctrl' ,
+		Cmd : '⌘' ,
+		Ctrl : 'Ctrl' ,
+		Alt : isMac ? '⌥' : 'Alt' ,
+		Option : isMac ? '⌥' : 'Alt' ,
+		Shift : isMac ? '⇧' : 'Shift' ,
+	};
+
+	return accelerator.split( '+' ).map( token => {
+		const isSeparator = token === '=' || token === '-' || token === ',' || token === '.';
+		return {
+			token ,
+			label : tokenLabels[token] ?? token ,
+			isSeparator ,
+		};
+	} );
 };
 
 /** 发送菜单操作到主进程并关闭 */
