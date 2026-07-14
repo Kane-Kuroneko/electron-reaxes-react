@@ -14,7 +14,7 @@ const detectOS = (): NodeJS.Platform => {
 };
 
 export const getBarHeight = ( platform: NodeJS.Platform ): number => {
-	return platform === 'darwin' ? 38 : 32;
+	return platform === 'darwin' ? 42 : 36;
 };
 
 const getMenuButtonRect = ( index : number ) => {

@@ -4,7 +4,7 @@
  * 不再管理 WebContentsView 生命周期——MainView 直接渲染在 mainWindow HTML 中。
  */
 
-const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 38 : 32;
+const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 42 : 36;
 const DROPDOWN_MIN_WIDTH = 200;
 const DROPDOWN_MAX_WIDTH = 320;
 const DROPDOWN_CHAR_WIDTH = 7.2;
@@ -16,9 +16,11 @@ const DROPDOWN_CHROME = {
 	left : 6 ,
 } as const;
 
+/* 须与 DropdownView/index.less 中 .menu-item__button 行高一致（height 27px + line-height 1） */
 const DROPDOWN_ROW_HEIGHT = 27;
 const DROPDOWN_SEPARATOR_HEIGHT = 9;
-const DROPDOWN_PANEL_VPAD = 8;
+/* 4+4 panel padding + 1+1 panel border（.menu-dropdown box-sizing: border-box） */
+const DROPDOWN_PANEL_VPAD = 10;
 
 type DropdownOpenPayload = MainView.DropdownRequest;
 

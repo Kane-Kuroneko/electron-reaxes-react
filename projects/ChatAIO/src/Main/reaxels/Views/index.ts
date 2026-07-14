@@ -437,7 +437,7 @@ const resolveStartupAI = (
 /* ==========================================
    菜单栏高度常量
    ========================================== */
-const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 38 : 32;
+const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 42 : 36;
 
 const getMenuBarHeight = () => {
 	return MENU_BAR_HEIGHT;

@@ -5,9 +5,9 @@
  */
 
 const MENU_BAR_HEIGHT: Record<string, number> = {
-	darwin : 38 ,
-	win32 : 32 ,
-	linux : 32,
+	darwin : 42 ,
+	win32 : 36 ,
+	linux : 36,
 };
 
 export const App = reaxper( () => {
@@ -24,7 +24,7 @@ export const App = reaxper( () => {
 	} = reaxel_MainView();
 
 	const platform = store.platform;
-	const barHeight = MENU_BAR_HEIGHT[platform] || 32;
+	const barHeight = MENU_BAR_HEIGHT[platform] || 36;
 
 	/* 键盘事件监听 */
 	useEffect( () => {

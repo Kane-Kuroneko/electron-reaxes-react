@@ -377,7 +377,7 @@ const cubicBezierAxis = (t:number , p1:number , p2:number) => {
 
 const PROMPT_VIEW_ANIMATION_MS = 300;
 const PROMPT_VIEW_ANIMATION_FRAME_MS = 3;
-const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 38 : 32;
+const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 42 : 36;
 
 const getMenuBarHeight = () => {
 	return MENU_BAR_HEIGHT;
