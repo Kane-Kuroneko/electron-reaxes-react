@@ -6,9 +6,11 @@
 
 const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 42 : 36;
 const DROPDOWN_MIN_WIDTH = 200;
-const DROPDOWN_MAX_WIDTH = 320;
-const DROPDOWN_CHAR_WIDTH = 7.2;
-const DROPDOWN_ITEM_EXTRA = 104;
+const DROPDOWN_MAX_WIDTH = 480;
+const DROPDOWN_CHAR_WIDTH = 8.2;
+/* checkmark + gaps + padding + side-gutter；有快捷键列时再加 accelerator 占位 */
+const DROPDOWN_ITEM_EXTRA = 56;
+const DROPDOWN_ACCEL_COLUMN_EXTRA = 88;
 const DROPDOWN_CHROME = {
 	top : 0 ,
 	right : 6 ,
@@ -391,6 +393,11 @@ export const reaxel_MainView = reaxel( () => {
 	   ========================================== */
 
 	const executeMenuAction = ( action : MenuView.Action ) => {
+		/* 必须先同步关闭并清掉 MainView.openMenuIndex，
+		   否则 switch-ai 等会触发 menu structure-update，
+		   updateStructure 在 openMenuIndex>=0 时会立刻 reopen dropdown。 */
+		hideDropdownView();
+
 		switch( action.action ) {
 			case 'open-settings':
 				openSettingsViewInRuntime();
@@ -455,7 +462,6 @@ export const reaxel_MainView = reaxel( () => {
 				console.warn( '[MainView] unknown action:' , action.action );
 		}
 
-		hideDropdownView();
 		reaxel_Menu().scheduleMenuUpdate();
 	};
 
@@ -601,7 +607,10 @@ const estimateDropdownWidth = ( items : MenuView.Item[] ): number => {
 			if( item.type === 'separator' ) continue;
 			const labelWidth = Math.ceil( ( item.label?.length || 0 ) * DROPDOWN_CHAR_WIDTH );
 			const accelWidth = item.accelerator
-				? Math.ceil( item.accelerator.length * 6.5 ) + 24
+				? Math.max(
+					DROPDOWN_ACCEL_COLUMN_EXTRA ,
+					Math.ceil( item.accelerator.length * 7 ) + 24 ,
+				)
 				: 0;
 			const loadDotWidth = item.loadState ? 11 : 0;
 			maxContentWidth = Math.max(

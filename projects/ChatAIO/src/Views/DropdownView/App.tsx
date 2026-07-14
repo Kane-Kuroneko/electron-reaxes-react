@@ -241,12 +241,10 @@ const MenuItemComponent = ( {
 				{/* 标签文本 */}
 				<span className="menu-item__label">{ item.label }</span>
 
-				{/* 快捷键 */}
+				{/* 仅在有快捷键时渲染，避免空占位挤压长 label / AI 名称 */}
 				{ item.accelerator ? (
 					<MenuAccelerator accelerator={ item.accelerator } />
-				) : (
-					<span className="menu-item__accelerator menu-item__accelerator--empty" aria-hidden="true" />
-				) }
+				) : null }
 
 				{/* 右侧留白，与左侧 checkmark 列对称 */}
 				<span className="menu-item__side-gutter" aria-hidden="true" />

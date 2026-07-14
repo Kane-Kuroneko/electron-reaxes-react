@@ -86,17 +86,22 @@ export const App = reaxper( () => {
 		>
 			{ isDarwin && <div className="main-view-traffic-light-spacer" /> }
 
-			<div className="main-view-bar" role="menubar" aria-label="Application Menu">
-				<div
-					className="main-view-bar__drag-layer"
-					aria-hidden="true"
-					onMouseDown={ ( e ) => {
-						if( e.button !== 0 ) return;
-						if( store.openMenuIndex >= 0 ) {
-							closeAllMenus();
-						}
-					} }
-				/>
+			<div
+				className="main-view-bar"
+				role="menubar"
+				aria-label="Application Menu"
+				onMouseDown={ ( e ) => {
+					if( e.button !== 0 ) return;
+					const target = e.target as HTMLElement;
+					/* 点在空白菜单栏区域时关闭下拉；Brand / 菜单按钮自行处理 */
+					if( target.closest( '.main-view-bar-item' ) || target.closest( '.main-view-context-badge' ) ) {
+						return;
+					}
+					if( store.openMenuIndex >= 0 ) {
+						closeAllMenus();
+					}
+				} }
+			>
 				<div className="main-view-bar__items">
 					{ store.currentContextLabel ? (
 						<CurrentContextBadge label={ store.currentContextLabel } />

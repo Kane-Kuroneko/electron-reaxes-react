@@ -43,7 +43,7 @@ export const createMainWindow = async() => {
 			titleBarOverlay : {
 				color : '#00000000' ,        // 透明背景，让 MenuView 背景透出
 				symbolColor : '#888888' ,    // 按钮图标颜色
-				height : 32 ,                // 与菜单栏高度一致
+				height : 36 ,                // 与菜单栏高度一致（Windows/Linux MENU_BAR_HEIGHT）
 			} as any,
 		} ),
 	};
