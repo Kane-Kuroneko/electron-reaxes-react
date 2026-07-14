@@ -55,7 +55,6 @@ export namespace MenuView {
 	export interface MenuState {
 		structure : Structure;
 		openMenuIndex : number;           // -1 表示全部关闭
-		hoveredPath : string[];           // 当前悬浮路径
 		focusedItemIndex : number;
 		menuBarHeight : number;
 	}

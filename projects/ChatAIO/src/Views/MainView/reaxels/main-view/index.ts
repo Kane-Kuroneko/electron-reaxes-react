@@ -1,6 +1,6 @@
 /**
  * @description MainView 渲染进程 reaxel
- * 管理菜单结构数据、展开状态、悬浮路径等渲染进程侧状态。
+ * 管理菜单结构数据、展开状态等渲染进程侧状态。
  * 菜单结构通过 IPC 从主进程推送，操作事件通过 IPC 发回主进程执行。
  * 没有 resizeMenuView IPC——因为 MainView 渲染在 mainWindow HTML 中，
  * WebContentsViews 有 y=menuBarHeight 偏移，菜单栏固定在顶部。
@@ -63,8 +63,9 @@ export const reaxel_MainView = reaxel( () => {
 		mutate,
 	} = createReaxable( {
 		structure : checkAs<MenuView.Structure>( [] ) ,
+		leftMenuEntries : checkAs<MenuBarEntry[]>( [] ) ,
+		centerNav : null as CenterNavPartition | null ,
 		openMenuIndex : -1 ,
-		hoveredPath : checkAs<string[]>( [] ) ,
 		focusedItemIndex : -1 ,
 		platform : detectOS() as NodeJS.Platform ,
 		theme : 'light' as 'light' | 'dark' ,
@@ -72,9 +73,18 @@ export const reaxel_MainView = reaxel( () => {
 		settingsViewOpened : false ,
 	} );
 
+	const applyStructurePartition = ( structure : MenuView.Structure ) => {
+		const partition = partitionStructure( structure );
+		setState( {
+			structure ,
+			leftMenuEntries : partition.leftMenuEntries ,
+			centerNav : partition.centerNav ,
+		} );
+	};
+
 	/** 更新菜单结构（由 IPC 回调调用） */
 	const updateStructure = ( structure : MenuView.Structure ) => {
-		setState( { structure } );
+		applyStructurePartition( structure );
 		if( store.openMenuIndex >= 0 ) {
 			if( store.openMenuIndex >= structure.length ) {
 				closeAllMenus();
@@ -98,7 +108,6 @@ export const reaxel_MainView = reaxel( () => {
 		setState( {
 			openMenuIndex : index ,
 			focusedItemIndex : -1 ,
-			hoveredPath : [],
 		} );
 		openDropdownForIndex( store.structure , index , -1 );
 	};
@@ -114,7 +123,6 @@ export const reaxel_MainView = reaxel( () => {
 		setState( {
 			openMenuIndex : index ,
 			focusedItemIndex : -1 ,
-			hoveredPath : [],
 		} );
 		openDropdownForIndex( store.structure , index , -1 );
 	};
@@ -124,7 +132,6 @@ export const reaxel_MainView = reaxel( () => {
 		setState( {
 			openMenuIndex : -1 ,
 			focusedItemIndex : -1 ,
-			hoveredPath : [],
 		} );
 		api.closeDropdownView();
 	};
@@ -199,11 +206,6 @@ export const reaxel_MainView = reaxel( () => {
 		} );
 	};
 
-	/** 设置悬浮路径 */
-	const setHoveredPath = ( path : string[] ) => {
-		setState( { hoveredPath : path } );
-	};
-
 	/** 触发菜单项操作 */
 	const triggerAction = ( action : MenuView.Action ) => {
 		try {
@@ -215,6 +217,46 @@ export const reaxel_MainView = reaxel( () => {
 				itemId : action.itemId ,
 			} );
 		}
+	};
+
+	const isInteractiveMenubarTarget = ( target : HTMLElement ) => {
+		return !!target.closest( '.main-view-bar-item' )
+			|| !!target.closest( '.main-view-context-badge' )
+			|| !!target.closest( '.main-view-bar__center' );
+	};
+
+	/** 点击空白菜单栏区域时关闭下拉 */
+	const handleBarMouseDown = ( e : React.MouseEvent ) => {
+		if( e.button !== 0 ) return;
+		const target = e.target as HTMLElement;
+		if( isInteractiveMenubarTarget( target ) ) {
+			return;
+		}
+		if( store.openMenuIndex >= 0 ) {
+			closeAllMenus();
+		}
+	};
+
+	const handleDragTailMouseDown = ( e : React.MouseEvent ) => {
+		if( e.button !== 0 ) return;
+		if( store.openMenuIndex >= 0 ) {
+			closeAllMenus();
+		}
+	};
+
+	const bindKeyboardNav = () => {
+		bindKeyboardNavHandler( {
+			getOpenMenuIndex : () => store.openMenuIndex ,
+			closeAllMenus ,
+			openFirstMenu ,
+			moveTopMenu ,
+			moveFocusedItem ,
+			triggerFocusedItem ,
+		} );
+	};
+
+	const unbindKeyboardNav = () => {
+		unbindKeyboardNavHandler();
 	};
 
 	/** 处理菜单命令（主进程→渲染进程） */
@@ -231,7 +273,6 @@ export const reaxel_MainView = reaxel( () => {
 			setState( {
 				openMenuIndex : -1 ,
 				focusedItemIndex : -1 ,
-				hoveredPath : [],
 			} );
 			// 主进程已关闭 DropdownView，此处只同步本地状态，避免再次 close 形成回环
 		}
@@ -246,8 +287,11 @@ export const reaxel_MainView = reaxel( () => {
 		moveTopMenu ,
 		moveFocusedItem ,
 		triggerFocusedItem ,
-		setHoveredPath ,
 		triggerAction ,
+		handleBarMouseDown ,
+		handleDragTailMouseDown ,
+		bindKeyboardNav ,
+		unbindKeyboardNav ,
 		handleCommand,
 	};
 
@@ -259,7 +303,16 @@ export const reaxel_MainView = reaxel( () => {
 } );
 
 
-import { createReaxable , reaxel } from "reaxes";
-import type { MenuView } from "#src/Types/MenuView";
+import { createReaxable , reaxel } from 'reaxes';
+import type { MenuView } from '#src/Types/MenuView';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import { reportMenubarRendererError } from '#src/shared/utils/menubar-error-report.utility';
+import {
+	partitionStructure ,
+	type CenterNavPartition ,
+	type MenuBarEntry ,
+} from './partition-structure.utility';
+import {
+	bindKeyboardNav as bindKeyboardNavHandler ,
+	unbindKeyboardNav as unbindKeyboardNavHandler ,
+} from './keyboard-nav';

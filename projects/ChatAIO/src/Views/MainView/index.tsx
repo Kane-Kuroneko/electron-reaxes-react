@@ -1,8 +1,9 @@
 installMenubarRendererErrorHandlers( 'main-view-renderer' );
 
-// 在 React 挂载前同步注册 IPC，避免 Strict Mode useEffect 清理与主进程 send 竞态
-const { handleCommand } = reaxel_MainView();
-api.onMenuViewCommand( handleCommand );
+// 在 React 挂载前同步注册 IPC 与键盘导航，避免 Strict Mode useEffect 清理与主进程 send 竞态
+const mainViewApi = reaxel_MainView();
+mainViewApi.bindKeyboardNav();
+api.onMenuViewCommand( mainViewApi.handleCommand );
 api.menuViewReady();
 
 const root = createRoot( document.getElementById( 'react-app-root' ) );

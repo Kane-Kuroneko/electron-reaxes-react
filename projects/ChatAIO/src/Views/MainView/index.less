@@ -55,6 +55,9 @@ html, body {
 	position: relative;
 	height: var(--menu-bar-height, 36px);
 	flex: 1;
+	display: flex;
+	align-items: center;
+	min-width: 0;
 	background: var(--menu-view-bg, #f5f6f8);
 	border-bottom: 1px solid var(--menu-view-border, rgba(0, 0, 0, 0.08));
 	box-sizing: border-box;
@@ -64,15 +67,32 @@ html, body {
 	-webkit-app-region: drag;
 }
 
-.main-view-bar__items {
-	position: relative;
-	z-index: 1;
+.main-view-bar__left {
 	display: flex;
 	align-items: center;
+	flex-shrink: 0;
 	height: 100%;
 	min-width: 0;
 	padding-left: 4px;
 	-webkit-app-region: drag;
+}
+
+/* 中区：相对整行 menubar（含 macOS 交通灯）水平居中 */
+.main-view-bar__center {
+	position: absolute;
+	left: 50%;
+	top: 0;
+	transform: translateX(-50%);
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	height: var(--menu-bar-height, 36px);
+	pointer-events: none;
+	-webkit-app-region: drag;
+}
+
+.main-view-bar__center > * {
+	pointer-events: auto;
 }
 
 /* 菜单项右侧剩余空白：显式拖拽尾区（高度仍锁在 menubar 内） */
@@ -91,17 +111,17 @@ html, body {
 	min-width: 128px;
 	max-width: 128px;
 	height: 28px;
-	margin: 4px 4px 4px 0;
+	margin: 4px;
 	padding: 0 10px;
 	display: flex;
 	align-items: center;
-	justify-content: flex-start;
+	justify-content: center;
 	border-radius: 5px;
 	background: linear-gradient(
 		90deg,
-		var(--menu-brand-bg-start, rgba(15, 23, 42, 0.07)) 0%,
-		var(--menu-brand-bg-mid, rgba(15, 23, 42, 0.03)) 62%,
-		transparent 100%
+		var(--menu-brand-bg-light, rgba(15, 23, 42, 0.03)) 0%,
+		var(--menu-brand-bg-dark, rgba(15, 23, 42, 0.09)) 50%,
+		var(--menu-brand-bg-light, rgba(15, 23, 42, 0.03)) 100%
 	);
 	color: var(--menu-view-text, rgba(24, 24, 27, 0.9));
 	font-size: 12px;
@@ -116,6 +136,7 @@ html, body {
 	white-space: nowrap;
 	min-width: 0;
 	pointer-events: none;
+	text-align: center;
 }
 
 /* ── Menu Bar Item ────────────────────────────────────── */
@@ -220,8 +241,8 @@ html, body {
 	--menu-view-text: rgba(24, 24, 27, 0.9);
 	--menu-view-hover-bg: rgba(15, 23, 42, 0.06);
 	--menu-view-active-bg: rgba(15, 23, 42, 0.1);
-	--menu-brand-bg-start: rgba(15, 23, 42, 0.07);
-	--menu-brand-bg-mid: rgba(15, 23, 42, 0.03);
+	--menu-brand-bg-light: rgba(15, 23, 42, 0.03);
+	--menu-brand-bg-dark: rgba(15, 23, 42, 0.09);
 	--menu-nav-btn-border: rgba(15, 23, 42, 0.14);
 	--menu-nav-btn-border-hover: rgba(15, 23, 42, 0.2);
 	--menu-nav-btn-bg: rgba(255, 255, 255, 0.82);
@@ -235,8 +256,8 @@ html, body {
 	--menu-view-text: rgba(24, 24, 27, 0.9);
 	--menu-view-hover-bg: rgba(15, 23, 42, 0.06);
 	--menu-view-active-bg: rgba(15, 23, 42, 0.1);
-	--menu-brand-bg-start: rgba(15, 23, 42, 0.07);
-	--menu-brand-bg-mid: rgba(15, 23, 42, 0.03);
+	--menu-brand-bg-light: rgba(15, 23, 42, 0.03);
+	--menu-brand-bg-dark: rgba(15, 23, 42, 0.09);
 	--menu-nav-btn-border: rgba(15, 23, 42, 0.14);
 	--menu-nav-btn-bg: rgba(255, 255, 255, 0.82);
 }
@@ -247,8 +268,8 @@ html, body {
 	--menu-view-text: rgba(24, 24, 27, 0.9);
 	--menu-view-hover-bg: rgba(15, 23, 42, 0.06);
 	--menu-view-active-bg: rgba(15, 23, 42, 0.1);
-	--menu-brand-bg-start: rgba(15, 23, 42, 0.06);
-	--menu-brand-bg-mid: rgba(15, 23, 42, 0.02);
+	--menu-brand-bg-light: rgba(15, 23, 42, 0.02);
+	--menu-brand-bg-dark: rgba(15, 23, 42, 0.08);
 	--menu-nav-btn-border: rgba(15, 23, 42, 0.12);
 	--menu-nav-btn-bg: rgba(255, 255, 255, 0.7);
 	--menu-bar-item-divider: rgba(15, 23, 42, 0.07);
