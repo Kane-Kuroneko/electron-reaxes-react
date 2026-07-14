@@ -244,6 +244,11 @@ export const reaxel_MainView = reaxel( () => {
 		}
 	};
 
+	const applyMenubarTheme = ( theme : 'light' | 'dark' ) => {
+		setState( { theme } );
+		document.documentElement.dataset.theme = theme;
+	};
+
 	const bindKeyboardNav = () => {
 		bindKeyboardNavHandler( {
 			getOpenMenuIndex : () => store.openMenuIndex ,
@@ -268,7 +273,7 @@ export const reaxel_MainView = reaxel( () => {
 			} );
 			updateStructure( command.payload.structure );
 		} else if( command.type === 'menu-view:theme-update' ) {
-			setState( { theme : command.payload.theme } );
+			applyMenubarTheme( command.payload.theme );
 		} else if( command.type === 'menu-view:close' ) {
 			setState( {
 				openMenuIndex : -1 ,

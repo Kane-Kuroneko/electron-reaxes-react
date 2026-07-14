@@ -43,6 +43,7 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 			}
 			void reaxel_AIViews().syncAIViewsWithConfig( currentSettings );
 			reaxel_PromptViews().syncAppearanceFromSettings();
+			reaxel_MainView().syncAppearanceFromSettings();
 		} );
 
 		if( !closeHandlerBound ) {

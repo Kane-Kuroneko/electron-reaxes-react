@@ -71,6 +71,13 @@ export const reaxel_MainView = reaxel( () => {
 				setState( { mainViewRendererReady : true } );
 				preloadDropdownView();
 				sendMenuStructure();
+				sendMenuTheme();
+			} );
+		} );
+
+		useIpcRendererToMain( 'prompt-view-appearance-preview-change' ).on( ( _ , appearance ) => {
+			runMenubarHandler( 'prompt-view-appearance-preview-change' , () => {
+				sendMenuTheme( appearance );
 			} );
 		} );
 
@@ -137,6 +144,32 @@ export const reaxel_MainView = reaxel( () => {
 					chrome : menu.createMenuChrome(),
 				},
 			} );
+	};
+
+	const sendMenuTheme = ( previewAppearance? : Pick<PromptView.Appearance , 'theme'> ) => {
+		if( !store.mainViewRendererReady ) return;
+		if( !mainWindow || mainWindow.isDestroyed() ) return;
+		if( mainWindow.webContents.isDestroyed() ) return;
+
+		const theme = resolveMenubarTheme( previewAppearance );
+		useIpcMainToRenderer( 'menu-view:command' )
+			.targets( [ mainWindow.webContents ] )
+			.send( {
+				type : 'menu-view:theme-update' ,
+				payload : { theme } ,
+			} );
+
+		const dropdown = store.dropdownWindow;
+		if( dropdown && !dropdown.isDestroyed() && dropdown.isVisible() ) {
+			sendDropdownCommand( {
+				type : 'theme-update' ,
+				theme ,
+			} );
+		}
+	};
+
+	const syncAppearanceFromSettings = () => {
+		sendMenuTheme();
 	};
 
 	const bindMainWindowEvents = () => {
@@ -572,6 +605,8 @@ export const reaxel_MainView = reaxel( () => {
 	const rtn = {
 		initMainView ,
 		sendMenuStructure ,
+		sendMenuTheme ,
+		syncAppearanceFromSettings ,
 		showDropdownView ,
 		hideDropdownView,
 	};
@@ -645,7 +680,18 @@ const getRuntimeSettings = ():Settings => {
 };
 
 const getCurrentTheme = (): 'light' | 'dark' => {
-	return getAppearanceEnvironment().systemTheme;
+	return resolveMenubarTheme();
+};
+
+const resolveMenubarTheme = (
+	previewAppearance? : Pick<PromptView.Appearance , 'theme'>,
+): 'light' | 'dark' => {
+	const settingsAppearance = getRuntimeSettings().appearance;
+	const themePreference = normalizeThemePreference(
+		previewAppearance?.theme ?? settingsAppearance.theme ,
+		settingsAppearance.darkmode ,
+	);
+	return resolveThemePreference( themePreference , getAppearanceEnvironment().systemTheme );
 };
 
 const bindMenubarWebContentsLogging = (
@@ -756,6 +802,11 @@ import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import type { MenuView , MainView } from '#src/Types/MenuView';
 import type { DropdownView } from '#src/Types/DropdownView';
 import type { Settings } from '#src/Types/SettingsTypes';
+import type { PromptView } from '#src/Types/PromptView';
+import {
+	normalizeThemePreference ,
+	resolveThemePreference,
+} from '#src/shared/appearance';
 import {
 	app ,
 	autoUpdater ,
