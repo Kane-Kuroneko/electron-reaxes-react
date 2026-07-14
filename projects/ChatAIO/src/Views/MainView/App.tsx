@@ -121,6 +121,16 @@ export const App = reaxper( () => {
 							onItemAction={ triggerAction }
 						/>
 					) ) }
+					<div
+						className="main-view-bar__drag-tail"
+						aria-hidden="true"
+						onMouseDown={ ( e ) => {
+							if( e.button !== 0 ) return;
+							if( store.openMenuIndex >= 0 ) {
+								closeAllMenus();
+							}
+						} }
+					/>
 				</div>
 			</div>
 		</div>

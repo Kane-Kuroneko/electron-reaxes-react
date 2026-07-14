@@ -1,8 +1,9 @@
 ﻿/**
  * @description MainView 样式
  * 菜单栏渲染在 mainWindow HTML 中，通过 -webkit-app-region 实现原生窗口拖拽。
- * 菜单栏背景区域为拖拽区域，菜单按钮为 no-drag 保持可点。
- * 内容区（菜单栏下方）透明——由 WebContentsViews 覆盖。
+ * 菜单栏背景区域为拖拽区域（.main-view-bar drag），菜单按钮为 no-drag 保持可点。
+ * 不要用 inset:0 的全栏 drag overlay——Electron 会把 HTCAPTION 聚合泄露到下方 AI WCV。
+ * Brand（.main-view-context-badge）单独保持 drag；#react-app-root 高度裁到菜单栏防止拖拽区下溢。
  */
 
 /* ── Reset ──────────────────────────────────────────────── */
@@ -59,7 +60,8 @@ html, body {
 	box-sizing: border-box;
 	overflow: hidden;
 	padding-top: 1px;
-	-webkit-app-region: no-drag;
+	/* 栏本体拖拽；菜单 item 用 no-drag 挖洞。勿再加绝对定位全栏 drag-layer */
+	-webkit-app-region: drag;
 }
 
 .main-view-bar__items {
@@ -70,6 +72,15 @@ html, body {
 	height: 100%;
 	min-width: 0;
 	padding-left: 4px;
+	-webkit-app-region: drag;
+}
+
+/* 菜单项右侧剩余空白：显式拖拽尾区（高度仍锁在 menubar 内） */
+.main-view-bar__drag-tail {
+	flex: 1 1 auto;
+	align-self: stretch;
+	min-width: 12px;
+	-webkit-app-region: drag;
 }
 
 /* ── Current AI context badge ─────────────────────────── */
