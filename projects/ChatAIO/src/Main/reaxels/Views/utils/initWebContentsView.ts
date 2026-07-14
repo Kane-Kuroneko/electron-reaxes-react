@@ -45,10 +45,14 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	} );
 	
 	//当用户ctrl+r时reload当前view;f12 devtools
-	view.webContents.on('before-input-event', (event, input) => {
-		if( input.type === 'mouseDown' ) {
+	/* before-input-event 只覆盖键盘。dropdown 以 showInactive 打开时失焦不会自动关，
+	   应用内点空白需靠 before-mouse-event 主动 dismiss。 */
+	view.webContents.on( 'before-mouse-event' , ( _event , mouse ) => {
+		if( mouse.type === 'mouseDown' ) {
 			dismissMenubarDropdownIfOpen();
 		}
+	} );
+	view.webContents.on('before-input-event', (event, input) => {
 		if( handleAISwitchShortcutInput( event , input ) ) {
 			return;
 		}

@@ -170,6 +170,17 @@ export const reaxel_MainView = reaxel( () => {
 				hideDropdownView();
 			}
 		} );
+		/* MainView HTML 壳：点空白也关掉（WCV 已有 before-mouse-event；此处兜底未覆盖区域） */
+		if( !mainWindow.webContents.isDestroyed() ) {
+			mainWindow.webContents.on( 'before-mouse-event' , ( _event , mouse ) => {
+				if( mouse.type === 'mouseDown' ) {
+					const dropdown = store.dropdownWindow;
+					if( dropdown && !dropdown.isDestroyed() && dropdown.isVisible() ) {
+						hideDropdownView();
+					}
+				}
+			} );
+		}
 	};
 
 	const hideDropdownViewIfAppUnfocused = () => {
