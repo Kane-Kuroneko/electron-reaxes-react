@@ -1,8 +1,3 @@
----
-trigger: model_decision
-description: Reaxes 框架开发指南 — 基于 MobX 的响应式状态管理，涵盖 reaxel、reaxper、createReaxable、obsReaction、distinctCallback 等核心 API
----
-
 # Reaxes 开发指南
 
 > 来源：`.qoder/skills/reaxes-development/SKILL.md`（2026-06-01），精简适配 Claude Code 格式。
