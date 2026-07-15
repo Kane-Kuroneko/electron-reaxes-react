@@ -300,6 +300,13 @@ throw `cannot find key '${key}' in storage`;
 - **平台特定代码**：用条件判断区分平台行为
 - **避免无关清理**：许多文件有既存的松散类型和注释掉的调试代码，只在任务需要时修改
 
+### ChatAIO Windows FloatingView 鼠标穿透
+
+- 禁止将 FloatingView 改为 `setIgnoreMouseEvents(true, { forward: true })`。
+- Windows 上 Electron mouse forwarding 会与其它 BrowserWindow 的系统拖动冲突，导致 Web menubar 抖动、闪烁和粘滞；FloatingView 即使 hidden 也可能触发。
+- 当前必须保留 `{ forward: false }`。若未来确需转发 `mousemove`，应在窗口移动/缩放期间关闭 forwarding，并完整回归。
+- 修改 FloatingView、menubar drag region、透明窗口或鼠标穿透前，必须阅读 [`menubar-drag-investigation.md`](../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md)。
+
 ---
 
 ## 代码审查检查清单
@@ -314,3 +321,4 @@ throw `cannot find key '${key}' in storage`;
 - [ ] 工具文件是否使用 `.utility.ts` 后缀？
 - [ ] 是否优先使用路径别名（`#` 开头）？
 - [ ] 分号/引号风格是否一致？
+- [ ] ChatAIO FloatingView 是否保持 `forward: false`，并检查了 Windows 拖拽回归文档？

@@ -148,6 +148,8 @@
 	"Add AI Page" : "AI ページを追加" ,
 	"Edit AI Page" : "AI ページを編集" ,
 	"Delete AI page" : "AI ページを削除" ,
+	"Undo Delete" : "削除を取り消し" ,
+	"Are you sure you want to delete this AI page?" : "この AI ページを削除してもよろしいですか？" ,
 	"Clone" : "複製" ,
 	"Reset All AI Pages" : "すべての AI ページをリセット" ,
 	"App family" : "アプリファミリー" ,

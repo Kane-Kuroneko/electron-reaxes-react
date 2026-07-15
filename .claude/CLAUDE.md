@@ -28,6 +28,12 @@ Skills in `.claude/skills/` are **workflows/guides** — procedural knowledge an
 | `reaxes-development.md` | 编辑 reaxel/Refaxel/store/reaxper 组件、涉及业务逻辑范式时 | Reaxes 完整 API 参考：createReaxable/reaxel/reaxper、Way A(命令式)/Way B(响应式)、distinctCallback、obsReaction、Refaxel 多例工厂 |
 | `review-local-changes.md` | 用户说 "看看改了啥 / review diff / 整理提交 / 该不该commit / 准备提交" 时 | 审查未提交改动 → 分类(A 有效/B 临时/C 垃圾) → 分组提交建议，禁止擅自 commit/push |
 
+### 10. Windows FloatingView Mouse Passthrough
+- Never change ChatAIO FloatingView to `setIgnoreMouseEvents(true, { forward: true })` on Windows.
+- Electron mouse forwarding conflicts with dragging another BrowserWindow and causes menubar jitter, flicker, and sticky lag even when FloatingView is hidden.
+- Keep `{ forward: false }`; if forwarded mouse movement ever becomes necessary, disable forwarding for the full window move/resize interval and rerun the regression matrix.
+- Read [`menubar-drag-investigation.md`](../projects/ChatAIO/docs/issues/menubar-drag-investigation.md) before changing FloatingView, menubar drag regions, transparent windows, or mouse passthrough.
+
 ## Path Aliases
 
 | Alias | Resolves to |

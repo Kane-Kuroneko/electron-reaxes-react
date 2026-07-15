@@ -492,3 +492,5 @@ import * as less from './index.module.less';
 4. **避免直接修改 store**：始终使用 `setState`/`mutate`/`merge`
 5. **obsReaction 依赖数组**：确保列出所有依赖的属性，使用 `if (first) return` 跳过首次
 6. **TypeScript 类型**：为 store 定义明确的接口类型，使用 `as Type[]` 初始化数组
+
+> ChatAIO FloatingView/menubar/窗口鼠标穿透改动还必须阅读 [`menubar-drag-investigation.md`](../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md)；Windows 上禁止启用 `setIgnoreMouseEvents(..., { forward: true })`。

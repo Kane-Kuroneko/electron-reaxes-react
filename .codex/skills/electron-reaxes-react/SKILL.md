@@ -12,6 +12,8 @@ Read these files before changing behavior:
 - `.qoder/rules/ipc-coding.md`
 - `CODING_STANDARD.md`
 - The target subproject docs such as `projects/ChatAIO/docs/architecture/ai-config.md` and `projects/ChatAIO/todo.md`
+- Before changing ChatAIO FloatingView, menubar, transparent windows, or mouse passthrough, read [`menubar-drag-investigation.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md) and [`menubar-drag-region-leak-below-content.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-region-leak-below-content.md) (Windows `app-region` hit-test leak below menubar).
+- Before adding or changing **any** Renderer → Main IPC (especially menubar `openDropdownView` / `menuViewAction`), read `.qoder/rules/ipc-coding.md` §错误 0 and apply `cloneForIPC` to all `reaxel_*.store` payloads.
 
 Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with npm. The local Reaxes implementation is available at `Z:\reaxes` when library behavior is unclear.
 
@@ -38,6 +40,8 @@ Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with n
 - Do not import `createIpc`, `ipcRenderer`, `ipcMain`, or use raw `webContents.send` in renderer components.
 - Main process IPC goes through `src/Main/services/ipc/index.ts` via `useIpcRpc`, `useIpcRendererToMain`, or `useIpcMainToRenderer`.
 - Every new channel must be typed in `projects/ChatAIO/src/Types/IpcSchema.d.ts`, exposed in `src/preload.ts`, and wrapped in `Views/SettingsView/services/Settings` if the Settings UI needs it.
+- **Before every IPC send**: if the payload came from `reaxel_*.store` (including data that was plain JSON on first Main→Renderer push), call `cloneForIPC()` from `projects/ChatAIO/src/shared/utils/clone-for-ipc.utility.ts`. Skipping this causes `An object could not be cloned.` — see `.qoder/rules/ipc-coding.md` §错误 0 / Store 往返.
+- **Menubar / DropdownView**: `api.openDropdownView({ items: cloneForIPC(submenu), ... })` and `api.menuViewAction(cloneForIPC(action))` are mandatory; menubar errors log to main console and `logs/menubar-errors.log`.
 
 ## ChatAIO Runtime Model
 
@@ -49,6 +53,14 @@ Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with n
 - Each AI page needs an isolated persistent partition/session. Use stable partition names derived from `AIItem.id`.
 - Global proxy is the default only for AIs whose `proxy_mode` is `follow_global_setting`. Per-AI `direct`, `from_server_list`, and `user_fill` settings override global proxy entirely.
 - After settings apply/save, persist settings, sync existing AI views, update sessions/proxy, and rebuild the menu. Return a restart-required result only for settings that cannot be applied to existing Electron processes.
+
+## Windows FloatingView Mouse Passthrough
+
+- Do not change ChatAIO FloatingView to `setIgnoreMouseEvents(true, { forward: true })` on Windows.
+- Electron's mouse forwarding hook conflicts with dragging another BrowserWindow, including a `-webkit-app-region: drag` menubar, causing jitter, flicker, and sticky lag even when FloatingView is hidden.
+- Keep `{ forward: false }` unless a new feature demonstrably requires forwarded `mousemove`; then redesign or disable forwarding throughout window move/resize and rerun the documented regression matrix.
+- Canonical root-cause evidence and upstream Electron issues: [`menubar-drag-investigation.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md).
+- Menubar **below** transparent drag blocking content on Windows: keep Electron **≥ 41.2.1**; see [`menubar-drag-region-leak-below-content.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-region-leak-below-content.md).
 
 ## Validation
 

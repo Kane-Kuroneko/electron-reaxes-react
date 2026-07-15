@@ -143,6 +143,13 @@ interface IUserData {}
 - 提交信息必须像任务完成汇总一样具体，准确覆盖已完成的产品/文档变更、实现变更、bug 修复、多语言或配置变更，以及执行过的验证。
 - 多文件或多关注点改动应使用简洁 subject + 多条 body bullet；除非改动确实很小，否则不要只写一句话。
 
+### ChatAIO Windows FloatingView 鼠标穿透
+
+- 禁止将 FloatingView 改为 `setIgnoreMouseEvents(true, { forward: true })`。
+- Windows 上 Electron mouse forwarding 会与其它 BrowserWindow 的系统拖动冲突，导致 Web menubar 抖动、闪烁和粘滞；FloatingView 即使 hidden 也可能触发。
+- 当前必须保留 `{ forward: false }`。若未来确需转发 `mousemove`，应在窗口移动/缩放期间关闭 forwarding，并完整回归。
+- 修改 FloatingView、menubar drag region、透明窗口或鼠标穿透前，必须阅读 [`menubar-drag-investigation.md`](../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md)。
+
 ---
 
 ## 🔍 代码审查检查清单
@@ -154,6 +161,7 @@ interface IUserData {}
 - [ ] 命名是否遵循 camelCase/PascalCase/kebab-case 规范
 - [ ] Reaxel 模块是否使用 kebab-case 命名
 - [ ] 通用、业务无关的工具是否放在对应 `utils`/`toolkits` 目录
+- [ ] ChatAIO FloatingView 是否保持 `forward: false`，并检查了 Windows 拖拽回归文档
 
 ---
 
@@ -162,3 +170,4 @@ interface IUserData {}
 - **EditorConfig**: `.editorconfig`
 - **TypeScript 配置**: `tsconfig.json`
 - **项目结构**: `generic-services/reaxels/` (reaxel 命名参考)
+- **ChatAIO FloatingView 拖拽陷阱**: [`menubar-drag-investigation.md`](../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md)

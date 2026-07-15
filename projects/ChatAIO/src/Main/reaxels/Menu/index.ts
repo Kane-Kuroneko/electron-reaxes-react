@@ -6,6 +6,7 @@ export const reaxel_Menu = reaxel( () => {
 	} = createReaxable( {} );
 
 	let i18nInstance: (() => { i18n: (text: string) => string }) | null = null;
+	let menuUpdateScheduled = false;
 
 	const t = (text: string) => {
 		if (!i18nInstance) {
@@ -20,13 +21,270 @@ export const reaxel_Menu = reaxel( () => {
 		i18nInstance = i18n;
 	}
 
+	/**
+	 * 生成可序列化的菜单结构数据（替代 createMenu 的 native Menu 构建）
+	 * 供 MenuView WebContentsView 使用，通过 IPC 下发到渲染进程。
+	 */
+	function createMenuChrome(): MenuView.Chrome {
+		const settingsViewOpened = Reaxel_View.store.settingsViewOpened;
+		if( settingsViewOpened ) {
+			return {
+				currentContextLabel : t( 'Settings' ) ,
+				settingsViewOpened : true ,
+			};
+		}
+		const currentAI = reaxel_AIViews().currentAIView;
+		const settings = getRuntimeSettings();
+		const fallbackAI = settings.AIs.find( ai => ai.id === Reaxel_View.store.currentAIViewKey );
+		const label = currentAI?.label || currentAI?.id || fallbackAI?.label || fallbackAI?.id || '';
+		return {
+			currentContextLabel : label ,
+			settingsViewOpened : false ,
+		};
+	}
+
+	function createMenuData(): MenuView.Structure {
+		const settings = getRuntimeSettings();
+		const enabledAIs = settings.AIs.filter( ai => !ai.disabled );
+		const { currentAIViewKey , settingsViewOpened } = Reaxel_View.store;
+		const instantiatedAIViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
+		const canSwitchInstantiatedAI = instantiatedAIViews.length > 1;
+		const nextInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , 1 );
+		const previousInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , -1 );
+		const promptViewLeftVisible = reaxel_PromptViews.store.left.visible || reaxel_PromptViews.store.left.width > 0;
+		const promptViewRightVisible = reaxel_PromptViews.store.right.visible || reaxel_PromptViews.store.right.width > 0;
+		const platform = process.platform;
+
+		const topLevelItems: MenuView.Structure = [
+			{
+				id : 'application' ,
+				label : t('Application') ,
+				enabled : true ,
+				submenu : [
+					{
+						id : 'settings' ,
+						label : t('Settings') ,
+						type : 'checkbox' ,
+						checked : settingsViewOpened ,
+						enabled : true ,
+						action : 'open-settings',
+					} ,
+					{ id : 'app-sep-1' , label : '' , type : 'separator' , enabled : true } ,
+					{
+						id : 'check-updates' ,
+						label : t('Check for Updates') ,
+						type : 'normal' ,
+						enabled : true ,
+						action : 'check-updates',
+					} ,
+					{ id : 'app-sep-2' , label : '' , type : 'separator' , enabled : true } ,
+					{
+						id : 'quit' ,
+						label : platform === 'darwin' ? t('Quit') : t('Exit') ,
+						type : 'normal' ,
+						enabled : true ,
+						action : 'quit',
+					} ,
+				],
+			} ,
+			{
+				id : 'view' ,
+				label : t('View') ,
+				enabled : true ,
+				submenu : [
+					{
+						id : 'reload' ,
+						label : t('Reload') ,
+						type : 'normal' ,
+						accelerator : 'CmdOrCtrl+R' ,
+						enabled : true ,
+						action : 'reload-view',
+					} ,
+					{
+						id : 'force-reload' ,
+						label : t('Force Reload') ,
+						type : 'normal' ,
+						accelerator : 'CmdOrCtrl+Shift+R' ,
+						enabled : true ,
+						action : 'force-reload-view',
+					} ,
+					{
+						id : 'devtools' ,
+						label : t('Developer Tools') ,
+						type : 'normal' ,
+						accelerator : platform === 'darwin' ? 'Cmd+Option+I' : 'F12' ,
+						enabled : true ,
+						action : 'toggle-devtools',
+					} ,
+					{ id : 'view-sep-1' , label : '' , type : 'separator' , enabled : true } ,
+					{
+						id : 'prompt-left' ,
+						label : t('PromptView Left') ,
+						type : 'checkbox' ,
+						checked : promptViewLeftVisible ,
+						accelerator : 'Alt+,' ,
+						enabled : true ,
+						action : 'toggle-prompt-left',
+					} ,
+					{
+						id : 'prompt-right' ,
+						label : t('PromptView Right') ,
+						type : 'checkbox' ,
+						checked : promptViewRightVisible ,
+						accelerator : 'Alt+.' ,
+						enabled : true ,
+						action : 'toggle-prompt-right',
+					} ,
+					{ id : 'view-sep-2' , label : '' , type : 'separator' , enabled : true } ,
+					{
+						id : 'wipe-reload' ,
+						label : t('Wipe and Reload This Page') ,
+						type : 'normal' ,
+						enabled : true ,
+						action : 'wipe-reload',
+					} ,
+					{ id : 'view-sep-3' , label : '' , type : 'separator' , enabled : true } ,
+					{
+						id : 'actual-size' ,
+						label : t('Actual Size') ,
+						type : 'normal' ,
+						accelerator : 'CmdOrCtrl+0' ,
+						enabled : true ,
+						action : 'actual-size',
+					} ,
+					{
+						id : 'zoom-in' ,
+						label : t('Zoom In') ,
+						type : 'normal' ,
+						accelerator : 'CmdOrCtrl+=' ,
+						enabled : true ,
+						action : 'zoom-in',
+					} ,
+					{
+						id : 'zoom-out' ,
+						label : t('Zoom Out') ,
+						type : 'normal' ,
+						accelerator : 'CmdOrCtrl+-' ,
+						enabled : true ,
+						action : 'zoom-out',
+					} ,
+					{ id : 'view-sep-4' , label : '' , type : 'separator' , enabled : true } ,
+					{
+						id : 'toggle-fullscreen' ,
+						label : t('Toggle Fullscreen') ,
+						type : 'normal' ,
+						enabled : true ,
+						action : 'toggle-fullscreen',
+					} ,
+					{ id : 'view-sep-5' , label : '' , type : 'separator' , enabled : true } ,
+					{
+						id : 'close-current-ai' ,
+						label : t('Close This AI') ,
+						type : 'normal' ,
+						accelerator : 'CmdOrCtrl+W' ,
+						enabled : !!reaxel_AIViews().currentAIView ,
+						action : 'close-current-ai',
+					} ,
+				],
+			} ,
+			{
+				id : 'switch-ai' ,
+				label : t('Switch AI') ,
+				enabled : true ,
+				submenu : enabledAIs.length > 0
+					? [
+						...enabledAIs.map( ai => ( {
+							id : `ai-${ ai.id }` ,
+							label : ai.label || ai.id ,
+							type : 'radio' as const ,
+							checked : currentAIViewKey === ai.id ,
+							enabled : true ,
+							loadState : isAIInstantiated( ai.id ) ? 'instantiated' as const : 'unloaded' as const ,
+							action : 'switch-ai' as const ,
+							actionPayload : ai.id,
+						} ) ) ,
+						{ id : 'switch-sep-1' , label : '' , type : 'separator' , enabled : true } ,
+						{
+							id : 'prev-instantiated' ,
+							label : t('Previous Opened AI') ,
+							type : 'normal' ,
+							accelerator : 'CmdOrCtrl+[' ,
+							enabled : canSwitchInstantiatedAI ,
+							action : 'prev-instantiated',
+						} ,
+						{
+							id : 'next-instantiated' ,
+							label : t('Next Opened AI') ,
+							type : 'normal' ,
+							accelerator : 'CmdOrCtrl+]' ,
+							enabled : canSwitchInstantiatedAI ,
+							action : 'next-instantiated',
+						} ,
+						{ id : 'switch-sep-2' , label : '' , type : 'separator' , enabled : true } ,
+						{
+							id : 'prev-page' ,
+							label : t('Previous AI Page') ,
+							type : 'normal' ,
+							accelerator : 'Alt+[' ,
+							enabled : enabledAIs.length > 1 ,
+							action : 'prev-page',
+						} ,
+						{
+							id : 'next-page' ,
+							label : t('Next AI Page') ,
+							type : 'normal' ,
+							accelerator : 'Alt+]' ,
+							enabled : enabledAIs.length > 1 ,
+							action : 'next-page',
+						} ,
+					]
+					: [
+						{
+							id : 'no-ai' ,
+							label : t('No enabled AI pages') ,
+							type : 'normal' ,
+							enabled : false,
+						} ,
+					],
+			} ,
+		];
+
+		if( canSwitchInstantiatedAI ) {
+			const prevName = previousInstantiatedAI?.label || previousInstantiatedAI?.id || '';
+			const nextName = nextInstantiatedAI?.label || nextInstantiatedAI?.id || '';
+			topLevelItems.push(
+				{
+					id : 'prev-instantiated' ,
+					label : t( 'Prev' ) ,
+					submenu : [] ,
+					enabled : true ,
+					icon : 'chevron-left' ,
+					adjacentLabel : prevName || undefined ,
+					tooltip : prevName ? `${ t( 'Prev' ) }: ${ prevName }` : t( 'Prev' ) ,
+					action : 'prev-instantiated',
+				} ,
+				{
+					id : 'next-instantiated' ,
+					label : t( 'Next' ) ,
+					submenu : [] ,
+					enabled : true ,
+					icon : 'chevron-right' ,
+					adjacentLabel : nextName || undefined ,
+					tooltip : nextName ? `${ t( 'Next' ) }: ${ nextName }` : t( 'Next' ) ,
+					action : 'next-instantiated',
+				} ,
+			);
+		}
+
+		return topLevelItems;
+	}
+
 	function createMenu() {
 		const settings = getRuntimeSettings();
 		const enabledAIs = settings.AIs.filter( ai => !ai.disabled );
 		const { currentAIViewKey } = Reaxel_View.store;
 		const instantiatedAIViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
 		const canSwitchInstantiatedAI = instantiatedAIViews.length > 1;
-		// 顶部相邻按钮基于已实例化的 AI Views
 		const nextInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , 1 );
 		const previousInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , -1 );
 		const promptViewLeftVisible = reaxel_PromptViews.store.left.visible || reaxel_PromptViews.store.left.width > 0;
@@ -125,8 +383,7 @@ export const reaxel_Menu = reaxel( () => {
 					} ,
 					{
 						label : t('Developer Tools') ,
-						// Windows: F12（Chrome 标准），macOS: Cmd+Option+I（Chrome 标准）
-							accelerator : process.platform === 'darwin' ? 'Cmd+Option+I' : 'F12' ,
+						accelerator : process.platform === 'darwin' ? 'Cmd+Option+I' : 'F12' ,
 						click : () => {
 							const view = Reaxel_View.store.settingsViewOpened
 								? reaxel_SettingsView.store.settingsView.view
@@ -310,20 +567,42 @@ export const reaxel_Menu = reaxel( () => {
 
 	function rebuildMenu() {
 		console.log('[Menu] rebuildMenu called, i18nInstance =', i18nInstance ? 'SET' : 'NULL');
-		const menu = createMenu();
-		// macOS：全局应用菜单（始终在屏幕顶部菜单栏可见）
-		// Windows/Linux：每窗口菜单
 		if( process.platform === 'darwin' ) {
+			const menu = createMenu();
 			Menu.setApplicationMenu( menu );
 		} else {
 			if( !mainWindow || mainWindow.isDestroyed() ) return;
-			mainWindow.setMenu( menu );
+			mainWindow.setMenu( null );
+		}
+		pushMenuUpdate();
+	}
+
+	/**
+	 * 发送菜单结构数据到 MainView 渲染进程
+	 */
+	function pushMenuUpdate() {
+		try {
+			const mainViewReaxel = reaxel_MainView();
+			if( mainViewReaxel ) {
+				mainViewReaxel.sendMenuStructure();
+			}
+		} catch ( e ) {
+			// MainView reaxel 可能尚未初始化，静默忽略
 		}
 	}
 
 	/**
-	 * 检查给定 AI ID 是否已经被实例化（WebContentsView 已创建）
+	 * 调度菜单更新（去重）
 	 */
+	function scheduleMenuUpdate() {
+		if( menuUpdateScheduled ) return;
+		menuUpdateScheduled = true;
+		setImmediate( () => {
+			menuUpdateScheduled = false;
+			rebuildMenu();
+		} );
+	}
+
 	const isAIInstantiated = (aiId:string) => {
 		return reaxel_AIViews.store.AIViews.some( rv => rv.id === aiId );
 	};
@@ -344,7 +623,10 @@ export const reaxel_Menu = reaxel( () => {
 	const rtn = {
 		menuReady ,
 		createMenu ,
+		createMenuData ,
+		createMenuChrome ,
 		rebuildMenu,
+		scheduleMenuUpdate,
 		setI18nInstance,
 	};
 
@@ -395,14 +677,10 @@ const createAdjacentAIMenuLabel = (
 	if( !ai ) {
 		return escapeElectronMenuBarLabel( `${ emoji } ${ label }` );
 	}
-	// 获取 AI 显示名称：优先使用 label，否则使用 id
 	const displayName = ai.label || ai.id;
 	return escapeElectronMenuBarLabel( `${ emoji } ${ label }: ${ fitMenuAIName( displayName ) }` );
 };
 
-/**
- * 基于已实例化的 AI Views 解析相邻 AI
- */
 const resolveAdjacentInstantiatedAI = (
 	instantiatedViews:RuntimeAIView[] ,
 	currentAIViewKey:string ,
@@ -419,6 +697,7 @@ const resolveAdjacentInstantiatedAI = (
 };
 
 import { Reaxel_View } from '../Views';
+import { reaxel_MainView } from '../Views/Main-View';
 import {
 	escapeElectronMenuBarLabel ,
 	fitMenuAIName,
@@ -435,6 +714,7 @@ import { reaxel_AIViews , type RuntimeAIView } from "#main/reaxels/Views/AI-View
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import { getAIConfigService } from "#main/services/settings/ai-config-service";
 import { getSettingsConfigService } from "#main/services/settings/settings-config-service";
+import type { MenuView } from "#src/Types/MenuView";
 import type { Settings } from "#src/Types/SettingsTypes";
 import {
 	createReaxable ,

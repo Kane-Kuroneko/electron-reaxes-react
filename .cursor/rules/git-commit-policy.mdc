@@ -1,0 +1,11 @@
+---
+description: 未经用户显式要求时禁止私自 git commit
+alwaysApply: true
+---
+
+# Git Commit 策略
+
+- **未经用户显式要求时，不得私自执行 `git commit`。**
+- 若用户意图不明确（例如只说「改好了」「继续」），先完成代码修改并汇报，**不要**主动提交。
+- 仅在用户明确说出 commit / 提交 / 保存到 git 等意图时，才创建 commit。
+- 同样未经明确要求，不得 push、amend 或执行其他会改写 git 历史的操作。

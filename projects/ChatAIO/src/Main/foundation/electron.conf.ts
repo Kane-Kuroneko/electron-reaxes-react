@@ -1,3 +1,5 @@
+app.commandLine.appendSwitch( 'disable-blink-features' , 'AutomationControlled' );
+
 if(dev()){
 	app.commandLine.appendSwitch('remote-debugging-port', '9222');
 	app.commandLine.appendSwitch('remote-allow-origins', '*');

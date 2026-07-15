@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"moduleResolution": "bundler",
+		"module": "ESNext",
+		"target": "ESNext",
+		"strict": false,
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"paths": {
+			"#src/*" : ["../../../src/*"],
+			"#SharedTypes/*" : ["../../../src/SharedTypes/*"],
+			"#generics/*" : ["../../../../generic-services/*"],
+		}
+	},
+	"include": ["./**/*.ts", "./**/*.tsx"],
+}

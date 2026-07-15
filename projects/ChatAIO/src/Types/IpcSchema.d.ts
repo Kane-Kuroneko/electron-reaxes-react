@@ -9,6 +9,13 @@ export interface RendererToMainEvents extends Record<string , IpcStructure.Rende
 	'close-prompt-view' : IpcStructure.RendererToMainEvent<[side: PromptView.Side] , {channel:void,args:void[]}>;
 	'perf-event' : IpcStructure.RendererToMainEvent<[events: import('#src/shared/utils/switch-perf-recorder.utility').PerfEvent[]] , {channel:void,args:void[]}>;
 	'focus-state-change' : IpcStructure.RendererToMainEvent<[import('#src/Types/FocusMonitor').FocusMonitor.FocusState] , {channel:void,args:void[]}>;
+	'menu-view:action' : IpcStructure.RendererToMainEvent<[MenuView.Action] , {channel:void,args:void[]}>;
+	'menu-view:ready' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
+	'menu-view:resize' : IpcStructure.RendererToMainEvent<[height: number] , {channel:void,args:void[]}>;
+	'dropdown-view:open' : IpcStructure.RendererToMainEvent<[MainView.DropdownRequest] , {channel:void,args:void[]}>;
+	'dropdown-view:close' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
+	'dropdown-view:focus-item' : IpcStructure.RendererToMainEvent<[index: number] , {channel:void,args:void[]}>;
+	'menubar:error-report' : IpcStructure.RendererToMainEvent<[MenubarErrorReport] , {channel:void,args:void[]}>;
 }
 
 export interface MainToRendererEvents extends Record<string , IpcStructure.MainToRendererEvent<unknown[]>> {
@@ -17,6 +24,8 @@ export interface MainToRendererEvents extends Record<string , IpcStructure.MainT
 	'floating-view-command' : IpcStructure.MainToRendererEvent<[FloatingView.Command]>;
 	'ai-page-environment-change' : IpcStructure.MainToRendererEvent<[AIPageEnvironment]>;
 	'prompt-view-appearance-change' : IpcStructure.MainToRendererEvent<[PromptView.AppearanceState]>;
+	'menu-view:command' : IpcStructure.MainToRendererEvent<[MenuView.MenuCommand]>;
+	'dropdown-view:command' : IpcStructure.MainToRendererEvent<[DropdownView.Command]>;
 }
 
 export interface IpcSyncRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , unknown>> {
@@ -80,3 +89,6 @@ import type { Languages } from '#src/Types/Languages';
 import type { Guiding } from '#src/Types/Guiding';
 import type { AIPageEnvironment } from '#src/Types/AIPageEnvironment';
 import type { PromptView } from '#src/Types/PromptView';
+import type { MenubarErrorReport } from '#main/services/menubar-error-log.utility';
+import type { MenuView , MainView } from '#src/Types/MenuView';
+import type { DropdownView } from '#src/Types/DropdownView';

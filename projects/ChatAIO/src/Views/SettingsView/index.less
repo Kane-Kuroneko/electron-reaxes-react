@@ -11,6 +11,8 @@
 	--settings-row-new-hover: #d9f7be;
 	--settings-row-modified: #fff7e6;
 	--settings-row-modified-hover: #ffe7ba;
+	--settings-row-pending-delete: #fff1f0;
+	--settings-row-pending-delete-hover: #ffe4e1;
 	color-scheme: light;
 }
 
@@ -27,6 +29,8 @@
 	--settings-row-new-hover: #29452d;
 	--settings-row-modified: #392d1a;
 	--settings-row-modified-hover: #4a3a20;
+	--settings-row-pending-delete: #3a1f1f;
+	--settings-row-pending-delete-hover: #4a2828;
 	color-scheme: dark;
 }
 
@@ -181,6 +185,26 @@ html, body {
 	
 	> td {
 		background-color: var(--settings-row-modified) !important;
+	}
+}
+// ManageAIs Table 待删除状态行 — 浅红色整行背景
+.ai-row--pending-delete,
+.ant-table-row.ant-table-row-level-0.ai-row--pending-delete {
+	background-color: var(--settings-row-pending-delete) !important;
+
+	&:hover > td {
+		background-color: var(--settings-row-pending-delete-hover) !important;
+	}
+
+	> td {
+		background-color: var(--settings-row-pending-delete) !important;
+	}
+}
+
+// 删除确认 Popover — 紧凑内边距
+.delete-ai-popover {
+	.ant-popover-inner {
+		padding: 8px 4px;
 	}
 }
 

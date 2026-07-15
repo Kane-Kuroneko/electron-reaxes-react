@@ -148,6 +148,8 @@
 	"Add AI Page" : "新增 AI 頁面" ,
 	"Edit AI Page" : "編輯 AI 頁面" ,
 	"Delete AI page" : "刪除 AI 頁面" ,
+	"Undo Delete" : "復原刪除" ,
+	"Are you sure you want to delete this AI page?" : "確定要刪除此 AI 頁面嗎？" ,
 	"Clone" : "複製" ,
 	"Reset All AI Pages" : "重置所有 AI 頁面" ,
 	"App family" : "應用系列" ,

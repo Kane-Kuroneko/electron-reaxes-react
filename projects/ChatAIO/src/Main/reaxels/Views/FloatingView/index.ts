@@ -150,7 +150,10 @@ export const reaxel_FloatingView = reaxel( () => {
 			},
 		} );
 
-		floatingWindow.setIgnoreMouseEvents( true , { forward : true } );
+		/* Windows 上禁止改为 forward:true：Electron 的 mouse forwarding hook 会干扰
+		   同应用其它窗口的系统拖动，导致 menubar 抖动、闪烁和粘滞。
+		   详见 docs/issues/menubar-drag-investigation.md。 */
+		floatingWindow.setIgnoreMouseEvents( true , { forward : false } );
 		floatingWindow.setMenu( null );
 		floatingWindow.setAlwaysOnTop( true , 'floating' );
 		setState.floatingView( {

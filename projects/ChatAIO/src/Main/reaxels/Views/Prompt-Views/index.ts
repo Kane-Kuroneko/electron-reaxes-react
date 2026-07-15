@@ -115,14 +115,13 @@ export const reaxel_PromptViews = reaxel( () => {
 		}
 		const width = Math.max( 0 , Math.round( sideState.width ) );
 		const visible = width > 0 || sideState.visible;
-		// macOS hiddenInset: 红绿灯按钮悬浮在内容区域上方，需要预留顶部安全区
-		const topOffset = process.platform === 'darwin' ? 38 : 0;
+		const menuBarHeight = getMenuBarHeight();
 		setViewVisibleIfChanged( view , visible );
 		setViewBoundsIfChanged( view , {
 			x : side === 'left' ? 0 : Math.max( 0 , bounds.width - width ) ,
-			y : topOffset ,
+			y : menuBarHeight ,
 			width ,
-			height : Math.max( 1 , bounds.height - topOffset ),
+			height : Math.max( 1 , bounds.height - menuBarHeight ),
 		} );
 	};
 	
@@ -209,6 +208,7 @@ export const reaxel_PromptViews = reaxel( () => {
 		expanding:boolean,
 	) => {
 		const bounds = mainWindow.getContentBounds();
+		const menuBarHeight = getMenuBarHeight();
 		const leftWidth = side === 'left'
 			? Math.max( 0 , nextWidth )
 			: Math.max( 0 , Math.round( store.left.width ) );
@@ -217,13 +217,11 @@ export const reaxel_PromptViews = reaxel( () => {
 			: Math.max( 0 , Math.round( store.right.width ) );
 
 		const syncCenterView = () => {
-			// macOS 标题栏: 预留红绿灯安全区，动画期间也不应覆盖标题栏阻断拖拽
-			const topOffset = process.platform === 'darwin' ? 38 : 0;
 			Reaxel_View().fitCurrentCenterView( {
 				x : leftWidth ,
-				y : topOffset ,
+				y : menuBarHeight ,
 				width : Math.max( 1 , bounds.width - leftWidth - rightWidth ) ,
-				height : Math.max( 1 , bounds.height - topOffset ),
+				height : Math.max( 1 , bounds.height - menuBarHeight ),
 			} );
 		};
 		const syncSideViews = () => {
@@ -301,14 +299,13 @@ const syncSideBoundsWithWidth = (
 	}
 	const roundedWidth = Math.max( 0 , Math.round( width ) );
 	const visible = roundedWidth > 0 || sideState.visible;
-	// macOS 标题栏: 预留红绿灯安全区，动画期间侧栏也不应覆盖标题栏
-	const topOffset = process.platform === 'darwin' ? 38 : 0;
+	const menuBarHeight = getMenuBarHeight();
 	setViewVisibleIfChanged( view , visible );
 	setViewBoundsIfChanged( view , {
 		x : side === 'left' ? 0 : Math.max( 0 , bounds.width - roundedWidth ) ,
-		y : topOffset ,
+		y : menuBarHeight ,
 		width : roundedWidth ,
-		height : Math.max( 1 , bounds.height - topOffset ),
+		height : Math.max( 1 , bounds.height - menuBarHeight ),
 	} );
 };
 
@@ -380,6 +377,11 @@ const cubicBezierAxis = (t:number , p1:number , p2:number) => {
 
 const PROMPT_VIEW_ANIMATION_MS = 300;
 const PROMPT_VIEW_ANIMATION_FRAME_MS = 3;
+const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 42 : 36;
+
+const getMenuBarHeight = () => {
+	return MENU_BAR_HEIGHT;
+};
 
 type PromptSideState = {
 	name: 'PromptViewLeft' | 'PromptViewRight';

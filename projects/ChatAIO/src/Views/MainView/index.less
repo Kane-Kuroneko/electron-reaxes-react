@@ -1,0 +1,283 @@
+﻿/**
+ * @description MainView 样式
+ * 菜单栏渲染在 mainWindow HTML 中，通过 -webkit-app-region 实现原生窗口拖拽。
+ * 菜单栏背景区域为拖拽区域（.main-view-bar drag），菜单按钮为 no-drag 保持可点。
+ * 不要用 inset:0 的全栏 drag overlay——Electron 会把 HTCAPTION 聚合泄露到下方 AI WCV。
+ * Brand（.main-view-context-badge）单独保持 drag；#react-app-root 高度裁到菜单栏防止拖拽区下溢。
+ */
+
+/* ── Reset ──────────────────────────────────────────────── */
+html, body {
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	width: 100%;
+	height: 100%;
+	background: var(--menu-view-bg, #f5f6f8);
+	-webkit-app-region: no-drag;
+}
+
+#react-app-root {
+	height: var(--menu-bar-height, 36px);
+	overflow: hidden;
+}
+
+/* ── MainView Root ──────────────────────────────────────── */
+.main-view-root {
+	display: flex;
+	align-items: flex-start;
+	width: 100%;
+	height: var(--menu-bar-height, 36px);
+	overflow: hidden;
+	background: transparent;
+	user-select: none;
+	position: relative;
+	z-index: 100;
+	padding: 0;
+	margin: 0;
+	box-sizing: border-box;
+	-webkit-app-region: no-drag;
+}
+
+/* macOS traffic light 预留区域 */
+.main-view-traffic-light-spacer {
+	flex-shrink: 0;
+	width: 78px;
+	height: var(--menu-bar-height, 36px);
+	background: var(--menu-view-bg, #f5f6f8);
+	-webkit-app-region: drag;
+	box-sizing: border-box;
+	padding-top: 1px;
+}
+
+/* ── Menu Bar ─────────────────────────────────────────── */
+.main-view-bar {
+	position: relative;
+	height: var(--menu-bar-height, 36px);
+	flex: 1;
+	display: flex;
+	align-items: center;
+	min-width: 0;
+	background: var(--menu-view-bg, #f5f6f8);
+	border-bottom: 1px solid var(--menu-view-border, rgba(0, 0, 0, 0.08));
+	box-sizing: border-box;
+	overflow: hidden;
+	padding-top: 1px;
+	/* 栏本体拖拽；菜单 item 用 no-drag 挖洞。勿再加绝对定位全栏 drag-layer */
+	-webkit-app-region: drag;
+}
+
+.main-view-bar__left {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	height: 100%;
+	min-width: 0;
+	padding-left: 4px;
+	-webkit-app-region: drag;
+}
+
+/* 中区：相对整行 menubar（含 macOS 交通灯）水平居中 */
+.main-view-bar__center {
+	position: absolute;
+	left: 50%;
+	top: 0;
+	transform: translateX(-50%);
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	height: var(--menu-bar-height, 36px);
+	pointer-events: none;
+	-webkit-app-region: drag;
+}
+
+.main-view-bar__center > * {
+	pointer-events: auto;
+}
+
+/* 菜单项右侧剩余空白：显式拖拽尾区（高度仍锁在 menubar 内） */
+.main-view-bar__drag-tail {
+	flex: 1 1 auto;
+	align-self: stretch;
+	min-width: 12px;
+	-webkit-app-region: drag;
+}
+
+/* ── Current AI context badge ─────────────────────────── */
+.main-view-context-badge {
+	flex-shrink: 0;
+	box-sizing: border-box;
+	width: 128px;
+	min-width: 128px;
+	max-width: 128px;
+	height: 28px;
+	margin: 4px;
+	padding: 0 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 5px;
+	background: linear-gradient(
+		90deg,
+		var(--menu-brand-bg-light, rgba(15, 23, 42, 0.03)) 0%,
+		var(--menu-brand-bg-dark, rgba(15, 23, 42, 0.09)) 50%,
+		var(--menu-brand-bg-light, rgba(15, 23, 42, 0.03)) 100%
+	);
+	font-size: 12px;
+	font-weight: 600;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	-webkit-app-region: drag;
+}
+
+.main-view-context-badge__label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	min-width: 0;
+	pointer-events: none;
+	text-align: center;
+	background: linear-gradient(
+		90deg,
+		var(--menu-brand-text-start, #8b7fd4) 0%,
+		var(--menu-brand-text-mid, #c49ad8) 52%,
+		var(--menu-brand-text-end, #e891b8) 100%
+	);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	-webkit-text-fill-color: transparent;
+}
+
+/* ── Menu Bar Item ────────────────────────────────────── */
+.main-view-bar-item {
+	position: relative;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	-webkit-app-region: no-drag;
+}
+
+.main-view-bar-item--nav {
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.main-view-bar-item__button {
+	height: 28px;
+	margin: 4px 1px;
+	padding: 0 7px;
+	border: none;
+	background: transparent;
+	color: var(--menu-view-text, rgba(24, 24, 27, 0.9));
+	font-size: 13px;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	cursor: pointer;
+	white-space: nowrap;
+	display: flex;
+	align-items: center;
+	border-radius: 5px;
+	box-shadow: inset 0 -1px 0 var(--menu-bar-item-divider, rgba(15, 23, 42, 0.07));
+	transition: background 0.08s ease, color 0.08s ease;
+	-webkit-app-region: no-drag;
+}
+
+.main-view-bar-item__button--action {
+	font-weight: 500;
+}
+
+.main-view-bar-item__button--nav {
+	display: inline-flex;
+	box-sizing: border-box;
+	width: 124px;
+	min-width: 124px;
+	max-width: 124px;
+	justify-content: flex-start;
+	padding: 0 6px;
+	gap: 4px;
+	font-weight: 500;
+	border: 1px solid var(--menu-nav-btn-border, rgba(15, 23, 42, 0.14));
+	background: var(--menu-nav-btn-bg, rgba(255, 255, 255, 0.82));
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) inset;
+}
+
+.main-view-bar-item__button--nav-prev {
+	flex-direction: row;
+}
+
+.main-view-bar-item__button--nav-next {
+	flex-direction: row;
+	justify-content: flex-end;
+}
+
+.main-view-bar-item__button--nav:hover {
+	background: var(--menu-nav-btn-bg-hover, rgba(255, 255, 255, 0.96));
+	border-color: var(--menu-nav-btn-border-hover, rgba(15, 23, 42, 0.2));
+}
+
+.main-view-bar-item__nav-icon {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+}
+
+.main-view-bar-item__nav-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	min-width: 0;
+	font-size: 12px;
+	line-height: 1;
+}
+
+.main-view-bar-item__button:hover {
+	background: var(--menu-view-hover-bg, rgba(128, 128, 128, 0.15));
+}
+
+.main-view-bar-item--open .main-view-bar-item__button {
+	background: var(--menu-view-active-bg, rgba(128, 128, 128, 0.2));
+}
+
+.main-view-bar-item__button:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+/* ── Theme Variables ──────────────────────────────────── */
+:root,
+[data-theme="light"] {
+	/* 默认使用浅色，避免菜单栏在亮色内容上显得突兀。 */
+	--menu-view-bg: #f5f6f8;
+	--menu-view-border: rgba(15, 23, 42, 0.08);
+	--menu-view-text: rgba(24, 24, 27, 0.9);
+	--menu-view-hover-bg: rgba(15, 23, 42, 0.06);
+	--menu-view-active-bg: rgba(15, 23, 42, 0.1);
+	--menu-brand-bg-light: rgba(15, 23, 42, 0.03);
+	--menu-brand-bg-dark: rgba(15, 23, 42, 0.09);
+	--menu-brand-text-start: #8b7fd4;
+	--menu-brand-text-mid: #c49ad8;
+	--menu-brand-text-end: #e891b8;
+	--menu-nav-btn-border: rgba(15, 23, 42, 0.14);
+	--menu-nav-btn-border-hover: rgba(15, 23, 42, 0.2);
+	--menu-nav-btn-bg: rgba(255, 255, 255, 0.82);
+	--menu-nav-btn-bg-hover: rgba(255, 255, 255, 0.96);
+	--menu-bar-item-divider: rgba(15, 23, 42, 0.07);
+}
+
+[data-theme="dark"] {
+	--menu-view-bg: #2d2d30;
+	--menu-view-border: rgba(255, 255, 255, 0.08);
+	--menu-view-text: rgba(255, 255, 255, 0.9);
+	--menu-view-hover-bg: rgba(255, 255, 255, 0.08);
+	--menu-view-active-bg: rgba(255, 255, 255, 0.12);
+	--menu-brand-bg-light: rgba(255, 255, 255, 0.04);
+	--menu-brand-bg-dark: rgba(255, 255, 255, 0.14);
+	--menu-brand-text-start: #b4a7f5;
+	--menu-brand-text-mid: #d8b4e8;
+	--menu-brand-text-end: #f5b8d4;
+	--menu-nav-btn-border: rgba(255, 255, 255, 0.14);
+	--menu-nav-btn-border-hover: rgba(255, 255, 255, 0.22);
+	--menu-nav-btn-bg: rgba(255, 255, 255, 0.08);
+	--menu-nav-btn-bg-hover: rgba(255, 255, 255, 0.14);
+	--menu-bar-item-divider: rgba(255, 255, 255, 0.08);
+}

@@ -1,0 +1,10 @@
+/**
+ * DEBUG: 实验性窗口边界黑框，直接画在 body 上。
+ * 删除 index.tsx 中对本文件的 import 即可移除。
+ *
+ * 透明窗下需极低 alpha 背景，否则 Windows 只合成有像素区域，四边可能不全。
+ */
+body {
+	/* border: 1px solid #000; */
+	background: rgba(255, 255, 255, 0.004);
+}

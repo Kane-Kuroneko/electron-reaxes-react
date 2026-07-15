@@ -129,6 +129,8 @@ contextBridge.exposeInMainWorld('api', api);
 
 Electron IPC 使用结构化克隆传输参数。Reaxes/MobX 的 observable、Proxy、class 实例、函数等都会触发 `An object could not be cloned.` 错误。
 
+**规则**：凡参数来自 `reaxel_*.store` 或经 `setState` 写入后的结构，Renderer → Main（以及主进程转发子窗口前）**必须先 `cloneForIPC`**。主进程首次下发的 plain JSON **不等于** store 里仍是 plain——进入 store 后即变为 observable。
+
 ```typescript
 // ❌ 错误：store 里的对象可能是 observable/proxy，不能直接跨 IPC
 api.testProxyServer(reaxel_SettingsView.store.UIControls.networks.proxy_fields, url);
@@ -139,7 +141,20 @@ const payload = cloneForIPC(reaxel_SettingsView.store.UIControls.networks.proxy_
 api.testProxyServer(payload, url);
 ```
 
-`cloneForIPC` 内部使用 MobX 官方 `toJS` 展开 observable，并处理嵌套 observable 的情况。SettingsView 中来自 `reaxel_SettingsView.store` 的对象尤其必须经过此转换。
+### Store 往返（menubar 等）
+
+```
+Main plain JSON  →  IPC  →  reaxel store (observable)  →  api.xxx(...)  →  必须 cloneForIPC
+```
+
+ChatAIO menubar 示例：
+
+```typescript
+api.openDropdownView({ items: cloneForIPC(topItem.submenu), anchorRect, menuIndex });
+api.menuViewAction(cloneForIPC(action));
+```
+
+`cloneForIPC` 位于 `#src/shared/utils/clone-for-ipc.utility.ts`。SettingsView / PromptView 已有正确用法，新 IPC 路径应对齐同一模式。
 
 ---
 
@@ -173,9 +188,12 @@ api.testProxyServer(payload, url);
 
 ## 代码审查检查清单
 
+- [ ] **跨 IPC 参数是否已 `cloneForIPC`？**（含 store 往返、menubar `openDropdownView` / `menuViewAction` — **最高优先级**）
 - [ ] 主进程是否使用了 `useIpcRpc` / `useIpcRendererToMain` / `useIpcMainToRenderer`？
 - [ ] 主进程是否**没有**直接使用 `ipcMain.on` / `ipcMain.handle` / `webContents.send`？
 - [ ] 渲染进程是否使用了 `window.api.xxx`？
 - [ ] 渲染进程是否**没有**导入 `createIpc` 或 `ipcRenderer`？
 - [ ] 新增的 IPC 通道是否已在 `IpcSchema.d.ts` 中定义类型？
-- [ ] 跨 IPC 传递 store 数据前是否使用了 `cloneForIPC`？
+- [ ] 跨 IPC 传递 store 数据前是否使用了 `cloneForIPC`？（与第一条等价，保留便于检索）
+
+> ChatAIO FloatingView/menubar/窗口鼠标穿透改动还必须阅读 [`menubar-drag-investigation.md`](../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md)；Windows 上禁止启用 `setIgnoreMouseEvents(..., { forward: true })`。

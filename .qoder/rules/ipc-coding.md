@@ -75,6 +75,7 @@ export interface IpcRpc extends Record<string, IpcStructure.IpcRpc<unknown[], un
 
 在 Code Review 时,请检查:
 
+- [ ] **跨 IPC 的参数是否已 `cloneForIPC`？**（见下方「错误 0」与「Store 往返」——**最高优先级**）
 - [ ] 主进程是否使用了 `useIpcRpc`/`useIpcRendererToMain`/`useIpcMainToRenderer`
 - [ ] 主进程是否应该**没有**直接使用 `ipcMain.on`/`ipcMain.handle`/`webContents.send`
 - [ ] 渲染进程是否使用了 `window.api.xxx`
@@ -108,7 +109,35 @@ const payload = cloneForIPC(reaxel_SettingsView.store.UIControls.networks.proxy_
 api.testProxyServer(payload, url);
 ```
 
-新增或修改 IPC 调用时必须检查参数是否为可结构化克隆的 plain data；SettingsView 中来自 `reaxel_SettingsView.store` 的对象尤其要先通过 `#src/shared/utils/clone-for-ipc.utility` 的 `cloneForIPC` 转换。该工具内部使用 MobX 官方 `toJS` 展开 observable，并处理普通对象中嵌套 observable 的情况。
+新增或修改 IPC 调用时必须检查参数是否为可结构化克隆的 plain data；**凡来源是 `reaxel_*.store` / `setState` 写入后的结构，一律先 `cloneForIPC`**。该工具位于 `#src/shared/utils/clone-for-ipc.utility.ts`，内部使用 MobX `toJS` 并处理嵌套 observable。
+
+#### Store 往返（常见漏网场景）
+
+主进程下发的数据**即使最初是 plain JSON**，进入渲染进程 `reaxel` store 后会再次变成 observable。**任何 Renderer → Main 的二次发送都必须重新 `cloneForIPC`**，不能因「当初是纯 JSON」而省略。
+
+```
+Main createMenuData()  →  plain JSON  →  IPC  →  reaxel_MainView.store.structure (observable)
+                                                              ↓
+                                    api.openDropdownView({ items: store.structure[i].submenu })  ← 必须 cloneForIPC
+```
+
+ChatAIO menubar 典型调用（**全部**需要 clone）：
+
+```typescript
+import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+
+// ✅ openDropdownView
+api.openDropdownView({
+	items: cloneForIPC(topItem.submenu),
+	anchorRect,
+	menuIndex: index,
+});
+
+// ✅ menuViewAction
+api.menuViewAction(cloneForIPC(action));
+```
+
+主进程向子窗口转发 store 衍生数据时，同样应先 `cloneForIPC`（例如 `dropdown-view:command` 的 `items`）。
 
 ### 错误 1: 主进程直接使用 ipcMain
 
@@ -194,3 +223,5 @@ window.api.exitSettings();
 - 🔒 渲染进程只能通过 preload 暴露的 API 与主进程通信
 - 🛠️ 主进程必须使用项目封装的 IPC 工具,统一管理事件注册和分发
 - 📝 所有 IPC 通道必须有明确的类型定义
+
+> ChatAIO FloatingView/menubar/窗口鼠标穿透改动还必须阅读 [`menubar-drag-investigation.md`](../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md)；Windows 上禁止启用 `setIgnoreMouseEvents(..., { forward: true })`。

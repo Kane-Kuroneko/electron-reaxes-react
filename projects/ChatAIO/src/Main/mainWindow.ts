@@ -39,28 +39,25 @@ export const createMainWindow = async() => {
 			titleBarStyle : 'hidden' as const,
 			trafficLightPosition : { x : 12 , y : 22 } as const,
 		} ),
+		// Windows/Linux：隐藏原生标题栏，使用 titleBarOverlay 保留窗口操作按钮
+		...( process.platform !== 'darwin' && {
+			titleBarStyle : 'hidden' as const,
+			titleBarOverlay : {
+				color : '#00000000' ,        // 透明背景，让 MenuView 背景透出
+				symbolColor : '#888888' ,    // 按钮图标颜色
+				height : 36 ,                // 与菜单栏高度一致（Windows/Linux MENU_BAR_HEIGHT）
+			} as any,
+		} ),
 	};
 	
 	mainWindow = new BrowserWindow( _.merge( {} , defaultOptions ) );
+
+	// 加载 MainView HTML（含 MenuBar 等全局组件）
+	loadMainViewHTML();
+
 	mainWindow.on( 'closed' , () => {
 		mainWindow = null;
 	} );
-
-	// macOS: 加载极简 HTML shell，仅在标题栏区域提供原生窗口拖拽能力
-	// 红绿灯按钮区域本身不响应拖拽（自 Electron v1.1.1），需通过 CSS -webkit-app-region: drag 声明
-	// Child WebContentsViews 渲染于 contentView 上层，不会被此 HTML 影响
-	if( process.platform === 'darwin' ) {
-		const dragShellHTML = `<!doctype html>
-<html>
-<head><meta charset="UTF-8">
-<style>
-	html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden}
-	.titlebar-drag{-webkit-app-region:drag;app-region:drag;height:38px;width:100%;position:fixed;top:0;left:0;z-index:9999}
-</style></head>
-<body><div class="titlebar-drag"></div></body>
-</html>`;
-		mainWindow.loadURL( `data:text/html;base64,${ Buffer.from( dragShellHTML , 'utf-8' ).toString( 'base64' ) }` );
-	}
 
 	return mainWindow;
 };
@@ -80,8 +77,29 @@ export const showMainWindow = () => {
 	return mainWindow;
 };
 
+/**
+ * 加载 MainView HTML 到 mainWindow（含 MenuBar 等全局组件）
+ */
+const loadMainViewHTML = () => {
+	if( !mainWindow || mainWindow.isDestroyed() ) return;
+
+	if( dev() ) {
+		const url = createDevRendererEntryURL( 'MainView' );
+		mainWindow.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
+	} else {
+		mainWindow.webContents.loadFile(
+			getRendererEntryFilePath( reaxel_ElectronENV().absAppRunningPath , 'MainView' )
+		);
+	}
+};
+
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import { dev } from 'electron-is';
+import {
+	createDevRendererEntryURL ,
+	getFreshRendererLoadURLOptions ,
+	getRendererEntryFilePath,
+} from '#main/services/dev/renderer-entry';
 import {
 	app ,
 	BrowserWindow ,
