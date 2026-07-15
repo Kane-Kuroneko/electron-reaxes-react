@@ -206,12 +206,16 @@ export const reaxel_MainView = reaxel( () => {
 		/* MainView HTML 壳：点空白也关掉（WCV 已有 before-mouse-event；此处兜底未覆盖区域） */
 		if( !mainWindow.webContents.isDestroyed() ) {
 			mainWindow.webContents.on( 'before-mouse-event' , ( _event , mouse ) => {
-				if( mouse.type === 'mouseDown' ) {
-					const dropdown = store.dropdownWindow;
-					if( dropdown && !dropdown.isDestroyed() && dropdown.isVisible() ) {
-						hideDropdownView();
-					}
+				if( mouse.type !== 'mouseDown' ) return;
+				const dropdown = store.dropdownWindow;
+				if( !dropdown || dropdown.isDestroyed() || !dropdown.isVisible() ) {
+					return;
 				}
+				/* 菜单栏内点击由 renderer toggleMenu 处理；此处预关闭会把 openMenuIndex 清零导致再次弹出 */
+				if( mouse.y < getMenuBarHeight() ) {
+					return;
+				}
+				hideDropdownView();
 			} );
 		}
 	};

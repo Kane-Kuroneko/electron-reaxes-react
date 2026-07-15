@@ -8,21 +8,24 @@ export const MenuBarLeftItems = reaxper( () => {
 
 	return (
 		<div className="main-view-bar__left">
-			{ store.leftMenuEntries.map( ( { item , originalIndex } ) => (
-				<MenuBarItem
-					key={ item.id }
-					item={ item }
-					index={ originalIndex }
-					isOpen={ store.openMenuIndex === originalIndex }
-					onToggle={ () => toggleMenu( originalIndex ) }
-					onHover={ () => {
-						if( store.openMenuIndex >= 0 ) {
-							setOpenMenuIndex( originalIndex );
-						}
-					} }
-					onItemAction={ triggerAction }
-				/>
-			) ) }
+			{ store.leftMenuEntries.map( ( { item , originalIndex } ) => {
+				const isOpen = store.openMenuIndex === originalIndex;
+				return (
+					<MenuBarItem
+						key={ item.id }
+						item={ item }
+						index={ originalIndex }
+						isOpen={ isOpen }
+						onToggle={ () => toggleMenu( originalIndex , isOpen ) }
+						onHover={ () => {
+							if( store.openMenuIndex >= 0 ) {
+								setOpenMenuIndex( originalIndex );
+							}
+						} }
+						onItemAction={ triggerAction }
+					/>
+				);
+			} ) }
 		</div>
 	);
 } );

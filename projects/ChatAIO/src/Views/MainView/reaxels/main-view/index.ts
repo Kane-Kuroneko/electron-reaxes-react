@@ -95,9 +95,8 @@ export const reaxel_MainView = reaxel( () => {
 	};
 
 	/** 展开/切换某顶级菜单 */
-	const toggleMenu = ( index : number ) => {
-		const willOpen = store.openMenuIndex !== index;
-		if( !willOpen ) {
+	const toggleMenu = ( index : number , isCurrentlyOpen = store.openMenuIndex === index ) => {
+		if( isCurrentlyOpen ) {
 			closeAllMenus();
 			return;
 		}
