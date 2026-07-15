@@ -13,6 +13,7 @@ export const App = reaxper( () => {
 		<div
 			className="main-view-root"
 			data-theme={ store.theme }
+			data-platform={ store.platform }
 			style={ {
 				height : `${ barHeight }px` ,
 				'--menu-bar-height' : `${ barHeight }px`,

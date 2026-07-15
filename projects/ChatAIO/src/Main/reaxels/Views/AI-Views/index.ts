@@ -201,21 +201,26 @@ export const reaxel_AIViews = reaxel( () => {
 		lastAppliedSettingsOpened = settingsOpened;
 		lastAppliedViewCount = viewCount;
 
+		let activeRuntimeView:RuntimeAIView | null = null;
+
 		store.AIViews.forEach( runtimeView => {
 			if( !runtimeView.view ) {
 				return;
 			}
 			const visible = !settingsOpened && runtimeView.id === currentAIViewKey;
 			if( visible ) {
-				/* 显式置顶：addChildView 对已添加的 view 幂等——先移除再追加到 contentView 末尾（顶层）。
-				   与 openSettingsView() 中对 settingsView 的处理方式一致。 */
-				mainWindow.contentView.addChildView( runtimeView.view );
+				activeRuntimeView = runtimeView;
+				return;
 			}
-			runtimeView.view.setVisible( visible );
-			if( visible ) {
-				focusRuntimeAIViewIfReady( runtimeView );
-			}
+			Reaxel_View().unmountInactiveCenterView( runtimeView.view );
 		} );
+
+		if( activeRuntimeView?.view && !settingsOpened ) {
+			Reaxel_View().mountActiveCenterView( activeRuntimeView.view );
+			if( process.platform !== 'darwin' ) {
+				focusRuntimeAIViewIfReady( activeRuntimeView );
+			}
+		}
 	};
 
 	const rtn = {

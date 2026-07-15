@@ -10,6 +10,41 @@ export const reaxel_FloatingView = reaxel( () => {
 	} );
 
 	let mainWindowEventsBound = false;
+	let switchAiBarLayerActive = false;
+	let switchAiBarHideTimer:ReturnType<typeof setTimeout> | null = null;
+	const SWITCH_AI_BAR_LAYER_MS = 2100;
+
+	const clearSwitchAiBarHideTimer = () => {
+		if( switchAiBarHideTimer ) {
+			clearTimeout( switchAiBarHideTimer );
+			switchAiBarHideTimer = null;
+		}
+	};
+
+	const isOverlayLayerActive = () => {
+		return switchAiBarLayerActive;
+	};
+
+	/** Keep the transparent overlay hidden unless SwitchAiBar is active (macOS occlusion/throttle fix). */
+	const syncOverlayLayerVisibility = () => {
+		if( isOverlayLayerActive() ) {
+			showLayerWindow();
+			return;
+		}
+		hideLayerWindow();
+	};
+
+	const armSwitchAiBarLayerAutoHide = () => {
+		clearSwitchAiBarHideTimer();
+		switchAiBarHideTimer = setTimeout( () => {
+			switchAiBarHideTimer = null;
+			switchAiBarLayerActive = false;
+			if( store.floatingView.loaded ) {
+				sendCommandNow( { type : 'switch-ai-bar:hide' } );
+			}
+			hideLayerWindow();
+		} , SWITCH_AI_BAR_LAYER_MS );
+	};
 
 	const getFloatingViewBounds = () => {
 		return mainWindow.getContentBounds();
@@ -84,14 +119,18 @@ export const reaxel_FloatingView = reaxel( () => {
 		if( !floatingWindow || floatingWindow.isDestroyed() ) {
 			return;
 		}
-		showLayerWindow();
+		if( command.type === 'switch-ai-bar:hide' ) {
+			switchAiBarLayerActive = false;
+			clearSwitchAiBarHideTimer();
+		}
 		if( store.floatingView.loaded ) {
 			sendCommandNow( command );
-			return;
+		} else {
+			mutate.floatingView( state => {
+				state.commandQueue.push( command );
+			} );
 		}
-		mutate.floatingView( state => {
-			state.commandQueue.push( command );
-		} );
+		syncOverlayLayerVisibility();
 	};
 
 	const bindMainWindowEvents = () => {
@@ -104,11 +143,17 @@ export const reaxel_FloatingView = reaxel( () => {
 		mainWindow.on( 'resize' , syncBounds );
 		mainWindow.on( 'maximize' , syncBounds );
 		mainWindow.on( 'unmaximize' , syncBounds );
-		/* restore / show / focus 使用 bringFloatingViewToTop：
-		   从最小化/隐藏恢复时可能需要重新抢占顶层。 */
-		mainWindow.on( 'restore' , bringFloatingViewToTop );
-		mainWindow.on( 'show' , bringFloatingViewToTop );
-		mainWindow.on( 'focus' , showLayerWindow );
+		/* restore / show：仅当 overlay 确实需要显示时才置顶，避免 macOS 透明层长期遮挡主窗口。 */
+		mainWindow.on( 'restore' , () => {
+			if( isOverlayLayerActive() ) {
+				bringFloatingViewToTop();
+			}
+		} );
+		mainWindow.on( 'show' , () => {
+			if( isOverlayLayerActive() ) {
+				bringFloatingViewToTop();
+			}
+		} );
 		mainWindow.on( 'blur' , hideLayerWindow );
 		mainWindow.on( 'hide' , hideLayerWindow );
 		mainWindow.on( 'minimize' , hideLayerWindow );
@@ -177,8 +222,8 @@ export const reaxel_FloatingView = reaxel( () => {
 				loaded : true,
 			} );
 			syncBounds();
-			showLayerWindow();
 			flushCommandQueue();
+			syncOverlayLayerVisibility();
 		} );
 
 		if( dev() ) {
@@ -193,21 +238,33 @@ export const reaxel_FloatingView = reaxel( () => {
 
 	const api = {
 		showSwitchAiBar( payload:FloatingView.SwitchAiBarPayload ) {
+			switchAiBarLayerActive = true;
 			queueOrSendCommand( {
 				type : 'switch-ai-bar:show' ,
 				payload,
 			} );
+			armSwitchAiBarLayerAutoHide();
 		} ,
 		hideSwitchAiBar() {
+			switchAiBarLayerActive = false;
+			clearSwitchAiBarHideTimer();
 			queueOrSendCommand( {
 				type : 'switch-ai-bar:hide',
 			} );
 		} ,
 		showGlobalMessage( payload:FloatingView.GlobalMessagePayload ) {
+			switchAiBarLayerActive = true;
 			queueOrSendCommand( {
 				type : 'global-message:show' ,
 				payload,
 			} );
+			clearSwitchAiBarHideTimer();
+			const durationMs = Math.max( 500 , ( payload.duration ?? 3 ) * 1000 );
+			switchAiBarHideTimer = setTimeout( () => {
+				switchAiBarHideTimer = null;
+				switchAiBarLayerActive = false;
+				hideLayerWindow();
+			} , durationMs );
 		},
 	};
 

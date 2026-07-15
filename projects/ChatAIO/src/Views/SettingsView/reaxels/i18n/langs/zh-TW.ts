@@ -115,6 +115,7 @@
 	"Address" : "位址" ,
 	"Operations" : "操作" ,
 	"Edit" : "編輯" ,
+	"Window" : "視窗" ,
 	"Delete" : "刪除" ,
 	"Test" : "測試" ,
 	"Test Proxy Server" : "測試代理伺服器" ,

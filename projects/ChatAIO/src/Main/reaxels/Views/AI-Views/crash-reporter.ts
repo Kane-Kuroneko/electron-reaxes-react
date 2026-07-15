@@ -55,32 +55,37 @@ export class ViewCrashReporter {
 		fs.writeFileSync(this.logFilePath, header, 'utf8');
 	}
 	
+	private appendCrashLog(viewName: string, details: any, label: 'Crash' | 'Event'): void {
+		try {
+			const timestamp = new Date().toISOString();
+			const crashEntry = this.formatCrashEntry(viewName, details, timestamp);
+			fs.appendFileSync(this.logFilePath, crashEntry, 'utf8');
+			try {
+				console.error(`[WebView ${label}] ${viewName} at ${timestamp}`, details);
+			} catch {
+				// stderr may be closed during shutdown (write EIO) — file log is enough
+			}
+		} catch (error) {
+			try {
+				console.warn('[ViewCrashReporter] Failed to write crash log:', error);
+			} catch {
+				// ignore
+			}
+		}
+	}
+
 	/**
 	 * 记录崩溃事件
 	 */
 	private logCrash(viewName: string, details: any): void {
-		const timestamp = new Date().toISOString();
-		const crashEntry = this.formatCrashEntry(viewName, details, timestamp);
-		
-		// 追加到日志文件
-		fs.appendFileSync(this.logFilePath, crashEntry, 'utf8');
-		
-		// 同时输出到控制台
-		console.error(`[WebView Crash] ${viewName} crashed at ${timestamp}`, details);
+		this.appendCrashLog(viewName, details, 'Crash');
 	}
-	
+
 	/**
 	 * 记录一般崩溃事件
 	 */
 	private logCrashEvent(viewName: string, details: any): void {
-		const timestamp = new Date().toISOString();
-		const crashEntry = this.formatCrashEntry(viewName, details, timestamp);
-		
-		// 追加到日志文件
-		fs.appendFileSync(this.logFilePath, crashEntry, 'utf8');
-		
-		// 同时输出到控制台
-		console.error(`[WebView Event] ${viewName} event at ${timestamp}`, details);
+		this.appendCrashLog(viewName, details, 'Event');
 	}
 	
 	/**

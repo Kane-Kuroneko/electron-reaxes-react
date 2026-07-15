@@ -115,6 +115,7 @@
 	"Address" : "주소" ,
 	"Operations" : "작업" ,
 	"Edit" : "편집" ,
+	"Window" : "윈도우" ,
 	"Delete" : "삭제" ,
 	"Test" : "테스트" ,
 	"Test Proxy Server" : "프록시 서버 테스트" ,

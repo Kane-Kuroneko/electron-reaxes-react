@@ -115,6 +115,7 @@
 	"Address" : "アドレス" ,
 	"Operations" : "操作" ,
 	"Edit" : "編集" ,
+	"Window" : "ウィンドウ" ,
 	"Delete" : "削除" ,
 	"Test" : "テスト" ,
 	"Test Proxy Server" : "プロキシサーバーをテスト" ,

@@ -32,6 +32,10 @@ export const createMainWindow = async() => {
 			nodeIntegration : false ,
 			contextIsolation : true ,
 			preload : path.join( absAppRunningPath , 'preload.js' ),
+			/* macOS: transparent FloatingView overlay must not throttle menubar / AI views (electron#51718). */
+			...( process.platform === 'darwin' && {
+				backgroundThrottling : false ,
+			} ),
 		},
 		// macOS 标题栏：隐藏原生标题栏，使用 trafficLightPosition 精确控制红绿灯位置
 		// hiddenInset 有已知 bug（死区、拖拽失效），hidden + trafficLightPosition 是社区推荐方案
@@ -51,6 +55,11 @@ export const createMainWindow = async() => {
 	};
 	
 	mainWindow = new BrowserWindow( _.merge( {} , defaultOptions ) );
+
+	// macOS: 主 webContents 仅承载 menubar；透明底色避免 AI WCV 未重绘时露出灰白壳层
+	if( process.platform === 'darwin' ) {
+		mainWindow.setBackgroundColor( '#00000000' );
+	}
 
 	// 加载 MainView HTML（含 MenuBar 等全局组件）
 	loadMainViewHTML();

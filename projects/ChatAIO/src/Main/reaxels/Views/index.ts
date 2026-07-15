@@ -35,7 +35,81 @@ export const Reaxel_View = reaxel( () => {
 	}
 
 	function fitCurrentCenterView(bounds:Rectangle) {
-		setViewBoundsIfChanged( getCurrentCenterView() , bounds );
+		const view = getCurrentCenterView();
+		if( !view || view.webContents.isDestroyed() ) {
+			return;
+		}
+		if( process.platform === 'darwin' && view.getVisible() ) {
+			view.setBounds( bounds );
+			return;
+		}
+		setViewBoundsIfChanged( view , bounds );
+	}
+
+	/** Detach inactive center views on macOS so the next mount triggers ViewHierarchyChanged + WasShown. */
+	function safeDetachWebContentsView(view:WebContentsView | null | undefined) {
+		if( !view || view.webContents.isDestroyed() ) {
+			return;
+		}
+		if( view.getVisible() ) {
+			view.setVisible( false );
+		}
+		if( process.platform === 'darwin' ) {
+			try {
+				mainWindow.contentView.removeChildView( view );
+			} catch {
+				/* view may already be detached */
+			}
+		}
+	}
+
+	/** Mount the active center view with explicit bounds and z-order (macOS remounts from contentView). */
+	function mountActiveCenterView(view:WebContentsView | null | undefined , bounds = getCenterBounds()) {
+		if( !view || view.webContents.isDestroyed() || mainWindow.isDestroyed() ) {
+			return;
+		}
+		if( process.platform === 'darwin' ) {
+			try {
+				mainWindow.contentView.removeChildView( view );
+			} catch {
+				/* view may already be detached */
+			}
+		}
+		mainWindow.contentView.addChildView( view );
+		view.setBounds( bounds );
+		view.setVisible( true );
+		if( process.platform === 'darwin' ) {
+			scheduleMacCenterViewPaint( view , bounds );
+		}
+	}
+
+	function unmountInactiveCenterView(view:WebContentsView | null | undefined) {
+		safeDetachWebContentsView( view );
+	}
+
+	/** macOS compositor paint after AI switch — menubar click leaves focus on mainWindow.webContents. */
+	function scheduleMacCenterViewPaint(view:WebContentsView | null | undefined , bounds:Rectangle) {
+		if( process.platform !== 'darwin' || !view || view.webContents.isDestroyed() ) {
+			return;
+		}
+		setImmediate( () => {
+			if( view.webContents.isDestroyed() || mainWindow.isDestroyed() ) {
+				return;
+			}
+			view.setBounds( {
+				...bounds ,
+				height : Math.max( 1 , bounds.height + 1 ),
+			} );
+			view.setBounds( bounds );
+			mainWindow.contentView.addChildView( view );
+			if( !view.webContents.isDestroyed() ) {
+				try {
+					safeFocusViewWithMonitor( view , 'apply-visibility' );
+				} catch {
+					view.webContents.focus();
+				}
+			}
+		} );
 	}
 
 	function getCenterBounds(bounds = mainWindow.getContentBounds()):Rectangle {
@@ -113,6 +187,18 @@ export const Reaxel_View = reaxel( () => {
 		};
 	};
 
+	const showSwitchAiBarAfterSwitch = (payload:FloatingView.SwitchAiBarPayload) => {
+		const show = () => {
+			reaxel_FloatingView().api.showSwitchAiBar( payload );
+		};
+		/* macOS: defer overlay until center WCV remount finishes (FloatingView showInactive can stall compositor). */
+		if( process.platform === 'darwin' ) {
+			setImmediate( show );
+			return;
+		}
+		show();
+	};
+
 	const turnToAiPageByOffset = (
 		offset:number ,
 		direction:FloatingView.SwitchAiBarDirection,
@@ -144,7 +230,7 @@ export const Reaxel_View = reaxel( () => {
 
 		const view = reaxel_AIViews().showAIView( nextAI.id , settings );
 
-		reaxel_FloatingView().api.showSwitchAiBar(
+		showSwitchAiBarAfterSwitch(
 			createSwitchAiBarPayload( activeAIs.map( createPayloadItemFromAI ) , nextIndex , direction , ctxId ),
 		);
 
@@ -191,7 +277,7 @@ export const Reaxel_View = reaxel( () => {
 		} );
 		reaxel_AIViews().applyVisibility();
 
-		reaxel_FloatingView().api.showSwitchAiBar(
+		showSwitchAiBarAfterSwitch(
 			createSwitchAiBarPayload( runtimeViews.map( createPayloadItemFromRuntimeView ) , nextIndex , direction , ctxId ),
 		);
 
@@ -366,6 +452,8 @@ export const Reaxel_View = reaxel( () => {
 		fitContentView ,
 		fitCurrentCenterView ,
 		focusCurrentContentView ,
+		mountActiveCenterView ,
+		unmountInactiveCenterView ,
 		turnToNextAiPage ,
 		turnToPreviousAiPage ,
 		turnToNextInstantiatedAiPage ,

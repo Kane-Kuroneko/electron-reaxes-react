@@ -13,13 +13,17 @@ html, body {
 	overflow: hidden;
 	width: 100%;
 	height: 100%;
-	background: var(--menu-view-bg, #f5f6f8);
+	/* 内容区由 AI/Settings WCV 覆盖；全窗口不透明背景会在 macOS compositor 未重绘时露出为“白屏” */
+	background: transparent;
 	-webkit-app-region: no-drag;
+	/* 仅 menubar 接收点击；避免全屏 mainWindow.webContents 吞掉 AI 区域事件 */
+	pointer-events: none;
 }
 
 #react-app-root {
 	height: var(--menu-bar-height, 36px);
 	overflow: hidden;
+	pointer-events: auto;
 }
 
 /* ── MainView Root ──────────────────────────────────────── */
@@ -161,6 +165,22 @@ html, body {
 .main-view-bar-item--nav {
 	flex-shrink: 0;
 	margin-top: 2px;
+}
+
+/* macOS: align prev/next nav cluster with other menubar items (no visual sink) */
+.main-view-root[data-platform="darwin"] .main-view-bar-item--nav {
+	margin-top: 0;
+}
+
+.main-view-root[data-platform="darwin"] .main-view-bar-item__button--nav {
+	box-shadow: none;
+	border-color: transparent;
+	background: transparent;
+}
+
+.main-view-root[data-platform="darwin"] .main-view-bar-item__button--nav:hover {
+	background: var(--menu-view-hover-bg, rgba(128, 128, 128, 0.15));
+	border-color: transparent;
 }
 
 .main-view-bar-item__button {

@@ -163,12 +163,16 @@ const safeLoadFile = async(
 };
 
 const normalizeViewOptions = (options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
+	const darwinThrottling = process.platform === 'darwin'
+		? { backgroundThrottling : false as const }
+		: {};
 	if( options.type !== 'AI-View' ) {
 		return {
 			...options ,
 			webPreferences : {
 				nodeIntegration : false ,
 				contextIsolation : true ,
+				...darwinThrottling ,
 				...( options.webPreferences || {} ),
 			},
 		};
@@ -178,6 +182,7 @@ const normalizeViewOptions = (options:WebContentsViewConstructorOptions&ExtraBro
 		webPreferences : {
 			nodeIntegration : false ,
 			contextIsolation : true ,
+			...darwinThrottling ,
 			...( options.webPreferences || {} ) ,
 			preload : path.join( absAppRunningPath , 'ai-page-preload.js' ) ,
 		},
