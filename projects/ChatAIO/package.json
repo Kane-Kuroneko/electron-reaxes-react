@@ -10,9 +10,15 @@
 		"start:electron": "yarn --cwd ../.. tsx scripts/electron.start/index.ts ChatAIO",
 		"build:webpack": "yarn --cwd ../.. tsx scripts/webpack.build/index.ts ChatAIO production",
 		"build:electron": "yarn --cwd ../.. tsx scripts/electron.build/index.ts ChatAIO",
+		"build:electron:mac": "yarn --cwd ../.. tsx scripts/electron.build/index.ts ChatAIO -- --mac",
+		"build:electron:win": "yarn --cwd ../.. tsx scripts/electron.build/index.ts ChatAIO -- --win",
+		"build:electron:linux": "yarn --cwd ../.. tsx scripts/electron.build/index.ts ChatAIO -- --linux",
+		"build:mac": "yarn build:webpack && yarn build:electron:mac",
+		"build:win": "yarn build:webpack && yarn build:electron:win",
+		"build:linux": "yarn build:webpack && yarn build:electron:linux",
 		"analyze:perf": "yarn --cwd ../.. tsx projects/ChatAIO/scripts/analyze-perf-logs.ts",
 		"analyze:perf:ci": "yarn --cwd ../.. tsx projects/ChatAIO/scripts/analyze-perf-logs.ts --ci",
-		"generate-icons": "bash scripts/generate-icons.sh"
+		"generate-icons": "yarn --cwd ../.. bash projects/ChatAIO/scripts/generate-icons.sh"
 	},
 	"type": "commonjs",
 	"description": "Unified desktop client for multiple AI services",
