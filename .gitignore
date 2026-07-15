@@ -6,3 +6,31 @@ __Bin
 .pem
 .cer
 performance-logs
+
+# macOS — based on github/gitignore Global/macOS.gitignore
+.DS_Store
+.localized
+__MACOSX/
+.AppleDouble
+.LSOverride
+Icon[ ]
+
+# Resource forks
+._*
+
+# Finder / volume metadata
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.com.apple.timemachine.supported
+
+# Network / AFP share artifacts
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
