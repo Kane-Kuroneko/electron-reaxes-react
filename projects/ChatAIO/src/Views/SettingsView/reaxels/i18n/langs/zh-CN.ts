@@ -3,6 +3,17 @@
 	"Application" : "应用程序" ,
 	"Settings" : "设置" ,
 	"Check for Updates" : "检查更新" ,
+
+	// Menu - macOS Native Edit/Window
+	"Undo" : "撤销" ,
+	"Redo" : "重做" ,
+	"Cut" : "剪切" ,
+	"Paste" : "粘贴" ,
+	"Paste and Match Style" : "粘贴并匹配样式" ,
+	"Select All" : "全选" ,
+	"Minimize" : "最小化" ,
+	"Zoom" : "缩放" ,
+	"Bring All to Front" : "全部置于顶层" ,
 	
 	// Menu - View
 	"View" : "视图" ,

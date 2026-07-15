@@ -154,7 +154,9 @@ export const reaxel_Menu = reaxel( () => {
 				label : t('Application') ,
 				submenu : [
 					{
-						label : `[${ Reaxel_View.store.settingsViewOpened ? '✔️' : '' }${t('Settings')}]` ,
+						label : t('Settings') ,
+						type : 'checkbox' ,
+						checked : Reaxel_View.store.settingsViewOpened ,
 						click() {
 							Reaxel_View.setState( { settingsViewOpened : true } );
 							const settingsView = reaxel_SettingsView().initSettingsView();
@@ -177,21 +179,10 @@ export const reaxel_Menu = reaxel( () => {
 					},
 				],
 			} ,
-			// macOS 标准 Edit 菜单 — 使用 Electron role 提供原生 AppKit 行为、系统语言本地化和标准快捷键
+			// macOS Edit 菜单 — 使用 t() 标签以跟随应用语言（role 会覆盖为系统/Electron locale）
 			...( process.platform === 'darwin' ? [{
 				label : t('Edit') ,
-				submenu : [
-					{ role : 'undo' as const } ,
-					{ role : 'redo' as const } ,
-					{ type : 'separator' as const } ,
-					{ role : 'cut' as const } ,
-					{ role : 'copy' as const } ,
-					{ role : 'paste' as const } ,
-					{ role : 'pasteAndMatchStyle' as const } ,
-					{ role : 'delete' as const } ,
-					{ type : 'separator' as const } ,
-					{ role : 'selectAll' as const } ,
-				],
+				submenu : createDarwinEditSubmenu( t ),
 			}] : [] ) ,
 			{
 				label : t('View') ,
@@ -306,7 +297,15 @@ export const reaxel_Menu = reaxel( () => {
 						},
 					} ,
 					{ type : 'separator' } ,
-					{ label : t('Toggle Fullscreen') , role : 'togglefullscreen' } ,
+					{
+						label : t('Toggle Fullscreen') ,
+						click : () => {
+							const win = BrowserWindow.getFocusedWindow();
+							if( win && !win.isDestroyed() ) {
+								win.setFullScreen( !win.isFullScreen() );
+							}
+						},
+					} ,
 					{ type : 'separator' } ,
 					{
 						label : createPlainMenuLabel( t('Close This AI') ) ,
@@ -321,15 +320,10 @@ export const reaxel_Menu = reaxel( () => {
 					},
 				],
 			} ,
-			// macOS 标准 Window 菜单 — 使用 Electron role 提供原生窗口管理行为
+			// macOS Window 菜单 — 使用 t() 标签以跟随应用语言
 			...( process.platform === 'darwin' ? [{
 				label : t('Window') ,
-				submenu : [
-					{ role : 'minimize' as const } ,
-					{ role : 'zoom' as const } ,
-					{ type : 'separator' as const } ,
-					{ role : 'front' as const } ,
-				],
+				submenu : createDarwinWindowSubmenu( t ),
 			}] : [] ) ,
 			] );
 	}
@@ -387,6 +381,7 @@ export const reaxel_Menu = reaxel( () => {
 		reaxel_AIViews.store.AIViews.length ,
 		reaxel_PromptViews.store.left.visible ,
 		reaxel_PromptViews.store.right.visible,
+		reaxel_I18n.store.language,
 	] );
 
 	const rtn = {
@@ -419,6 +414,122 @@ const getWrappedIndex = (index:number , length:number) => {
 	return ( index + length ) % length;
 };
 
+const getActiveMenuWebContents = () => {
+	if( Reaxel_View.store.settingsViewOpened ) {
+		const settingsWebContents = reaxel_SettingsView.store.settingsView.view?.webContents;
+		if( settingsWebContents && !settingsWebContents.isDestroyed() ) {
+			return settingsWebContents;
+		}
+	}
+	const currentAIView = reaxel_AIViews().currentAIView;
+	const aiWebContents = currentAIView?.view?.webContents;
+	if( aiWebContents && !aiWebContents.isDestroyed() ) {
+		return aiWebContents;
+	}
+	if( mainWindow && !mainWindow.isDestroyed() ) {
+		return mainWindow.webContents;
+	}
+	return null;
+};
+
+const withActiveMenuWebContents = ( action:( webContents:Electron.WebContents ) => void ) => {
+	const webContents = getActiveMenuWebContents();
+	if( webContents && !webContents.isDestroyed() ) {
+		action( webContents );
+	}
+};
+
+const createDarwinEditSubmenu = (
+	t:( text:string ) => string,
+):MenuItemConstructorOptions[] => {
+	return [
+		{
+			label : t( 'Undo' ) ,
+			accelerator : 'CmdOrCtrl+Z' ,
+			click : () => {
+				withActiveMenuWebContents( webContents => webContents.undo() );
+			},
+		} ,
+		{
+			label : t( 'Redo' ) ,
+			accelerator : 'Shift+CmdOrCtrl+Z' ,
+			click : () => {
+				withActiveMenuWebContents( webContents => webContents.redo() );
+			},
+		} ,
+		{ type : 'separator' } ,
+		{
+			label : t( 'Cut' ) ,
+			accelerator : 'CmdOrCtrl+X' ,
+			click : () => {
+				withActiveMenuWebContents( webContents => webContents.cut() );
+			},
+		} ,
+		{
+			label : t( 'Copy' ) ,
+			accelerator : 'CmdOrCtrl+C' ,
+			click : () => {
+				withActiveMenuWebContents( webContents => webContents.copy() );
+			},
+		} ,
+		{
+			label : t( 'Paste' ) ,
+			accelerator : 'CmdOrCtrl+V' ,
+			click : () => {
+				withActiveMenuWebContents( webContents => webContents.paste() );
+			},
+		} ,
+		{
+			label : t( 'Paste and Match Style' ) ,
+			accelerator : 'Shift+CmdOrCtrl+V' ,
+			click : () => {
+				withActiveMenuWebContents( webContents => webContents.pasteAndMatchStyle() );
+			},
+		} ,
+		{
+			label : t( 'Delete' ) ,
+			click : () => {
+				withActiveMenuWebContents( webContents => webContents.delete() );
+			},
+		} ,
+		{ type : 'separator' } ,
+		{
+			label : t( 'Select All' ) ,
+			accelerator : 'CmdOrCtrl+A' ,
+			click : () => {
+				withActiveMenuWebContents( webContents => webContents.selectAll() );
+			},
+		} ,
+	];
+};
+
+const createDarwinWindowSubmenu = (
+	t:( text:string ) => string,
+):MenuItemConstructorOptions[] => {
+	return [
+		{
+			label : t( 'Minimize' ) ,
+			accelerator : 'CmdOrCtrl+M' ,
+			click : () => {
+				BrowserWindow.getFocusedWindow()?.minimize();
+			},
+		} ,
+		{
+			label : t( 'Zoom' ) ,
+			click : () => {
+				Menu.sendActionToFirstResponder( 'performZoom:' );
+			},
+		} ,
+		{ type : 'separator' } ,
+		{
+			label : t( 'Bring All to Front' ) ,
+			click : () => {
+				Menu.sendActionToFirstResponder( 'arrangeInFront:' );
+			},
+		} ,
+	];
+};
+
 const createPlainMenuLabel = (label:string) => {
 	return escapeElectronMenuBarLabel( label.trim() );
 };
@@ -440,9 +551,11 @@ const resolveAdjacentInstantiatedAI = (
 
 import { Reaxel_View } from '../Views';
 import { reaxel_MainView } from '../Views/Main-View';
+import { reaxel_I18n } from '#main/reaxels/I18n';
 import { escapeElectronMenuBarLabel } from './menu-label-width';
 import {
 	autoUpdater ,
+	BrowserWindow ,
 	dialog ,
 	Menu,
 	type MenuItemConstructorOptions,

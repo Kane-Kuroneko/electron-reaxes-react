@@ -3,6 +3,17 @@
 	"Application" : "애플리케이션" ,
 	"Settings" : "설정" ,
 	"Check for Updates" : "업데이트 확인" ,
+
+	// Menu - macOS Native Edit/Window
+	"Undo" : "실행 취소" ,
+	"Redo" : "다시 실행" ,
+	"Cut" : "잘라내기" ,
+	"Paste" : "붙여넣기" ,
+	"Paste and Match Style" : "스타일과 함께 붙여넣기" ,
+	"Select All" : "모두 선택" ,
+	"Minimize" : "창 최소화" ,
+	"Zoom" : "확대/축소" ,
+	"Bring All to Front" : "모두 앞으로 가져오기" ,
 	
 	// Menu - View
 	"View" : "보기" ,

@@ -3,6 +3,17 @@
 	"Application" : "アプリケーション" ,
 	"Settings" : "設定" ,
 	"Check for Updates" : "更新を確認" ,
+
+	// Menu - macOS Native Edit/Window
+	"Undo" : "取り消す" ,
+	"Redo" : "やり直す" ,
+	"Cut" : "切り取る" ,
+	"Paste" : "ペースト" ,
+	"Paste and Match Style" : "スタイルを合わせてペースト" ,
+	"Select All" : "すべてを選択" ,
+	"Minimize" : "ウィンドウをしまう" ,
+	"Zoom" : "ズーム" ,
+	"Bring All to Front" : "すべてを手前に移動" ,
 	
 	// Menu - View
 	"View" : "表示" ,
