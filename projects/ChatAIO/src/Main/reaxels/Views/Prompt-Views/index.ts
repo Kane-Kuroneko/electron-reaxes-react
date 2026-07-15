@@ -217,11 +217,13 @@ export const reaxel_PromptViews = reaxel( () => {
 			: Math.max( 0 , Math.round( store.right.width ) );
 
 		const syncCenterView = () => {
+			// macOS 标题栏: 预留红绿灯安全区，动画期间也不应覆盖标题栏阻断拖拽
+			const topOffset = process.platform === 'darwin' ? 38 : 0;
 			Reaxel_View().fitCurrentCenterView( {
 				x : leftWidth ,
-				y : 0 ,
+				y : topOffset ,
 				width : Math.max( 1 , bounds.width - leftWidth - rightWidth ) ,
-				height : bounds.height,
+				height : Math.max( 1 , bounds.height - topOffset ),
 			} );
 		};
 		const syncSideViews = () => {
@@ -299,12 +301,14 @@ const syncSideBoundsWithWidth = (
 	}
 	const roundedWidth = Math.max( 0 , Math.round( width ) );
 	const visible = roundedWidth > 0 || sideState.visible;
+	// macOS 标题栏: 预留红绿灯安全区，动画期间侧栏也不应覆盖标题栏
+	const topOffset = process.platform === 'darwin' ? 38 : 0;
 	setViewVisibleIfChanged( view , visible );
 	setViewBoundsIfChanged( view , {
 		x : side === 'left' ? 0 : Math.max( 0 , bounds.width - roundedWidth ) ,
-		y : 0 ,
+		y : topOffset ,
 		width : roundedWidth ,
-		height : bounds.height,
+		height : Math.max( 1 , bounds.height - topOffset ),
 	} );
 };
 

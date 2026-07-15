@@ -1,3 +1,4 @@
+import { app } from 'electron';
 import type { WebContentsView } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -8,7 +9,7 @@ export class ViewCrashReporter {
 	
 	constructor(view: WebContentsView, viewName: string = 'Unknown') {
 		// 创建logs目录
-		const logsDir = path.join(process.cwd(), 'logs');
+		const logsDir = path.join(app.getPath('userData'), 'logs');
 		if (!fs.existsSync(logsDir)) {
 			fs.mkdirSync(logsDir, { recursive: true });
 		}

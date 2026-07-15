@@ -80,6 +80,22 @@ export const reaxel_Menu = reaxel( () => {
 					},
 				],
 			} ,
+			// macOS 标准 Edit 菜单 — 使用 Electron role 提供原生 AppKit 行为、系统语言本地化和标准快捷键
+			...( process.platform === 'darwin' ? [{
+				label : t('Edit') ,
+				submenu : [
+					{ role : 'undo' as const } ,
+					{ role : 'redo' as const } ,
+					{ type : 'separator' as const } ,
+					{ role : 'cut' as const } ,
+					{ role : 'copy' as const } ,
+					{ role : 'paste' as const } ,
+					{ role : 'pasteAndMatchStyle' as const } ,
+					{ role : 'delete' as const } ,
+					{ type : 'separator' as const } ,
+					{ role : 'selectAll' as const } ,
+				],
+			}] : [] ) ,
 			{
 				label : t('View') ,
 				submenu : [
@@ -209,6 +225,16 @@ export const reaxel_Menu = reaxel( () => {
 					},
 				],
 			} ,
+			// macOS 标准 Window 菜单 — 使用 Electron role 提供原生窗口管理行为
+			...( process.platform === 'darwin' ? [{
+				label : t('Window') ,
+				submenu : [
+					{ role : 'minimize' as const } ,
+					{ role : 'zoom' as const } ,
+					{ type : 'separator' as const } ,
+					{ role : 'front' as const } ,
+				],
+			}] : [] ) ,
 			{
 				label : t("Switch AI") ,
 				submenu : enabledAIs.length
@@ -272,7 +298,7 @@ export const reaxel_Menu = reaxel( () => {
 					],
 			},
 			...adjacentAIMenuItems,
-		] );
+			] );
 	}
 
 	function createClickMenuHandler( aiId:string ) {
