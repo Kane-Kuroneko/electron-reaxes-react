@@ -12,7 +12,7 @@ Read these files before changing behavior:
 - `.qoder/rules/ipc-coding.md`
 - `CODING_STANDARD.md`
 - The target subproject docs such as `projects/ChatAIO/docs/architecture/ai-config.md` and `projects/ChatAIO/todo.md`
-- Before changing ChatAIO FloatingView, menubar, transparent windows, or mouse passthrough, read [`menubar-drag-investigation.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md).
+- Before changing ChatAIO FloatingView, menubar, transparent windows, or mouse passthrough, read [`menubar-drag-investigation.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md) and [`menubar-drag-region-leak-below-content.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-region-leak-below-content.md) (Windows `app-region` hit-test leak below menubar).
 - Before adding or changing **any** Renderer → Main IPC (especially menubar `openDropdownView` / `menuViewAction`), read `.qoder/rules/ipc-coding.md` §错误 0 and apply `cloneForIPC` to all `reaxel_*.store` payloads.
 
 Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with npm. The local Reaxes implementation is available at `Z:\reaxes` when library behavior is unclear.
@@ -60,6 +60,7 @@ Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with n
 - Electron's mouse forwarding hook conflicts with dragging another BrowserWindow, including a `-webkit-app-region: drag` menubar, causing jitter, flicker, and sticky lag even when FloatingView is hidden.
 - Keep `{ forward: false }` unless a new feature demonstrably requires forwarded `mousemove`; then redesign or disable forwarding throughout window move/resize and rerun the documented regression matrix.
 - Canonical root-cause evidence and upstream Electron issues: [`menubar-drag-investigation.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md).
+- Menubar **below** transparent drag blocking content on Windows: keep Electron **≥ 41.2.1**; see [`menubar-drag-region-leak-below-content.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-region-leak-below-content.md).
 
 ## Validation
 

@@ -3,6 +3,7 @@
 ## 1. 文档状态
 
 - 问题：Web menubar 拖拽主窗口时出现抖动、闪烁、跟手性差和释放后粘滞。
+- **另见**：菜单栏**下方**内容区透明挡点击 + 可拖窗（Electron `app-region` 命中泄露）→ [`menubar-drag-region-leak-below-content.md`](./menubar-drag-region-leak-below-content.md)。
 - 已知对照：历史验证中摘除 `FloatingView` 后问题消失。
 - 调查范围：围绕 `FloatingView` 的窗口几何、可见层、renderer 内容和窗口属性逐层隔离。
 - 当前结论：已确认根因并修复。Windows 上 `setIgnoreMouseEvents(true, { forward: true })` 会干扰同应用主窗口拖动；改为 `{ forward: false }` 后用户确认恢复丝滑。
