@@ -46,147 +46,13 @@ export const reaxel_Menu = reaxel( () => {
 	function createMenuData(): MenuView.Structure {
 		const settings = getRuntimeSettings();
 		const enabledAIs = settings.AIs.filter( ai => !ai.disabled );
-		const { currentAIViewKey , settingsViewOpened } = Reaxel_View.store;
+		const { currentAIViewKey } = Reaxel_View.store;
 		const instantiatedAIViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
 		const canSwitchInstantiatedAI = instantiatedAIViews.length > 1;
 		const nextInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , 1 );
 		const previousInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , -1 );
-		const promptViewLeftVisible = reaxel_PromptViews.store.left.visible || reaxel_PromptViews.store.left.width > 0;
-		const promptViewRightVisible = reaxel_PromptViews.store.right.visible || reaxel_PromptViews.store.right.width > 0;
-		const platform = process.platform;
 
 		const topLevelItems: MenuView.Structure = [
-			{
-				id : 'application' ,
-				label : t('Application') ,
-				enabled : true ,
-				submenu : [
-					{
-						id : 'settings' ,
-						label : t('Settings') ,
-						type : 'checkbox' ,
-						checked : settingsViewOpened ,
-						enabled : true ,
-						action : 'open-settings',
-					} ,
-					{ id : 'app-sep-1' , label : '' , type : 'separator' , enabled : true } ,
-					{
-						id : 'check-updates' ,
-						label : t('Check for Updates') ,
-						type : 'normal' ,
-						enabled : true ,
-						action : 'check-updates',
-					} ,
-					{ id : 'app-sep-2' , label : '' , type : 'separator' , enabled : true } ,
-					{
-						id : 'quit' ,
-						label : platform === 'darwin' ? t('Quit') : t('Exit') ,
-						type : 'normal' ,
-						enabled : true ,
-						action : 'quit',
-					} ,
-				],
-			} ,
-			{
-				id : 'view' ,
-				label : t('View') ,
-				enabled : true ,
-				submenu : [
-					{
-						id : 'reload' ,
-						label : t('Reload') ,
-						type : 'normal' ,
-						accelerator : 'CmdOrCtrl+R' ,
-						enabled : true ,
-						action : 'reload-view',
-					} ,
-					{
-						id : 'force-reload' ,
-						label : t('Force Reload') ,
-						type : 'normal' ,
-						accelerator : 'CmdOrCtrl+Shift+R' ,
-						enabled : true ,
-						action : 'force-reload-view',
-					} ,
-					{
-						id : 'devtools' ,
-						label : t('Developer Tools') ,
-						type : 'normal' ,
-						accelerator : platform === 'darwin' ? 'Cmd+Option+I' : 'F12' ,
-						enabled : true ,
-						action : 'toggle-devtools',
-					} ,
-					{ id : 'view-sep-1' , label : '' , type : 'separator' , enabled : true } ,
-					{
-						id : 'prompt-left' ,
-						label : t('PromptView Left') ,
-						type : 'checkbox' ,
-						checked : promptViewLeftVisible ,
-						accelerator : 'Alt+,' ,
-						enabled : true ,
-						action : 'toggle-prompt-left',
-					} ,
-					{
-						id : 'prompt-right' ,
-						label : t('PromptView Right') ,
-						type : 'checkbox' ,
-						checked : promptViewRightVisible ,
-						accelerator : 'Alt+.' ,
-						enabled : true ,
-						action : 'toggle-prompt-right',
-					} ,
-					{ id : 'view-sep-2' , label : '' , type : 'separator' , enabled : true } ,
-					{
-						id : 'wipe-reload' ,
-						label : t('Wipe and Reload This Page') ,
-						type : 'normal' ,
-						enabled : true ,
-						action : 'wipe-reload',
-					} ,
-					{ id : 'view-sep-3' , label : '' , type : 'separator' , enabled : true } ,
-					{
-						id : 'actual-size' ,
-						label : t('Actual Size') ,
-						type : 'normal' ,
-						accelerator : 'CmdOrCtrl+0' ,
-						enabled : true ,
-						action : 'actual-size',
-					} ,
-					{
-						id : 'zoom-in' ,
-						label : t('Zoom In') ,
-						type : 'normal' ,
-						accelerator : 'CmdOrCtrl+=' ,
-						enabled : true ,
-						action : 'zoom-in',
-					} ,
-					{
-						id : 'zoom-out' ,
-						label : t('Zoom Out') ,
-						type : 'normal' ,
-						accelerator : 'CmdOrCtrl+-' ,
-						enabled : true ,
-						action : 'zoom-out',
-					} ,
-					{ id : 'view-sep-4' , label : '' , type : 'separator' , enabled : true } ,
-					{
-						id : 'toggle-fullscreen' ,
-						label : t('Toggle Fullscreen') ,
-						type : 'normal' ,
-						enabled : true ,
-						action : 'toggle-fullscreen',
-					} ,
-					{ id : 'view-sep-5' , label : '' , type : 'separator' , enabled : true } ,
-					{
-						id : 'close-current-ai' ,
-						label : t('Close This AI') ,
-						type : 'normal' ,
-						accelerator : 'CmdOrCtrl+W' ,
-						enabled : !!reaxel_AIViews().currentAIView ,
-						action : 'close-current-ai',
-					} ,
-				],
-			} ,
 			{
 				id : 'switch-ai' ,
 				label : t('Switch AI') ,
@@ -280,35 +146,8 @@ export const reaxel_Menu = reaxel( () => {
 	}
 
 	function createMenu() {
-		const settings = getRuntimeSettings();
-		const enabledAIs = settings.AIs.filter( ai => !ai.disabled );
-		const { currentAIViewKey } = Reaxel_View.store;
-		const instantiatedAIViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
-		const canSwitchInstantiatedAI = instantiatedAIViews.length > 1;
-		const nextInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , 1 );
-		const previousInstantiatedAI = resolveAdjacentInstantiatedAI( instantiatedAIViews , currentAIViewKey , -1 );
 		const promptViewLeftVisible = reaxel_PromptViews.store.left.visible || reaxel_PromptViews.store.left.width > 0;
 		const promptViewRightVisible = reaxel_PromptViews.store.right.visible || reaxel_PromptViews.store.right.width > 0;
-		const adjacentAIMenuItems:MenuItemConstructorOptions[] = canSwitchInstantiatedAI
-			? [
-				{
-					label : createAdjacentAIMenuLabel( '⏮️' , t( 'Prev' ) , previousInstantiatedAI ) ,
-					accelerator : 'CmdOrCtrl+[' ,
-					registerAccelerator : false ,
-					click : () => {
-						void Reaxel_View().turnToPreviousInstantiatedAiPage();
-					},
-				} ,
-				{
-					label : createAdjacentAIMenuLabel( '⏭️' , t( 'Next' ) , nextInstantiatedAI ) ,
-					accelerator : 'CmdOrCtrl+]' ,
-					registerAccelerator : false ,
-					click : () => {
-						void Reaxel_View().turnToNextInstantiatedAiPage();
-					},
-				} ,
-			]
-			: [];
 
 		return Menu.buildFromTemplate( [
 			{
@@ -492,77 +331,7 @@ export const reaxel_Menu = reaxel( () => {
 					{ role : 'front' as const } ,
 				],
 			}] : [] ) ,
-			{
-				label : t("Switch AI") ,
-				submenu : enabledAIs.length
-					? [
-						...enabledAIs.map( ai => ( {
-							label : isAIInstantiated( ai.id )
-								? `${ ai.label } ✅️`
-								: ai.label ,
-							type : 'radio' as const ,
-							checked : currentAIViewKey === ai.id ,
-							click : createClickMenuHandler( ai.id ),
-						} ) ),
-						{ type : 'separator' as const } ,
-						{
-							label : createPlainMenuLabel( t('Previous Opened AI') ) ,
-							type : 'normal' as const ,
-							accelerator : 'CmdOrCtrl+[' ,
-							registerAccelerator : false ,
-							enabled : canSwitchInstantiatedAI ,
-							click : () => {
-								void Reaxel_View().turnToPreviousInstantiatedAiPage();
-							},
-						} ,
-						{
-							label : createPlainMenuLabel( t('Next Opened AI') ) ,
-							type : 'normal' as const ,
-							accelerator : 'CmdOrCtrl+]' ,
-							registerAccelerator : false ,
-							enabled : canSwitchInstantiatedAI ,
-							click : () => {
-								void Reaxel_View().turnToNextInstantiatedAiPage();
-							},
-						} ,
-						{ type : 'separator' as const } ,
-						{
-							label : createPlainMenuLabel( t('Previous AI Page') ) ,
-							type : 'normal' as const ,
-							accelerator : 'Alt+[' ,
-							registerAccelerator : false ,
-							enabled : enabledAIs.length > 1 ,
-							click : () => {
-								void Reaxel_View().turnToPreviousAiPage();
-							},
-						} ,
-						{
-							label : createPlainMenuLabel( t('Next AI Page') ) ,
-							type : 'normal' as const ,
-							accelerator : 'Alt+]' ,
-							registerAccelerator : false ,
-							enabled : enabledAIs.length > 1 ,
-							click : () => {
-								void Reaxel_View().turnToNextAiPage();
-							},
-						} ,
-					]
-					: [
-						{
-							label : t('No enabled AI pages') ,
-							enabled : false,
-						},
-					],
-			},
-			...adjacentAIMenuItems,
 			] );
-	}
-
-	function createClickMenuHandler( aiId:string ) {
-		return () => {
-			reaxel_AIViews().showAIView( aiId , getRuntimeSettings() );
-			rebuildMenu();
-		};
 	}
 
 	function rebuildMenu() {
@@ -646,39 +415,12 @@ const getRuntimeSettings = ():Settings => {
 	};
 };
 
-const resolveAdjacentMenuAI = (
-	enabledAIs:Settings['AIs'] ,
-	currentAIViewKey:string ,
-	offset:number,
-) => {
-	if( enabledAIs.length === 0 ) {
-		return null;
-	}
-	const currentIndex = enabledAIs.findIndex( ai => ai.id === currentAIViewKey );
-	const baseIndex = currentIndex === -1
-		? offset > 0 ? -1 : 0
-		: currentIndex;
-	return enabledAIs[getWrappedIndex( baseIndex + offset , enabledAIs.length )];
-};
-
 const getWrappedIndex = (index:number , length:number) => {
 	return ( index + length ) % length;
 };
 
 const createPlainMenuLabel = (label:string) => {
 	return escapeElectronMenuBarLabel( label.trim() );
-};
-
-const createAdjacentAIMenuLabel = (
-	emoji:string ,
-	label:string ,
-	ai:Settings['AIs'][number] | RuntimeAIView | null,
-) => {
-	if( !ai ) {
-		return escapeElectronMenuBarLabel( `${ emoji } ${ label }` );
-	}
-	const displayName = ai.label || ai.id;
-	return escapeElectronMenuBarLabel( `${ emoji } ${ label }: ${ fitMenuAIName( displayName ) }` );
 };
 
 const resolveAdjacentInstantiatedAI = (
@@ -698,10 +440,7 @@ const resolveAdjacentInstantiatedAI = (
 
 import { Reaxel_View } from '../Views';
 import { reaxel_MainView } from '../Views/Main-View';
-import {
-	escapeElectronMenuBarLabel ,
-	fitMenuAIName,
-} from './menu-label-width';
+import { escapeElectronMenuBarLabel } from './menu-label-width';
 import {
 	autoUpdater ,
 	dialog ,

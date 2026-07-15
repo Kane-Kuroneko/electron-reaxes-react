@@ -41,7 +41,8 @@ export const createMainWindow = async() => {
 		// hiddenInset 有已知 bug（死区、拖拽失效），hidden + trafficLightPosition 是社区推荐方案
 		...( process.platform === 'darwin' && {
 			titleBarStyle : 'hidden' as const,
-			trafficLightPosition : { x : 12 , y : 22 } as const,
+			// y 与 MainView 菜单项垂直中心对齐：bar 42px，按钮 28px + margin 4px + padding 1px → center ≈ 19px
+			trafficLightPosition : { x : 12 , y : 13 } as const,
 		} ),
 		// Windows/Linux：隐藏原生标题栏，使用 titleBarOverlay 保留窗口操作按钮
 		...( process.platform !== 'darwin' && {
