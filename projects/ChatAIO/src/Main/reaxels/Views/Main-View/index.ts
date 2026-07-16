@@ -301,7 +301,12 @@ export const reaxel_MainView = reaxel( () => {
 
 		if( store.dropdownLoaded ) {
 			sendDropdownCommand( showCommand );
-			window.showInactive();
+			if( process.platform === 'darwin' ) {
+				window.showInactive();
+			} else {
+				/* Windows/Linux: dropdown must have focus so blur fires on main window click */
+				window.show();
+			}
 			setState( { pendingDropdownPayload : null } );
 		}
 	};
@@ -347,7 +352,12 @@ export const reaxel_MainView = reaxel( () => {
 			windowWidth ,
 			windowHeight ,
 		} );
-		window.showInactive();
+		if( process.platform === 'darwin' ) {
+			window.showInactive();
+		} else {
+			/* Windows/Linux: dropdown must have focus so blur fires on main window click */
+			window.show();
+		}
 		setState( { pendingDropdownPayload : null } );
 	};
 
@@ -358,7 +368,6 @@ export const reaxel_MainView = reaxel( () => {
 		}
 
 		const dropdownWindow = new BrowserWindow( {
-			parent : mainWindow ,
 			show : false ,
 			frame : false ,
 			transparent : true ,
@@ -392,7 +401,7 @@ export const reaxel_MainView = reaxel( () => {
 		} );
 
 		dropdownWindow.on( 'blur' , () => {
-			hideDropdownView();
+			hideDropdownView( { syncMainView : false } );
 		} );
 
 		dropdownWindow.on( 'closed' , () => {
