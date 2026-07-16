@@ -12,19 +12,6 @@ export interface AIConfigFile {
 	deletedIds?: string[];
 }
 
-const AI_FAMILY_DEFAULT_URLS:Record<AI.AIFamily , string> = {
-	chatgpt : 'https://chatgpt.com' ,
-	grok : 'https://grok.com' ,
-	gemini : 'https://gemini.google.com' ,
-	deepseek : 'https://chat.deepseek.com' ,
-	perplexity : 'https://www.perplexity.ai' ,
-	claude : 'https://claude.ai' ,
-	custom : '' ,
-	'dev-proxy-test' : 'https://whatismyipaddress.com/' ,
-	doubao : 'https://www.doubao.com' ,
-	qianwen : 'https://www.qianwen.com/' ,
-	kimi : 'https://kimi.moonshot.cn',
-};
 
 const normalizeAIFamily = (ai:AI.AIItem):AI.AIFamily => {
 	const family = ai.AI_family;
@@ -253,6 +240,7 @@ export default AIConfigService;
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { app } from 'electron';
+import { AI_FAMILY_DEFAULT_URLS } from '#src/shared/statics/ai-family-defaults';
 import defaultAIsData from '#src/shared/statics/default-ais.json';
 import { cloneObservableToPlain } from '#src/shared/utils/clone-for-ipc.utility';
 import { AI } from '#src/Types/SettingsTypes/AI';

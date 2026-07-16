@@ -110,9 +110,19 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	grok : 'orange' ,
 	deepseek : 'purple' ,
 	perplexity : 'magenta' ,
+	manus : 'volcano' ,
+	aistudio : 'geekblue' ,
+	copilot : 'processing' ,
+	'meta-ai' : 'blue' ,
+	poe : 'purple' ,
+	mistral : 'orange' ,
 	doubao : 'red' ,
 	qianwen : 'geekblue' ,
 	kimi : 'gold' ,
+	chatglm : 'cyan' ,
+	yuanbao : 'green' ,
+	hailuo : 'magenta' ,
+	yiyan : 'volcano' ,
 	'dev-proxy-test' : 'lime' ,
 	custom : 'default',
 };
@@ -425,13 +435,13 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 
 		const isCustomFamily = fields.AI_family === 'custom';
 		// 内置 family 的 URL 可选择覆盖; custom family 的 URL 直接属于当前 AI 实例.
-		const displayUrl = isCustomFamily ? fields.url : fields.url_override || defaultURLByFamily( fields.AI_family );
+		const displayUrl = isCustomFamily ? fields.url : fields.url_override || getAIDomainByFamily( fields.AI_family );
 		const isFirstAIForcedPreload = reaxel_SettingsView.store.UIControls.manage_AIs.startupAIPageLoadMode === 'first-ai'
 			&& store.mode === 'edit'
 			&& reaxel_SettingsView.store.Data.AIs[0]?.id === store.editing_id;
 
 		const handleSave = () => {
-			const effectiveUrl = ( isCustomFamily ? fields.url : fields.url_override || defaultURLByFamily( fields.AI_family ) ).trim();
+			const effectiveUrl = ( isCustomFamily ? fields.url : fields.url_override || getAIDomainByFamily( fields.AI_family ) ).trim();
 			if( !effectiveUrl ) {
 				message.error( i18n( 'URL is required for custom AI' ) );
 				return;
@@ -480,7 +490,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 					onClick={ () => {
 						// Save: 将draft保存到url_override
 						const trimmed = urlDraft.trim();
-						const defaultUrl = defaultURLByFamily( fields.AI_family );
+						const defaultUrl = getAIDomainByFamily( fields.AI_family );
 						setState.fields( {
 							url_override : trimmed && trimmed !== defaultUrl ? trimmed : null,
 						} );
@@ -538,10 +548,12 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 				</Form.Item>
 				<Form.Item label={<I18n>AI family</I18n>}>
 					<Select
+						showSearch
+						optionFilterProp="children"
 						value={ fields.AI_family }
 						onChange={ value => {
 							const family = value as AI.AIFamily;
-							const defaultUrl = defaultURLByFamily( family );
+							const defaultUrl = getAIDomainByFamily( family );
 							const patch:Partial<AI.EditAIItem> = {
 								AI_family : family ,
 								url : defaultUrl ,
@@ -785,22 +797,6 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		return globalThis.crypto?.randomUUID?.() || `ai-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 , 11 ) }`;
 	};
 
-	const defaultURLByFamily = (family:AI.AIFamily) => {
-		return {
-				chatgpt : 'https://chatgpt.com' ,
-				grok : 'https://grok.com' ,
-				gemini : 'https://gemini.google.com' ,
-				deepseek : 'https://chat.deepseek.com' ,
-				perplexity : 'https://www.perplexity.ai' ,
-				claude : 'https://claude.ai' ,
-				custom : '' ,
-			'dev-proxy-test' : 'https://whatismyipaddress.com/' ,
-				doubao : 'https://www.doubao.com' ,
-				qianwen : 'https://www.qianwen.com/' ,
-				kimi : 'https://kimi.moonshot.cn',
-		}[family] ?? 'https://chatgpt.com';
-	};
-
 	interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
 		'data-row-key': string;
 	}
@@ -952,6 +948,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
 	import { resetAIsToDefaults } from "#src/Views/SettingsView/services/Settings";
 	import { AIFamily } from "#src/shared/statics/AI-family";
+	import { getAIDomainByFamily } from "#src/shared/statics/ai-family-defaults";
 	import { createDefaultProxyConf as defaultProxyConf } from "#src/shared/statics/default-proxy";
 	import { AI } from "#src/Types/SettingsTypes/AI";
 	import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";

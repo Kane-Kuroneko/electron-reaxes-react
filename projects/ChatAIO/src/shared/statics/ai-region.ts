@@ -11,7 +11,11 @@ const DOMESTIC_AI_FAMILIES:ReadonlySet<AI.AIFamily> = new Set( [
 	'deepseek' ,
 	'doubao' ,
 	'qianwen' ,
-	'kimi',
+	'kimi' ,
+	'chatglm' ,
+	'yuanbao' ,
+	'hailuo' ,
+	'yiyan' ,
 ] );
 
 export const getAIRegion = (family:AI.AIFamily):AIRegion => {

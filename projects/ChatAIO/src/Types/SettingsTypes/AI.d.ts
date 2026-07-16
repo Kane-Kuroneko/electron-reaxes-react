@@ -1,6 +1,27 @@
 export namespace AI {
 	
-	export type AIFamily = "chatgpt"|"grok"|"gemini"|"deepseek"|"perplexity"|"claude"|"custom"|"dev-proxy-test"|"doubao"|"qianwen"|"kimi";
+	export type AIFamily =
+		| "chatgpt"
+		| "grok"
+		| "gemini"
+		| "deepseek"
+		| "perplexity"
+		| "claude"
+		| "manus"
+		| "aistudio"
+		| "copilot"
+		| "meta-ai"
+		| "poe"
+		| "mistral"
+		| "doubao"
+		| "qianwen"
+		| "kimi"
+		| "chatglm"
+		| "yuanbao"
+		| "hailuo"
+		| "yiyan"
+		| "custom"
+		| "dev-proxy-test";
 	
 	
 	export type UserFillProxy = NetworkProxy.ProxyConf;
