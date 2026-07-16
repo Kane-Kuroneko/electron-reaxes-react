@@ -61,6 +61,9 @@ const onDropdownViewCommand = (callback:(command:DropdownView.Command) => void) 
 		callback( command );
 	} );
 };
+const isDropdownVisible = (): boolean => {
+	return ipcRenderer.sendSync( 'JSON_SYNC' , { channel : 'dropdown-view:is-visible' } );
+};
 
 const api = {
 	fetchSettings ,
@@ -104,6 +107,7 @@ const api = {
 	menuViewReady,
 	menuViewResize,
 	onMenuViewCommand,
+	isDropdownVisible,
 };
 export type API = typeof api;
 

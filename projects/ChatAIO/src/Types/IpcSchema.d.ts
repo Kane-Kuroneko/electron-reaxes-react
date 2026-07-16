@@ -30,6 +30,7 @@ export interface MainToRendererEvents extends Record<string , IpcStructure.MainT
 
 export interface IpcSyncRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , unknown>> {
 	'get-ai-page-environment': IpcStructure.IpcRpc<[void], AIPageEnvironment | null>;
+	'dropdown-view:is-visible': IpcStructure.IpcRpc<[void], boolean>;
 }
 
 export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , unknown>>{

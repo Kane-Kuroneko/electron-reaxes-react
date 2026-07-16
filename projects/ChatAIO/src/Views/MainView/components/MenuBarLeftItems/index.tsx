@@ -3,6 +3,7 @@ export const MenuBarLeftItems = reaxper( () => {
 	const {
 		toggleMenu ,
 		setOpenMenuIndex ,
+		closeAllMenus ,
 		triggerAction ,
 	} = reaxel_MainView();
 
@@ -19,6 +20,12 @@ export const MenuBarLeftItems = reaxper( () => {
 						onToggle={ () => toggleMenu( originalIndex , isOpen ) }
 						onHover={ () => {
 							if( store.openMenuIndex >= 0 ) {
+								/* 主进程可能已通过 before-mouse-event 关闭 dropdown（如 drag region 点击）。
+								 * 用同步 IPC 确认实际可见性，避免 stale openMenuIndex 导致 hover 重新弹出。 */
+								if( !window.api.isDropdownVisible() ) {
+									closeAllMenus();
+									return;
+								}
 								setOpenMenuIndex( originalIndex );
 							}
 						} }

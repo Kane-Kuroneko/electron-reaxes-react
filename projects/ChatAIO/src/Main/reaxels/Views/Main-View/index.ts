@@ -108,6 +108,11 @@ export const reaxel_MainView = reaxel( () => {
 		useIpcRendererToMain( 'menubar:error-report' ).on( ( _ , report ) => {
 			logMenubarError( report );
 		} );
+
+		useIpcSync( 'dropdown-view:is-visible' ).handle( () => {
+			const dropdown = store.dropdownWindow;
+			return !!dropdown && !dropdown.isDestroyed() && dropdown.isVisible();
+		} );
 	};
 
 	const initMainView = () => {
@@ -791,8 +796,7 @@ import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import { reaxel_SettingsView } from '#main/reaxels/Views/Settings-View';
 import { mainWindow } from '#main/mainWindow';
-import { useIpcMainToRenderer } from '#main/services/ipc';
-import { useIpcRendererToMain } from '#main/services/ipc';
+import { useIpcMainToRenderer , useIpcRendererToMain , useIpcSync } from '#main/services/ipc';
 import {
 	createDevRendererEntryURL ,
 	getFreshRendererLoadURLOptions ,
