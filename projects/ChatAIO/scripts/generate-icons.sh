@@ -9,7 +9,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 STATICS_DIR="$PROJECT_DIR/statics"
-SOURCE="$STATICS_DIR/shared/main-icon 900*900.png"
+SOURCE="$STATICS_DIR/shared/main-icon-900x900.png"
 PY_SCRIPT="$SCRIPT_DIR/png-to-template.py"
 ICONSET_DIR="$STATICS_DIR/macos/icon/iconset.iconset"
 
