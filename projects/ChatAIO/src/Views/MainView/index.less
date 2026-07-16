@@ -70,8 +70,10 @@ html, body {
 	box-sizing: border-box;
 	overflow: hidden;
 	padding: 0;
-	/* 栏本体拖拽；菜单 item 用 no-drag 挖洞。勿再加绝对定位全栏 drag-layer */
-	-webkit-app-region: drag;
+	/* Windows: 本体 no-drag 让 click 到达 renderer（handleBarMouseDown 正常关 dropdown）。
+	 * 拖拽仅靠 .main-view-bar__drag-tail（右端伸缩区）。菜单 item 用 no-drag 挖洞。
+	 * 勿再加绝对定位全栏 drag-layer。 */
+	-webkit-app-region: no-drag;
 }
 
 .main-view-bar__left {
@@ -81,7 +83,7 @@ html, body {
 	height: 100%;
 	min-width: 0;
 	padding-left: 4px;
-	-webkit-app-region: drag;
+	-webkit-app-region: no-drag;
 }
 
 /* 中区：相对整行 menubar（含 macOS 交通灯）水平居中；垂直与左区共用 margin 契约 */
