@@ -71,9 +71,23 @@ html, body {
 	overflow: hidden;
 	padding: 0;
 	/* Windows: 本体 no-drag 让 click 到达 renderer（handleBarMouseDown 正常关 dropdown）。
-	 * 拖拽仅靠 .main-view-bar__drag-tail（右端伸缩区）。菜单 item 用 no-drag 挖洞。
-	 * 勿再加绝对定位全栏 drag-layer。 */
+	 * 拖拽仅靠 6px 顶部 ::before 伪元素和 .main-view-context-badge（128px 左徽章），
+	 * 不依赖 .main-view-bar__drag-tail——它会吞掉大块空白区域的点击。
+	 * 菜单 item 用 no-drag 挖洞。勿再加绝对定位全栏 drag-layer。 */
 	-webkit-app-region: no-drag;
+}
+
+/* 6px 顶部拖拽条——取代大块 drag-tail 成为主要拖拽区 */
+.main-view-bar::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 6px;
+	z-index: 100;
+	-webkit-app-region: drag;
+	pointer-events: auto;
 }
 
 .main-view-bar__left {
@@ -105,12 +119,13 @@ html, body {
 	pointer-events: auto;
 }
 
-/* 菜单项右侧剩余空白：显式拖拽尾区（高度仍锁在 menubar 内） */
+/* 菜单项右侧剩余空白：不再设为 drag——它会吞掉大块空白区域的点击。
+ * 窗口拖拽改用 6px 顶部拖拽条（.main-view-bar::before）和 context-badge。 */
 .main-view-bar__drag-tail {
 	flex: 1 1 auto;
 	align-self: stretch;
 	min-width: 12px;
-	-webkit-app-region: drag;
+	-webkit-app-region: no-drag;
 }
 
 /* ── Current AI context badge ─────────────────────────── */
