@@ -203,7 +203,10 @@ export const reaxel_MainView = reaxel( () => {
 				hideDropdownView();
 			}
 		} );
-		/* MainView HTML 壳：点空白也关掉（WCV 已有 before-mouse-event；此处兜底未覆盖区域） */
+		/* MainView HTML 壳：点空白也关掉（WCV 已有 before-mouse-event；此处兜底未覆盖区域）
+		 * Windows: -webkit-app-region: drag 区域会吞掉渲染进程的 mousedown，
+		 * 必须在此处从主进程关闭下拉。使用 syncMainView:false 避免 race condition
+		 * （渲染进程的 openMenuIndex 不会被提前清零，菜单按钮点击后的 toggleMenu 判断正确）。 */
 		if( !mainWindow.webContents.isDestroyed() ) {
 			mainWindow.webContents.on( 'before-mouse-event' , ( _event , mouse ) => {
 				if( mouse.type !== 'mouseDown' ) return;
@@ -211,8 +214,13 @@ export const reaxel_MainView = reaxel( () => {
 				if( !dropdown || dropdown.isDestroyed() || !dropdown.isVisible() ) {
 					return;
 				}
-				/* 菜单栏内点击由 renderer toggleMenu 处理；此处预关闭会把 openMenuIndex 清零导致再次弹出 */
 				if( mouse.y < getMenuBarHeight() ) {
+					/* macOS：渲染进程可直接接收菜单栏点击事件（无 drag 区域拦截）。
+					 * Windows/Linux：drag 区域吞掉 mousedown，必须由主进程关闭。 */
+					if( process.platform === 'darwin' ) {
+						return;
+					}
+					hideDropdownView( { syncMainView : false } );
 					return;
 				}
 				hideDropdownView();

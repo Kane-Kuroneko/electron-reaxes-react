@@ -115,6 +115,146 @@ export const reaxel_Menu = reaxel( () => {
 			} ,
 		];
 
+		/* 非 macOS：在自定义菜单栏中添加 Application 和 View 菜单（macOS 原生菜单已提供） */
+		if( process.platform !== 'darwin' ) {
+			const promptViewLeftVisible = reaxel_PromptViews.store.left.visible || reaxel_PromptViews.store.left.width > 0;
+			const promptViewRightVisible = reaxel_PromptViews.store.right.visible || reaxel_PromptViews.store.right.width > 0;
+
+			topLevelItems.unshift(
+				{
+					id : 'application' ,
+					label : t( 'Application' ) ,
+					enabled : true ,
+					submenu : [
+						{
+							id : 'settings' ,
+							label : t( 'Settings' ) ,
+							type : 'checkbox' as const ,
+							checked : Reaxel_View.store.settingsViewOpened ,
+							enabled : true ,
+							action : 'open-settings',
+						} ,
+						{ id : 'app-sep-1' , label : '' , type : 'separator' , enabled : true } ,
+						{
+							id : 'check-updates' ,
+							label : t( 'Check for Updates' ) ,
+							type : 'normal' as const ,
+							enabled : true ,
+							action : 'check-updates',
+						} ,
+						{ id : 'app-sep-2' , label : '' , type : 'separator' , enabled : true } ,
+						{
+							id : 'quit' ,
+							label : t( 'Exit' ) ,
+							type : 'normal' as const ,
+							enabled : true ,
+							action : 'quit',
+						} ,
+					],
+				} ,
+				{
+					id : 'view' ,
+					label : t( 'View' ) ,
+					enabled : true ,
+					submenu : [
+						{
+							id : 'reload' ,
+							label : t( 'Reload' ) ,
+							type : 'normal' as const ,
+							accelerator : 'CmdOrCtrl+R' ,
+							enabled : true ,
+							action : 'reload-view',
+						} ,
+						{
+							id : 'force-reload' ,
+							label : t( 'Force Reload' ) ,
+							type : 'normal' as const ,
+							accelerator : 'CmdOrCtrl+Shift+R' ,
+							enabled : true ,
+							action : 'force-reload-view',
+						} ,
+						{
+							id : 'devtools' ,
+							label : t( 'Developer Tools' ) ,
+							type : 'normal' as const ,
+							accelerator : 'F12' ,
+							enabled : true ,
+							action : 'toggle-devtools',
+						} ,
+						{ id : 'view-sep-1' , label : '' , type : 'separator' , enabled : true } ,
+						{
+							id : 'prompt-left' ,
+							label : t( 'PromptView Left' ) ,
+							type : 'checkbox' as const ,
+							checked : promptViewLeftVisible ,
+							accelerator : 'Alt+,' ,
+							enabled : true ,
+							action : 'toggle-prompt-left',
+						} ,
+						{
+							id : 'prompt-right' ,
+							label : t( 'PromptView Right' ) ,
+							type : 'checkbox' as const ,
+							checked : promptViewRightVisible ,
+							accelerator : 'Alt+.' ,
+							enabled : true ,
+							action : 'toggle-prompt-right',
+						} ,
+						{ id : 'view-sep-2' , label : '' , type : 'separator' , enabled : true } ,
+						{
+							id : 'wipe-reload' ,
+							label : t( 'Wipe and Reload This Page' ) ,
+							type : 'normal' as const ,
+							enabled : true ,
+							action : 'wipe-reload',
+						} ,
+						{ id : 'view-sep-3' , label : '' , type : 'separator' , enabled : true } ,
+						{
+							id : 'actual-size' ,
+							label : t( 'Actual Size' ) ,
+							type : 'normal' as const ,
+							accelerator : 'CmdOrCtrl+0' ,
+							enabled : true ,
+							action : 'actual-size',
+						} ,
+						{
+							id : 'zoom-in' ,
+							label : t( 'Zoom In' ) ,
+							type : 'normal' as const ,
+							accelerator : 'CmdOrCtrl+=' ,
+							enabled : true ,
+							action : 'zoom-in',
+						} ,
+						{
+							id : 'zoom-out' ,
+							label : t( 'Zoom Out' ) ,
+							type : 'normal' as const ,
+							accelerator : 'CmdOrCtrl+-' ,
+							enabled : true ,
+							action : 'zoom-out',
+						} ,
+						{ id : 'view-sep-4' , label : '' , type : 'separator' , enabled : true } ,
+						{
+							id : 'toggle-fullscreen' ,
+							label : t( 'Toggle Fullscreen' ) ,
+							type : 'normal' as const ,
+							enabled : true ,
+							action : 'toggle-fullscreen',
+						} ,
+						{ id : 'view-sep-5' , label : '' , type : 'separator' , enabled : true } ,
+						{
+							id : 'close-current-ai' ,
+							label : t( 'Close This AI' ) ,
+							type : 'normal' as const ,
+							accelerator : 'CmdOrCtrl+W' ,
+							enabled : !!reaxel_AIViews().currentAIView ,
+							action : 'close-current-ai',
+						} ,
+					],
+				} ,
+			);
+		}
+
 		if( canSwitchInstantiatedAI ) {
 			const prevName = previousInstantiatedAI?.label || previousInstantiatedAI?.id || '';
 			const nextName = nextInstantiatedAI?.label || nextInstantiatedAI?.id || '';
