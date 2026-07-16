@@ -4,7 +4,7 @@
  * 不再管理 WebContentsView 生命周期——MainView 直接渲染在 mainWindow HTML 中。
  */
 
-const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 42 : 36;
+const MENU_BAR_HEIGHT = resolveMenuBarHeight();
 const DROPDOWN_MIN_WIDTH = 200;
 const DROPDOWN_MAX_WIDTH = 480;
 const DROPDOWN_CHAR_WIDTH = 8.2;
@@ -803,6 +803,7 @@ import { setMenuShortcutHandlers } from '#main/services/shortcuts/window-keyboar
 import { setMenubarDropdownDismissHandler } from '#main/services/menubar-dropdown-dismiss.utility';
 import type { MenubarErrorReport } from '#main/services/menubar-error-log.utility';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
 import type { MenuView , MainView } from '#src/Types/MenuView';
 import type { DropdownView } from '#src/Types/DropdownView';
 import type { Settings } from '#src/Types/SettingsTypes';

@@ -13,14 +13,14 @@ const detectOS = (): NodeJS.Platform => {
 	return 'linux';
 };
 
-export const getBarHeight = ( platform: NodeJS.Platform ): number => {
-	return platform === 'darwin' ? 42 : 36;
+export const getBarHeight = (): number => {
+	return getMenuBarHeight();
 };
 
 const getMenuButtonRect = ( index : number ) => {
 	const el = document.querySelector( `[data-menu-index="${ index }"]` ) as HTMLElement | null;
 	if( !el ) {
-		return { x : 0 , y : 0 , width : 0 , height : getBarHeight( detectOS() ) };
+		return { x : 0 , y : 0 , width : 0 , height : getBarHeight() };
 	}
 	const rect = el.getBoundingClientRect();
 	return {
@@ -310,6 +310,7 @@ export const reaxel_MainView = reaxel( () => {
 import { createReaxable , reaxel } from 'reaxes';
 import type { MenuView } from '#src/Types/MenuView';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import { getMenuBarHeight } from '#src/shared/menubar-geometry';
 import { reportMenubarRendererError } from '#src/shared/utils/menubar-error-report.utility';
 import {
 	partitionStructure ,

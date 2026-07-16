@@ -4,6 +4,10 @@
  * 菜单栏背景区域为拖拽区域（.main-view-bar drag），菜单按钮为 no-drag 保持可点。
  * 不要用 inset:0 的全栏 drag overlay——Electron 会把 HTCAPTION 聚合泄露到下方 AI WCV。
  * Brand（.main-view-context-badge）单独保持 drag；#react-app-root 高度裁到菜单栏防止拖拽区下溢。
+ *
+ * 垂直几何（见 shared/menubar-geometry.ts）：
+ *   barHeight = --menu-item-margin-y * 2 + --menu-item-height = 36
+ *   全平台统一；禁止再把 macOS 抬到 42（会相对窗口顶边整体下沉）。
  */
 
 /* ── Reset ──────────────────────────────────────────────── */
@@ -29,7 +33,7 @@ html, body {
 /* ── MainView Root ──────────────────────────────────────── */
 .main-view-root {
 	display: flex;
-	align-items: flex-start;
+	align-items: stretch;
 	width: 100%;
 	height: var(--menu-bar-height, 36px);
 	overflow: hidden;
@@ -43,21 +47,20 @@ html, body {
 	-webkit-app-region: no-drag;
 }
 
-/* macOS traffic light 预留区域 */
+/* macOS traffic light 预留区域（宽度由 geometry 注入） */
 .main-view-traffic-light-spacer {
 	flex-shrink: 0;
-	width: 78px;
-	height: var(--menu-bar-height, 36px);
+	width: var(--traffic-light-spacer-width, 78px);
+	height: 100%;
 	background: var(--menu-view-bg, #f5f6f8);
 	-webkit-app-region: drag;
 	box-sizing: border-box;
-	padding-top: 1px;
 }
 
 /* ── Menu Bar ─────────────────────────────────────────── */
 .main-view-bar {
 	position: relative;
-	height: var(--menu-bar-height, 36px);
+	height: 100%;
 	flex: 1;
 	display: flex;
 	align-items: center;
@@ -66,7 +69,7 @@ html, body {
 	border-bottom: 1px solid var(--menu-view-border, rgba(0, 0, 0, 0.08));
 	box-sizing: border-box;
 	overflow: hidden;
-	padding-top: 1px;
+	padding: 0;
 	/* 栏本体拖拽；菜单 item 用 no-drag 挖洞。勿再加绝对定位全栏 drag-layer */
 	-webkit-app-region: drag;
 }
@@ -81,16 +84,17 @@ html, body {
 	-webkit-app-region: drag;
 }
 
-/* 中区：相对整行 menubar（含 macOS 交通灯）水平居中 */
+/* 中区：相对整行 menubar（含 macOS 交通灯）水平居中；垂直与左区共用 margin 契约 */
 .main-view-bar__center {
 	position: absolute;
 	left: 50%;
 	top: 0;
+	bottom: 0;
 	transform: translateX(-50%);
 	z-index: 2;
 	display: flex;
 	align-items: center;
-	height: var(--menu-bar-height, 36px);
+	height: auto;
 	pointer-events: none;
 	-webkit-app-region: drag;
 }
@@ -114,8 +118,8 @@ html, body {
 	width: 128px;
 	min-width: 128px;
 	max-width: 128px;
-	height: 28px;
-	margin: 4px;
+	height: var(--menu-item-height, 28px);
+	margin: var(--menu-item-margin-y, 4px) 4px;
 	padding: 0 10px;
 	display: flex;
 	align-items: center;
@@ -164,28 +168,11 @@ html, body {
 
 .main-view-bar-item--nav {
 	flex-shrink: 0;
-	margin-top: 2px;
-}
-
-/* macOS: align prev/next nav cluster with other menubar items (no visual sink) */
-.main-view-root[data-platform="darwin"] .main-view-bar-item--nav {
-	margin-top: 0;
-}
-
-.main-view-root[data-platform="darwin"] .main-view-bar-item__button--nav {
-	box-shadow: none;
-	border-color: transparent;
-	background: transparent;
-}
-
-.main-view-root[data-platform="darwin"] .main-view-bar-item__button--nav:hover {
-	background: var(--menu-view-hover-bg, rgba(128, 128, 128, 0.15));
-	border-color: transparent;
 }
 
 .main-view-bar-item__button {
-	height: 28px;
-	margin: 4px 1px;
+	height: var(--menu-item-height, 28px);
+	margin: var(--menu-item-margin-y, 4px) 1px;
 	padding: 0 7px;
 	border: none;
 	background: transparent;
@@ -233,6 +220,18 @@ html, body {
 .main-view-bar-item__button--nav:hover {
 	background: var(--menu-nav-btn-bg-hover, rgba(255, 255, 255, 0.96));
 	border-color: var(--menu-nav-btn-border-hover, rgba(15, 23, 42, 0.2));
+}
+
+/* macOS: Prev/Next 视觉降为扁平，与「切换 AI」同列节奏；几何仍走 margin 契约 */
+.main-view-root[data-platform="darwin"] .main-view-bar-item__button--nav {
+	box-shadow: none;
+	border-color: transparent;
+	background: transparent;
+}
+
+.main-view-root[data-platform="darwin"] .main-view-bar-item__button--nav:hover {
+	background: var(--menu-view-hover-bg, rgba(128, 128, 128, 0.15));
+	border-color: transparent;
 }
 
 .main-view-bar-item__nav-icon {

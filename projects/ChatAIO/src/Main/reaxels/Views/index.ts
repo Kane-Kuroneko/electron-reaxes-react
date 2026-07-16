@@ -523,13 +523,9 @@ const resolveStartupAI = (
 };
 
 /* ==========================================
-   菜单栏高度常量
+   菜单栏高度常量（单一数据源：shared/menubar-geometry）
    ========================================== */
-const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 42 : 36;
-
-const getMenuBarHeight = () => {
-	return MENU_BAR_HEIGHT;
-};
+const getMenuBarHeight = () => resolveMenuBarHeight();
 
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
@@ -537,6 +533,7 @@ import {
 	type Rectangle ,
 	WebContentsView,
 } from "electron";
+import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
 import ElectronStore from "electron-store";
 import { mainWindow } from "#main/mainWindow";
 import { reaxel_AIViews } from "#main/reaxels/Views/AI-Views";

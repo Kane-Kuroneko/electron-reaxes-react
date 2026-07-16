@@ -37,20 +37,19 @@ export const createMainWindow = async() => {
 				backgroundThrottling : false ,
 			} ),
 		},
-		// macOS 标题栏：隐藏原生标题栏，使用 trafficLightPosition 精确控制红绿灯位置
-		// hiddenInset 有已知 bug（死区、拖拽失效），hidden + trafficLightPosition 是社区推荐方案
+		// macOS 标题栏：hidden + trafficLightPosition（勿用 hiddenInset：死区/拖拽失效）
+		// 几何见 shared/menubar-geometry.ts：红绿灯与菜单控件共垂直中心
 		...( process.platform === 'darwin' && {
 			titleBarStyle : 'hidden' as const,
-			// y 与 MainView 菜单项垂直中心对齐：bar 42px，按钮 28px + margin 4px + padding 1px → center ≈ 19px
-			trafficLightPosition : { x : 12 , y : 13 } as const,
+			trafficLightPosition : getTrafficLightPosition(),
 		} ),
 		// Windows/Linux：隐藏原生标题栏，使用 titleBarOverlay 保留窗口操作按钮
 		...( process.platform !== 'darwin' && {
 			titleBarStyle : 'hidden' as const,
 			titleBarOverlay : {
-				color : '#00000000' ,        // 透明背景，让 MenuView 背景透出
-				symbolColor : '#888888' ,    // 按钮图标颜色
-				height : 36 ,                // 与菜单栏高度一致（Windows/Linux MENU_BAR_HEIGHT）
+				color : '#00000000' ,
+				symbolColor : '#888888' ,
+				height : getMenuBarHeight(),
 			} as any,
 		} ),
 	};
@@ -104,6 +103,7 @@ const loadMainViewHTML = () => {
 };
 
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
+import { getMenuBarHeight , getTrafficLightPosition } from '#src/shared/menubar-geometry';
 import { dev } from 'electron-is';
 import {
 	createDevRendererEntryURL ,

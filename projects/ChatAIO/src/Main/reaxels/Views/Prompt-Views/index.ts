@@ -377,11 +377,8 @@ const cubicBezierAxis = (t:number , p1:number , p2:number) => {
 
 const PROMPT_VIEW_ANIMATION_MS = 300;
 const PROMPT_VIEW_ANIMATION_FRAME_MS = 3;
-const MENU_BAR_HEIGHT = process.platform === 'darwin' ? 42 : 36;
 
-const getMenuBarHeight = () => {
-	return MENU_BAR_HEIGHT;
-};
+const getMenuBarHeight = () => resolveMenuBarHeight();
 
 type PromptSideState = {
 	name: 'PromptViewLeft' | 'PromptViewRight';
@@ -406,6 +403,7 @@ import {
 } from '#main/services/ipc';
 import { mainWindow } from '#main/mainWindow';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
+import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
 import type { PromptView } from '#src/Types/PromptView';
 import {
 	clipboard ,
