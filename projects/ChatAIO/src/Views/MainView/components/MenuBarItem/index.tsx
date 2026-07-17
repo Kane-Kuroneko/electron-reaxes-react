@@ -1,20 +1,19 @@
 /**
  * 单个顶级菜单项（下拉弹出由 DropdownView BrowserWindow 处理）
+ * 纯视图：交互只把事件抛给 reaxel 注入的 onPress / onHover，不承载业务逻辑。
  */
 export const MenuBarItem = reaxper( ( {
 	item ,
-	index ,
+	isFirst ,
 	isOpen ,
-	onToggle ,
+	onPress ,
 	onHover ,
-	onItemAction ,
 } : {
 	item : MenuView.TopLevelItem;
-	index : number;
+	isFirst : boolean;
 	isOpen : boolean;
-	onToggle : () => void;
+	onPress : () => void;
 	onHover : () => void;
-	onItemAction : ( action : MenuView.Action ) => void;
 } ) => {
 	const hasSubmenu = ( item.submenu?.length || 0 ) > 0;
 
@@ -26,7 +25,7 @@ export const MenuBarItem = reaxper( ( {
 					onHover();
 				}
 			} }
-			data-menu-index={ index }
+			data-menu-id={ item.id }
 			role="none"
 		>
 			<button
@@ -34,24 +33,13 @@ export const MenuBarItem = reaxper( ( {
 				role="menuitem"
 				aria-haspopup={ hasSubmenu ? 'true' : undefined }
 				aria-expanded={ hasSubmenu ? isOpen : undefined }
-				tabIndex={ index === 0 ? 0 : -1 }
+				tabIndex={ isFirst ? 0 : -1 }
 				disabled={ !item.enabled }
 				onMouseDown={ ( e ) => {
 					if( e.button !== 0 ) return;
 					e.preventDefault();
 					e.stopPropagation();
-					if( hasSubmenu ) {
-						onToggle();
-						return;
-					}
-					if( item.action && item.enabled ) {
-						onItemAction( {
-							type : 'execute' ,
-							itemId : item.id ,
-							action : item.action ,
-							payload : item.actionPayload,
-						} );
-					}
+					onPress();
 				} }
 				onClick={ ( e ) => {
 					e.preventDefault();

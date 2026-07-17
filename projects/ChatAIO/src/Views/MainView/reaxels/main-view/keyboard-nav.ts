@@ -3,7 +3,7 @@
  */
 
 type KeyboardNavDeps = {
-	getOpenMenuIndex : () => number;
+	isMenuOpen : () => boolean;
 	closeAllMenus : () => void;
 	openFirstMenu : () => void;
 	moveTopMenu : ( delta : number ) => void;
@@ -17,14 +17,14 @@ export const createKeyboardNavHandler = ( deps : KeyboardNavDeps ) => {
 	return ( e : KeyboardEvent ) => {
 		if( e.key === 'Alt' || e.key === 'F10' ) {
 			e.preventDefault();
-			if( deps.getOpenMenuIndex() >= 0 ) {
+			if( deps.isMenuOpen() ) {
 				deps.closeAllMenus();
 			} else {
 				deps.openFirstMenu();
 			}
 			return;
 		}
-		if( deps.getOpenMenuIndex() < 0 ) return;
+		if( !deps.isMenuOpen() ) return;
 		if( e.key === 'Escape' ) {
 			e.preventDefault();
 			deps.closeAllMenus();

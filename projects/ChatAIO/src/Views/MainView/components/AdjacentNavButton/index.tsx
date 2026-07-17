@@ -1,11 +1,9 @@
 export const AdjacentNavButton = reaxper( ( {
 	item ,
-	index ,
-	onItemAction ,
+	onActivate ,
 } : {
 	item : MenuView.TopLevelItem;
-	index : number;
-	onItemAction : ( action : MenuView.Action ) => void;
+	onActivate : () => void;
 } ) => {
 	const isNext = item.icon === 'chevron-right';
 	const Icon = isNext ? ChevronRight : ChevronLeft;
@@ -17,7 +15,7 @@ export const AdjacentNavButton = reaxper( ( {
 	return (
 		<div
 			className="main-view-bar-item main-view-bar-item--nav"
-			data-menu-index={ index }
+			data-menu-id={ item.id }
 			role="none"
 		>
 			<button
@@ -31,14 +29,7 @@ export const AdjacentNavButton = reaxper( ( {
 					if( e.button !== 0 ) return;
 					e.preventDefault();
 					e.stopPropagation();
-					if( item.action && item.enabled ) {
-						onItemAction( {
-							type : 'execute' ,
-							itemId : item.id ,
-							action : item.action ,
-							payload : item.actionPayload,
-						} );
-					}
+					onActivate();
 				} }
 				onClick={ ( e ) => {
 					e.preventDefault();

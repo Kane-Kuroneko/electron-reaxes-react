@@ -1,6 +1,6 @@
 export const MenuBarCenterCluster = reaxper( () => {
 	const { store } = reaxel_MainView;
-	const { triggerAction } = reaxel_MainView();
+	const { activateItem } = reaxel_MainView();
 	const { centerNav , currentContextLabel } = store;
 
 	if( !centerNav && !currentContextLabel ) {
@@ -12,8 +12,7 @@ export const MenuBarCenterCluster = reaxper( () => {
 			{ centerNav ? (
 				<AdjacentNavButton
 					item={ centerNav.prev.item }
-					index={ centerNav.prev.originalIndex }
-					onItemAction={ triggerAction }
+					onActivate={ () => activateItem( centerNav.prev.item ) }
 				/>
 			) : null }
 			{ currentContextLabel ? (
@@ -22,8 +21,7 @@ export const MenuBarCenterCluster = reaxper( () => {
 			{ centerNav ? (
 				<AdjacentNavButton
 					item={ centerNav.next.item }
-					index={ centerNav.next.originalIndex }
-					onItemAction={ triggerAction }
+					onActivate={ () => activateItem( centerNav.next.item ) }
 				/>
 			) : null }
 		</div>

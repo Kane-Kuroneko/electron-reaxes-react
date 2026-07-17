@@ -54,7 +54,7 @@ export namespace MenuView {
 	/** 当前展开的菜单状态（渲染进程跟踪） */
 	export interface MenuState {
 		structure : Structure;
-		openMenuIndex : number;           // -1 表示全部关闭
+		openMenuId : string;              // '' 表示全部关闭；以菜单 id 为唯一标识
 		focusedItemIndex : number;
 		menuBarHeight : number;
 	}
@@ -91,7 +91,7 @@ export namespace MainView {
 	export interface DropdownRequest {
 		items : MenuView.Item[];
 		anchorRect : { x : number; y : number; width : number; height : number };
-		menuIndex : number;
+		menuId : string;
 		focusedIndex? : number;
 	}
 }

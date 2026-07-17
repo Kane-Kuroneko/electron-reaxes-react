@@ -85,7 +85,7 @@ export const reaxel_MainView = reaxel( () => {
 			runMenubarHandler( 'dropdown-view:open' , () => {
 				showDropdownView( payload );
 			} , {
-				menuIndex : payload.menuIndex ,
+				menuId : payload.menuId ,
 				itemCount : payload.items?.length ?? 0 ,
 			} );
 		} );
@@ -211,7 +211,7 @@ export const reaxel_MainView = reaxel( () => {
 		/* MainView HTML 壳：点空白也关掉（WCV 已有 before-mouse-event；此处兜底未覆盖区域）
 		 * Windows: -webkit-app-region: drag 区域会吞掉渲染进程的 mousedown，
 		 * 必须在此处从主进程关闭下拉。使用 syncMainView:false 避免 race condition
-		 * （渲染进程的 openMenuIndex 不会被提前清零，菜单按钮点击后的 toggleMenu 判断正确）。 */
+		 * （渲染进程的 openMenuId 不会被提前清空，菜单按钮点击后的 toggleMenu 判断正确）。 */
 		if( !mainWindow.webContents.isDestroyed() ) {
 			mainWindow.webContents.on( 'before-mouse-event' , ( _event , mouse ) => {
 				if( mouse.type !== 'mouseDown' ) return;
@@ -463,9 +463,9 @@ export const reaxel_MainView = reaxel( () => {
 	   ========================================== */
 
 	const executeMenuAction = ( action : MenuView.Action ) => {
-		/* 必须先同步关闭并清掉 MainView.openMenuIndex，
+		/* 必须先同步关闭并清空 MainView.openMenuId，
 		   否则 switch-ai 等会触发 menu structure-update，
-		   updateStructure 在 openMenuIndex>=0 时会立刻 reopen dropdown。 */
+		   updateStructure 在 openMenuId 非空时会立刻 reopen dropdown。 */
 		hideDropdownView();
 
 		switch( action.action ) {

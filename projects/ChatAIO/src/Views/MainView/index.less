@@ -175,7 +175,7 @@ html, body {
 }
 
 /* Windows: restore prev/next vertical offset lost when macOS margin cleanup unified geometry */
-.main-view-root[data-platform="win32"] .main-view-bar-item--nav {
+.win-menu-bar .main-view-bar-item--nav {
 	margin-top: 2px;
 }
 
@@ -232,13 +232,13 @@ html, body {
 }
 
 /* macOS: Prev/Next 视觉降为扁平，与「切换 AI」同列节奏；几何仍走 margin 契约 */
-.main-view-root[data-platform="darwin"] .main-view-bar-item__button--nav {
+.mac-menu-bar .main-view-bar-item__button--nav {
 	box-shadow: none;
 	border-color: transparent;
 	background: transparent;
 }
 
-.main-view-root[data-platform="darwin"] .main-view-bar-item__button--nav:hover {
+.mac-menu-bar .main-view-bar-item__button--nav:hover {
 	background: var(--menu-view-hover-bg, rgba(128, 128, 128, 0.15));
 	border-color: transparent;
 }
