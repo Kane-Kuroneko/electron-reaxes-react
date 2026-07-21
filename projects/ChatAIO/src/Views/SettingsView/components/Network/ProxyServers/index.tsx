@@ -536,8 +536,8 @@ import {
 } from 'antd';
 
 import { reaxper  } from 'reaxes-react';
-import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
-import { testProxyServer } from "#src/Views/SettingsView/services/Settings";
+import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
+import { testProxyServer } from "#SettingsView/services/Settings";
 import {
 	createDefaultProxyConf as defaultProxyConf ,
 	createDefaultProxyTestURLs as defaultProxyTestURLs,

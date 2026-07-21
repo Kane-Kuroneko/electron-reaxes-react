@@ -58,12 +58,12 @@ export const App = reaxper( () => {
 	</ConfigProvider>;
 } );
 
-import { RCAIPagesPage } from './components/AIPages';
-import { RCGuidingFooter } from './components/Footer';
-import { RCNetworkPage } from './components/Network';
-import { RCPreferencesPage } from './components/Preferences';
-import { I18n } from './reaxels/exports';
-import { reaxel_GuidingView } from '#src/Views/GuidingView/reaxels/guiding-view';
+import { RCAIPagesPage } from '#GuidingView/components/AIPages';
+import { RCGuidingFooter } from '#GuidingView/components/Footer';
+import { RCNetworkPage } from '#GuidingView/components/Network';
+import { RCPreferencesPage } from '#GuidingView/components/Preferences';
+import { I18n } from '#GuidingView/reaxels/exports';
+import { reaxel_GuidingView } from '#GuidingView/reaxels/guiding-view';
 import {
 	ConfigProvider ,
 	Steps ,

@@ -335,8 +335,8 @@ export const SwitchAiBar = reaxper( () => {
 	</section>;
 } );
 
-import { reaxel_FloatingView } from '../../reaxels/floating-view';
-import { getCurrentPerfCtxId } from '../../reaxels/floating-view';
+import { reaxel_FloatingView } from '#FloatingView/reaxels/floating-view';
+import { getCurrentPerfCtxId } from '#FloatingView/reaxels/floating-view';
 import type { FloatingView } from '#src/Types/FloatingView';
 import { perf , switchProfiler } from '#src/shared/utils/switch-perf-recorder.utility';
 import { useState , useCallback , useEffect , useRef } from 'react';

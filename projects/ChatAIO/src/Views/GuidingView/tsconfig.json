@@ -33,6 +33,9 @@
 			"../../../../../node_modules/@types"
 		] ,
 		"paths" : {
+			"#GuidingView/*" : [
+				"./*"
+			] ,
 			"#SharedTypes/*" : [
 				"../../Types/*"
 			] ,

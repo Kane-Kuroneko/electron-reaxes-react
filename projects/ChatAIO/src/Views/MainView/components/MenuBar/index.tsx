@@ -19,6 +19,6 @@ export const MenuBar = reaxper( () => {
 } );
 
 
-import { reaxel_MainView } from '../../reaxels/main-view';
-import { MenuBarLeftItems } from '../MenuBarLeftItems';
+import { reaxel_MainView } from '#MainView/reaxels/main-view';
+import { MenuBarLeftItems } from '#MainView/components/MenuBarLeftItems';
 import { reaxper } from 'reaxes-react';

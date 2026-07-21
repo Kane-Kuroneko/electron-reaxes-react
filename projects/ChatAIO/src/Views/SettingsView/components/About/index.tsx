@@ -39,5 +39,5 @@ export const RCAboutPanel = reaxper( () => {
 
 import { reaxper } from 'reaxes-react';
 import { Descriptions } from 'antd';
-import { I18n } from '#src/Views/SettingsView/reaxels/exports';
+import { I18n } from '#SettingsView/reaxels/exports';
 

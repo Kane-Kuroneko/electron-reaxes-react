@@ -326,7 +326,7 @@ import { FolderOutlined, RobotOutlined } from '@ant-design/icons';
 
 import { reaxper  } from 'reaxes-react';
 import less from './index.module.less';
-import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
+import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 import { crayon } from '#generics/utils/src/crayon.utility';
 import { logProxy } from '#generics/utils/src/logProxy.utility';

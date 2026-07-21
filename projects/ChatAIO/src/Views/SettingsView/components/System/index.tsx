@@ -37,4 +37,4 @@ import {
 	Space ,
 } from 'antd';
 import { reaxper  } from 'reaxes-react';
-import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
+import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";

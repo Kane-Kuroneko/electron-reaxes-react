@@ -588,7 +588,7 @@ function buildDefaultAIName(family:AI.AIFamily , AIs:AI.AIItem[] , excludeId?:st
 export type Reaxel_SettingsView = Pick<typeof reaxel_SettingsView , "mutate"|"store"|"setState">;
 
 import { rehancer_Dev } from './rehancer_Dev';
-import { reaxel_I18n } from "#src/Views/SettingsView/reaxels/i18n";
+import { reaxel_I18n } from "#SettingsView/reaxels/i18n";
 import {
 	applySettings as applySettingsService ,
 	exitSettings ,
@@ -598,7 +598,7 @@ import {
 	submitSettings ,
 	turnToNextAiPage ,
 	turnToPreviousAiPage,
-} from '#src/Views/SettingsView/services/Settings';
+} from '#SettingsView/services/Settings';
 import {
 	normalizeThemePreference ,
 	resolveLanguagePreference ,

@@ -8,4 +8,4 @@ declare global {
 
 export {};
 
-import { API } from '../../preload';
+import { API } from '#src/preload';

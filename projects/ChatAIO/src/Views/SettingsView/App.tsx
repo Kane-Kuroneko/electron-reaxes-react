@@ -164,13 +164,13 @@ const showApplyResult = (result:SettingsApplyResult) => {
 	message.success( i18n('Settings applied') );
 };
 
-import { RCGeneralPanel } from './components/General';
-import { RCAboutPanel } from './components/About';
-import { RCManageAIsPanel } from './components/ManageAIs';
-import { RCNetworkPanel } from './components/Network';
-import { devCleanStart } from './services/Settings';
+import { RCGeneralPanel } from '#SettingsView/components/General';
+import { RCAboutPanel } from '#SettingsView/components/About';
+import { RCManageAIsPanel } from '#SettingsView/components/ManageAIs';
+import { RCNetworkPanel } from '#SettingsView/components/Network';
+import { devCleanStart } from '#SettingsView/services/Settings';
 import { resolveThemePreference } from '#src/shared/appearance';
-import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
+import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 import type { SettingsApplyResult } from "#src/Types/SettingsTypes";
 import {
 	Button ,

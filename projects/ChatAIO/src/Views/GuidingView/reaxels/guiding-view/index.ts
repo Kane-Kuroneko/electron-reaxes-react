@@ -353,8 +353,8 @@ function createCustomAIId() {
 
 export type Reaxel_GuidingView = Pick<typeof reaxel_GuidingView , "mutate"|"store"|"setState">;
 
-import { createGuidingIpcService } from '#src/Views/GuidingView/services/Guiding';
-import { reaxel_GuidingI18n } from '#src/Views/GuidingView/reaxels/i18n';
+import { createGuidingIpcService } from '#GuidingView/services/Guiding';
+import { reaxel_GuidingI18n } from '#GuidingView/reaxels/i18n';
 import {
 	concreteLanguages ,
 	getLanguageDisplayName ,

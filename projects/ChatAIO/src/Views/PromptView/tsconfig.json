@@ -33,6 +33,12 @@
 			"../../../../../node_modules/@types"
 		] ,
 		"paths" : {
+			"#PromptView/*" : [
+				"./*"
+			] ,
+			"#SettingsView/*" : [
+				"../SettingsView/*"
+			] ,
 			"#SharedTypes/*" : [
 				"../../Types/*"
 			] ,

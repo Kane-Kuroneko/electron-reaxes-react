@@ -59,14 +59,20 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 				'#renderer' : path.join(subProjectRootPath,'src/Renderer'),
 				'#src' : path.join(subProjectRootPath,'src'),
 				'#generics' : path.join(repoRootPath,'generic-services'),
+				'#MainView' : path.join(subProjectRootPath,'src/Views/MainView'),
+				'#SettingsView' : path.join(subProjectRootPath,'src/Views/SettingsView'),
+				'#FloatingView' : path.join(subProjectRootPath,'src/Views/FloatingView'),
+				'#GuidingView' : path.join(subProjectRootPath,'src/Views/GuidingView'),
+				'#PromptView' : path.join(subProjectRootPath,'src/Views/PromptView'),
+				'#DropdownView' : path.join(subProjectRootPath,'src/Views/DropdownView'),
 			},
 		},
 		plugins : [
 			...( rendererEntryConfig.plugins ?? [] ) ,
 			new ProvidePlugin( {
 				
-				'I18n' : [ '#src/Views/SettingsView/reaxels/exports' , 'I18n' ] ,
-				'i18n' : [ '#src/Views/SettingsView/reaxels/exports' , 'i18n' ] ,
+				'I18n' : [ '#SettingsView/reaxels/exports' , 'I18n' ] ,
+				'i18n' : [ '#SettingsView/reaxels/exports' , 'i18n' ] ,
 			} ),
 		],
 	};

@@ -317,11 +317,11 @@ const PromptCard = reaxper( ( props: {
 	</article>;
 } );
 
-import { reaxel_PromptView } from './reaxels/prompt-view';
+import { reaxel_PromptView } from '#PromptView/reaxels/prompt-view';
 import {
 	I18n ,
 	i18n,
-} from './reaxels/exports';
+} from '#PromptView/reaxels/exports';
 import { resolveThemePreference } from '#src/shared/appearance';
 import type { PromptView } from '#src/Types/PromptView';
 import {

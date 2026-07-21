@@ -33,8 +33,8 @@ export const RCGuidingFooter = reaxper( () => {
 	</footer>;
 } );
 
-import { LongPressButton } from '#src/Views/GuidingView/components/LongPressButton';
-import { reaxel_GuidingView } from '#src/Views/GuidingView/reaxels/guiding-view';
-import { I18n } from '#src/Views/GuidingView/reaxels/exports';
+import { LongPressButton } from '#GuidingView/components/LongPressButton';
+import { reaxel_GuidingView } from '#GuidingView/reaxels/guiding-view';
+import { I18n } from '#GuidingView/reaxels/exports';
 import { Button } from 'antd';
 import { reaxper } from 'reaxes-react';

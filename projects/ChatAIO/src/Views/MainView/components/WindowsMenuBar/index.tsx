@@ -21,8 +21,8 @@ export const WindowsMenuBar = reaxper( () => {
 } );
 
 
-import { MenuBar } from '../MenuBar';
-import { MenuBarCenterCluster } from '../MenuBarCenterCluster';
-import { reaxel_MainView } from '../../reaxels/main-view';
+import { MenuBar } from '#MainView/components/MenuBar';
+import { MenuBarCenterCluster } from '#MainView/components/MenuBarCenterCluster';
+import { reaxel_MainView } from '#MainView/reaxels/main-view';
 import { getMenuBarRootStyleVars } from '#src/shared/menubar-geometry';
 import { reaxper } from 'reaxes-react';

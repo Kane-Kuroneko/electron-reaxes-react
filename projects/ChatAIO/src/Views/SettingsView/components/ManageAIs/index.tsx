@@ -945,8 +945,8 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	};
 
 	import { DragIconSvg } from "./DragIcon.svg";
-	import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
-	import { resetAIsToDefaults } from "#src/Views/SettingsView/services/Settings";
+	import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
+	import { resetAIsToDefaults } from "#SettingsView/services/Settings";
 	import { AIFamily } from "#src/shared/statics/AI-family";
 	import { getAIDomainByFamily } from "#src/shared/statics/ai-family-defaults";
 	import { createDefaultProxyConf as defaultProxyConf } from "#src/shared/statics/default-proxy";

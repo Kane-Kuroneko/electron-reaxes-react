@@ -40,8 +40,8 @@ export const RCNetworkPage = reaxper( () => {
 	</section>;
 } );
 
-import { reaxel_GuidingView } from '#src/Views/GuidingView/reaxels/guiding-view';
-import { I18n } from '#src/Views/GuidingView/reaxels/exports';
+import { reaxel_GuidingView } from '#GuidingView/reaxels/guiding-view';
+import { I18n } from '#GuidingView/reaxels/exports';
 import {
 	Button ,
 	Radio,

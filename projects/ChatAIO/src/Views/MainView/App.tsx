@@ -17,8 +17,8 @@ export const App = reaxper( () => {
 } );
 
 
-import { MacMenuBar } from './components/MacMenuBar';
-import { WindowsMenuBar } from './components/WindowsMenuBar';
-import { reaxel_MainView } from './reaxels/main-view';
+import { MacMenuBar } from '#MainView/components/MacMenuBar';
+import { WindowsMenuBar } from '#MainView/components/WindowsMenuBar';
+import { reaxel_MainView } from '#MainView/reaxels/main-view';
 import { reaxper } from 'reaxes-react';
 import './index.less';

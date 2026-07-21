@@ -215,8 +215,8 @@ const applyThemePreferenceToDocument = (
 	document.documentElement.dataset.chataioTheme = resolvedTheme;
 };
 
-import { reaxel_I18n } from '../i18n';
-import { i18n } from '../exports';
+import { reaxel_I18n } from '#PromptView/reaxels/i18n';
+import { i18n } from '#PromptView/reaxels/exports';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import {
 	resolveLanguagePreference ,

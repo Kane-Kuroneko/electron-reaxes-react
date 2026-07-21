@@ -4,22 +4,22 @@ export let reaxel_I18n = reaxel(() => {
 	let i18n = Refaxel_I18n([
 		{
 			language : 'zh-CN' ,
-			resourceLoader : () => import('#src/Views/SettingsView/reaxels/i18n/langs/zh-CN').then( m => m.default ) ,
+			resourceLoader : () => import('#SettingsView/reaxels/i18n/langs/zh-CN').then( m => m.default ) ,
 			name : '简体中文',
 		} ,
 		{
 			language : 'zh-TW' ,
-			resourceLoader : () => import('#src/Views/SettingsView/reaxels/i18n/langs/zh-TW').then( m => m.default ) ,
+			resourceLoader : () => import('#SettingsView/reaxels/i18n/langs/zh-TW').then( m => m.default ) ,
 			name : '正體中文',
 		} ,
 		{
 			language : 'ja-JP' ,
-			resourceLoader : () => import('#src/Views/SettingsView/reaxels/i18n/langs/ja-JP').then( m => m.default ) ,
+			resourceLoader : () => import('#SettingsView/reaxels/i18n/langs/ja-JP').then( m => m.default ) ,
 			name : '日本語',
 		} ,
 		{
 			language : 'ko-KR' ,
-			resourceLoader : () => import('#src/Views/SettingsView/reaxels/i18n/langs/ko-KR').then( m => m.default ) ,
+			resourceLoader : () => import('#SettingsView/reaxels/i18n/langs/ko-KR').then( m => m.default ) ,
 			name : '한국어',
 		} ,
 		{

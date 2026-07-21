@@ -331,7 +331,7 @@ const triggerAction = ( action : MenuView.Action ) => {
 };
 
 
-import { reaxel_DropdownView } from './reaxels/dropdown-view';
+import { reaxel_DropdownView } from '#DropdownView/reaxels/dropdown-view';
 import { reaxper } from 'reaxes-react';
 import type { MenuView } from '#src/Types/MenuView';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';

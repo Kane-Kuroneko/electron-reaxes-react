@@ -5,4 +5,4 @@ export const rehancer_Dev = ({store,setState,mutate}:Reaxel_SettingsView) => () 
 
 import type {
 	Reaxel_SettingsView,
-} from '../index';
+} from '#SettingsView/reaxels/settings-view';

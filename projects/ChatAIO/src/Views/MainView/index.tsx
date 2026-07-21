@@ -13,5 +13,5 @@ root.render( <App /> );
 
 import { App } from './App';
 import { createRoot } from 'react-dom/client';
-import { reaxel_MainView } from './reaxels/main-view';
+import { reaxel_MainView } from '#MainView/reaxels/main-view';
 import { installMenubarRendererErrorHandlers } from '#src/shared/utils/menubar-error-report.utility';

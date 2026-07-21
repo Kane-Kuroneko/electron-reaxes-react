@@ -1,17 +1,58 @@
 {
-	"compilerOptions": {
-		"jsx": "react-jsx",
-		"moduleResolution": "bundler",
-		"module": "ESNext",
-		"target": "ESNext",
-		"strict": false,
-		"allowSyntheticDefaultImports": true,
-		"esModuleInterop": true,
-		"paths": {
-			"#src/*" : ["../../../src/*"],
-			"#SharedTypes/*" : ["../../../src/SharedTypes/*"],
-			"#generics/*" : ["../../../../generic-services/*"],
+	"compilerOptions" : {
+		"allowJs" : true ,
+		"allowSyntheticDefaultImports" : true ,
+		"allowUnusedLabels" : true ,
+		"baseUrl" : "." ,
+		"declaration" : false ,
+		"declarationMap" : false ,
+		"esModuleInterop" : true ,
+		"experimentalDecorators" : true ,
+		"jsx" : "react-jsx" ,
+		"resolveJsonModule" : true ,
+		"strictFunctionTypes" : false ,
+		"strict" : false ,
+		"strictBindCallApply" : false ,
+		"module" : "ESNext" ,
+		"target" : "ESNext" ,
+		"moduleResolution" : "bundler" ,
+		"strictNullChecks" : false ,
+		"allowUnreachableCode" : true ,
+		"noEmit" : true ,
+		"noImplicitAny" : false ,
+		"noImplicitReturns" : false ,
+		"noImplicitUseStrict" : false ,
+		"noUnusedLocals" : false ,
+		"noUnusedParameters" : false ,
+		"preserveConstEnums" : true ,
+		"checkJs" : true ,
+		"skipLibCheck" : true ,
+		"allowUmdGlobalAccess" : true ,
+		"typeRoots" : [
+			"../../../../../node_modules/@types"
+		] ,
+		"paths" : {
+			"#DropdownView/*" : [
+				"./*"
+			] ,
+			"#SharedTypes/*" : [
+				"../../Types/*"
+			] ,
+			"#src/*" : [
+				"../../*"
+			] ,
+			"#generics/*" : [
+				"../../../../../generic-services/*"
+			]
 		}
-	},
-	"include": ["./**/*.ts", "./**/*.tsx"],
+	} ,
+	"include" : [
+		"." ,
+		"../../preload.ts" ,
+		"../../Types/**/*" ,
+		"../../shared/**/*" ,
+		"../../../global.d.ts" ,
+		"../../../../../global.d.ts" ,
+		"../../../../../g.d.ts"
+	]
 }

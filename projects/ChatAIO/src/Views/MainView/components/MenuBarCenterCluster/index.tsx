@@ -29,7 +29,7 @@ export const MenuBarCenterCluster = reaxper( () => {
 } );
 
 
-import { reaxel_MainView } from '../../reaxels/main-view';
-import { AdjacentNavButton } from '../AdjacentNavButton';
-import { CurrentContextBadge } from '../CurrentContextBadge';
+import { reaxel_MainView } from '#MainView/reaxels/main-view';
+import { AdjacentNavButton } from '#MainView/components/AdjacentNavButton';
+import { CurrentContextBadge } from '#MainView/components/CurrentContextBadge';
 import { reaxper } from 'reaxes-react';

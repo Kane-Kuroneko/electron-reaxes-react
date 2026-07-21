@@ -90,8 +90,8 @@ export const RCGeneralPanel = reaxper(() => {
 	</div>;
 });
 
-import { reaxel_SettingsView } from "#src/Views/SettingsView/reaxels/settings-view";
-import { RCLanguageSelect } from '../LanguageSelect';
+import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
+import { RCLanguageSelect } from '#SettingsView/components/LanguageSelect';
 import {
 	Checkbox ,
 	Form ,
