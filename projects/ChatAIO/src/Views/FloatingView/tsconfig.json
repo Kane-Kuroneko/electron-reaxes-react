@@ -36,6 +36,9 @@
 			"#FloatingView/*" : [
 				"./*"
 			] ,
+			"#Views/shared/*" : [
+				"../shared/*"
+			] ,
 			"#SharedTypes/*" : [
 				"../../Types/*"
 			] ,

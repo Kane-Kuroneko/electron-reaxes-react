@@ -42,6 +42,9 @@
 			"#src/*" : [
 				"./src/*"
 			] ,
+			"#Views/shared/*" : [
+				"./src/Views/shared/*"
+			] ,
 			"#root-projects/*" : [
 				"../../projects/*"
 			] ,

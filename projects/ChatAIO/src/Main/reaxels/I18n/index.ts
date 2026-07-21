@@ -84,10 +84,10 @@ export const reaxel_I18n = reaxel(() => {
 	});
 });
 
-import zhCN from '#src/Views/SettingsView/reaxels/i18n/langs/zh-CN';
-import zhTW from '#src/Views/SettingsView/reaxels/i18n/langs/zh-TW';
-import jaJP from '#src/Views/SettingsView/reaxels/i18n/langs/ja-JP';
-import koKR from '#src/Views/SettingsView/reaxels/i18n/langs/ko-KR';
+import zhCN from '#Views/shared/i18n/langs/zh-CN';
+import zhTW from '#Views/shared/i18n/langs/zh-TW';
+import jaJP from '#Views/shared/i18n/langs/ja-JP';
+import koKR from '#Views/shared/i18n/langs/ko-KR';
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
 import { getAppearanceEnvironment } from '#main/services/appearance';
 import { resolveLanguagePreference } from '#src/shared/appearance';

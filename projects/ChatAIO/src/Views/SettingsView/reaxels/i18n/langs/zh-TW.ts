@@ -1,94 +1,18 @@
-﻿export default {
-	// Menu - Application
-	"Application" : "應用程式" ,
-	"Settings" : "設定" ,
-	"Check for Updates" : "檢查更新" ,
-
-	// Menu - macOS Native Edit/Window
-	"Undo" : "還原" ,
-	"Redo" : "重做" ,
-	"Cut" : "剪下" ,
-	"Paste" : "貼上" ,
-	"Paste and Match Style" : "貼上並符合樣式" ,
-	"Select All" : "全選" ,
-	"Minimize" : "縮到最小" ,
-	"Zoom" : "縮放" ,
-	"Bring All to Front" : "移至最上層" ,
-	
-	// Menu - View
-	"View" : "檢視" ,
-	"Reload" : "重新載入" ,
-	"Force Reload" : "強制重新載入" ,
-	"Developer Tools" : "開發者工具" ,
-	"Wipe and Reload This Page" : "清除並重新載入此頁面" ,
-	"Actual Size" : "實際大小" ,
-	"Zoom In" : "放大" ,
-	"Zoom Out" : "縮小" ,
-	"Toggle Fullscreen" : "切換全螢幕" ,
-	"Exit" : "結束" ,
-	
-	// Menu - Switch AI
-	"Switch AI" : "切換 AI" ,
-	"Previous" : "上一個" ,
-	"Prev" : "上一個" ,
-	"Next" : "下一個" ,
-	"Previous AI" : "上一個 AI" ,
-	"Next AI" : "下一個 AI" ,
-	"Previous AI Page" : "上一個 AI 頁面" ,
-	"Next AI Page" : "下一個 AI 頁面" ,
-	"Previous Opened AI" : "上一個已開啟 AI" ,
-	"Next Opened AI" : "下一個已開啟 AI" ,
-	"Previous Instantiated AI Page" : "上一個已開啟 AI 頁面" ,
-	"Next Instantiated AI Page" : "下一個已開啟 AI 頁面" ,
-	"No enabled AI pages" : "沒有啟用的 AI 頁面" ,
-	"Close This AI" : "關閉目前 AI" ,
-	"The last AI page cannot be closed" : "最後一個 AI 頁無法被關閉" ,
-	"PromptView Left" : "左側 PromptView" ,
-	"PromptView Right" : "右側 PromptView" ,
-	"Prompt Shelf" : "Prompt 架" ,
-	"Prompts" : "Prompt 庫" ,
-	"Left" : "左側" ,
-	"Right" : "右側" ,
-	"New Prompt" : "新增 Prompt" ,
-	"Prompt text" : "Prompt 文字" ,
-	"Prompt" : "Prompt" ,
-	"prompts" : "條 Prompt" ,
-	"Saved" : "已儲存" ,
-	"Saving" : "儲存中" ,
-	"No prompts" : "沒有 Prompt" ,
-	"Empty" : "空" ,
-	"chars" : "字元" ,
-	"Duplicate" : "複製一份" ,
-	"Copy" : "複製" ,
-	"Copied" : "已複製" ,
-	"Copy failed" : "複製失敗" ,
-	"Drag to sort" : "拖曳排序" ,
-	
-	// Tray
-	"Show Window" : "顯示視窗" ,
-	"Quit" : "結束" ,
-	
-	// Settings View - Menu
+export default {
 	"General" : "通用" ,
 	"Networks" : "網路" ,
 	"Manage AIs" : "管理 AI" ,
-	
-	// Settings View - Buttons
 	"Discard Changes" : "放棄變更" ,
 	"Exit Without Save" : "不儲存離開" ,
 	"Apply" : "套用" ,
 	"Save & Exit" : "儲存並離開" ,
 	"Clean Start" : "乾淨啟動" ,
-	
-	// Dialogs
 	"Restart required" : "需要重新啟動" ,
 	"Settings were saved. These changes require restarting the app:" : "設定已儲存。這些變更需要重新啟動應用程式：" ,
 	"Settings applied" : "設定已套用" ,
 	"This operation will clear all authentication data from the current page and reload it. \r\nInclude cookies, local storage, and other data." : "此動作將清除目前頁面的所有認證資料並重新載入。\r\n包括 Cookie、本機儲存和其他資料。" ,
 	"Yes" : "是" ,
 	"No" : "否" ,
-	
-	// Appearance Panel
 	"Appearance" : "外觀" ,
 	"Theme" : "主題" ,
 	"Dark Mode" : "深色模式" ,
@@ -96,15 +20,10 @@
 	"Light" : "淺色" ,
 	"Dark" : "深色" ,
 	"Language" : "語言" ,
-	
-	// System Panel
 	"System" : "系統" ,
 	"GPU Acceleration" : "GPU 加速" ,
-	"GPU acceleration is applied before Electron creates browser processes." : "GPU 加速設置在 Electron 建立瀏覽器程序前生效。" ,
 	"Show Tray" : "顯示系統列圖示" ,
 	"Close to Tray" : "關閉視窗時縮小至系統列" ,
-	
-	// Network - Global Proxy
 	"Global Proxy" : "全域代理" ,
 	"Direct(No Proxy)" : "直連（無代理）" ,
 	"Follow system proxy settings" : "跟隨系統代理設定" ,
@@ -117,8 +36,6 @@
 	"Port number" : "連接埠" ,
 	"No proxy for" : "不代理" ,
 	"Select AI family or AI name to bypass proxy" : "選擇 AI 系列或 AI 名稱以繞過代理" ,
-	
-	// Network - Proxy Servers
 	"Proxy Servers" : "代理伺服器清單" ,
 	"Add Server" : "新增伺服器" ,
 	"Server Name" : "伺服器名稱" ,
@@ -127,7 +44,6 @@
 	"Operations" : "操作" ,
 	"Edit" : "編輯" ,
 	"Window" : "視窗" ,
-	"Delete" : "刪除" ,
 	"Test" : "測試" ,
 	"Test Proxy Server" : "測試代理伺服器" ,
 	"Proxy Test" : "代理測試" ,
@@ -146,8 +62,6 @@
 	"Password" : "密碼" ,
 	"Save" : "儲存" ,
 	"Cancel" : "取消" ,
-	
-	// Manage AIs
 	"Drag" : "拖曳" ,
 	"New" : "新增" ,
 	"Modified" : "已修改" ,
@@ -182,12 +96,10 @@
 	"AI pages reset to defaults" : "AI 頁面已重置為預設值" ,
 	"This will permanently reset all AI page configurations to factory defaults and clear page data including cookies, login state, localStorage, cache, and auth cache. All your custom AI pages, URL overrides, and proxy settings will be lost." : "此操作會將所有 AI 頁面設定永久重置為出廠預設值，並清除頁面資料，包括 Cookie、登入狀態、localStorage、快取和認證快取。所有自訂 AI 頁面、URL 覆蓋和代理設定都將遺失。" ,
 	"Hold the button below to confirm reset." : "長按下方按鈕確認重置。" ,
-	
 	"About" : "關於" ,
 	"Version" : "版本" ,
 	"Description" : "描述" ,
 	"Developer" : "開發者" ,
 	"Tech Stack" : "技術栈" ,
 	"Unified desktop client for multiple AI services" : "多AI服務統一桌面用戶端" ,
-	"" : "" ,
 } as any;

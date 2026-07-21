@@ -18,6 +18,7 @@ export const main = (
 				'#renderer' : path.join(subProjectRootPath,'src/Renderer'),
 				'#src' : path.join(subProjectRootPath,'src'),
 				'#generics' : path.join(repoRootPath,'generic-services'),
+				'#Views/shared' : path.join(subProjectRootPath,'src/Views/shared'),
 			}
 		},
 		plugins : [
@@ -65,6 +66,7 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 				'#GuidingView' : path.join(subProjectRootPath,'src/Views/GuidingView'),
 				'#PromptView' : path.join(subProjectRootPath,'src/Views/PromptView'),
 				'#DropdownView' : path.join(subProjectRootPath,'src/Views/DropdownView'),
+				'#Views/shared' : path.join(subProjectRootPath,'src/Views/shared'),
 			},
 		},
 		plugins : [

@@ -1,94 +1,18 @@
-﻿export default {
-	// Menu - Application
-	"Application" : "アプリケーション" ,
-	"Settings" : "設定" ,
-	"Check for Updates" : "更新を確認" ,
-
-	// Menu - macOS Native Edit/Window
-	"Undo" : "取り消す" ,
-	"Redo" : "やり直す" ,
-	"Cut" : "切り取る" ,
-	"Paste" : "ペースト" ,
-	"Paste and Match Style" : "スタイルを合わせてペースト" ,
-	"Select All" : "すべてを選択" ,
-	"Minimize" : "ウィンドウをしまう" ,
-	"Zoom" : "ズーム" ,
-	"Bring All to Front" : "すべてを手前に移動" ,
-	
-	// Menu - View
-	"View" : "表示" ,
-	"Reload" : "再読み込み" ,
-	"Force Reload" : "強制再読み込み" ,
-	"Developer Tools" : "開発者ツール" ,
-	"Wipe and Reload This Page" : "このページを消去して再読み込み" ,
-	"Actual Size" : "実際のサイズ" ,
-	"Zoom In" : "拡大" ,
-	"Zoom Out" : "縮小" ,
-	"Toggle Fullscreen" : "フルスクリーン切替" ,
-	"Exit" : "終了" ,
-	
-	// Menu - Switch AI
-	"Switch AI" : "AI を切り替え" ,
-	"Previous" : "前へ" ,
-	"Prev" : "前へ" ,
-	"Next" : "次へ" ,
-	"Previous AI" : "前の AI" ,
-	"Next AI" : "次の AI" ,
-	"Previous AI Page" : "前の AI ページ" ,
-	"Next AI Page" : "次の AI ページ" ,
-	"Previous Opened AI" : "前の開いている AI" ,
-	"Next Opened AI" : "次の開いている AI" ,
-	"Previous Instantiated AI Page" : "前の開いている AI ページ" ,
-	"Next Instantiated AI Page" : "次の開いている AI ページ" ,
-	"No enabled AI pages" : "有効な AI ページがありません" ,
-	"Close This AI" : "この AI を閉じる" ,
-	"The last AI page cannot be closed" : "最後の AI ページは閉じられません" ,
-	"PromptView Left" : "左側 PromptView" ,
-	"PromptView Right" : "右側 PromptView" ,
-	"Prompt Shelf" : "Prompt シェルフ" ,
-	"Prompts" : "Prompt 一覧" ,
-	"Left" : "左" ,
-	"Right" : "右" ,
-	"New Prompt" : "新規 Prompt" ,
-	"Prompt text" : "Prompt テキスト" ,
-	"Prompt" : "Prompt" ,
-	"prompts" : "件の Prompt" ,
-	"Saved" : "保存済み" ,
-	"Saving" : "保存中" ,
-	"No prompts" : "Prompt なし" ,
-	"Empty" : "空" ,
-	"chars" : "文字" ,
-	"Duplicate" : "複製" ,
-	"Copy" : "コピー" ,
-	"Copied" : "コピーしました" ,
-	"Copy failed" : "コピーに失敗しました" ,
-	"Drag to sort" : "ドラッグして並べ替え" ,
-	
-	// Tray
-	"Show Window" : "ウィンドウを表示" ,
-	"Quit" : "終了" ,
-	
-	// Settings View - Menu
+export default {
 	"General" : "一般" ,
 	"Networks" : "ネットワーク" ,
 	"Manage AIs" : "AI の管理" ,
-	
-	// Settings View - Buttons
 	"Discard Changes" : "変更を破棄" ,
 	"Exit Without Save" : "保存せずに終了" ,
 	"Apply" : "適用" ,
 	"Save & Exit" : "保存して終了" ,
 	"Clean Start" : "クリーン起動" ,
-	
-	// Dialogs
 	"Restart required" : "再起動が必要です" ,
 	"Settings were saved. These changes require restarting the app:" : "設定が保存されました。これらの変更にはアプリの再起動が必要です：" ,
 	"Settings applied" : "設定が適用されました" ,
 	"This operation will clear all authentication data from the current page and reload it. \r\nInclude cookies, local storage, and other data." : "この操作により、現在のページのすべての認証データがクリアされ、再読み込みされます。\r\nCookie、ローカルストレージ、その他のデータが含まれます。" ,
 	"Yes" : "はい" ,
 	"No" : "いいえ" ,
-	
-	// Appearance Panel
 	"Appearance" : "外観" ,
 	"Theme" : "テーマ" ,
 	"Dark Mode" : "ダークモード" ,
@@ -96,15 +20,10 @@
 	"Light" : "ライト" ,
 	"Dark" : "ダーク" ,
 	"Language" : "言語" ,
-	
-	// System Panel
 	"System" : "システム" ,
 	"GPU Acceleration" : "GPU アクセラレーション" ,
-	"GPU acceleration is applied before Electron creates browser processes." : "GPU アクセラレーション設定は Electron がブラウザプロセスを作成する前に適用されます。" ,
 	"Show Tray" : "トレイアイコンを表示" ,
 	"Close to Tray" : "ウィンドウを閉じたらトレイに最小化" ,
-	
-	// Network - Global Proxy
 	"Global Proxy" : "グローバルプロキシ" ,
 	"Direct(No Proxy)" : "直接接続（プロキシなし）" ,
 	"Follow system proxy settings" : "システムプロキシ設定に従う" ,
@@ -117,8 +36,6 @@
 	"Port number" : "ポート番号" ,
 	"No proxy for" : "プロキシ除外" ,
 	"Select AI family or AI name to bypass proxy" : "プロキシをバイパスする AI ファミリーまたは AI 名を選択" ,
-	
-	// Network - Proxy Servers
 	"Proxy Servers" : "プロキシサーバー一覧" ,
 	"Add Server" : "サーバーを追加" ,
 	"Server Name" : "サーバー名" ,
@@ -127,7 +44,6 @@
 	"Operations" : "操作" ,
 	"Edit" : "編集" ,
 	"Window" : "ウィンドウ" ,
-	"Delete" : "削除" ,
 	"Test" : "テスト" ,
 	"Test Proxy Server" : "プロキシサーバーをテスト" ,
 	"Proxy Test" : "プロキシテスト" ,
@@ -146,8 +62,6 @@
 	"Password" : "パスワード" ,
 	"Save" : "保存" ,
 	"Cancel" : "キャンセル" ,
-	
-	// Manage AIs
 	"Drag" : "ドラッグ" ,
 	"New" : "新規" ,
 	"Modified" : "変更済み" ,
@@ -182,12 +96,10 @@
 	"AI pages reset to defaults" : "AI ページをデフォルトにリセットしました" ,
 	"This will permanently reset all AI page configurations to factory defaults and clear page data including cookies, login state, localStorage, cache, and auth cache. All your custom AI pages, URL overrides, and proxy settings will be lost." : "この操作により、すべての AI ページ設定が工場出荷時のデフォルトに永久的にリセットされ、Cookie、ログイン状態、localStorage、キャッシュ、認証キャッシュを含むページデータが消去されます。すべてのカスタム AI ページ、URL オーバーライド、プロキシ設定が失われます。" ,
 	"Hold the button below to confirm reset." : "下のボタンを長押ししてリセットを確認してください。" ,
-	
 	"About" : "このアプリについて" ,
 	"Version" : "バージョン" ,
 	"Description" : "説明" ,
 	"Developer" : "開発者" ,
 	"Tech Stack" : "技術スタック" ,
 	"Unified desktop client for multiple AI services" : "複数AIサービスの統合デスクトップクライアント" ,
-	"" : "" ,
 } as any;

@@ -35,6 +35,9 @@
 			"#MainView/*" : [
 				"./*"
 			] ,
+			"#Views/shared/*" : [
+				"../shared/*"
+			] ,
 			"#SharedTypes/*" : [
 				"../../Types/*"
 			] ,

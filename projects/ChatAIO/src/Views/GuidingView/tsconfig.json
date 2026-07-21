@@ -36,6 +36,9 @@
 			"#GuidingView/*" : [
 				"./*"
 			] ,
+			"#Views/shared/*" : [
+				"../shared/*"
+			] ,
 			"#SharedTypes/*" : [
 				"../../Types/*"
 			] ,

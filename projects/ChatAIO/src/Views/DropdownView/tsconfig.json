@@ -35,6 +35,9 @@
 			"#DropdownView/*" : [
 				"./*"
 			] ,
+			"#Views/shared/*" : [
+				"../shared/*"
+			] ,
 			"#SharedTypes/*" : [
 				"../../Types/*"
 			] ,

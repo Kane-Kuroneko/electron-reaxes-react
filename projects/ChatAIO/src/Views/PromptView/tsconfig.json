@@ -36,8 +36,8 @@
 			"#PromptView/*" : [
 				"./*"
 			] ,
-			"#SettingsView/*" : [
-				"../SettingsView/*"
+			"#Views/shared/*" : [
+				"../shared/*"
 			] ,
 			"#SharedTypes/*" : [
 				"../../Types/*"
