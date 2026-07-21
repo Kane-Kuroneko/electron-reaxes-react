@@ -50,4 +50,9 @@ export default {
 	"GPU acceleration is applied before Electron creates browser processes." : "GPU 加速設置在 Electron 建立瀏覽器程序前生效。" ,
 	"Delete" : "刪除" ,
 	"Close" : "關閉" ,
+	"Edit" : "編輯" ,
+	"Window" : "視窗" ,
+	"Yes" : "是" ,
+	"No" : "否" ,
+	"This operation will clear all authentication data from the current page and reload it. \r\nInclude cookies, local storage, and other data." : "此動作將清除目前頁面的所有認證資料並重新載入。\r\n包括 Cookie、本機儲存和其他資料。" ,
 } as any;

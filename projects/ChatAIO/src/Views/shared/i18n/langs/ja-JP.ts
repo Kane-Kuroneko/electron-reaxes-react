@@ -50,4 +50,9 @@ export default {
 	"GPU acceleration is applied before Electron creates browser processes." : "GPU アクセラレーション設定は Electron がブラウザプロセスを作成する前に適用されます。" ,
 	"Delete" : "削除" ,
 	"Close" : "閉じる" ,
+	"Edit" : "編集" ,
+	"Window" : "ウィンドウ" ,
+	"Yes" : "はい" ,
+	"No" : "いいえ" ,
+	"This operation will clear all authentication data from the current page and reload it. \r\nInclude cookies, local storage, and other data." : "この操作により、現在のページのすべての認証データがクリアされ、再読み込みされます。\r\nCookie、ローカルストレージ、その他のデータが含まれます。" ,
 } as any;

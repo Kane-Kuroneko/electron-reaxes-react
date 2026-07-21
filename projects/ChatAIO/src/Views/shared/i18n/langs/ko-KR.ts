@@ -50,4 +50,9 @@ export default {
 	"GPU acceleration is applied before Electron creates browser processes." : "GPU 가속 설정은 Electron이 브라우저 프로세스를 생성하기 전에 적용됩니다." ,
 	"Delete" : "삭제" ,
 	"Close" : "닫기" ,
+	"Edit" : "편집" ,
+	"Window" : "윈도우" ,
+	"Yes" : "예" ,
+	"No" : "아니요" ,
+	"This operation will clear all authentication data from the current page and reload it. \r\nInclude cookies, local storage, and other data." : "이 작업은 현재 페이지의 모든 인증 데이터를 지우고 다시 로드합니다.\r\n쿠키, 로컬 저장소 및 기타 데이터가 포함됩니다." ,
 } as any;
