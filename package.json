@@ -18,7 +18,8 @@
 		"electron-start:AI-WebTools-AIO": "tsx scripts/electron.start/index.ts AI-WebTools-AIO",
 		"webpack-build:AI-WebTools-AIO": "tsx scripts/webpack.build/index.ts AI-WebTools-AIO production",
 		"electron-build:AI-WebTools-AIO": "cd projects/AI-WebTools-AIO & electron-builder build -w",
-		"postinstall": "tsx scripts/postinstall/index.ts && patch-package"
+		"postinstall": "tsx scripts/postinstall/index.ts && patch-package",
+		"setup:git-symlinks": "tsx scripts/setup-git-symlinks.ts"
 	},
 	"electronmon": {
 		"patterns": [
