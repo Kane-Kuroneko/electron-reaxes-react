@@ -52,10 +52,12 @@ body {
 	overflow: hidden;
 }
 
-/* ── SwitchAiBar 容器（显隐过渡） ── */
+/* ── SwitchAiBar 容器（显隐过渡）
+   FloatingView 窗口 bounds 已从 menubar 下方起算（见 Main FloatingView reaxel），
+   此处 top 为相对内容区的额外间距。 ── */
 .switch-ai-bar {
 	position: absolute;
-	top: 24px;
+	top: 16px;
 	left: 50%;
 	width: min(700px, calc(100vw - 48px));
 	transform: translateX(-50%);
@@ -259,7 +261,7 @@ body {
 
 @media (max-width: 520px) {
 	.switch-ai-bar {
-		top: 14px;
+		top: 10px;
 		width: calc(100vw - 20px);
 	}
 

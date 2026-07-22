@@ -39,6 +39,30 @@ export interface SpanDurations {
 	endToEnd?: number;                  /* switch:start → switch:complete */
 	uiToSwiperBegin?: number;           /* switch:ui-state-updated → 首个 switch:swiper-begin */
 	closeExitDuration?: number;         /* switch:close-exit-start → switch:close-exit-end */
+	/** showAIView / applyVisibility 耗时 */
+	aiViewMs?: number;
+	/** FloatingView showInactive 耗时 */
+	overlayShowMs?: number;
+	/** ui-state-updated → first-paint */
+	toFirstPaintMs?: number;
+	/** 本次切换内 LoAF 条目数 */
+	loafCount?: number;
+	/** 本次切换内最大 LoAF duration (ms) */
+	maxLoafMs?: number;
+	/** start → 最终 complete（isFinal=true 或 begin 之后最后一次） */
+	endToEndFinal?: number;
+	/** 过早 complete 次数 */
+	prematureCompleteCount?: number;
+	/** 首次调出采样：最长帧 */
+	firstShowMaxFrameDeltaMs?: number;
+	/** 首次调出采样：掉帧数 */
+	firstShowDroppedFrames?: number;
+	/** 首次调出：visible→css transition start */
+	msToCssTransitionStart?: number;
+	/** 首次调出：visible→final complete */
+	msToFinalComplete?: number;
+	/** 是否会话内第一次真实 overlay show */
+	isFirstOverlayShow?: boolean;
 }
 
 export interface SpanAnomaly {
@@ -51,7 +75,10 @@ export interface SpanAnomaly {
 		| 'close_exit_timeout'
 		| 'swiper_anomaly'
 		| 'missing_close_exit_events'
-		| 'empty_log';
+		| 'empty_log'
+		| 'animation_skipped'
+		| 'swiper_remount_while_visible'
+		| 'prepare_show_items_mismatch';
 	severity: 'P1' | 'P2' | 'P3';
 	detail: string;
 }
@@ -66,6 +93,12 @@ export interface PerfSpan {
 	anomalies: SpanAnomaly[];
 	durations: SpanDurations;
 	viewCount?: number;
+	/** 会话内是否首次切换（来自 switch:start data） */
+	isFirstSwitchInSession?: boolean;
+	/** 会话内第几次切换 */
+	switchOrdinal?: number;
+	/** 分段耗时中最大嫌疑段 */
+	topBottleneck?: { segment: string; ms: number };
 }
 
 export interface SessionSummary {
@@ -96,6 +129,31 @@ export interface OverallStats {
 	overallAvgSwiperTransition: number;
 	overallAvgEndToEnd: number;
 	overallAvgCloseExit: number;
+	overallAvgAiViewMs: number;
+	overallAvgOverlayShowMs: number;
+	overallAvgToFirstPaintMs: number;
+	/** 首次切换 vs 后续切换对比 */
+	firstVsLater: FirstVsLaterComparison;
+}
+
+export interface MetricAvg {
+	count: number;
+	avgEndToEnd: number;
+	avgMainOverhead: number;
+	avgAiViewMs: number;
+	avgOverlayShowMs: number;
+	avgToFirstPaintMs: number;
+	avgIpcLatency: number;
+	avgUiToSwiperBegin: number;
+	avgMaxLoafMs: number;
+	avgLoafCount: number;
+}
+
+export interface FirstVsLaterComparison {
+	first: MetricAvg;
+	later: MetricAvg;
+	/** 首次相对后续的端到端倍数（later=0 时为 null） */
+	e2eRatio: number | null;
 }
 
 export interface AnalysisReport {
@@ -112,6 +170,12 @@ export interface AnalysisReport {
 	worstQueueBuildup: PerfSpan[];
 	/** Close 退出动画最慢的 Span */
 	worstCloseExit: PerfSpan[];
+	/** overlay show 最慢 */
+	worstOverlayShow: PerfSpan[];
+	/** 端到端最慢 */
+	worstEndToEnd: PerfSpan[];
+	/** 冷启动后首次切换 span（专项判读） */
+	firstColdSwitch: PerfSpan | null;
 }
 
 /** CI 回归阈值：超出任一阈值时 analyzer 返回非零退出码 */
@@ -217,9 +281,17 @@ function buildSpan( ctxId: string , events: PerfEvent[] ): PerfSpan {
 		}
 	}
 
-	/* 检测重复事件 */
+	/* 检测重复事件（允许同一 Span 内多次出现的 phase） */
+	const ALLOW_MULTI = new Set( [
+		'switch:loaf' ,
+		'switch:swiper-begin' ,
+		'switch:swiper-end' ,
+		'switch:active-index-changed' ,
+		'switch:complete' ,
+		'switch:swiper-remount' ,
+	] );
 	for( const [ phase , count ] of seenPhases ) {
-		if( count > 1 ) {
+		if( count > 1 && !ALLOW_MULTI.has( phase ) ) {
 			anomalies.push( {
 				type    : 'duplicate_event' ,
 				severity : 'P2' ,
@@ -231,10 +303,11 @@ function buildSpan( ctxId: string , events: PerfEvent[] ): PerfSpan {
 	/* 提取 action */
 	const action = extractAction( firstByPhase );
 
-	/* 检测缺失渲染进程事件 */
+	/* 检测缺失渲染进程事件（boot-* 为 FloatingView 主进程生命周期，不要求 renderer） */
 	const hasMain = events.some( e => e.proc === 'main' );
 	const hasRenderer = events.some( e => e.proc === 'renderer' );
-	if( hasMain && !hasRenderer ) {
+	const isBootSpan = ctxId.startsWith( 'boot-' );
+	if( hasMain && !hasRenderer && !isBootSpan ) {
 		anomalies.push( {
 			type     : 'missing_renderer_events' ,
 			severity : 'P1' ,
@@ -244,6 +317,40 @@ function buildSpan( ctxId: string , events: PerfEvent[] ): PerfSpan {
 
 	/* 计算耗时 */
 	const durations = computeDurations( firstByPhase , events , anomalies , action );
+	const startData = firstByPhase.get( 'switch:start' )?.data;
+	const isFirstSwitchInSession = typeof startData?.isFirstSwitchInSession === 'boolean'
+		? startData.isFirstSwitchInSession
+		: undefined;
+	const switchOrdinal = typeof startData?.switchOrdinal === 'number'
+		? Number( startData.switchOrdinal )
+		: undefined;
+
+	/* 动画被跳过：有 complete / ui 更新但无 swiper-begin（首次 remount 典型形态） */
+	const isSwitchAction = action === 'switch-configured' || action === 'switch-instantiated';
+	if(
+		isSwitchAction
+		&& firstByPhase.has( 'switch:complete' )
+		&& firstByPhase.has( 'switch:ui-state-updated' )
+		&& !firstByPhase.has( 'switch:swiper-begin' )
+	) {
+		anomalies.push( {
+			type     : 'animation_skipped' ,
+			severity : 'P1' ,
+			detail   : `Span ${ ctxId } 有 switch:complete 但无 switch:swiper-begin（动画被跳过；常见于可见期 Swiper 重建）`,
+		} );
+	}
+
+	const remountWhileVisible = events.filter(
+		e => e.phase === 'switch:swiper-remount' && e.data?.visible === true,
+	);
+	if( remountWhileVisible.length > 0 ) {
+		const sample = remountWhileVisible[0];
+		anomalies.push( {
+			type     : 'swiper_remount_while_visible' ,
+			severity : 'P1' ,
+			detail   : `Span ${ ctxId } 在 visible=true 时重建 Swiper（${ sample.data?.prevTotal }→${ sample.data?.nextTotal }，共 ${ remountWhileVisible.length } 次）`,
+		} );
+	}
 
 	return {
 		ctxId ,
@@ -252,8 +359,25 @@ function buildSpan( ctxId: string , events: PerfEvent[] ): PerfSpan {
 		allEvents : events ,
 		anomalies ,
 		durations ,
-		viewCount : extractViewCount( firstByPhase ),
+		viewCount : extractViewCount( firstByPhase ) ,
+		isFirstSwitchInSession ,
+		switchOrdinal ,
+		topBottleneck : pickTopBottleneck( durations ),
 	};
+}
+
+function pickTopBottleneck( durations: SpanDurations ): PerfSpan['topBottleneck'] {
+	const candidates: Array<{ segment: string; ms: number }> = [];
+	if( durations.aiViewMs != null ) candidates.push( { segment : 'aiViewMs' , ms : durations.aiViewMs } );
+	if( durations.overlayShowMs != null ) candidates.push( { segment : 'overlayShowMs' , ms : durations.overlayShowMs } );
+	if( durations.ipcLatency != null ) candidates.push( { segment : 'ipcLatency' , ms : durations.ipcLatency } );
+	if( durations.toFirstPaintMs != null ) candidates.push( { segment : 'toFirstPaintMs' , ms : durations.toFirstPaintMs } );
+	if( durations.uiToSwiperBegin != null ) candidates.push( { segment : 'uiToSwiperBegin' , ms : durations.uiToSwiperBegin } );
+	if( durations.maxLoafMs != null ) candidates.push( { segment : 'maxLoafMs' , ms : durations.maxLoafMs } );
+	const swiperSum = durations.swiperTransitions.reduce( ( a , b ) => a + b , 0 );
+	if( swiperSum > 0 ) candidates.push( { segment : 'swiperTransitionsSum' , ms : swiperSum } );
+	if( candidates.length === 0 ) return undefined;
+	return candidates.sort( ( a , b ) => b.ms - a.ms )[0];
 }
 
 function extractAction( firstByPhase: Map<string , PerfEvent> ): PerfSpan['action'] {
@@ -291,10 +415,25 @@ function computeDurations(
 	const complete = firstByPhase.get( 'switch:complete' );
 	const closeExitStart = firstByPhase.get( 'switch:close-exit-start' );
 	const closeExitEnd = firstByPhase.get( 'switch:close-exit-end' );
+	const aiViewBegin = firstByPhase.get( 'switch:ai-view-begin' );
+	const aiViewEnd = firstByPhase.get( 'switch:ai-view-end' );
+	const fvShowBegin = firstByPhase.get( 'fv:show-begin' );
+	const fvShowEnd = firstByPhase.get( 'fv:show-end' );
+	const firstPaint = firstByPhase.get( 'switch:first-paint' );
 
 	/* Main 进程开销（同进程，优先 hrt） */
 	if( start && ipcSent ) {
 		durations.mainOverhead = deltaMs( start , ipcSent );
+	}
+
+	/* AI View 切换耗时 */
+	if( aiViewBegin && aiViewEnd ) {
+		durations.aiViewMs = deltaMs( aiViewBegin , aiViewEnd );
+	}
+
+	/* Overlay showInactive 耗时 */
+	if( fvShowBegin && fvShowEnd ) {
+		durations.overlayShowMs = deltaMs( fvShowBegin , fvShowEnd );
 	}
 
 	/* IPC 延迟（跨进程，只能用 ts） */
@@ -307,22 +446,37 @@ function computeDurations(
 		durations.rendererUpdate = deltaMs( ipcReceived , uiUpdated );
 	}
 
-	/* UI 更新到首个 Swiper 开始（同进程，优先 hrt） */
+	/* UI 更新到首帧 / Swiper 开始 */
+	if( uiUpdated && firstPaint ) {
+		durations.toFirstPaintMs = deltaMs( uiUpdated , firstPaint );
+	}
 	const swiperBegins = events.filter( e => e.phase === 'switch:swiper-begin' );
 	if( uiUpdated && swiperBegins.length > 0 ) {
 		durations.uiToSwiperBegin = deltaMs( uiUpdated , swiperBegins[0] );
 	}
 
-	/* Swiper 过渡耗时：匹配 begin/end 对（同进程，优先 hrt） */
+	/* LoAF 汇总 */
+	const loafEvents = events.filter( e => e.phase === 'switch:loaf' );
+	if( loafEvents.length > 0 ) {
+		durations.loafCount = loafEvents.length;
+		durations.maxLoafMs = Math.max(
+			...loafEvents.map( e => Number( e.data?.duration ?? 0 ) ),
+		);
+	}
+
+	/* Swiper 过渡耗时：优先匹配 begin 之后的非 premature end */
 	const sortedEvents = [ ...events ].sort( ( a , b ) => a.ts - b.ts );
 	let pendingBegin: PerfEvent | null = null;
 	for( const event of sortedEvents ) {
 		if( event.phase === 'switch:swiper-begin' ) {
 			pendingBegin = event;
 		} else if( event.phase === 'switch:swiper-end' && pendingBegin ) {
+			/* 跳过 begin 之前的过早 end（loopFix） */
+			if( event.data?.premature === true && event.data?.isFinal !== true ) {
+				continue;
+			}
 			const duration = deltaMs( pendingBegin , event );
 			durations.swiperTransitions.push( duration );
-			/* Swiper 过渡异常检测 */
 			if( duration < 50 ) {
 				anomalies.push( {
 					type     : 'swiper_anomaly' ,
@@ -340,9 +494,42 @@ function computeDurations(
 		}
 	}
 
-	/* 端到端延迟 */
-	if( start && complete ) {
-		durations.endToEnd = complete.ts - start.ts;
+	/* 端到端：优先最终 complete，避免过早 transitionEnd 把首次 E2E 算成十几 ms */
+	const completes = events.filter( e => e.phase === 'switch:complete' );
+	const finalComplete = [ ...completes ].reverse().find( e => e.data?.isFinal === true )
+		|| ( swiperBegins.length > 0
+			? [ ...completes ].reverse().find( e => e.ts >= swiperBegins[0].ts )
+			: undefined )
+		|| completes[completes.length - 1]
+		|| complete;
+	if( start && finalComplete ) {
+		durations.endToEnd = finalComplete.ts - start.ts;
+		durations.endToEndFinal = durations.endToEnd;
+	}
+	durations.prematureCompleteCount = completes.filter(
+		e => e.data?.premature === true || e.data?.isFinal === false,
+	).length;
+
+	const showBegin = fvShowBegin;
+	if( showBegin?.data?.isFirstOverlayShow === true ) {
+		durations.isFirstOverlayShow = true;
+	}
+
+	const firstShowStats = firstByPhase.get( 'switch:first-show-stats' );
+	if( firstShowStats?.data ) {
+		const d = firstShowStats.data;
+		if( typeof d.maxFrameDeltaMs === 'number' ) {
+			durations.firstShowMaxFrameDeltaMs = Number( d.maxFrameDeltaMs );
+		}
+		if( typeof d.droppedFrames === 'number' ) {
+			durations.firstShowDroppedFrames = Number( d.droppedFrames );
+		}
+		if( typeof d.msToCssTransitionStart === 'number' ) {
+			durations.msToCssTransitionStart = Number( d.msToCssTransitionStart );
+		}
+		if( typeof d.msToFinalComplete === 'number' ) {
+			durations.msToFinalComplete = Number( d.msToFinalComplete );
+		}
 	}
 
 	/* Close 退出动画耗时（同进程，优先 hrt） */
@@ -485,15 +672,79 @@ export function analyzeSession( filePath: string ): SessionSummary {
    全量分析
    ═══════════════════════════════════════════════════════════════ */
 
-/** 分析 performance-logs 目录下的所有日志，返回完整报告 */
-export function analyzeAllSessions( logDir: string ): AnalysisReport {
-	const files = fs.readdirSync( logDir )
+export interface AnalyzeSessionsOptions {
+	/** 只分析最新一条非 fixture 日志 */
+	latestOnly?: boolean;
+	/** 跳过 perf-fixture-*（默认 true） */
+	skipFixtures?: boolean;
+}
+
+/** 列出目录中可分析的 perf JSONL（按文件名排序） */
+export function listPerfLogFiles(
+	logDir: string ,
+	options: AnalyzeSessionsOptions = {},
+): string[] {
+	const skipFixtures = options.skipFixtures !== false;
+	if( !fs.existsSync( logDir ) ) {
+		return [];
+	}
+	let files = fs.readdirSync( logDir )
 		.filter( f => f.startsWith( 'perf-' ) && f.endsWith( '.jsonl' ) )
+		.filter( f => !( skipFixtures && f.startsWith( 'perf-fixture-' ) ) )
 		.map( f => path.join( logDir , f ) )
 		.sort();
+	if( options.latestOnly && files.length > 0 ) {
+		files = [ files[files.length - 1] ];
+	}
+	return files;
+}
+
+/** 同文件内：prepare fingerprint 与首次 switch show 是否一致 */
+function detectPrepareShowMismatch( events: PerfEvent[] ): SpanAnomaly | null {
+	const prepare = [ ...events ].reverse().find(
+		e => e.phase === 'fv:prepare-applied' || e.phase === 'fv:prepare-sent',
+	);
+	const firstShow = events.find(
+		e => e.phase === 'switch:ui-state-updated' && e.ctxId?.startsWith( 'ctx-' ),
+	);
+	if( !prepare?.data || !firstShow?.data ) {
+		return null;
+	}
+	const prepHash = prepare.data.idsHash;
+	const showHash = firstShow.data.idsHash;
+	const prepCount = prepare.data.itemCount;
+	const showCount = firstShow.data.itemCount;
+	if( prepHash == null || showHash == null ) {
+		/* 旧日志无 fingerprint：退化为 itemCount */
+		if( prepCount != null && showCount != null && Number( prepCount ) !== Number( showCount ) ) {
+			return {
+				type     : 'prepare_show_items_mismatch' ,
+				severity : 'P2' ,
+				detail   : `prepare itemCount=${ prepCount } 与首次 show itemCount=${ showCount } 不一致（可能导致可见期 Swiper 重建）`,
+			};
+		}
+		return null;
+	}
+	if( String( prepHash ) !== String( showHash ) || Number( prepCount ) !== Number( showCount ) ) {
+		return {
+			type     : 'prepare_show_items_mismatch' ,
+			severity : 'P2' ,
+			detail   : `prepare(idsHash=${ prepHash },n=${ prepCount },source=${ prepare.data.source }) ≠ 首次 show(idsHash=${ showHash },n=${ showCount },source=${ firstShow.data.source })——prepare 与切换列表不同源`,
+		};
+	}
+	return null;
+}
+
+/** 分析 performance-logs 目录下的日志，返回完整报告 */
+export function analyzeAllSessions(
+	logDir: string ,
+	options: AnalyzeSessionsOptions = {},
+): AnalysisReport {
+	const files = listPerfLogFiles( logDir , options );
 
 	const sessions: SessionSummary[] = [];
 	const allSpans: PerfSpan[] = [];
+	const sessionAnomalies: SpanAnomaly[] = [];
 
 	for( const file of files ) {
 		const summary = analyzeSession( file );
@@ -501,14 +752,23 @@ export function analyzeAllSessions( logDir: string ): AnalysisReport {
 
 		if( summary.eventCount > 0 ) {
 			const events = parseLogFile( file );
+			const mismatch = detectPrepareShowMismatch( events );
+			if( mismatch ) {
+				sessionAnomalies.push( {
+					...mismatch ,
+					detail : `[${ path.basename( file ) }] ${ mismatch.detail }`,
+				} );
+			}
 			const spans = groupIntoSpans( events );
 			allSpans.push( ...spans );
 		}
 	}
 
 	/* 整体统计 */
+	const spanAnomalies = allSpans.flatMap( s => s.anomalies );
+	const allAnomalies = [ ...spanAnomalies , ...sessionAnomalies ];
 	const totalEvents = sessions.reduce( ( sum , s ) => sum + s.eventCount , 0 );
-	const totalAnomalies = sessions.reduce( ( sum , s ) => sum + s.anomalyCount , 0 );
+	const totalAnomalies = allAnomalies.length;
 
 	const allMainOverheads = allSpans
 		.map( s => s.durations.mainOverhead )
@@ -543,7 +803,26 @@ export function analyzeAllSessions( logDir: string ): AnalysisReport {
 		? Number( ( allCloseExit.reduce( ( a , b ) => a + b , 0 ) / allCloseExit.length ).toFixed( 1 ) )
 		: 0;
 
-	const allAnomalies = allSpans.flatMap( s => s.anomalies );
+	const allAiView = allSpans
+		.map( s => s.durations.aiViewMs )
+		.filter( ( n ): n is number => n !== undefined );
+	const overallAvgAiViewMs = allAiView.length > 0
+		? Number( ( allAiView.reduce( ( a , b ) => a + b , 0 ) / allAiView.length ).toFixed( 1 ) )
+		: 0;
+
+	const allOverlayShow = allSpans
+		.map( s => s.durations.overlayShowMs )
+		.filter( ( n ): n is number => n !== undefined );
+	const overallAvgOverlayShowMs = allOverlayShow.length > 0
+		? Number( ( allOverlayShow.reduce( ( a , b ) => a + b , 0 ) / allOverlayShow.length ).toFixed( 1 ) )
+		: 0;
+
+	const allFirstPaint = allSpans
+		.map( s => s.durations.toFirstPaintMs )
+		.filter( ( n ): n is number => n !== undefined );
+	const overallAvgToFirstPaintMs = allFirstPaint.length > 0
+		? Number( ( allFirstPaint.reduce( ( a , b ) => a + b , 0 ) / allFirstPaint.length ).toFixed( 1 ) )
+		: 0;
 
 	/* 最慢的 Span */
 	const withMainOverhead = [ ...allSpans ]
@@ -568,6 +847,24 @@ export function analyzeAllSessions( logDir: string ): AnalysisReport {
 		.sort( ( a , b ) => ( b.durations.closeExitDuration! ) - ( a.durations.closeExitDuration! ) )
 		.slice( 0 , 5 );
 
+	const worstOverlayShow = [ ...allSpans ]
+		.filter( s => s.durations.overlayShowMs !== undefined )
+		.sort( ( a , b ) => ( b.durations.overlayShowMs! ) - ( a.durations.overlayShowMs! ) )
+		.slice( 0 , 5 );
+
+	const worstEndToEnd = [ ...allSpans ]
+		.filter( s => s.durations.endToEnd !== undefined )
+		.sort( ( a , b ) => ( b.durations.endToEnd! ) - ( a.durations.endToEnd! ) )
+		.slice( 0 , 5 );
+
+	const switchSpans = allSpans.filter(
+		s => s.action === 'switch-configured' || s.action === 'switch-instantiated',
+	);
+	const firstVsLater = compareFirstVsLater( switchSpans );
+	const firstColdSwitch = switchSpans.find( s => s.isFirstSwitchInSession === true )
+		|| switchSpans.find( s => s.durations.isFirstOverlayShow === true )
+		|| null;
+
 	return {
 		analyzedAt        : new Date().toISOString() ,
 		logDir ,
@@ -582,13 +879,52 @@ export function analyzeAllSessions( logDir: string ): AnalysisReport {
 			overallAvgSwiperTransition  ,
 			overallAvgEndToEnd          ,
 			overallAvgCloseExit         ,
+			overallAvgAiViewMs ,
+			overallAvgOverlayShowMs ,
+			overallAvgToFirstPaintMs ,
+			firstVsLater ,
 		} ,
 		allAnomalies ,
 		worstMainOverhead ,
 		worstCloseOps ,
 		worstQueueBuildup ,
 		worstCloseExit ,
+		worstOverlayShow ,
+		worstEndToEnd ,
+		firstColdSwitch ,
 	};
+}
+
+function avgOf( values: number[] ): number {
+	if( values.length === 0 ) return 0;
+	return Number( ( values.reduce( ( a , b ) => a + b , 0 ) / values.length ).toFixed( 1 ) );
+}
+
+function summarizeMetricAvg( spans: PerfSpan[] ): MetricAvg {
+	return {
+		count : spans.length ,
+		avgEndToEnd : avgOf( spans.map( s => s.durations.endToEnd ).filter( ( n ): n is number => n !== undefined ) ) ,
+		avgMainOverhead : avgOf( spans.map( s => s.durations.mainOverhead ).filter( ( n ): n is number => n !== undefined ) ) ,
+		avgAiViewMs : avgOf( spans.map( s => s.durations.aiViewMs ).filter( ( n ): n is number => n !== undefined ) ) ,
+		avgOverlayShowMs : avgOf( spans.map( s => s.durations.overlayShowMs ).filter( ( n ): n is number => n !== undefined ) ) ,
+		avgToFirstPaintMs : avgOf( spans.map( s => s.durations.toFirstPaintMs ).filter( ( n ): n is number => n !== undefined ) ) ,
+		avgIpcLatency : avgOf( spans.map( s => s.durations.ipcLatency ).filter( ( n ): n is number => n !== undefined ) ) ,
+		avgUiToSwiperBegin : avgOf( spans.map( s => s.durations.uiToSwiperBegin ).filter( ( n ): n is number => n !== undefined ) ) ,
+		avgMaxLoafMs : avgOf( spans.map( s => s.durations.maxLoafMs ).filter( ( n ): n is number => n !== undefined ) ) ,
+		avgLoafCount : avgOf( spans.map( s => s.durations.loafCount ).filter( ( n ): n is number => n !== undefined ) ) ,
+	};
+}
+
+function compareFirstVsLater( switchSpans: PerfSpan[] ): FirstVsLaterComparison {
+	const first = switchSpans.filter( s => s.isFirstSwitchInSession === true || s.switchOrdinal === 1 );
+	const later = switchSpans.filter( s => !( s.isFirstSwitchInSession === true || s.switchOrdinal === 1 ) );
+	/* 若无显式标记，按时间序把每个 session 文件内首个 switch 当 first——此处已在 span 级标记，兜底用 ordinal 缺失时全进 later */
+	const firstAvg = summarizeMetricAvg( first );
+	const laterAvg = summarizeMetricAvg( later );
+	const e2eRatio = laterAvg.avgEndToEnd > 0 && firstAvg.count > 0
+		? Number( ( firstAvg.avgEndToEnd / laterAvg.avgEndToEnd ).toFixed( 2 ) )
+		: null;
+	return { first : firstAvg , later : laterAvg , e2eRatio };
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -661,11 +997,15 @@ export function checkCIThresholds( report: AnalysisReport ): CIViolation[] {
 
 /** 将分析报告格式化为 Markdown */
 export function formatReport( report: AnalysisReport ): string {
-	const { overallStats , sessions , allAnomalies , worstMainOverhead , worstCloseOps , worstQueueBuildup , worstCloseExit } = report;
+	const {
+		overallStats , sessions , allAnomalies , worstMainOverhead , worstCloseOps ,
+		worstQueueBuildup , worstCloseExit , worstOverlayShow , worstEndToEnd ,
+	} = report;
 
 	const p1Count = allAnomalies.filter( a => a.severity === 'P1' ).length;
 	const p2Count = allAnomalies.filter( a => a.severity === 'P2' ).length;
 	const p3Count = allAnomalies.filter( a => a.severity === 'P3' ).length;
+	const { firstVsLater } = overallStats;
 
 	let md = '';
 
@@ -682,10 +1022,54 @@ export function formatReport( report: AnalysisReport ): string {
 	md += `| 总操作数 (Span) | ${ overallStats.totalSpans } |\n`;
 	md += `| 异常总数 | ${ overallStats.totalAnomalies }（P1: ${ p1Count }, P2: ${ p2Count }, P3: ${ p3Count }）|\n`;
 	md += `| 平均主进程开销 | **${ overallStats.overallAvgMainOverhead }ms** |\n`;
+	md += `| 平均 AI View 切换 | ${ overallStats.overallAvgAiViewMs }ms |\n`;
+	md += `| 平均 Overlay show | ${ overallStats.overallAvgOverlayShowMs }ms |\n`;
 	md += `| 平均 IPC 延迟 | ${ overallStats.overallAvgIpcLatency }ms |\n`;
+	md += `| 平均 toFirstPaint | ${ overallStats.overallAvgToFirstPaintMs }ms |\n`;
 	md += `| 平均 Swiper 过渡 | ${ overallStats.overallAvgSwiperTransition }ms |\n`;
 	md += `| 平均端到端延迟 | ${ overallStats.overallAvgEndToEnd }ms |\n`;
 	md += `| 平均 Close 退出动画 | ${ overallStats.overallAvgCloseExit }ms |\n\n`;
+
+	/* ── 首次 vs 后续 ── */
+	md += `## 1.1 首次切换 vs 后续切换\n\n`;
+	md += `| 指标 | 首次 (n=${ firstVsLater.first.count }) | 后续 (n=${ firstVsLater.later.count }) |\n`;
+	md += `|------|------|------|\n`;
+	md += `| 端到端 | ${ firstVsLater.first.avgEndToEnd }ms | ${ firstVsLater.later.avgEndToEnd }ms |\n`;
+	md += `| 主进程开销 | ${ firstVsLater.first.avgMainOverhead }ms | ${ firstVsLater.later.avgMainOverhead }ms |\n`;
+	md += `| AI View | ${ firstVsLater.first.avgAiViewMs }ms | ${ firstVsLater.later.avgAiViewMs }ms |\n`;
+	md += `| Overlay show | ${ firstVsLater.first.avgOverlayShowMs }ms | ${ firstVsLater.later.avgOverlayShowMs }ms |\n`;
+	md += `| IPC | ${ firstVsLater.first.avgIpcLatency }ms | ${ firstVsLater.later.avgIpcLatency }ms |\n`;
+	md += `| toFirstPaint | ${ firstVsLater.first.avgToFirstPaintMs }ms | ${ firstVsLater.later.avgToFirstPaintMs }ms |\n`;
+	md += `| ui→swiperBegin | ${ firstVsLater.first.avgUiToSwiperBegin }ms | ${ firstVsLater.later.avgUiToSwiperBegin }ms |\n`;
+	md += `| max LoAF | ${ firstVsLater.first.avgMaxLoafMs }ms | ${ firstVsLater.later.avgMaxLoafMs }ms |\n`;
+	md += `| LoAF 次数 | ${ firstVsLater.first.avgLoafCount } | ${ firstVsLater.later.avgLoafCount } |\n`;
+	if( firstVsLater.e2eRatio != null ) {
+		md += `\n> 首次端到端 / 后续端到端 = **${ firstVsLater.e2eRatio }x**\n`;
+	}
+	md += `\n`;
+
+	/* ── 冷启动首次调出专项 ── */
+	md += `## 1.2 冷启动首次调出专项\n\n`;
+	md += `判读优先级：\`msToFinalComplete\` / \`firstShowMaxFrameDeltaMs\` / \`maxLoAF\` 相对后续是否异常；\n`;
+	md += `\`overlayShowMs\` 若很小则延迟不在 showInactive 本身。\n\n`;
+	if( report.firstColdSwitch ) {
+		const d = report.firstColdSwitch.durations;
+		md += `| 指标 | 值 |\n|------|----|\n`;
+		md += `| ctxId | ${ report.firstColdSwitch.ctxId } |\n`;
+		md += `| isFirstOverlayShow | ${ d.isFirstOverlayShow ?? '-' } |\n`;
+		md += `| E2E(最终 complete) | ${ d.endToEnd ?? '-' }ms |\n`;
+		md += `| Overlay show | ${ d.overlayShowMs ?? '-' }ms |\n`;
+		md += `| toFirstPaint | ${ d.toFirstPaintMs ?? '-' }ms |\n`;
+		md += `| ui→swiperBegin | ${ d.uiToSwiperBegin ?? '-' }ms |\n`;
+		md += `| msToCssTransitionStart | ${ d.msToCssTransitionStart ?? '-' }ms |\n`;
+		md += `| msToFinalComplete | ${ d.msToFinalComplete ?? '-' }ms |\n`;
+		md += `| firstShow maxFrameDelta | ${ d.firstShowMaxFrameDeltaMs ?? '-' }ms |\n`;
+		md += `| firstShow droppedFrames | ${ d.firstShowDroppedFrames ?? '-' } |\n`;
+		md += `| max LoAF | ${ d.maxLoafMs ?? '-' }ms |\n`;
+		md += `| prematureCompleteCount | ${ d.prematureCompleteCount ?? '-' } |\n\n`;
+	} else {
+		md += `_本次报告未捕获首次切换（请冷启动后点 menubar Prev/Next 一次，再连切 2～3 次，然后 --latest）。_\n\n`;
+	}
 
 	/* ── Session 摘要 ── */
 	md += `## 2. Session 摘要\n\n`;
@@ -731,8 +1115,32 @@ export function formatReport( report: AnalysisReport ): string {
 	}
 
 	/* ── 重点 Span ── */
+	if( worstEndToEnd.length > 0 ) {
+		md += `## 4. 端到端最慢操作 (Top ${ worstEndToEnd.length })\n\n`;
+		md += `| ctxId | Action | E2E | Top 瓶颈 | Overlay | AI View | FirstPaint | First? |\n`;
+		md += `|-------|--------|-----|----------|---------|---------|------------|--------|\n`;
+		for( const span of worstEndToEnd ) {
+			const bn = span.topBottleneck
+				? `${ span.topBottleneck.segment }=${ span.topBottleneck.ms }ms`
+				: '-';
+			md += `| ${ span.ctxId } | ${ span.action } | **${ span.durations.endToEnd }ms** | ${ bn } | ${ span.durations.overlayShowMs ?? '-' } | ${ span.durations.aiViewMs ?? '-' } | ${ span.durations.toFirstPaintMs ?? '-' } | ${ span.isFirstSwitchInSession ?? '-' } |\n`;
+		}
+		md += `\n`;
+	}
+
+	if( worstOverlayShow.length > 0 ) {
+		md += `## 4.1 Overlay show 最慢 (Top ${ worstOverlayShow.length })\n\n`;
+		md += `| ctxId | Overlay show | wasHidden? | First? |\n`;
+		md += `|-------|--------------|------------|--------|\n`;
+		for( const span of worstOverlayShow ) {
+			const showBegin = span.firstByPhase.get( 'fv:show-begin' );
+			md += `| ${ span.ctxId } | **${ span.durations.overlayShowMs }ms** | ${ showBegin?.data?.overlayWasHidden ?? '-' } | ${ span.isFirstSwitchInSession ?? '-' } |\n`;
+		}
+		md += `\n`;
+	}
+
 	if( worstMainOverhead.length > 0 ) {
-		md += `## 4. 主进程最慢操作 (Top ${ worstMainOverhead.length })\n\n`;
+		md += `## 5. 主进程最慢操作 (Top ${ worstMainOverhead.length })\n\n`;
 		md += `| ctxId | Action | 主进程耗时 | View 数 |\n`;
 		md += `|-------|--------|-----------|--------|\n`;
 		for( const span of worstMainOverhead ) {
@@ -742,7 +1150,7 @@ export function formatReport( report: AnalysisReport ): string {
 	}
 
 	if( worstCloseOps.length > 0 ) {
-		md += `## 5. Close 操作最慢 (Top ${ worstCloseOps.length })\n\n`;
+		md += `## 6. Close 操作最慢 (Top ${ worstCloseOps.length })\n\n`;
 		md += `| ctxId | 主进程耗时 | View 数 |\n`;
 		md += `|-------|-----------|--------|\n`;
 		for( const span of worstCloseOps ) {
@@ -752,7 +1160,7 @@ export function formatReport( report: AnalysisReport ): string {
 	}
 
 	if( worstCloseExit.length > 0 ) {
-		md += `## 6. Close 退出动画最慢 (Top ${ worstCloseExit.length })\n\n`;
+		md += `## 7. Close 退出动画最慢 (Top ${ worstCloseExit.length })\n\n`;
 		md += `| ctxId | 退出动画耗时 | View 数 |\n`;
 		md += `|-------|-------------|--------|\n`;
 		for( const span of worstCloseExit ) {
@@ -762,7 +1170,7 @@ export function formatReport( report: AnalysisReport ): string {
 	}
 
 	if( worstQueueBuildup.length > 0 ) {
-		md += `## 7. 挂起队列堆积 (Top ${ worstQueueBuildup.length })\n\n`;
+		md += `## 8. 挂起队列堆积 (Top ${ worstQueueBuildup.length })\n\n`;
 		md += `| ctxId | Action | Swiper 过渡次数 | 总 Swiper 耗时 |\n`;
 		md += `|-------|--------|----------------|---------------|\n`;
 		for( const span of worstQueueBuildup ) {
@@ -773,7 +1181,7 @@ export function formatReport( report: AnalysisReport ): string {
 	}
 
 	/* ── 建议 ── */
-	md += `## 8. 建议\n\n`;
+	md += `## 9. 建议\n\n`;
 	const suggestions = generateSuggestions( report );
 	for( const s of suggestions ) {
 		md += `- ${ s }\n`;
@@ -785,6 +1193,70 @@ export function formatReport( report: AnalysisReport ): string {
 function generateSuggestions( report: AnalysisReport ): string[] {
 	const suggestions: string[] = [];
 	const { overallStats } = report;
+	const { firstVsLater } = overallStats;
+
+	if( firstVsLater.e2eRatio != null && firstVsLater.e2eRatio >= 1.5 ) {
+		suggestions.push(
+			`**首次切换明显慢于后续**（${ firstVsLater.e2eRatio }x）。对比首次/后续的 Overlay show、AI View、toFirstPaint 哪一段拉大差距。`,
+		);
+	}
+
+	if( overallStats.overallAvgOverlayShowMs > 16 ) {
+		suggestions.push(
+			`**Overlay showInactive 偏慢**（平均 ${ overallStats.overallAvgOverlayShowMs }ms）。嫌疑：透明窗合成器冷启动；可考虑更强预热或 contentTracing 确认 compositor。`,
+		);
+	}
+
+	if( overallStats.overallAvgAiViewMs > 30 ) {
+		suggestions.push(
+			`**AI View 切换偏慢**（平均 ${ overallStats.overallAvgAiViewMs }ms）。嫌疑：WebContentsView 显隐/ remount 阻塞 overlay 显示。`,
+		);
+	}
+
+	if( overallStats.overallAvgToFirstPaintMs > 50 ) {
+		suggestions.push(
+			`**toFirstPaint 偏慢**（平均 ${ overallStats.overallAvgToFirstPaintMs }ms）。嫌疑：FloatingView 渲染树 / Swiper 挂载或首帧合成。`,
+		);
+	}
+
+	if( firstVsLater.first.avgMaxLoafMs > 50 || firstVsLater.later.avgMaxLoafMs > 50 ) {
+		suggestions.push(
+			`**检测到 Long Animation Frames**。动画期主线程被长任务打断；查看 switch:loaf / switch:first-show-stats（Electron 可加 --enable-features=AlwaysLogLOAFURL）。`,
+		);
+	}
+
+	const cold = report.firstColdSwitch?.durations;
+	if( cold?.firstShowMaxFrameDeltaMs != null && cold.firstShowMaxFrameDeltaMs > 50 ) {
+		suggestions.push(
+			`**冷启动首次调出帧间隔过大**（maxFrameDelta=${ cold.firstShowMaxFrameDeltaMs }ms）。嫌疑：透明窗首次合成 / 首帧布局 thrash，而非后续切换路径。`,
+		);
+	}
+	if( cold?.maxLoafMs != null && cold.maxLoafMs > 100 && ( firstVsLater.later.avgMaxLoafMs || 0 ) < 50 ) {
+		suggestions.push(
+			`**仅首次存在显著 LoAF**（${ cold.maxLoafMs }ms vs 后续 ~${ firstVsLater.later.avgMaxLoafMs }ms）。聚焦首次 show 后 700ms 内的 FloatingView 主线程工作。`,
+		);
+	}
+
+	const hasAnimationSkipped = report.allAnomalies.some( a => a.type === 'animation_skipped' );
+	if( hasAnimationSkipped ) {
+		suggestions.push(
+			`**动画被跳过**（有 complete 无 swiper-begin）。通常是可见期 Swiper 重建：检查 prepare 与 show 的 items 是否同源（instantiated vs configured）。`,
+		);
+	}
+
+	const hasRemountVisible = report.allAnomalies.some( a => a.type === 'swiper_remount_while_visible' );
+	if( hasRemountVisible ) {
+		suggestions.push(
+			`**可见期 Swiper 重建**。SwitchAiBar 的 items.length 在显示时变化会强制 remount，入场滑动会被吃掉。`,
+		);
+	}
+
+	const hasPrepareMismatch = report.allAnomalies.some( a => a.type === 'prepare_show_items_mismatch' );
+	if( hasPrepareMismatch ) {
+		suggestions.push(
+			`**prepare 与首次 show 列表不一致**。启动预热应与 menubar Prev/Next（instantiated）使用同一 runtime 列表。`,
+		);
+	}
 
 	if( overallStats.overallAvgMainOverhead > 20 ) {
 		suggestions.push( `**主进程开销偏高**（${ overallStats.overallAvgMainOverhead }ms > 目标 20ms）。建议排查 \`applyVisibility()\` 和 \`fitWindow()\` 的冗余调用。` );
@@ -826,12 +1298,16 @@ function generateSuggestions( report: AnalysisReport ): string[] {
    ═══════════════════════════════════════════════════════════════ */
 
 /** 运行完整分析流程：扫描日志 → 分析 → 输出 Markdown 报告 → 输出 JSON 数据 */
-export function runAnalysis( logDir: string , outputDir: string ): { mdPath: string; jsonPath: string } {
+export function runAnalysis(
+	logDir: string ,
+	outputDir: string ,
+	options: AnalyzeSessionsOptions = {},
+): { mdPath: string; jsonPath: string } {
 	if( !fs.existsSync( outputDir ) ) {
 		fs.mkdirSync( outputDir , { recursive : true } );
 	}
 
-	const report = analyzeAllSessions( logDir );
+	const report = analyzeAllSessions( logDir , options );
 
 	const mdContent = formatReport( report );
 	const timestamp = new Date().toISOString().replace( /:/g , '-' ).replace( /\..+/ , '' );

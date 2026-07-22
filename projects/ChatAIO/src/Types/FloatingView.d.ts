@@ -27,6 +27,16 @@ export namespace FloatingView {
 		direction: SwitchAiBarDirection;
 		/** 性能记录上下文 ID（用于关联主进程与渲染进程的 perf 事件） */
 		ctxId?: string;
+		/**
+		 * 列表来源（性能诊断）：
+		 * configured=全部活跃配置；instantiated=已打开 runtime；prepare-*=启动预热。
+		 */
+		source?:
+			| 'configured'
+			| 'instantiated'
+			| 'prepare-instantiated'
+			| 'prepare-configured'
+			| 'unknown';
 	};
 
 	export type GlobalMessagePayload = {
@@ -38,6 +48,11 @@ export namespace FloatingView {
 	export type Command =
 		| {
 			type: 'switch-ai-bar:show';
+			payload: SwitchAiBarPayload;
+		}
+		| {
+			/** 启动预热：写入卡片数据并挂载 Swiper，不显示 */
+			type: 'switch-ai-bar:prepare';
 			payload: SwitchAiBarPayload;
 		}
 		| {

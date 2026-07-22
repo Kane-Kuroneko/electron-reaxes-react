@@ -2,8 +2,8 @@
  * SwitchPerformanceRecorder — AI 页面快速切换性能分析记录器
  *
  * 使用方式：
- *   主进程：import { perf } from '#src/shared/utils/switch-perf-recorder.utility';
- *           perf.mark('switch:start', { ctx: 'close' });
+ *   主进程：import { perf , PerfPhase } from '#src/shared/utils/switch-perf-recorder.utility';
+ *           perf.mark(PerfPhase.SwitchStart, 'main', ctxId, { action: 'switch-configured' });
  *   渲染进程：同上，通过 IPC 批量发送到主进程落盘。
  *
  * 日志输出到 projects/ChatAIO/performance-logs/perf-<ISO-timestamp>.jsonl
@@ -29,6 +29,88 @@ export interface PerfEvent {
 	data?: Record<string, unknown>;
 }
 
+/**
+ * 稳定 phase 名：启动预热用 boot-* ctx；单次切换沿用 ctx-*。
+ * 分析器与埋点均应引用此常量，避免字符串散落。
+ */
+export const PerfPhase = {
+	/* ── FloatingView 启动 / 预热 ── */
+	FvInitStart       : 'fv:init-start' ,
+	FvInitCreated     : 'fv:init-created' ,
+	FvDidFinishLoad   : 'fv:did-finish-load' ,
+	FvWarmupShow      : 'fv:warmup-show' ,
+	FvWarmupHide      : 'fv:warmup-hide' ,
+	FvPrepareSent     : 'fv:prepare-sent' ,
+	FvPrepareApplied  : 'fv:prepare-applied' ,
+	FvSwiperMounted   : 'fv:swiper-mounted' ,
+	/* ── 单次切换分段 ── */
+	SwitchStart       : 'switch:start' ,
+	SwitchAiViewBegin : 'switch:ai-view-begin' ,
+	SwitchAiViewEnd   : 'switch:ai-view-end' ,
+	FvShowBegin       : 'fv:show-begin' ,
+	FvShowEnd         : 'fv:show-end' ,
+	SwitchIpcSent     : 'switch:ipc-sent' ,
+	SwitchIpcReceived : 'switch:ipc-received' ,
+	SwitchUiUpdated   : 'switch:ui-state-updated' ,
+	SwitchFirstPaint  : 'switch:first-paint' ,
+	SwitchActiveIndex : 'switch:active-index-changed' ,
+	SwitchSwiperBegin : 'switch:swiper-begin' ,
+	SwitchSwiperEnd   : 'switch:swiper-end' ,
+	SwitchComplete    : 'switch:complete' ,
+	SwitchLoaf        : 'switch:loaf' ,
+	SwitchSessionStats: 'switch:session-stats' ,
+	SwitchRenderDone  : 'switch:render-done' ,
+	/** Swiper 因 items.length 变化强制重建 */
+	SwitchSwiperRemount : 'switch:swiper-remount' ,
+	/**
+	 * 冷启动后「第一次真正把 overlay 从 hidden→shown」专用。
+	 * 与 isFirstSwitchInSession 不同：后者是第一次切换操作，本标记聚焦合成器/首显。
+	 */
+	FvFirstOverlayShow : 'fv:first-overlay-show' ,
+	/** renderer：document 变为可见 / bar 变为 visible 后的可见性确认 */
+	SwitchVisibilityVisible : 'switch:visibility-visible' ,
+	/** CSS/Swiper transition 真正开始（wrapper transform 变化后的首帧） */
+	SwitchCssTransitionStart : 'switch:css-transition-start' ,
+	/** 首次调出窗口期内的帧采样汇总（非逐帧刷屏） */
+	SwitchFirstShowStats : 'switch:first-show-stats' ,
+} as const;
+
+export type PerfPhaseName = typeof PerfPhase[keyof typeof PerfPhase];
+
+/** SwitchAiBar 列表来源：用于 prepare/show fingerprint 对比 */
+export type SwitchAiBarItemsSource =
+	| 'configured'
+	| 'instantiated'
+	| 'prepare-instantiated'
+	| 'prepare-configured'
+	| 'unknown';
+
+/** 稳定短哈希：对比 prepare 与 show 的 items 是否同构 */
+export function hashSwitchAiBarItemIds( ids: string[] ): string {
+	let h = 2166136261;
+	for( const id of ids ) {
+		for( let i = 0 ; i < id.length ; i++ ) {
+			h ^= id.charCodeAt( i );
+			h = Math.imul( h , 16777619 );
+		}
+		h ^= 0x7c;
+		h = Math.imul( h , 16777619 );
+	}
+	return ( h >>> 0 ).toString( 16 ).padStart( 8 , '0' );
+}
+
+export function switchAiBarItemsFingerprint(
+	items: Array<{ id: string }> ,
+	source: SwitchAiBarItemsSource = 'unknown',
+): { itemCount: number; idsHash: string; source: SwitchAiBarItemsSource } {
+	const ids = items.map( i => i.id );
+	return {
+		itemCount : ids.length ,
+		idsHash : hashSwitchAiBarItemIds( ids ) ,
+		source ,
+	};
+}
+
 const MAX_BUFFER_SIZE = 200;
 
 /** 安全获取 performance.now()，兼容无 performance 全局的环境 */
@@ -44,10 +126,35 @@ function safeNow(): number | undefined {
 export class SwitchPerformanceRecorder {
 	private buffer: PerfEvent[] = [];
 	private ctxSeq = 0;
+	private bootSeq = 0;
+	/** 进程内已完成的切换次数；用于标记 isFirstSwitchInSession */
+	private switchCountInSession = 0;
+	private flushHandler: (( events: PerfEvent[] ) => void) | null = null;
 
 	/** 生成新的上下文 ID，绑定一次完整的切换/关闭操作 */
 	newCtx(): string {
 		return `ctx-${ ++this.ctxSeq }-${ Date.now() }`;
+	}
+
+	/** 启动 / FloatingView 预热专用 ctx */
+	newBootCtx(): string {
+		return `boot-${ ++this.bootSeq }-${ Date.now() }`;
+	}
+
+	/**
+	 * 标记一次用户切换即将开始，返回是否为会话内首次切换。
+	 * 应在 switch:start 之前调用（主进程）。
+	 */
+	beginSwitchInSession(): { isFirstSwitchInSession: boolean; switchOrdinal: number } {
+		this.switchCountInSession += 1;
+		return {
+			isFirstSwitchInSession : this.switchCountInSession === 1 ,
+			switchOrdinal : this.switchCountInSession ,
+		};
+	}
+
+	getSwitchCountInSession(): number {
+		return this.switchCountInSession;
 	}
 
 	/** 记录一个性能事件 */
@@ -61,8 +168,8 @@ export class SwitchPerformanceRecorder {
 			data ,
 		} );
 		/* 超出缓冲区立即触发 flush（由外部注入的 flush handler 处理） */
-		if( this.buffer.length >= MAX_BUFFER_SIZE && this.flushHandler ) {
-			this.flushHandler( this.drain() );
+		if( this.buffer.length >= MAX_BUFFER_SIZE ) {
+			this.flush();
 		}
 	}
 
@@ -73,11 +180,17 @@ export class SwitchPerformanceRecorder {
 		return events;
 	}
 
+	/** 立即 flush 缓冲（complete / 关键节点后调用，避免等 5s 定时器） */
+	flush(): void {
+		if( !this.flushHandler || this.buffer.length === 0 ) {
+			return;
+		}
+		this.flushHandler( this.drain() );
+	}
+
 	get bufferLength(): number {
 		return this.buffer.length;
 	}
-
-	private flushHandler: (( events: PerfEvent[] ) => void) | null = null;
 
 	/** 注册 flush 处理器（主进程设为写入文件，渲染进程设为 IPC 发送） */
 	onFlush( handler: ( events: PerfEvent[] ) => void ): void {
@@ -130,7 +243,7 @@ export class SwitchScenarioProfiler {
 		const duration = ( safeNow() ?? Date.now() ) - this.sessionStartTime;
 		const stats = this.computeStats( duration );
 		/* 将统计信息作为 perf event 记录 */
-		perf.mark( 'switch:session-stats' , 'renderer' , '' , stats as unknown as Record<string, unknown> );
+		perf.mark( PerfPhase.SwitchSessionStats , 'renderer' , '' , stats as unknown as Record<string, unknown> );
 		return stats;
 	}
 

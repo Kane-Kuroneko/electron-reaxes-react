@@ -6,6 +6,8 @@ export const isMainRuntimeStarted = () => mainRuntimeStarted;
 export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) => {
 	console.log( '[Runtime] startMainRuntime:' , options );
 	const win = await createMainWindow();
+	/* FloatingView 尽早创建并加载 renderer，避免首次显示时才冷启动。 */
+	reaxel_FloatingView().initFloatingView();
 	const settingsRuntime = reaxel_Settings();
 	const settings = settingsRuntime.reloadFromDisk();
 	
@@ -116,6 +118,7 @@ import { reaxel_Settings } from "#main/reaxels/Settings";
 import { reaxel_Menu } from './reaxels/Menu';
 import { reaxel_I18n } from '#main/reaxels/I18n';
 import { Reaxel_View } from "#main/reaxels/Views";
+import { reaxel_FloatingView } from '#main/reaxels/Views/FloatingView';
 import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import { reaxel_MainView } from '#main/reaxels/Views/Main-View';

@@ -176,14 +176,16 @@ export const Reaxel_View = reaxel( () => {
 	const createSwitchAiBarPayload = (
 		items:SwitchAiBarPayloadItem[] ,
 		activeIndex:number ,
-		direction:FloatingView.SwitchAiBarDirection,
-		ctxId?: string,
+		direction:FloatingView.SwitchAiBarDirection ,
+		ctxId?: string ,
+		source:FloatingView.SwitchAiBarPayload['source'] = 'unknown',
 	):FloatingView.SwitchAiBarPayload => {
 		return {
 			items : items.map( ( { id , label , family } ) => ( { id , label , family } ) ) ,
 			activeIndex ,
-			direction,
-			ctxId,
+			direction ,
+			ctxId ,
+			source ,
 		};
 	};
 
@@ -197,6 +199,28 @@ export const Reaxel_View = reaxel( () => {
 			return;
 		}
 		show();
+	};
+
+	/** 与 menubar Prev/Next（instantiated）同源预热，避免首次 show 时 items.length 变化触发 Swiper 重建。 */
+	const prepareInstantiatedSwitchAiBar = (opts?:{ silent?: boolean }) => {
+		const settings = getRuntimeSettings();
+		const runtimeViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
+		if( runtimeViews.length === 0 ) {
+			return;
+		}
+		const currentIndex = runtimeViews.findIndex( rv => rv.id === store.currentAIViewKey );
+		const payload = createSwitchAiBarPayload(
+			runtimeViews.map( createPayloadItemFromRuntimeView ) ,
+			currentIndex >= 0 ? currentIndex : 0 ,
+			'next' ,
+			undefined ,
+			'prepare-instantiated',
+		);
+		if( opts?.silent ) {
+			reaxel_FloatingView().api.prepareSwitchAiBarIfHidden( payload );
+			return;
+		}
+		reaxel_FloatingView().api.prepareSwitchAiBar( payload );
 	};
 
 	const turnToAiPageByOffset = (
@@ -221,23 +245,41 @@ export const Reaxel_View = reaxel( () => {
 		const nextAI = activeAIs[nextIndex];
 		/* 性能记录 */
 		const ctxId = perf.newCtx();
-		perf.mark( 'switch:start' , 'main' , ctxId , {
+		const { isFirstSwitchInSession , switchOrdinal } = perf.beginSwitchInSession();
+		perf.mark( PerfPhase.SwitchStart , 'main' , ctxId , {
 			action : 'switch-configured' ,
 			offset ,
 			direction ,
-			viewCount : activeAIs.length,
+			viewCount : activeAIs.length ,
+			isFirstSwitchInSession ,
+			switchOrdinal ,
 		} );
 
+		perf.mark( PerfPhase.SwitchAiViewBegin , 'main' , ctxId , {
+			aiId : nextAI.id ,
+			isFirstSwitchInSession ,
+		} );
 		const view = reaxel_AIViews().showAIView( nextAI.id , settings );
+		perf.mark( PerfPhase.SwitchAiViewEnd , 'main' , ctxId , {
+			aiId : nextAI.id ,
+		} );
 
 		showSwitchAiBarAfterSwitch(
-			createSwitchAiBarPayload( activeAIs.map( createPayloadItemFromAI ) , nextIndex , direction , ctxId ),
+			createSwitchAiBarPayload(
+				activeAIs.map( createPayloadItemFromAI ) ,
+				nextIndex ,
+				direction ,
+				ctxId ,
+				'configured',
+			),
 		);
 
-		perf.mark( 'switch:ipc-sent' , 'main' , ctxId , {
+		perf.mark( PerfPhase.SwitchIpcSent , 'main' , ctxId , {
 			action : 'switch-configured' ,
-			activeIndex : nextIndex,
+			activeIndex : nextIndex ,
+			isFirstSwitchInSession ,
 		} );
+		perf.flush();
 
 		return view;
 	};
@@ -265,26 +307,44 @@ export const Reaxel_View = reaxel( () => {
 
 		/* 性能记录 */
 		const ctxId = perf.newCtx();
-		perf.mark( 'switch:start' , 'main' , ctxId , {
+		const { isFirstSwitchInSession , switchOrdinal } = perf.beginSwitchInSession();
+		perf.mark( PerfPhase.SwitchStart , 'main' , ctxId , {
 			action : 'switch-instantiated' ,
 			direction ,
-			viewCount : runtimeViews.length,
+			viewCount : runtimeViews.length ,
+			isFirstSwitchInSession ,
+			switchOrdinal ,
 		} );
 
+		perf.mark( PerfPhase.SwitchAiViewBegin , 'main' , ctxId , {
+			aiId : nextRuntimeView.id ,
+			isFirstSwitchInSession ,
+		} );
 		setState( {
 			currentAIViewKey : nextRuntimeView.id ,
 			settingsViewOpened : false,
 		} );
 		reaxel_AIViews().applyVisibility();
+		perf.mark( PerfPhase.SwitchAiViewEnd , 'main' , ctxId , {
+			aiId : nextRuntimeView.id ,
+		} );
 
 		showSwitchAiBarAfterSwitch(
-			createSwitchAiBarPayload( runtimeViews.map( createPayloadItemFromRuntimeView ) , nextIndex , direction , ctxId ),
+			createSwitchAiBarPayload(
+				runtimeViews.map( createPayloadItemFromRuntimeView ) ,
+				nextIndex ,
+				direction ,
+				ctxId ,
+				'instantiated',
+			),
 		);
 
-		perf.mark( 'switch:ipc-sent' , 'main' , ctxId , {
+		perf.mark( PerfPhase.SwitchIpcSent , 'main' , ctxId , {
 			action : 'switch-instantiated' ,
-			activeIndex : nextIndex,
+			activeIndex : nextIndex ,
+			isFirstSwitchInSession ,
 		} );
+		perf.flush();
 
 		return nextRuntimeView.view;
 	};
@@ -312,13 +372,23 @@ export const Reaxel_View = reaxel( () => {
 
 		/* 性能记录：关闭开始 */
 		const ctxId = perf.newCtx();
-		perf.mark( 'switch:start' , 'main' , ctxId , {
+		const { isFirstSwitchInSession , switchOrdinal } = perf.beginSwitchInSession();
+		perf.mark( PerfPhase.SwitchStart , 'main' , ctxId , {
 			action : 'close' ,
 			currentId : currentRuntimeView?.id ,
-			viewCount : runtimeViews.length,
+			viewCount : runtimeViews.length ,
+			isFirstSwitchInSession ,
+			switchOrdinal ,
 		} );
 
+		perf.mark( PerfPhase.SwitchAiViewBegin , 'main' , ctxId , {
+			action : 'close' ,
+		} );
 		const result = reaxel_AIViews().closeCurrentAIViewAndShowNext( settings );
+		perf.mark( PerfPhase.SwitchAiViewEnd , 'main' , ctxId , {
+			action : 'close' ,
+			closed : Boolean( result ),
+		} );
 
 		if( result ) {
 			/* 关闭成功后，向 FloatingView 发送更新后的卡片载荷。
@@ -335,26 +405,31 @@ export const Reaxel_View = reaxel( () => {
 						updatedRuntimeViews.map( createPayloadItemFromRuntimeView ) ,
 						nextIndex >= 0 ? nextIndex : 0 ,
 						'next' ,
-						ctxId,
+						ctxId ,
+						'instantiated',
 					),
 				);
 
-				perf.mark( 'switch:ipc-sent' , 'main' , ctxId , {
+				perf.mark( PerfPhase.SwitchIpcSent , 'main' , ctxId , {
 					action : 'close' ,
 					itemCount : updatedRuntimeViews.length ,
-					activeIndex : nextIndex,
+					activeIndex : nextIndex ,
+					isFirstSwitchInSession ,
 				} );
 			} else {
 				reaxel_FloatingView().api.hideSwitchAiBar();
 
-				perf.mark( 'switch:ipc-sent' , 'main' , ctxId , {
+				perf.mark( PerfPhase.SwitchIpcSent , 'main' , ctxId , {
 					action : 'close' ,
 					itemCount : 0 ,
-					activeIndex : -1,
+					activeIndex : -1 ,
+					isFirstSwitchInSession ,
 				} );
+				prepareInstantiatedSwitchAiBar( { silent : true } );
 			}
 
 		}
+		perf.flush();
 		return result;
 	};
 
@@ -401,6 +476,8 @@ export const Reaxel_View = reaxel( () => {
 		reaxel_FloatingView().initFloatingView();
 		reaxel_PromptViews().registerIpc();
 		await onReadyLoadAIView();
+		/* AI 列表就绪后预热 SwitchAiBar：与 menubar Prev/Next 同源（instantiated），避免首次显示重建。 */
+		prepareInstantiatedSwitchAiBar();
 		mainWindow.on( 'resize' , () => {
 			fitWindow();
 		} );
@@ -414,6 +491,7 @@ export const Reaxel_View = reaxel( () => {
 
 		useIpcRendererToMain( 'update-preload-ai-config' ).on( async() => {
 			await reaxel_AIViews().syncAIViewsWithConfig( getRuntimeSettings() );
+			prepareInstantiatedSwitchAiBar( { silent : true } );
 		} );
 
 		useIpcRendererToMain( 'turn-to-next-ai-page' ).on( () => {
@@ -431,6 +509,12 @@ export const Reaxel_View = reaxel( () => {
 			electronStore.set( "previously_used_ai" , store.currentAIViewKey );
 		}
 	} , () => [ store.currentAIViewKey ] );
+
+	/* runtime AI 列表变化时静默对齐 SwitchAiBar（仅 overlay 隐藏时），避免下次显示时重建。 */
+	obsReaction( ( first ) => {
+		if( first ) return;
+		prepareInstantiatedSwitchAiBar( { silent : true } );
+	} , () => [ reaxel_AIViews.store.AIViews.length ] );
 
 	/* 切换 AI page / Settings 时仅更新当前中心视图的 bounds。
 	   全量 fitWindow()（遍历所有 views）由 mainWindow resize 事件独立驱动，
@@ -554,7 +638,7 @@ import type { FloatingView } from "#src/Types/FloatingView";
 import type { AI } from "#src/Types/SettingsTypes/AI";
 import type { Settings } from "#src/Types/SettingsTypes";
 import type { RuntimeAIView } from "#main/reaxels/Views/AI-Views";
-import { perf } from '#src/shared/utils/switch-perf-recorder.utility';
+import { perf , PerfPhase } from '#src/shared/utils/switch-perf-recorder.utility';
 import {
 	createReaxable ,
 	obsReaction ,

@@ -34,18 +34,50 @@ export const reaxel_FloatingView = reaxel( () => {
 		} );
 	};
 
+	/** 仅写入卡片数据以挂载 Swiper，保持 hidden——用于启动预热。 */
+	const prepareSwitchAiBar = (payload:FloatingView.SwitchAiBarPayload) => {
+		const fingerprint = switchAiBarItemsFingerprint(
+			payload.items ,
+			payload.source ?? 'unknown',
+		);
+		perf.mark( PerfPhase.FvPrepareApplied , 'renderer' , currentPerfCtxId || 'boot' , {
+			...fingerprint ,
+			activeIndex : payload.activeIndex ,
+			prevItemCount : store.switchAiBar.items.length ,
+		} );
+		setState.switchAiBar( {
+			visible : false ,
+			items : payload.items ,
+			activeIndex : payload.activeIndex ,
+			direction : payload.direction,
+		} );
+		perf.flush();
+	};
+
 	const showSwitchAiBar = (payload:FloatingView.SwitchAiBarPayload) => {
 		clearHideTimer();
 		currentPerfCtxId = payload.ctxId || '';
+		const prevItems = store.switchAiBar.items;
+		const prevItemCount = prevItems.length;
+		const fingerprint = switchAiBarItemsFingerprint(
+			payload.items ,
+			payload.source ?? 'unknown',
+		);
+		const prevFingerprint = switchAiBarItemsFingerprint( prevItems );
+		const itemsChanged = prevFingerprint.idsHash !== fingerprint.idsHash
+			|| prevItemCount !== fingerprint.itemCount;
+
 		setState.switchAiBar( {
 			visible : true ,
 			items : payload.items ,
 			activeIndex : payload.activeIndex ,
 			direction : payload.direction,
 		} );
-		perf.mark( 'switch:ui-state-updated' , 'renderer' , currentPerfCtxId , {
-			itemCount : payload.items.length ,
-			activeIndex : payload.activeIndex,
+		perf.mark( PerfPhase.SwitchUiUpdated , 'renderer' , currentPerfCtxId , {
+			...fingerprint ,
+			activeIndex : payload.activeIndex ,
+			itemsChanged ,
+			prevItemCount ,
 		} );
 		hideTimer = setTimeout( hideSwitchAiBar , AUTO_HIDE_MS );
 	};
@@ -56,10 +88,18 @@ export const reaxel_FloatingView = reaxel( () => {
 	};
 
 	const handleCommand = (command:FloatingView.Command) => {
+		if( command.type === 'switch-ai-bar:prepare' ) {
+			prepareSwitchAiBar( command.payload );
+			return;
+		}
 		if( command.type === 'switch-ai-bar:show' ) {
-			perf.mark( 'switch:ipc-received' , 'renderer' , command.payload.ctxId || '' , {
+			const fingerprint = switchAiBarItemsFingerprint(
+				command.payload.items ,
+				command.payload.source ?? 'unknown',
+			);
+			perf.mark( PerfPhase.SwitchIpcReceived , 'renderer' , command.payload.ctxId || '' , {
 				action : command.payload.ctxId ? 'switch' : 'unknown' ,
-				itemCount : command.payload.items.length,
+				...fingerprint ,
 			} );
 			showSwitchAiBar( command.payload );
 			return;
@@ -75,6 +115,7 @@ export const reaxel_FloatingView = reaxel( () => {
 
 	const rtn = {
 		handleCommand ,
+		prepareSwitchAiBar ,
 		showSwitchAiBar ,
 		hideSwitchAiBar ,
 		showGlobalMessage,
@@ -89,7 +130,11 @@ export const reaxel_FloatingView = reaxel( () => {
 
 import type { FloatingView } from '#src/Types/FloatingView';
 import { message } from 'antd';
-import { perf } from '#src/shared/utils/switch-perf-recorder.utility';
+import {
+	perf ,
+	PerfPhase ,
+	switchAiBarItemsFingerprint,
+} from '#src/shared/utils/switch-perf-recorder.utility';
 import {
 	createReaxable ,
 	reaxel,

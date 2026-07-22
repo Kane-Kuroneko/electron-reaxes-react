@@ -66,6 +66,10 @@ export const SwitchAiBar = reaxper( () => {
 	/* activeIndexRef 始终跟随最新 activeIndex —— 供 handleSwiper 等稳定回调中读取 */
 	const activeIndexRef = useRef( activeIndex );
 	activeIndexRef.current = activeIndex;
+	const visibleRef = useRef( visible );
+	visibleRef.current = visible;
+	const hadSwiperBeginRef = useRef( false );
+	const firstShowMonitorRef = useRef<ReturnType<typeof startFirstShowMonitor>>( null );
 
 	/* ═════════════════════════════════════════════════════════
 	   快速切换检测 — 跟踪最近一次 activeIndex 变化的时间
@@ -103,8 +107,16 @@ export const SwitchAiBar = reaxper( () => {
 	const swiperKeyRef = useRef( 0 );
 	const prevTotalRef = useRef( total );
 	if( prevTotalRef.current !== total ) {
+		const prevTotal = prevTotalRef.current;
 		prevTotalRef.current = total;
 		swiperKeyRef.current++;
+		/* 可见期重建是首次卡顿的核心嫌疑；立即落盘便于分析器检出 */
+		perf.mark( PerfPhase.SwitchSwiperRemount , 'renderer' , getCurrentPerfCtxId() || 'boot' , {
+			prevTotal ,
+			nextTotal : total ,
+			visible ,
+		} );
+		perf.flush();
 	}
 	const swiperKey = swiperKeyRef.current;
 
@@ -150,14 +162,35 @@ export const SwitchAiBar = reaxper( () => {
 	} , [] );
 
 	/* ════════════════════════════════════════════════════════
-	   transition 结束：记录性能标记 */
+	   transition 结束：区分过早 complete（loopFix）与真正结束 */
 	const handleTransitionEnd = useCallback( ( swiper : SwiperClass ) => {
-		perf.mark( 'switch:swiper-end' , 'renderer' , getCurrentPerfCtxId() , {
-			realIndex : swiper.realIndex,
+		const ctxId = getCurrentPerfCtxId();
+		const expectedActiveIndex = activeIndexRef.current;
+		const realIndex = swiper.realIndex;
+		const hadBegin = hadSwiperBeginRef.current;
+		const monitorMeta = firstShowMonitorRef.current?.noteComplete( {
+			realIndex ,
+			expectedActiveIndex ,
+			hadSwiperBegin : hadBegin ,
 		} );
-		perf.mark( 'switch:complete' , 'renderer' , getCurrentPerfCtxId() , {
-			activeIndex : activeIndexRef.current,
+		const isFinal = monitorMeta?.isFinal
+			?? ( hadBegin && realIndex === expectedActiveIndex );
+		const premature = monitorMeta?.premature ?? !isFinal;
+
+		perf.mark( PerfPhase.SwitchSwiperEnd , 'renderer' , ctxId , {
+			realIndex ,
+			expectedActiveIndex ,
+			isFinal ,
+			premature ,
 		} );
+		perf.mark( PerfPhase.SwitchComplete , 'renderer' , ctxId , {
+			activeIndex : expectedActiveIndex ,
+			realIndex ,
+			isFinal ,
+			premature ,
+			msFromVisible : monitorMeta?.msFromVisible ,
+		} );
+		perf.flush();
 	} , [] );
 
 	/* ── Swiper 实例就绪 ──
@@ -167,18 +200,38 @@ export const SwitchAiBar = reaxper( () => {
 		swiperRef.current = swiper;
 		prevActiveIndexRef.current = activeIndexRef.current;
 		updateSlidePositions( swiper );
-		perf.mark( 'switch:render-done' , 'renderer' , getCurrentPerfCtxId() , {
+		const ctxId = getCurrentPerfCtxId() || 'boot';
+		perf.mark( PerfPhase.FvSwiperMounted , 'renderer' , ctxId , {
+			totalSlides : swiper.slides.length ,
+			visible : visibleRef.current ,
+		} );
+		perf.mark( PerfPhase.SwitchRenderDone , 'renderer' , ctxId , {
 			totalSlides : swiper.slides.length,
 		} );
+		perf.flush();
 	} , [] );
 
 	/* ═════════════════════════════════════════════════════════
 	   检测 activeIndex 变化 → 执行 slideNext/slidePrev
 	   Interrupt & Redirect：每次切换直接执行，CSS transition 自动中断重定向
+
+	   契约（不可破坏）：
+	   - 只用 slideNext/slidePrev，禁止 slideTo/slideToLoop（loop + 重复 slide 下会与 store 错位）
+	   - 隐藏时只同步 prev 索引、不播动画（避免隐藏窗口 transition 被合成器跳到终态）
+	   - prepare 预热把 Swiper 停在当前卡；首次 show 时靠 prev→active 的 delta 播入场滑动
 	   ═════════════════════════════════════════════════════════ */
 	const prevActiveIndexRef = useRef( activeIndex );
 	useEffect( () => {
 		if( prevActiveIndexRef.current === activeIndex ) return;
+
+		/* 隐藏期：只跟踪索引，不动 Swiper。
+		   prepare 会在 visible=false 时写入 activeIndex；此时若 slideNext，
+		   动画在隐藏窗口里跑完，首次真正显示时就会「无动画且可能错位」。 */
+		if( !visible || total < 1 ) {
+			prevActiveIndexRef.current = activeIndex;
+			return;
+		}
+
 		const prevIndex = prevActiveIndexRef.current;
 		prevActiveIndexRef.current = activeIndex;
 
@@ -208,13 +261,13 @@ export const SwitchAiBar = reaxper( () => {
 			steps = total;
 		}
 
-		perf.mark( 'switch:active-index-changed' , 'renderer' , getCurrentPerfCtxId() , {
+		perf.mark( PerfPhase.SwitchActiveIndex , 'renderer' , getCurrentPerfCtxId() , {
 			prevIndex ,
 			activeIndex ,
 			direction ,
 			isRapid ,
 			speed ,
-			elapsed : Math.round( elapsed ),
+			elapsed : Math.round( elapsed ) ,
 			steps ,
 		} );
 
@@ -232,6 +285,12 @@ export const SwitchAiBar = reaxper( () => {
 				swiper.slidePrev( speed );
 			}
 		}
+		hadSwiperBeginRef.current = true;
+		firstShowMonitorRef.current?.noteCssTransitionStart( {
+			direction ,
+			speed ,
+			steps ,
+		} );
 
 		/* rapid 模式 CSS class 管理 */
 		if( isRapid ) {
@@ -260,13 +319,48 @@ export const SwitchAiBar = reaxper( () => {
 			}
 		}
 
-		perf.mark( 'switch:swiper-begin' , 'renderer' , getCurrentPerfCtxId() , {
+		perf.mark( PerfPhase.SwitchSwiperBegin , 'renderer' , getCurrentPerfCtxId() , {
 			direction ,
 			speed ,
 			steps ,
 			isRapid ,
 		} );
-	} , [ activeIndex , direction ] );
+	} , [ activeIndex , direction , visible , total ] );
+
+	/* ── 可见后：首帧 + LoAF + 冷启动首次调出专项采样 ── */
+	useEffect( () => {
+		if( !visible ) {
+			return;
+		}
+		const ctxId = getCurrentPerfCtxId();
+		hadSwiperBeginRef.current = false;
+		let cancelled = false;
+		let raf1 = 0;
+		let raf2 = 0;
+		raf1 = requestAnimationFrame( () => {
+			raf2 = requestAnimationFrame( () => {
+				if( cancelled ) return;
+				perf.mark( PerfPhase.SwitchFirstPaint , 'renderer' , ctxId , {
+					activeIndex : activeIndexRef.current ,
+					documentVisibility : document.visibilityState ,
+					documentHidden : document.hidden ,
+				} );
+				perf.flush();
+			} );
+		} );
+		const loaf = startLoafObserver( ctxId );
+		const firstShow = startFirstShowMonitor( ctxId );
+		firstShowMonitorRef.current = firstShow;
+		return () => {
+			cancelled = true;
+			cancelAnimationFrame( raf1 );
+			cancelAnimationFrame( raf2 );
+			loaf.disconnect();
+			firstShowMonitorRef.current = null;
+			/* 仅首次调出 monitor 需要在提前卸载时落盘；后续 visible 周期 firstShow 为 null */
+			firstShow?.stop();
+		};
+	} , [ visible ] );
 
 	/* ── 隐藏时退出 rapid 模式 + 结束 profiler 采样 ── */
 	useEffect( () => {
@@ -337,8 +431,10 @@ export const SwitchAiBar = reaxper( () => {
 
 import { reaxel_FloatingView } from '#FloatingView/reaxels/floating-view';
 import { getCurrentPerfCtxId } from '#FloatingView/reaxels/floating-view';
+import { startLoafObserver } from '#FloatingView/utils/loaf-observer.utility';
+import { startFirstShowMonitor } from '#FloatingView/utils/first-show-monitor.utility';
 import type { FloatingView } from '#src/Types/FloatingView';
-import { perf , switchProfiler } from '#src/shared/utils/switch-perf-recorder.utility';
+import { perf , PerfPhase , switchProfiler } from '#src/shared/utils/switch-perf-recorder.utility';
 import { useState , useCallback , useEffect , useRef } from 'react';
 import { Swiper , SwiperSlide } from 'swiper/react';
 import type { SwiperClass } from 'swiper/react';

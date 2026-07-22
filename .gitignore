@@ -5,7 +5,12 @@ __Bin
 .env.json
 .pem
 .cer
-performance-logs
+
+# Runtime / profiling logs (never commit)
+performance-logs/
+projects/ChatAIO/performance-logs/
+projects/ChatAIO/logs/
+logs/
 
 # macOS — based on github/gitignore Global/macOS.gitignore
 .DS_Store
@@ -34,4 +39,3 @@ Icon[ ]
 Network Trash Folder
 Temporary Items
 .apdisk
-/projects/ChatAIO/logs/menubar-errors.log
