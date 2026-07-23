@@ -1,6 +1,6 @@
 {
 	"name": "chataio",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"main": "dist/main.js",
 	"keywords": [],
 	"author": "",
@@ -8,6 +8,7 @@
 	"scripts": {
 		"start:webpack": "yarn --cwd ../.. tsx scripts/webpack.start/index.ts ChatAIO 4444",
 		"start:electron": "yarn --cwd ../.. tsx scripts/electron.start/index.ts ChatAIO",
+		"build": "yarn build:webpack && yarn build:electron",
 		"build:webpack": "yarn --cwd ../.. tsx scripts/webpack.build/index.ts ChatAIO production",
 		"build:electron": "yarn --cwd ../.. tsx scripts/electron.build/index.ts ChatAIO",
 		"build:electron:mac": "yarn --cwd ../.. tsx scripts/electron.build/index.ts ChatAIO -- --mac",
