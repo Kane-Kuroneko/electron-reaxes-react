@@ -3,24 +3,35 @@ let closeHandlerBound = false;
 
 export const isMainRuntimeStarted = () => mainRuntimeStarted;
 
+/**
+ * 主运行时启动契约（menubar 与 AI view 解耦）：
+ *
+ * Phase 0  MenubarHost   — 注册 menubar IPC / 快捷键（必须在 MainView loadURL 之前）
+ * Phase 1  AppConfig     — settings / i18n / appearance（菜单数据全部来自主进程本地）
+ * Phase 2  MainWindow    — 创建窗口并 load MainView，立刻 attach menubar 宿主
+ * Phase 3  OverlayWarm   — FloatingView 预热（独立窗口，不阻塞 menubar）
+ * Phase 4  ShellChrome   — tray / 生命周期 / rebuildMenu（structure 在 menu-view:ready 时再推）
+ * Phase 5  ContentViews  — AI / Prompt 等 runtime views（与 menubar 握手无关）
+ *
+ * 禁止把 ensureMenubarHostReady / attachMainWindow 排到 initRuntimeViews 之后。
+ */
 export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) => {
 	console.log( '[Runtime] startMainRuntime:' , options );
-	const win = await createMainWindow();
-	/* FloatingView 尽早创建并加载 renderer，避免首次显示时才冷启动。 */
-	reaxel_FloatingView().initFloatingView();
-	const settingsRuntime = reaxel_Settings();
-	const settings = settingsRuntime.reloadFromDisk();
-	
+
 	if( !mainRuntimeStarted ) {
 		mainRuntimeStarted = true;
-		useBeautifulDevtool( win );
+
+		/* Phase 0 — MenubarHost：IPC 必须先于任何 MainView navigation */
+		reaxel_MainView().ensureMenubarHostReady();
+
+		/* Phase 1 — AppConfig */
+		const settingsRuntime = reaxel_Settings();
+		const settings = settingsRuntime.reloadFromDisk();
 		const resolvedAppearance = applyElectronAppearance( settings.appearance );
 		reaxel_I18n().setLanguage( resolvedAppearance.language as any );
-		
 		reaxel_Menu().setI18nInstance( reaxel_I18n );
 		setTrayI18nInstance( reaxel_I18n );
-		reaxel_Menu().rebuildMenu();
-		
+
 		useIpcRendererToMain( 'language-change' ).on( ( e , language ) => {
 			const environment = getAppearanceEnvironment();
 			const resolvedLanguage = resolveLanguagePreference(
@@ -33,11 +44,7 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 				updateTrayMenu();
 			}
 		} );
-		
-		if( settings.system.show_tray ) {
-			initTray();
-		}
-		
+
 		nativeTheme.on( 'updated' , () => {
 			const currentSettings = settingsRuntime.getCurrentSettings();
 			if( currentSettings.appearance.theme !== 'system' ) {
@@ -47,6 +54,31 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 			reaxel_PromptViews().syncAppearanceFromSettings();
 			reaxel_MainView().syncAppearanceFromSettings();
 		} );
+
+		app.on( 'window-all-closed' , () => {
+			if( process.platform !== 'darwin' ) {
+				app.quit();
+			}
+		} );
+
+		app.on( 'activate' , () => {
+			if( mainWindow && !mainWindow.isDestroyed() ) {
+				showMainWindow();
+			} else {
+				void createMainWindow().then( ( win ) => {
+					reaxel_MainView().attachMainWindow();
+					useBeautifulDevtool( win );
+					reaxel_Menu().rebuildMenu();
+				} );
+			}
+		} );
+
+		initSwitchPerformanceLogging();
+
+		/* Phase 2 — MainWindow + menubar attach（与 AI 无关） */
+		const win = await createMainWindow();
+		reaxel_MainView().attachMainWindow();
+		useBeautifulDevtool( win );
 
 		if( !closeHandlerBound ) {
 			closeHandlerBound = true;
@@ -61,38 +93,32 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 				}
 			} );
 		}
-		
-		// macOS 应用生命周期处理
-		// 窗口全部关闭时的行为
-		app.on( 'window-all-closed' , () => {
-			// macOS：保持应用运行（标准 macOS 行为，应用留在 Dock 中）
-			// Windows/Linux：退出应用（标准行为）
-			if( process.platform !== 'darwin' ) {
-				app.quit();
-			}
-		} );
-		// Dock 图标点击：恢复或重建主窗口
-		app.on( 'activate' , () => {
-			if( mainWindow && !mainWindow.isDestroyed() ) {
-				showMainWindow();
-			} else {
-				void createMainWindow().then( () => {
-					reaxel_Menu().rebuildMenu();
-				} );
-			}
-		} );
-		initSwitchPerformanceLogging();
+
+		/* Phase 3 — OverlayWarm */
+		reaxel_FloatingView().initFloatingView();
+
+		/* Phase 4 — ShellChrome */
+		if( settings.system.show_tray ) {
+			initTray();
+		}
+		reaxel_Menu().rebuildMenu();
+
+		/* Phase 5 — ContentViews（AI）；不得回挡 menubar */
 		await Reaxel_View().initRuntimeViews();
-		// 初始化自定义菜单视图（WebContentsView 方式，替代原生 Menu）
-		reaxel_MainView().initMainView();
 		console.log( '[Runtime] runtime views initialized.' );
+	} else {
+		/* 运行时已启动：只保证窗口与 menubar 宿主仍附着（例如 guiding → runtime） */
+		const win = await createMainWindow();
+		reaxel_MainView().attachMainWindow();
+		reaxel_FloatingView().initFloatingView();
+		useBeautifulDevtool( win );
 	}
-	
+
 	if( options.openSettings ) {
 		openSettingsView( options.openDevTools ?? dev() );
 	}
-	
-	return win;
+
+	return mainWindow;
 };
 
 export const openSettingsView = (openDevTools = false) => {
@@ -145,4 +171,3 @@ import {
 	app ,
 	nativeTheme,
 } from 'electron';
-

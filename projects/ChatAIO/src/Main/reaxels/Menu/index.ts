@@ -481,7 +481,8 @@ export const reaxel_Menu = reaxel( () => {
 	}
 
 	/**
-	 * 发送菜单结构数据到 MainView 渲染进程
+	 * 发送菜单结构数据到 MainView 渲染进程。
+	 * 依赖 runtime Phase 0 已 ensureMenubarHostReady，且 renderer 已发 menu-view:ready。
 	 */
 	function pushMenuUpdate() {
 		try {

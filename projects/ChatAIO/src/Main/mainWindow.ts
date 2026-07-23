@@ -61,7 +61,11 @@ export const createMainWindow = async() => {
 		mainWindow.setBackgroundColor( '#00000000' );
 	}
 
-	// 加载 MainView HTML（含 MenuBar 等全局组件）
+	/*
+	 * MainView（menubar）loadURL 前，调用方必须已执行
+	 * reaxel_MainView().ensureMenubarHostReady()（见 runtime.ts Phase 0）。
+	 * Electron 约定：ipcMain handler 注册先于 renderer 导航。
+	 */
 	loadMainViewHTML();
 
 	mainWindow.on( 'closed' , () => {

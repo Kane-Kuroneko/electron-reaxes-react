@@ -449,6 +449,7 @@ export const Reaxel_View = reaxel( () => {
 	const initRuntimeViews = async() => {
 		if( runtimeViewsInitialized ) return;
 		runtimeViewsInitialized = true;
+		/* menubar 宿主（IPC/attach）由 runtime Phase 0–2 负责，此处只初始化内容区 views。 */
 		setAISwitchShortcutHandlers( {
 			nextConfigured : () => {
 				turnToNextAiPage();

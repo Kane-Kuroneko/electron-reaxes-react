@@ -101,6 +101,9 @@ const useRegisterIpcRpc = function(){
 	}, ...payloads) => {
 		if( !meta.channel ) {throw new Error('channel is required')};
 		const registered = registry[meta.channel];
+		if( !registered ) {
+			throw new Error( `IpcRpc: no handler registered for channel<<${meta.channel}>>` );
+		}
 		try {
 			return registered( { event } , ...payloads );
 		} catch ( e ) {
@@ -123,9 +126,43 @@ const useRegisterIpcRpc = function(){
 }();
 
 const useRegisterRtmEvent = function(){
+	const RTM_PENDING_LIMIT = 32;
 	const registry:{
 		[channel in string]?:Array<<RtmEvent extends {[p:string]:IpcStructure.RendererToMainEvent<unknown[] , {channel:unknown,args:unknown[]}>},Channel extends keyof RtmEvent>(meta:{event:IpcMainEvent,reply:unknown},...payloads:RtmEvent[Channel]["args"]) => void>
 	} = {};
+	/* Renderer 可能在主进程 register 之前发出 RTM（启动竞态）。缓冲至首个 handler 注册后 flush，避免静默丢失。 */
+	const pending:{
+		[channel in string]?:Array<{
+			event:IpcMainEvent ,
+			args:unknown[],
+		}>
+	} = {};
+
+	const makeReply = ( event:IpcMainEvent ) => {
+		return <RendererToMainEvents extends Record<string , IpcStructure.RendererToMainEvent<unknown[] , {channel:unknown,args:unknown[]}>> ,Channel extends keyof RendererToMainEvents>(channel:Channel) => {
+			return {
+				send(...args: RendererToMainEvents[Channel]["reply"]['args']){
+					event.reply('JSON',{channel},...args);
+				}
+			}
+		};
+	};
+
+	const dispatch = (
+		handlers:NonNullable<(typeof registry)[string]> ,
+		event:IpcMainEvent ,
+		args:unknown[],
+	) => {
+		const reply = makeReply( event );
+		handlers.forEach( ( handler ) => {
+			try {
+				handler( { event,reply } , ...args );
+			} catch ( e ) {
+				debugger;
+				throw e;
+			}
+		} );
+	};
 	
 	ipcMain.on('JSON',async (event,meta:{
 		channel:string;
@@ -134,27 +171,36 @@ const useRegisterRtmEvent = function(){
 		
 		console.log(`IpcRtm received message from channel<<${meta.channel}>>`);
 		
-		const reply = <RendererToMainEvents extends Record<string , IpcStructure.RendererToMainEvent<unknown[] , {channel:unknown,args:unknown[]}>> ,Channel extends keyof RendererToMainEvents>(channel:Channel) => {
-			return {
-				send(...args: RendererToMainEvents[Channel]["reply"]['args']){
-					event.reply('JSON',{channel},...args);
-				}
-			}
-		}
 		const registered = registry[meta.channel];
-		registered.forEach( ( handler ) => {
-			try {
-				handler( { event,reply } , ...args );
-			} catch ( e ) {
-				debugger;
-				throw e;
+		if( !registered || registered.length === 0 ) {
+			const queue = pending[meta.channel] || ( pending[meta.channel] = [] );
+			if( queue.length >= RTM_PENDING_LIMIT ) {
+				console.warn(
+					`IpcRtm: pending queue full for unregistered channel<<${meta.channel}>>, dropping oldest`,
+				);
+				queue.shift();
 			}
-		} );
+			queue.push( { event , args } );
+			console.warn( `IpcRtm: buffered message for unregistered channel<<${meta.channel}>> (pending=${queue.length})` );
+			return;
+		}
+		dispatch( registered , event , args );
 	});
 	
 	return <RendererToMainEvents extends Record<string , IpcStructure.RendererToMainEvent<unknown[] , { channel: unknown, args: unknown[] }>> , Channel extends string & keyof RendererToMainEvents>( channel: Channel , handler: ( meta: { event: IpcMainEvent, reply: ( channel: RendererToMainEvents[Channel]["reply"]['channel'] ) => { send( ...args: RendererToMainEvents[Channel]["reply"]['args'] ): void } } , ...args: RendererToMainEvents[Channel]["args"] ) => void ) => {		
 		const registered = registry[channel];
+		const isFirstHandler = !registered || registered.length === 0;
 		registered ? registered.push( handler ) : registry[channel] = [ handler ];
+		if( isFirstHandler ) {
+			const queue = pending[channel];
+			if( queue?.length ) {
+				delete pending[channel];
+				const handlers = registry[channel]!;
+				queue.forEach( ( item ) => {
+					dispatch( handlers , item.event , item.args );
+				} );
+			}
+		}
 		return function disposer() {
 			registry[channel] = registry[channel]!.filter( cb => cb !== handler );
 		};

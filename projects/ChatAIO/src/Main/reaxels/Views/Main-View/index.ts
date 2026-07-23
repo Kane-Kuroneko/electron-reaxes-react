@@ -40,6 +40,8 @@ export const reaxel_MainView = reaxel( () => {
 	} );
 
 	let ipcRegistered = false;
+	/* 当前已绑定 menubar 宿主事件的 BrowserWindow；窗口销毁后需重新 attach。 */
+	let boundMainWindow : BrowserWindow | null = null;
 
 	const runMenubarHandler = (
 		scope : string ,
@@ -115,18 +117,71 @@ export const reaxel_MainView = reaxel( () => {
 		} );
 	};
 
-	const initMainView = () => {
+	/**
+	 * 进程级 menubar 宿主就绪：仅注册 IPC / 快捷键 / dismiss，不依赖 mainWindow。
+	 * 必须在 createMainWindow → loadURL(MainView) 之前调用，避免 menu-view:ready 竞态。
+	 */
+	const ensureMenubarHostReady = () => {
 		registerIpc();
 		registerMenuShortcutHandlers();
 		setMenubarDropdownDismissHandler( () => hideDropdownView() );
+	};
 
-		if( mainWindow && !mainWindow.isDestroyed() ) {
-			bindMainWindowEvents();
-			bindMenubarWebContentsLogging( mainWindow.webContents , 'main-view-renderer' );
-			preloadDropdownView();
-			setState( { loaded : true } );
-			console.log( '[Menubar] error log file:' , getMenubarErrorLogPath() );
+	/**
+	 * 将 menubar 宿主绑定到当前 mainWindow（可重复调用；同窗幂等，换窗重绑）。
+	 * 若 renderer 已 ready，立即补推 structure/theme（覆盖 ready 早于 attach 的窗口）。
+	 */
+	const attachMainWindow = () => {
+		ensureMenubarHostReady();
+		if( !mainWindow || mainWindow.isDestroyed() ) {
+			return;
 		}
+
+		const win = mainWindow;
+		if( boundMainWindow === win ) {
+			preloadDropdownView();
+			if( store.mainViewRendererReady ) {
+				sendMenuStructure();
+				sendMenuTheme();
+			}
+			return;
+		}
+
+		const isRebind = boundMainWindow !== null;
+		boundMainWindow = win;
+		if( isRebind ) {
+			/* 换窗后旧 renderer 已失效，等待新 MainView 再发 menu-view:ready */
+			setState( {
+				mainViewRendererReady : false ,
+				loaded : false ,
+			} );
+		}
+		win.once( 'closed' , () => {
+			if( boundMainWindow === win ) {
+				boundMainWindow = null;
+				setState( {
+					mainViewRendererReady : false ,
+					loaded : false ,
+				} );
+			}
+		} );
+
+		bindMainWindowEvents();
+		bindMenubarWebContentsLogging( win.webContents , 'main-view-renderer' );
+		preloadDropdownView();
+		setState( { loaded : true } );
+		console.log( '[Menubar] error log file:' , getMenubarErrorLogPath() );
+
+		if( store.mainViewRendererReady ) {
+			sendMenuStructure();
+			sendMenuTheme();
+		}
+	};
+
+	/** @deprecated 兼容入口：ensure + attach。新代码请按 runtime 阶段分别调用。 */
+	const initMainView = () => {
+		ensureMenubarHostReady();
+		attachMainWindow();
 	};
 
 	const preloadDropdownView = () => {
@@ -629,6 +684,8 @@ export const reaxel_MainView = reaxel( () => {
 	};
 
 	const rtn = {
+		ensureMenubarHostReady ,
+		attachMainWindow ,
 		initMainView ,
 		sendMenuStructure ,
 		sendMenuTheme ,
