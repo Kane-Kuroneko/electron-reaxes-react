@@ -103,6 +103,8 @@ export default {
 	"Update downloaded. Restart to install." : "アップデートをダウンロードしました。再起動してインストールしてください。" ,
 	"Update failed" : "アップデートに失敗しました" ,
 	"No changelog for this version" : "このバージョンの更新履歴はありません" ,
+	"Refresh" : "再読み込み" ,
+	"Failed to fetch changelog" : "更新履歴の取得に失敗しました" ,
 	"Description" : "説明" ,
 	"Developer" : "開発者" ,
 	"Tech Stack" : "技術スタック" ,

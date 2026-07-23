@@ -6,6 +6,7 @@ export const RCVersionPanel = reaxper( () => {
 	const [ updateState , setUpdateState ] = useState<AppUpdater.State | null>( null );
 	const [ changelogs , setChangelogs ] = useState<AppUpdater.Changelogs | null>( null );
 	const [ loadingChangelogs , setLoadingChangelogs ] = useState( false );
+	const [ fetchError , setFetchError ] = useState<string | null>( null );
 	const [ updating , setUpdating ] = useState( false );
 
 	const activeTab = store.VersionUI.activeTab;
@@ -13,11 +14,13 @@ export const RCVersionPanel = reaxper( () => {
 
 	const refreshChangelogs = async() => {
 		setLoadingChangelogs( true );
+		setFetchError( null );
 		try {
 			const result = await api.fetchVersionChangelogs();
 			setChangelogs( result );
 		} catch ( error ) {
 			console.error( '[VersionPanel] fetch changelogs failed:' , error );
+			setFetchError( error instanceof Error ? error.message : i18n( 'Failed to fetch changelog' ) );
 		} finally {
 			setLoadingChangelogs( false );
 		}
@@ -76,8 +79,9 @@ export const RCVersionPanel = reaxper( () => {
 			children : <ChangelogBlock
 				version={ changelogs?.current.version || updateState?.currentVersion || '—' }
 				body={ changelogs?.current.body }
-				error={ changelogs?.current.error }
+				error={ changelogs?.current.error || fetchError }
 				loading={ loadingChangelogs }
+				onRefresh={ () => void refreshChangelogs() }
 				emptyHint={ <I18n>No changelog for this version</I18n> }
 			/> ,
 		} ,
@@ -88,8 +92,9 @@ export const RCVersionPanel = reaxper( () => {
 				<ChangelogBlock
 					version={ changelogs?.latest?.version || updateState?.availableVersion || '—' }
 					body={ changelogs?.latest?.body }
-					error={ changelogs?.latest?.error }
+					error={ changelogs?.latest?.error || fetchError }
 					loading={ loadingChangelogs }
+					onRefresh={ () => void refreshChangelogs() }
 					emptyHint={ <I18n>No changelog for this version</I18n> }
 				/>
 				<div className="version-update-actions">
@@ -168,32 +173,83 @@ const ChangelogBlock = reaxper( ( {
 	body ,
 	error ,
 	loading ,
+	onRefresh ,
 	emptyHint ,
 } : {
 	version : string;
 	body : string | null | undefined;
 	error? : string | null;
 	loading : boolean;
+	onRefresh : () => void;
 	emptyHint : React.ReactNode;
 } ) => {
-	if( loading && body == null ) {
+	const refreshButton = (
+		<Button
+			className="version-changelog__refresh"
+			type="text"
+			size="small"
+			icon={ <ReloadOutlined /> }
+			loading={ loading }
+			onClick={ onRefresh }
+		>
+			<I18n>Refresh</I18n>
+		</Button>
+	);
+
+	if( loading && body == null && !error ) {
 		return <div className="version-changelog-loading"><Spin /></div>;
 	}
 	return <div className="version-changelog">
 		<div className="version-changelog__meta">
 			<span className="version-changelog__label"><I18n>Version</I18n></span>
 			<span className="version-changelog__value">{ version }</span>
+			{ refreshButton }
 		</div>
 		{ error ? (
-			<Alert type="warning" showIcon message={ error } style={ { marginBottom : 12 } } />
+			<Alert
+				type="warning"
+				showIcon
+				message={ error }
+				style={ { marginBottom : 12 } }
+				action={ (
+					<Button
+						size="small"
+						type="link"
+						loading={ loading }
+						onClick={ onRefresh }
+					>
+						<I18n>Refresh</I18n>
+					</Button>
+				) }
+			/>
 		) : null }
 		{ body ? (
-			<pre className="version-changelog__body">{ body }</pre>
+			<div className="version-changelog__body">
+				<Markdown
+					remarkPlugins={ [ remarkGfm ] }
+					components={ changelogMarkdownComponents }
+				>
+					{ body }
+				</Markdown>
+			</div>
 		) : (
 			<div className="version-changelog__empty">{ emptyHint }</div>
 		) }
 	</div>;
 } );
+
+const changelogMarkdownComponents : Components = {
+	a : ( { href , children , ...props } ) => (
+		<a
+			{ ...props }
+			href={ href }
+			target="_blank"
+			rel="noopener noreferrer"
+		>
+			{ children }
+		</a>
+	) ,
+};
 
 
 import { reaxel_SettingsView } from '#SettingsView/reaxels/settings-view';
@@ -207,6 +263,9 @@ import {
 	Tabs ,
 	message ,
 } from 'antd';
+import { ReloadOutlined } from '@ant-design/icons';
+import Markdown , { type Components } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
 	useEffect ,
 	useState ,

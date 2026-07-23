@@ -55,6 +55,7 @@
 		"ps-list": "^8.1.1",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",
+		"react-markdown": "^10.1.0",
 		"react-router-dom": "^7.0.2",
 		"react-split": "^2.0.14",
 		"react-split-grid": "^1.0.4",
@@ -62,6 +63,7 @@
 		"reaxes-react": "file:../reaxes/packages/reaxes-react/dist",
 		"reaxes-toolkit": "^1.0.4",
 		"reaxes-utils": "file:../reaxes/packages/reaxes-utils/dist",
+		"remark-gfm": "^4.0.1",
 		"shallowequal": "^1.1.0",
 		"swiper": "^12.1.2"
 	},

@@ -103,6 +103,8 @@ export default {
 	"Update downloaded. Restart to install." : "업데이트가 다운로드되었습니다. 다시 시작하여 설치하세요." ,
 	"Update failed" : "업데이트 실패" ,
 	"No changelog for this version" : "이 버전의 변경 로그가 없습니다" ,
+	"Refresh" : "새로고침" ,
+	"Failed to fetch changelog" : "변경 로그를 가져오지 못했습니다" ,
 	"Description" : "설명" ,
 	"Developer" : "개발자" ,
 	"Tech Stack" : "기술 스택" ,

@@ -80,6 +80,24 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 }
 
 const useSettingsView = (view:WebContentsView,options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
+	/* changelog 等外链：禁止导航出 Settings，改走系统浏览器 */
+	view.webContents.setWindowOpenHandler( ( { url } ) => {
+		if( /^https?:/i.test( url ) ) {
+			void shell.openExternal( url );
+		}
+		return { action : 'deny' };
+	} );
+	view.webContents.on( 'will-navigate' , ( event , url ) => {
+		try {
+			const currentOrigin = new URL( view.webContents.getURL() ).origin;
+			if( new URL( url ).origin !== currentOrigin ) {
+				event.preventDefault();
+				void shell.openExternal( url );
+			}
+		} catch {
+			event.preventDefault();
+		}
+	} );
 	if(dev()){
 		~async function loadDevSettingsView() {
 			const loaded = await safeLoadURL( view , createDevRendererEntryURL( 'SettingsView' ) , 'Settings-View' );

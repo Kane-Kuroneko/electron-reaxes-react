@@ -103,6 +103,8 @@ export default {
 	"Update downloaded. Restart to install." : "更新已下载，重启后安装。" ,
 	"Update failed" : "更新失败" ,
 	"No changelog for this version" : "此版本暂无更新说明" ,
+	"Refresh" : "刷新" ,
+	"Failed to fetch changelog" : "获取更新说明失败" ,
 	"Description" : "描述" ,
 	"Developer" : "开发者" ,
 	"Tech Stack" : "技术栈" ,
