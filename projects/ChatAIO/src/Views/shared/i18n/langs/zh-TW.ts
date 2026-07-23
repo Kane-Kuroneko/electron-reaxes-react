@@ -55,4 +55,5 @@ export default {
 	"Yes" : "是" ,
 	"No" : "否" ,
 	"This operation will clear all authentication data from the current page and reload it. \r\nInclude cookies, local storage, and other data." : "此動作將清除目前頁面的所有認證資料並重新載入。\r\n包括 Cookie、本機儲存和其他資料。" ,
+	"Update available" : "有可用更新" ,
 } as any;

@@ -5,6 +5,13 @@
 	directories: {
 		output : "__Bin"
 	},
+	artifactName: "${productName}-${version}-${os}-${arch}.${ext}",
+	electronUpdaterCompatibility: ">=2.16",
+	publish: {
+		provider: "github",
+		owner: "Kane-Kuroneko",
+		repo: "ChatAIO-Releases",
+	},
 	files: ["dist/"],
 	extraResources: [
 		{
@@ -19,6 +26,10 @@
 		target: [
 			{
 				target: "dmg",
+				arch: ["x64", "arm64"]
+			},
+			{
+				target: "zip",
 				arch: ["x64", "arm64"]
 			}
 		],

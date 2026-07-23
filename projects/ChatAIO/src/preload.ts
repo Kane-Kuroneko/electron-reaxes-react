@@ -56,14 +56,31 @@ const openDropdownView = useRtm('dropdown-view:open');
 const closeDropdownView = useRtm('dropdown-view:close');
 const focusDropdownViewItem = useRtm('dropdown-view:focus-item');
 const reportMenubarError = useRtm('menubar:error-report');
+const openSettingsVersion = useRtm('open-settings-version');
 const onDropdownViewCommand = (callback:(command:DropdownView.Command) => void) => {
 	return useMtr( 'dropdown-view:command' )( ( _ , command ) => {
 		callback( command );
 	} );
 };
+const onUpdateStateChanged = (callback:(state:AppUpdater.State) => void) => {
+	return useMtr( 'update-state-changed' )( ( _ , state ) => {
+		callback( state );
+	} );
+};
+const onSettingsViewNavigate = (callback:(payload:AppUpdater.NavigatePayload) => void) => {
+	return useMtr( 'settings-view:navigate' )( ( _ , payload ) => {
+		callback( payload );
+	} );
+};
 const isDropdownVisible = (): boolean => {
 	return ipcRenderer.sendSync( 'JSON_SYNC' , { channel : 'dropdown-view:is-visible' } );
 };
+
+const getAppVersion = useRpc('get-app-version');
+const getUpdateState = useRpc('get-update-state');
+const checkForUpdates = useRpc('check-for-updates');
+const fetchVersionChangelogs = useRpc('fetch-version-changelogs');
+const downloadAndInstallUpdate = useRpc('download-and-install-update');
 
 const api = {
 	fetchSettings ,
@@ -103,11 +120,19 @@ const api = {
 	closeDropdownView,
 	focusDropdownViewItem,
 	reportMenubarError,
+	openSettingsVersion,
 	onDropdownViewCommand,
+	onUpdateStateChanged,
+	onSettingsViewNavigate,
 	menuViewReady,
 	menuViewResize,
 	onMenuViewCommand,
 	isDropdownVisible,
+	getAppVersion,
+	getUpdateState,
+	checkForUpdates,
+	fetchVersionChangelogs,
+	downloadAndInstallUpdate,
 };
 export type API = typeof api;
 
@@ -141,3 +166,4 @@ import type { FloatingView } from './Types/FloatingView';
 import type { PromptView } from './Types/PromptView';
 import type { MenuView } from './Types/MenuView';
 import type { DropdownView } from './Types/DropdownView';
+import type { AppUpdater } from './Types/AppUpdater';

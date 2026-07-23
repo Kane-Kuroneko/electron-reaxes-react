@@ -263,10 +263,11 @@ export const reaxel_MainView = reaxel( () => {
 				hideDropdownView();
 			}
 		} );
-		/* MainView HTML 壳：点空白也关掉（WCV 已有 before-mouse-event；此处兜底未覆盖区域）
-		 * Windows: -webkit-app-region: drag 区域会吞掉渲染进程的 mousedown，
-		 * 必须在此处从主进程关闭下拉。使用 syncMainView:false 避免 race condition
-		 * （渲染进程的 openMenuId 不会被提前清空，菜单按钮点击后的 toggleMenu 判断正确）。 */
+		/* MainView HTML 壳：点空白也关掉下拉。
+		 * drag 面已收敛为 root::before(6px) / badge / traffic-light spacer
+		 * （见 MainView/index.less）；这些区域仍会吞掉 renderer mousedown，
+		 * 必须在此从主进程关闭。syncMainView:false 避免与 toggleMenu 竞态
+		 * （不提前清空 openMenuId）。栏空白已是 no-drag，走 renderer handleBarMouseDown。 */
 		if( !mainWindow.webContents.isDestroyed() ) {
 			mainWindow.webContents.on( 'before-mouse-event' , ( _event , mouse ) => {
 				if( mouse.type !== 'mouseDown' ) return;
@@ -275,8 +276,9 @@ export const reaxel_MainView = reaxel( () => {
 					return;
 				}
 				if( mouse.y < getMenuBarHeight() ) {
-					/* macOS：渲染进程可直接接收菜单栏点击事件（无 drag 区域拦截）。
-					 * Windows/Linux：drag 区域吞掉 mousedown，必须由主进程关闭。 */
+					/* macOS：渲染进程可直接接收多数菜单栏点击；窄 drag 面仍可能吞事件，
+					 * 但 darwin 上由 renderer 路径关菜单更稳，此处不抢。
+					 * Windows/Linux：残留 drag 面必须由主进程关闭。 */
 					if( process.platform === 'darwin' ) {
 						return;
 					}
@@ -528,7 +530,7 @@ export const reaxel_MainView = reaxel( () => {
 				openSettingsViewInRuntime();
 				break;
 			case 'check-updates':
-				autoUpdater.checkForUpdates();
+				void reaxel_AppUpdater().checkForUpdates();
 				break;
 			case 'reload-view':
 				handleReloadView();
@@ -861,6 +863,7 @@ import { Reaxel_View } from '#main/reaxels/Views';
 import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import { reaxel_SettingsView } from '#main/reaxels/Views/Settings-View';
+import { reaxel_AppUpdater } from '#main/reaxels/electron-updater';
 import { mainWindow } from '#main/mainWindow';
 import { useIpcMainToRenderer , useIpcRendererToMain , useIpcSync } from '#main/services/ipc';
 import {
@@ -892,7 +895,6 @@ import {
 } from '#src/shared/appearance';
 import {
 	app ,
-	autoUpdater ,
 	dialog ,
 	BrowserWindow,
 } from 'electron';

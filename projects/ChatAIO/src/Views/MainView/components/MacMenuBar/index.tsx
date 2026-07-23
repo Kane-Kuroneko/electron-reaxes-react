@@ -17,6 +17,7 @@ export const MacMenuBar = reaxper( () => {
 			<div className="main-view-traffic-light-spacer" />
 			<MenuBar />
 			<MenuBarCenterCluster />
+			<MenuBarRightItems />
 		</div>
 	);
 } );
@@ -24,6 +25,7 @@ export const MacMenuBar = reaxper( () => {
 
 import { MenuBar } from '#MainView/components/MenuBar';
 import { MenuBarCenterCluster } from '#MainView/components/MenuBarCenterCluster';
+import { MenuBarRightItems } from '#MainView/components/MenuBarRightItems';
 import { reaxel_MainView } from '#MainView/reaxels/main-view';
 import { getMenuBarRootStyleVars } from '#src/shared/menubar-geometry';
 import { reaxper } from 'reaxes-react';

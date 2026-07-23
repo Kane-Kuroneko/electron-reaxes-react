@@ -157,7 +157,7 @@ export const reaxable_Settings = () => {
 	} );
 };
 
-export type Menus = "general" | "net" | "mngeai" | "keys" | "about";
+export type Menus = "general" | "net" | "mngeai" | "keys" | "version" | "about";
 
 
 

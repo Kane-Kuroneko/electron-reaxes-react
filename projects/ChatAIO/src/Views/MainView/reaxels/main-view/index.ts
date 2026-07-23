@@ -75,6 +75,7 @@ export const reaxel_MainView = reaxel( () => {
 		theme : 'light' as 'light' | 'dark' ,
 		currentContextLabel : '' ,
 		settingsViewOpened : false ,
+		updateAvailable : false ,
 	} );
 
 	const applyStructurePartition = ( structure : MenuView.Structure ) => {
@@ -226,8 +227,9 @@ export const reaxel_MainView = reaxel( () => {
 
 	/**
 	 * 顶级菜单项悬停切换：菜单已展开时切到该项（以 id 标识）。
-	 * 主进程可能已通过 before-mouse-event 关闭 dropdown（如 drag region 点击），
+	 * 主进程可能已通过 before-mouse-event 关闭 dropdown（窄 drag 面：顶条/badge），
 	 * 用同步 IPC 确认实际可见性，避免 stale openMenuId 导致 hover 重新弹出。
+	 * 与 CSS 收敛 drag（栏/drag-tail no-drag）互补，二者都不要删。
 	 */
 	const hoverTopMenuItem = ( menuId : string ) => {
 		if( !store.openMenuId ) return;
@@ -241,10 +243,11 @@ export const reaxel_MainView = reaxel( () => {
 	const isInteractiveMenubarTarget = ( target : HTMLElement ) => {
 		return !!target.closest( '.main-view-bar-item' )
 			|| !!target.closest( '.main-view-context-badge' )
-			|| !!target.closest( '.main-view-bar__center' );
+			|| !!target.closest( '.main-view-bar__center' )
+			|| !!target.closest( '.main-view-bar__right' );
 	};
 
-	/** 点击空白菜单栏区域时关闭下拉 */
+	/** 点击空白菜单栏（no-drag）时关闭下拉；drag 面点不到此处，由主进程 before-mouse-event 兜底 */
 	const handleBarMouseDown = ( e : React.MouseEvent ) => {
 		if( e.button !== 0 ) return;
 		const target = e.target as HTMLElement;
@@ -256,6 +259,7 @@ export const reaxel_MainView = reaxel( () => {
 		}
 	};
 
+	/** drag-tail 现为 no-drag 占位；点击同样关下拉 */
 	const handleDragTailMouseDown = ( e : React.MouseEvent ) => {
 		if( e.button !== 0 ) return;
 		if( store.openMenuId ) {
@@ -302,6 +306,10 @@ export const reaxel_MainView = reaxel( () => {
 		}
 	};
 
+	const applyUpdateState = ( state : AppUpdater.State ) => {
+		setState( { updateAvailable : state.updateAvailable } );
+	};
+
 	const rtn = {
 		updateStructure ,
 		toggleMenu ,
@@ -319,7 +327,8 @@ export const reaxel_MainView = reaxel( () => {
 		handleDragTailMouseDown ,
 		bindKeyboardNav ,
 		unbindKeyboardNav ,
-		handleCommand,
+		handleCommand ,
+		applyUpdateState ,
 	};
 
 	return Object.assign( () => rtn , {
@@ -332,6 +341,7 @@ export const reaxel_MainView = reaxel( () => {
 
 import { createReaxable , reaxel } from 'reaxes';
 import type { MenuView } from '#src/Types/MenuView';
+import type { AppUpdater } from '#src/Types/AppUpdater';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import { getMenuBarHeight } from '#src/shared/menubar-geometry';
 import { reportMenubarRendererError } from '#src/shared/utils/menubar-error-report.utility';

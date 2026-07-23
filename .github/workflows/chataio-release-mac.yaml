@@ -1,10 +1,11 @@
 # ChatAIO macOS (Apple Silicon) 自动构建
-# 触发方式: 在 GitHub 上发布 Release 时自动触发
-# 产物: 自动将 DMG 上传至该 Release 的附件
+# 触发方式: 在源码仓库发布 Release 时自动触发
+# 产物: 将 dmg / zip / blockmap / latest-mac.yml 上传至 Kane-Kuroneko/ChatAIO-Releases
 #
 # ⚠️ 前置条件:
 #   - 仓库 CainKane/Reaxes 必须为 public，或已在 repo secrets 中配置 PAT
-#   - 如需代码签名，请在 repo secrets 中配置 Apple 证书（可选）
+#   - secrets.CHATAIO_RELEASES_TOKEN：可写 Kane-Kuroneko/ChatAIO-Releases 的 PAT（repo 权限）
+#   - 如需代码签名，请在 repo secrets 中配置 Apple 证书（mac 自动更新通常需要签名）
 #   - 若 Reaxes dist 已跟踪到 git 中，可移除 build-reaxes 步骤
 
 name: ChatAIO macOS Release
@@ -71,21 +72,30 @@ jobs:
            run: yarn tsx scripts/webpack.build/index.ts ChatAIO production
 
          # ============================================================
-         # 6. Electron-builder 打包（macOS arm64 DMG）
+         # 6. Electron-builder 打包（macOS arm64 dmg+zip，生成 latest-mac.yml）
          # ============================================================
          - name: Electron build (macOS arm64)
            working-directory: ./electron-reaxes-react
-           run: yarn tsx scripts/electron.build/index.ts ChatAIO --mac --arm64
+           run: yarn tsx scripts/electron.build/index.ts ChatAIO -- --mac --arm64 --publish never
            env:
               # macOS CI 环境默认无签名证书，关闭自动发现以避免构建中断
+              # 注意：未签名时安装态 mac 自动更新可能失败
               CSC_IDENTITY_AUTO_DISCOVERY: false
 
          # ============================================================
-         # 7. 将 DMG 上传至 Release
+         # 7. 上传产物至 ChatAIO-Releases（供 electron-updater）
          # ============================================================
-         - name: Upload DMG to Release
+         - name: Upload artifacts to ChatAIO-Releases
            uses: softprops/action-gh-release@v2
            with:
-              files: electron-reaxes-react/projects/ChatAIO/__Bin/*.dmg
+              repository: Kane-Kuroneko/ChatAIO-Releases
+              tag_name: ${{ github.event.release.tag_name }}
+              name: ${{ github.event.release.name || github.event.release.tag_name }}
+              body: ${{ github.event.release.body }}
+              files: |
+                 electron-reaxes-react/projects/ChatAIO/__Bin/*.dmg
+                 electron-reaxes-react/projects/ChatAIO/__Bin/*.zip
+                 electron-reaxes-react/projects/ChatAIO/__Bin/*.blockmap
+                 electron-reaxes-react/projects/ChatAIO/__Bin/latest-mac.yml
            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              GITHUB_TOKEN: ${{ secrets.CHATAIO_RELEASES_TOKEN }}

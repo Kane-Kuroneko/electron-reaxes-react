@@ -12,6 +12,7 @@ export const App = reaxper( () => {
 		general : RCGeneralPanel ,
 		net : RCNetworkPanel ,
 		mngeai : RCManageAIsPanel ,
+		version : RCVersionPanel ,
 		about : RCAboutPanel ,
 	}[store.current];
 	
@@ -166,6 +167,7 @@ const showApplyResult = (result:SettingsApplyResult) => {
 
 import { RCGeneralPanel } from '#SettingsView/components/General';
 import { RCAboutPanel } from '#SettingsView/components/About';
+import { RCVersionPanel } from '#SettingsView/components/Version';
 import { RCManageAIsPanel } from '#SettingsView/components/ManageAIs';
 import { RCNetworkPanel } from '#SettingsView/components/Network';
 import { devCleanStart } from '#SettingsView/services/Settings';

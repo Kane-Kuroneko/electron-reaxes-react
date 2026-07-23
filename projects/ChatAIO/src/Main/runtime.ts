@@ -102,6 +102,7 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 			initTray();
 		}
 		reaxel_Menu().rebuildMenu();
+		reaxel_AppUpdater();
 
 		/* Phase 5 — ContentViews（AI）；不得回挡 menubar */
 		await Reaxel_View().initRuntimeViews();
@@ -149,6 +150,7 @@ import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import { reaxel_MainView } from '#main/reaxels/Views/Main-View';
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
+import { reaxel_AppUpdater } from '#main/reaxels/electron-updater';
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
 import {
 	applyElectronAppearance ,

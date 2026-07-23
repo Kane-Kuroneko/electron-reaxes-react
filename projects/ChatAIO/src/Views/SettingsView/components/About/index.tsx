@@ -2,6 +2,20 @@
  * About Panel - 开发者与应用信息
  */
 export const RCAboutPanel = reaxper( () => {
+	const [ version , setVersion ] = useState( '—' );
+
+	useEffect( () => {
+		let disposed = false;
+		void api.getAppVersion().then( ( v ) => {
+			if( !disposed ) setVersion( v );
+		} ).catch( () => {
+			if( !disposed ) setVersion( '—' );
+		} );
+		return () => {
+			disposed = true;
+		};
+	} , [] );
+
 	return <div className="settings-section">
 		<div className="section-title"><I18n>About</I18n></div>
 		<Descriptions
@@ -19,7 +33,7 @@ export const RCAboutPanel = reaxper( () => {
 				ChatAIO
 			</Descriptions.Item>
 			<Descriptions.Item label={<I18n>Version</I18n>}>
-				1.0.0
+				{ version }
 			</Descriptions.Item>
 			<Descriptions.Item label={<I18n>Description</I18n>}>
 				<I18n>Unified desktop client for multiple AI services</I18n>
@@ -37,7 +51,8 @@ export const RCAboutPanel = reaxper( () => {
 	</div>;
 } );
 
+
 import { reaxper } from 'reaxes-react';
 import { Descriptions } from 'antd';
+import { useEffect , useState } from 'react';
 import { I18n } from '#SettingsView/reaxels/exports';
-

@@ -16,6 +16,7 @@ export interface RendererToMainEvents extends Record<string , IpcStructure.Rende
 	'dropdown-view:close' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
 	'dropdown-view:focus-item' : IpcStructure.RendererToMainEvent<[index: number] , {channel:void,args:void[]}>;
 	'menubar:error-report' : IpcStructure.RendererToMainEvent<[MenubarErrorReport] , {channel:void,args:void[]}>;
+	'open-settings-version' : IpcStructure.RendererToMainEvent<[versionTab?: AppUpdater.VersionTab] , {channel:void,args:void[]}>;
 }
 
 export interface MainToRendererEvents extends Record<string , IpcStructure.MainToRendererEvent<unknown[]>> {
@@ -26,6 +27,8 @@ export interface MainToRendererEvents extends Record<string , IpcStructure.MainT
 	'prompt-view-appearance-change' : IpcStructure.MainToRendererEvent<[PromptView.AppearanceState]>;
 	'menu-view:command' : IpcStructure.MainToRendererEvent<[MenuView.MenuCommand]>;
 	'dropdown-view:command' : IpcStructure.MainToRendererEvent<[DropdownView.Command]>;
+	'update-state-changed' : IpcStructure.MainToRendererEvent<[AppUpdater.State]>;
+	'settings-view:navigate' : IpcStructure.MainToRendererEvent<[AppUpdater.NavigatePayload]>;
 }
 
 export interface IpcSyncRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , unknown>> {
@@ -57,6 +60,11 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	'get-prompt-view-state': IpcStructure.IpcRpc<[side: PromptView.Side], PromptView.State>;
 	'save-prompt-view-items': IpcStructure.IpcRpc<[side: PromptView.Side, items: PromptView.Item[]], PromptView.SaveResult>;
 	'copy-prompt-view-text': IpcStructure.IpcRpc<[text: string], PromptView.CopyResult>;
+	'get-app-version': IpcStructure.IpcRpc<[void], string>;
+	'get-update-state': IpcStructure.IpcRpc<[void], AppUpdater.State>;
+	'check-for-updates': IpcStructure.IpcRpc<[void], AppUpdater.State>;
+	'fetch-version-changelogs': IpcStructure.IpcRpc<[void], AppUpdater.Changelogs>;
+	'download-and-install-update': IpcStructure.IpcRpc<[void], AppUpdater.DownloadResult>;
 }
 
 type MainToRendererReply<K extends keyof MainToRendererEvents> = ReplyFromMtrEvents<MainToRendererEvents , K>;
@@ -93,3 +101,4 @@ import type { PromptView } from '#src/Types/PromptView';
 import type { MenubarErrorReport } from '#main/services/menubar-error-log.utility';
 import type { MenuView , MainView } from '#src/Types/MenuView';
 import type { DropdownView } from '#src/Types/DropdownView';
+import type { AppUpdater } from '#src/Types/AppUpdater';

@@ -4,7 +4,9 @@ installMenubarRendererErrorHandlers( 'main-view-renderer' );
 const mainViewApi = reaxel_MainView();
 mainViewApi.bindKeyboardNav();
 api.onMenuViewCommand( mainViewApi.handleCommand );
+api.onUpdateStateChanged( mainViewApi.applyUpdateState );
 api.menuViewReady();
+void api.getUpdateState().then( mainViewApi.applyUpdateState ).catch( () => {} );
 
 const root = createRoot( document.getElementById( 'react-app-root' ) );
 

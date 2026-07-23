@@ -16,10 +16,17 @@ export const reaxel_SettingsView = reaxel( () => {
 					value : checkAs<Menus>( 'mngeai' ),
 				},
 				{
+					label : 'Version' ,
+					value : checkAs<Menus>( 'version' ),
+				},
+				{
 					label : 'About' ,
 					value : checkAs<Menus>( 'about' ),
 				},
 			],
+		} ,
+		VersionUI : {
+			activeTab : checkAs<AppUpdater.VersionTab>( 'current' ),
 		} ,
 		UIControls : {
 			networks : {
@@ -463,6 +470,13 @@ export const reaxel_SettingsView = reaxel( () => {
 			if( !current ) return false;
 			return JSON.stringify( current ) !== _committedAISnapshot.get( id );
 		},
+		navigateFromMain( payload : AppUpdater.NavigatePayload ) {
+			if( payload.menu !== 'version' ) return;
+			setState.RootMenu( { current : checkAs<Menus>( 'version' ) } );
+			setState.VersionUI( {
+				activeTab : payload.versionTab === 'latest' ? 'latest' : 'current' ,
+			} );
+		},
 	};
 	
 	return Object.assign( () => rtn , {
@@ -616,6 +630,7 @@ import type { PromptView } from '#src/Types/PromptView';
 import type {
 	Menus,
 } from '#src/shared/structs/settings';
+import type { AppUpdater } from '#src/Types/AppUpdater';
 import type {
 	Settings ,
 	SettingsFetchResult,

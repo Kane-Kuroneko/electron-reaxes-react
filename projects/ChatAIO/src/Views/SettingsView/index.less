@@ -249,3 +249,58 @@ html, body {
 		}
 	}
 }
+
+.version-changelog__meta {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.version-changelog__label {
+	font-weight: 500;
+	opacity: 0.72;
+}
+
+.version-changelog__value {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 13px;
+}
+
+.version-changelog__body {
+	margin: 0;
+	padding: 12px 14px;
+	border-radius: 6px;
+	background: var(--settings-subfield-bg);
+	border: 1px solid var(--settings-subfield-border);
+	white-space: pre-wrap;
+	word-break: break-word;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12.5px;
+	line-height: 1.55;
+	max-height: 420px;
+	overflow: auto;
+}
+
+.version-changelog__empty,
+.version-changelog-loading {
+	padding: 24px 0;
+	text-align: center;
+	opacity: 0.65;
+}
+
+.version-update-actions {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 12px;
+	margin-top: 16px;
+}
+
+.version-download-progress {
+	width: 100%;
+	max-width: 360px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}

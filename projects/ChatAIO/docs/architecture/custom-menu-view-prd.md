@@ -149,7 +149,7 @@ Z-order (top → bottom):
 - **子菜单位置**：相对于父菜单项，带有 `4-8px` 间距和微阴影
 - **动画**：展开时 100-150ms 淡入 + 微上移（fadeIn + slideDown），收起时即时隐藏
 - **图标**：菜单项可显示图标（现有的 emoji / 自定义 SVG）
-- **窗口拖拽**：使用 Electron CSS draggable region；菜单栏空白区域 `-webkit-app-region: drag`，菜单按钮、下拉菜单和菜单项显式 `no-drag`
+- **窗口拖拽**：使用 Electron CSS draggable region；**仅** 6px 顶条（`.main-view-root::before`）、品牌 badge、macOS traffic-light spacer 为 `-webkit-app-region: drag`。栏空白、`drag-tail`、菜单按钮、下拉与菜单项均为 `no-drag`（禁止整栏 / 大块 tail drag，避免内容区 HTCAPTION 泄露；见 `docs/issues/menubar-drag-region-leak-below-content.md`）
 
 ---
 
@@ -539,7 +539,7 @@ obsReaction((first) => {
 | **macOS traffic light 遮挡** | 菜单栏覆盖窗口按钮 | 右侧预留 ~70px 空白区域；使用 CSS `-webkit-app-region: drag` / `no-drag` |
 | **键盘事件冲突** | Alt 键触发菜单 vs Alt+, / Alt+. PromptView 快捷键 | 调整 `window-keyboard.ts` 的 `preventSingleAltMenuFocus` 逻辑 |
 | **全屏模式 (F11)** | 菜单栏在全屏时需隐藏 | 监听 `mainWindow` 的 fullscreen 事件，隐藏 MenuView |
-| **拖拽 (titleBarStyle)** | `app-region: drag` 会吞掉 pointer events，错误覆盖会导致 hover/click 不稳定 | 只让菜单栏空白区域和 macOS spacer 可拖，菜单按钮、下拉菜单和菜单项全部设置 `no-drag`；不使用 JS 手写 `setPosition()` 拖拽 |
+| **拖拽 (titleBarStyle)** | `app-region: drag` 会吞掉 pointer events；过大 drag 面还会把 HTCAPTION 泄露到下方 AI WCV | 只保留 6px 顶条 + badge + macOS spacer 可拖；栏空白 / drag-tail / center 容器 / 按钮 / 下拉全部 `no-drag`；不使用 JS 手写 `setPosition()`；勿为交互问题把整栏改回 drag |
 | **性能** | 菜单结构重建频繁 | `obsReaction` 已自带浅比较去重；`createMenuData()` 是纯函数调用，开销低 |
 | **多显示器** | 菜单位置错位 | WebContentsView 绑定到 mainWindow.contentView，自动跟随主窗口 |
 
@@ -569,7 +569,7 @@ obsReaction((first) => {
 - Electron `View.setBounds()` 的坐标相对父 view，MenuView 下拉菜单如果继续存在同一个 `WebContentsView` 内，就必须在展开时扩展 bounds，否则 DOM 下拉层会被 native view 裁剪。关闭菜单后必须恢复到菜单栏高度，避免长期截获内容区事件。
 - VS Code 自定义 menubar 的关键经验不是视觉样式，而是状态管理：菜单获得焦点时延迟更新菜单项，失焦或窗口 resize 时关闭菜单，Alt/F10 进入菜单焦点，左右键切换顶级菜单，上下键在菜单项之间移动。这些行为比单纯 hover 更接近桌面应用菜单。
 - `custom-electron-titlebar` 一类开源库适合参考 titlebar/menu 的 DOM 组织，但 ChatAIO 已经有 WebContentsView、typed IPC、Reaxes 和多入口构建体系，直接引库会引入不必要的架构分叉。因此本方案只吸收其“titlebar 区域与菜单交互区分离”的 UX 经验，不新增依赖。
-- Electron draggable region 文档强调 `app-region: drag` 会忽略鼠标点击、进入和离开事件，因此 MenuView 不应在 JS 中手写拖拽窗口坐标，也不应把整层 WebContentsView 设为可拖。正确做法是将拖拽区域收束到菜单栏空白处，再对菜单按钮和下拉层加 `no-drag`。
+- Electron draggable region 文档强调 `app-region: drag` 会忽略鼠标点击、进入和离开事件，因此 MenuView 不应在 JS 中手写拖拽窗口坐标，也不应把整层 WebContentsView / 整栏设为可拖。正确做法是将拖拽区域收束到 **6px 顶条 + badge +（macOS）spacer**，栏空白与菜单按钮、下拉层全部 `no-drag`（详见 `docs/issues/menubar-drag-region-leak-below-content.md` §5.2）。
 - VS Code menubar 打开菜单时采用 `mousedown` 触发，并对后续 `mouseup` 做状态隔离；顶级菜单只在已有菜单打开时通过 `mouseenter` 横向切换。MenuView 采用同类策略：顶级按钮 `mousedown` toggle，展开后 hover 切换，点击下拉外的 MenuView 空白区关闭。
 
 由此确定的实现原则：

@@ -55,4 +55,5 @@ export default {
 	"Yes" : "はい" ,
 	"No" : "いいえ" ,
 	"This operation will clear all authentication data from the current page and reload it. \r\nInclude cookies, local storage, and other data." : "この操作により、現在のページのすべての認証データがクリアされ、再読み込みされます。\r\nCookie、ローカルストレージ、その他のデータが含まれます。" ,
+	"Update available" : "アップデートがあります" ,
 } as any;
