@@ -62,6 +62,21 @@
 - [`docs/issues/menubar-drag-investigation.md`](./docs/issues/menubar-drag-investigation.md)
 - [`docs/issues/menubar-drag-region-leak-below-content.md`](./docs/issues/menubar-drag-region-leak-below-content.md)
 
+### 替换 App / Tray 图标（Agent）
+
+用户要求更换应用图标时，**不要手改 `.ico` / `.icns`**，在 monorepo 根调用统一脚本（附完整 agent 手册）：
+
+- 手册：[`../../scripts/replace-app-icons/AGENTS.md`](../../scripts/replace-app-icons/AGENTS.md)
+- 命令：
+
+```bash
+python scripts/replace-app-icons/replace-app-icons.py "<PNG绝对路径>" --project ChatAIO
+# 或
+yarn replace-app-icons -- "<PNG绝对路径>" --project ChatAIO
+```
+
+源 PNG 只读；会覆盖 `statics/gpt.{ico,icns,png}`、macOS tray template、shared master。未经用户要求不要 commit。
+
 ---
 
 ## 新机 / 新 clone 检查清单

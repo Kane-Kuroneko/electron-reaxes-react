@@ -6,17 +6,27 @@ const {
 const electronBuilderCliPath = createRequire( import.meta.url ).resolve( 'electron-builder/cli.js' );
 const electronBuilderArgs = getElectronBuilderArgs();
 
-resetElectronBuildOutput();
-
-console.log( `[ElectronBuild] project: ${ name_subproject }` );
-console.log( `[ElectronBuild] cwd: ${ absolutelyPath_subproject }` );
-console.log( `[ElectronBuild] electron-builder ${ electronBuilderArgs.join( ' ' ) }` );
-
 try {
-	process.exitCode = await spawnElectronBuilder();
+	await resetElectronBuildOutput();
 } catch( error ) {
-	console.error( '[ElectronBuild] electron-builder failed to start:' , error );
+	console.error( '[ElectronBuild] failed to reset __Bin:' , error instanceof Error ? error.message : error );
 	process.exitCode = 1;
+}
+
+if( !process.exitCode ) {
+	console.log( `[ElectronBuild] project: ${ name_subproject }` );
+	console.log( `[ElectronBuild] cwd: ${ absolutelyPath_subproject }` );
+	console.log( `[ElectronBuild] electron-builder ${ electronBuilderArgs.join( ' ' ) }` );
+
+	try {
+		process.exitCode = await spawnElectronBuilder();
+		if( process.exitCode === 0 ) {
+			refreshWindowsIconCacheAfterBuild();
+		}
+	} catch( error ) {
+		console.error( '[ElectronBuild] electron-builder failed to start:' , error );
+		process.exitCode = 1;
+	}
 }
 
 function getElectronBuilderArgs() {
@@ -47,16 +57,73 @@ function getElectronBuilderArgs() {
 	return [ 'build' , platformFlag ];
 }
 
-function resetElectronBuildOutput() {
+async function resetElectronBuildOutput() {
 	const outputPath = path.resolve( absolutelyPath_subproject , '__Bin' );
 	if( path.dirname( outputPath ) !== path.resolve( absolutelyPath_subproject ) || path.basename( outputPath ) !== '__Bin' ) {
 		throw new Error( `[ElectronBuild] Refuse to remove unexpected path: ${ outputPath }` );
 	}
-	fs.rmSync( outputPath , {
-		recursive : true ,
-		force : true,
-	} );
-	console.log( `[ElectronBuild] reset __Bin: ${ outputPath }` );
+	if( !fs.existsSync( outputPath ) ) {
+		console.log( `[ElectronBuild] __Bin absent, skip reset: ${ outputPath }` );
+		return;
+	}
+
+	// Node's fs.rm maxRetries is ignored on Windows; implement our own backoff.
+	// Common lockers: running ChatAIO.exe, Explorer previewing __Bin, AV scanners.
+	const maxAttempts = 10;
+	let lastError: unknown;
+	for( let attempt = 1; attempt <= maxAttempts; attempt++ ) {
+		try {
+			clearReadonlyTree( outputPath );
+			fs.rmSync( outputPath , {
+				recursive : true ,
+				force : true,
+			} );
+			console.log( `[ElectronBuild] reset __Bin: ${ outputPath }` );
+			return;
+		} catch( error ) {
+			lastError = error;
+			const code = ( error as NodeJS.ErrnoException )?.code;
+			const retryable = code === 'EPERM' || code === 'EBUSY' || code === 'ENOTEMPTY' || code === 'EACCES';
+			if( !retryable || attempt === maxAttempts ) {
+				break;
+			}
+			const delayMs = 200 * attempt;
+			console.warn( `[ElectronBuild] __Bin locked (${ code }), retry ${ attempt }/${ maxAttempts } in ${ delayMs }ms...` );
+			await sleep( delayMs );
+		}
+	}
+
+	throw new Error(
+		`Cannot remove ${ outputPath }\n` +
+		`Reason: ${ lastError instanceof Error ? lastError.message : String( lastError ) }\n` +
+		`Close ChatAIO / any Explorer window inside __Bin, then retry.` ,
+	);
+}
+
+function clearReadonlyTree( root:string ) {
+	if( process.platform !== 'win32' || !fs.existsSync( root ) ) {
+		return;
+	}
+	const stack = [ root ];
+	while( stack.length ) {
+		const current = stack.pop()!;
+		try {
+			const stat = fs.lstatSync( current );
+			if( stat.isDirectory() ) {
+				for( const name of fs.readdirSync( current ) ) {
+					stack.push( path.join( current , name ) );
+				}
+			}
+			// clear read-only bit so rm can succeed after AV / Explorer touch
+			fs.chmodSync( current , 0o666 );
+		} catch {
+			// best-effort; rm retry loop handles remaining failures
+		}
+	}
+}
+
+function sleep( ms:number ) {
+	return new Promise<void>( ( resolve ) => setTimeout( resolve , ms ) );
 }
 
 function spawnElectronBuilder() {
@@ -81,6 +148,27 @@ function spawnElectronBuilder() {
 
 		electronBuilderProcess.on( 'error' , reject );
 	} );
+}
+
+/**
+ * Windows Explorer 会按路径缓存 exe 图标；换 icon 后同路径重建常仍显示旧图。
+ * `ie4uinit.exe -show`（Win10/11）足以刷新 shell 图标关联，无需杀 explorer。
+ * 杀 explorer / 删 IconCache.db 过重（任务栏闪断、关资源管理器窗口），仅作人工兜底，不默认执行。
+ */
+function refreshWindowsIconCacheAfterBuild() {
+	if( process.platform !== 'win32' ) {
+		return;
+	}
+	try {
+		spawn( 'ie4uinit.exe' , [ '-show' ] , {
+			detached : true ,
+			stdio : 'ignore' ,
+			windowsHide : true,
+		} ).unref();
+		console.log( '[ElectronBuild] refreshed Windows icon cache (ie4uinit -show)' );
+	} catch( error ) {
+		console.warn( '[ElectronBuild] failed to refresh Windows icon cache:' , error );
+	}
 }
 
 import { getProjectPaths } from '../../engine/toolkit/project-paths';
