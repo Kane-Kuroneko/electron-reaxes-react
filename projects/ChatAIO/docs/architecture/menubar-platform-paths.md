@@ -53,11 +53,10 @@ macOS 与 Windows 的菜单栏在**内容**与**视图**两个层面都不同，
 
 - 栏高 36 / item 高 28 / marginY 4（`menubar-geometry.ts`；禁止 macOS 抬到 42，
   相对窗口顶边会整体下沉）。
-- 左区菜单项、`drag-tail`（**布局占位，no-drag**）、中区 Prev/Brand/Next 簇、`CurrentContextBadge`。
+- 左区菜单项、`drag-tail`（空白拖窗）、中区 Prev/Brand/Next 簇、`CurrentContextBadge`。
 - `data-theme` light/dark 主题；键盘导航。
-- **窗口拖拽（窄 drag 面，见 `menubar-drag-region-leak-below-content.md` §5.2）**：
-  `.main-view-root::before`（6px）+ badge +（macOS）traffic-light spacer；
-  栏本体 / center 容器 / drag-tail / right 均为 `no-drag`。
+- **窗口拖拽**：栏 / drag-tail / badge /（macOS）traffic-light spacer 为 `drag`；按钮 `no-drag`。
+  内容区幽灵拖拽靠主壳 View 裁剪（`clipMainShellToMenuBar`），**不要**砍掉 menubar drag。
 
 ### macOS 专属（`.mac-menu-bar`）
 

@@ -13,13 +13,22 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	}
 	view.webContents.setVisualZoomLevelLimits(1,5);
 	mainWindow.contentView.addChildView(view);
+	/* 内容 WCV 默认不可见，避免未布局前以全窗/错位 bounds 叠在 menubar 上抢命中（#41002） */
+	view.setVisible( false );
 	const refreshBounds = () => {
 		if( options.refreshBounds ) {
 			options.refreshBounds( view );
 			return;
 		}
+		/* 禁止回退到 y=0 全窗：会与主壳 menubar drag 在屏幕坐标重叠 */
 		const { width , height } = mainWindow.getContentBounds();
-		view.setBounds( { x: 0, y: 0, width, height} );
+		const menuBarHeight = getMenuBarHeight();
+		view.setBounds( {
+			x : 0 ,
+			y : menuBarHeight ,
+			width ,
+			height : Math.max( 1 , height - menuBarHeight ),
+		} );
 	};
 	
 	// 初始化崩溃报告器
@@ -252,6 +261,7 @@ import {
 } from '#main/services/dev/renderer-entry';
 import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
+import { getMenuBarHeight } from '#src/shared/menubar-geometry';
 import {
 	applyAIPageAppearanceToView ,
 	getAIPageBackgroundColor ,

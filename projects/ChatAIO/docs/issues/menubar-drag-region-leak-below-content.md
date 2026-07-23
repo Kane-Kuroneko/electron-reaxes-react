@@ -2,163 +2,164 @@
 
 ## 文档状态
 
-- **症状**：menubar **下方**、内容区**左上角**出现透明矩形；可拖动主窗口，但挡住 AI 页点击。
+- **症状**：menubar **正下方**、内容区**靠左**出现透明矩形；可拖动主窗口，但挡住 AI 页点击。
 - **与另一文档区分**：[`menubar-drag-investigation.md`](./menubar-drag-investigation.md) 记录的是 **FloatingView `forward: true` 导致拖动抖动/闪烁**；本文是 **命中测试泄露**，二者可并存、根因不同。
-- **状态**：CONFIRMED（2026-07-15 升级验证；2026-07-24 再次确认须叠加 CSS 收敛 drag 面）。
-- **正式修复**：
-  1. Electron **≥ 41.2.1**（仓库 `955e286d1` → **41.10.2**）——修 hidden WCV 仍贡献 HTCAPTION（#51176/#51200）。
-  2. **应用侧永久收敛 drag 面**（`MainView/index.less`）——主壳 `app-region` 过大时，在多层 WCV + `titleBarOverlay` 下仍可能把命中泄露到内容区左上角（与 [#43320](https://github.com/electron/electron/issues/43320) 同类）；**禁止**为修 dropdown 等交互把整栏 / `drag-tail` 再改回 `drag`（历史回归：`55a1987af`）。
+- **状态**：CONFIRMED（2026-07-15 首次；**2026-07-24 用户确认主壳裁剪方案修复成功**）。
+- **正式修复（须同时满足，缺一不可）**：
+  1. Electron **≥ 41.2.1**（仓库 **41.10.2**，`955e286d1`）—— hidden WCV 的 drag 不再贡献 HTCAPTION（[#51176](https://github.com/electron/electron/issues/51176) / [#51200](https://github.com/electron/electron/pull/51200)）。
+  2. **主壳 native View 裁到 menubar 高度**（`clipMainShellToMenuBar`）——避免全窗主壳上的 `app-region: drag` 与内容 WCV 在屏幕坐标叠命中（[#41002](https://github.com/electron/electron/issues/41002) / [#43320](https://github.com/electron/electron/issues/43320)）。
+  3. 内容 WCV **禁止 y=0 全窗默认 bounds**；闲置中心 view **removeChildView**（不仅 `setVisible(false)`）。
+
+> **禁止**：为「修幽灵拖区」把 menubar 整栏改成 `no-drag` / 只留 6px 顶条。那只会让**整栏拖不动**，与目标「menubar 可拖 + 内容区不可拖」相反。2026-07-24 曾误用此方案，已回滚。
 
 ---
 
 ## 1. 症状（如何辨认）
 
-- 位置：自定义 menubar **正下方**，通常从窗口**左缘**开始，宽约数十～百余像素（与 menubar 内 `-webkit-app-region: drag` 区域在屏幕上的投影重合）。
+- 位置：自定义 menubar **正下方**，通常从窗口**左缘**起，宽约数十～百余像素（与 menubar 内 drag 区域在垂直方向上的「投影」重合）。
 - 表现：
-  - 鼠标按住可**拖动主窗口**（像拖标题栏）。
-  - 同一区域**无法点击**下方 AI `WebContentsView` 内的链接、按钮等。
+  - 该矩形内按住可**拖动主窗口**（像拖标题栏）。
+  - 同一区域**无法点击**下方 AI `WebContentsView` 内的链接、输入框、按钮等。
 - 易误判：
-  - 不是 menubar 菜单项本身点不到（菜单按钮是 `no-drag`，一般可点）。
-  - 不是 FloatingView 抖动问题（见另一文档）。
-  - 仅收紧 CSS（`html/body` 高度、`pointer-events`）可能**缩小**泄露区，但在 Electron 41.0.3 上**无法根治**。
+  - 不是「整栏 menubar 拖不动」（那是错误修复的副作用）。
+  - 不是 FloatingView 抖动（见另一文档）。
+  - 不是菜单按钮本身点不到（按钮为 `no-drag`）。
 
 ---
 
-## 2. 根因（上游 Electron）
+## 2. 根因
 
-Windows 上，子 `WebContentsView` 内声明的 `-webkit-app-region: drag` 会参与父窗口的非客户区（**HTCAPTION**）命中测试。在受影响版本中，即使该 view：
+### 2.1 公开讨论（先查再改）
 
-- 已 `setVisible(false)`，或
-- 高度已限制在 menubar（例如 36px），且 AI 内容在 `y = menuBarHeight` 的子 view 中，
-
-**仍可能在屏幕对应坐标保留“可拖拽”命中**，导致内容区左上角被“幽灵标题栏”占用。
-
-| 资源 | 说明 |
+| 资源 | 要点 |
 |------|------|
-| [electron#51176](https://github.com/electron/electron/issues/51176) | 复现：hidden view 内 `app-region: drag` 仍拖窗 |
-| [electron#51200](https://github.com/electron/electron/pull/51200) | 修复：view 不可见时 hit-test 返回 `HTNOWHERE` |
-| [electron#51246](https://github.com/electron/electron/pull/51246) | backport 至 **41-x-y**（随 **41.2.1** 发布） |
+| [electron#41002](https://github.com/electron/electron/issues/41002) | 底层 BrowserView/WCV 的 `app-region: drag` **无视上层遮挡**，仍截获命中（Windows 确认）。nornagon 复现 gist 同模型。 |
+| [electron#43320](https://github.com/electron/electron/issues/43320) | 同坐标下任一 DraggableRegionProvider 有 drag → 该点可拖；官方称属 Chromium hit-test 模型，**仍 open**，不能指望「升级就好」。 |
+| [electron#51176](https://github.com/electron/electron/issues/51176) / [#51200](https://github.com/electron/electron/pull/51200) | **hidden** WCV 的 drag 仍生效；41.2.1+ 对不可见 view 返回 `HTNOWHERE`。 |
+| [VS Code #310765](https://github.com/microsoft/vscode/issues/310765) | 同源：非活动 editor-browser 里 fullscreen drag 挡住其它 tab；靠上游 #51200 + 应用侧规避。 |
 
-ChatAIO 在 **Electron 41.0.3** 上稳定复现；升级至 **41.10.2** 后用户确认消失。
+**核心机制**：Electron 非客户区命中（`HTCAPTION`）聚合**所有** drag-region provider，**不按绘制 z-order / 遮挡**决策。主壳若仍是**全 client 高度**的 WebContentsView，其上 menubar 的 `-webkit-app-region: drag` 会继续作为 provider 参与整窗命中 → 内容区左上角出现「幽灵标题栏」。
 
-> **旁注**：Cursor IDE 等 Electron 应用若在 Windows 上使用多层 view + 自定义标题栏，也可能出现同类“透明挡点击 + 可拖窗”现象，需等上游 Electron/Chromium 修复或应用侧规避 `app-region` 拖拽。
-
----
-
-## 3. 架构背景（ChatAIO）
+### 2.2 ChatAIO 触发组合
 
 ```text
-BrowserWindow (titleBarStyle: hidden + titleBarOverlay on Windows)
-├── mainWindow.webContents  → MainView HTML（menubar，含 -webkit-app-region: drag）
+BrowserWindow（titleBarStyle: hidden + titleBarOverlay）
+├── 主壳 WebContentsView ← 只渲染 MainView menubar HTML
+│     但默认 native bounds = 全 client 高度   ← 根因
+│     CSS: .main-view-bar / drag-tail / badge = drag
 └── contentView 子 WebContentsView
-    ├── MainView / AI / Settings / Prompt …（y 偏移 menuBarHeight）
-    └── FloatingView（独立问题见 menubar-drag-investigation.md）
+      AI / Settings / Prompt（y ≥ menuBarHeight = 36）
+
+内容区某点 (x, y>36)：
+  上层 AI WCV → 无 drag → 本应把点击交给页面
+  下层主壳 provider → 仍可能把该点判成 HTCAPTION
+  → 透明可拖窗 + 挡点击
 ```
 
-menubar 相关样式见 [`index.less`](../../src/Views/MainView/index.less)。**允许的 drag 面仅**：
+补充放大因子（未裁主壳时更易复现）：
 
-- `.main-view-root::before`（6px 顶条，覆盖整行含 center/right）
-- `.main-view-context-badge`
-- macOS `.main-view-traffic-light-spacer`
-
-`.main-view-bar` / `__left` / `__center` / `__drag-tail` / `__right` 必须为 `no-drag`。
+- 内容 WCV 曾默认 `setBounds({ x:0, y:0, width, height })` 全窗，与主壳 drag 在屏幕坐标重叠（#41002 经典场景）。
+- Windows 上闲置 AI 只 `setVisible(false)`、不 `removeChildView`，在 #51200 之前会继续贡献命中；之后仍建议 detach，减少 provider 集合。
 
 ---
 
-## 4. 已尝试但无效或不必保留的规避（勿再重复投入）
+## 3. 正式修复方法
 
-以下在 41.0.3 上**未根治**，已在升级 Electron 前回退，**不要**在无新证据时重新引入：
-
-| 方案 | 结果 |
-|------|------|
-| 仅 CSS：锁 `html/body` 高度、`pointer-events: none` | 泄露区可能缩小，仍存在 |
-| 去掉 `.main-view-bar` 整栏 `drag`，只留 tail/badge | 仍存在 |
-| MainView 迁到独立 `WebContentsView` + `about:blank` 主壳 | 仍存在 |
-| `BrowserWindow` → `BaseWindow` 去掉主 `webContents` | 仍存在 |
-| 移除全部 `app-region: drag`，改 IPC + `setPosition` 手拖 | 仍存在 |
-| 任意组合上述 | 仍存在 |
-
-**结论**：在 41.0.3 上这是 **Electron 平台 bug**，应用层绕路成本高且不可靠；优先保证 **Electron ≥ 41.2.1**。
-
----
-
-## 5. 正式解决方案
-
-### 5.1 升级 Electron（必须）
-
-根 `package.json`：
+### 3.1 Electron ≥ 41.2.1（底线）
 
 ```json
 "electron": "^41.10.2"
 ```
 
-安装后确认版本：
-
 ```bash
-node -p "require('electron/package.json').version"
+node -p "require('electron/package.json').version"   # 应 ≥ 41.2.1
 ```
 
-应 **≥ 41.2.1**。提交参考：`955e286d1`。
+只解决 **hidden** WCV 一类；**不能**单独解决主壳全窗 + 内容 WCV 叠层。
 
-同步关注：`@electron/rebuild`、`electron-builder` 与新版 Electron 匹配；`yarn install` 后需成功执行根目录 `postinstall`（`electron-rebuild`）。
+### 3.2 主壳 View 裁到 menubar（本问题的关键修复）
 
-### 5.2 应用侧 drag 面收敛（必须，与 5.1 叠加）
+实现：[`clip-main-shell-to-menubar.utility.ts`](../../src/Main/services/clip-main-shell-to-menubar.utility.ts)
 
-仅升级 Electron **不够**：主壳 menubar 若恢复「整栏 / 大块 `drag-tail` = drag」，内容区左上角幽灵拖拽可在 **41.10.2** 上复发。
+- 在 view 树中查找 `webContents === mainWindow.webContents` 的 `WebContentsView`（含 contentView 兄弟，见 Electron #41256）。
+- `setBounds({ x: 0, y: 0, width, height: menuBarHeight })`（`menuBarHeight = 36`）。
+- `createMainWindow` 调用 `bindMainShellMenuBarClip`；在 `resize` / `maximize` / `unmaximize` / 全屏进出 / `did-finish-load` / `dom-ready` 重裁；`fitWindow` 时再保险调用一次。
 
-| 区域 | `app-region` | 原因 |
-|------|----------------|------|
-| `.main-view-bar` / `__left` / `__center` / `__drag-tail` / `__right` | **no-drag** | 空白点击进 renderer；减小 HTCAPTION 面积 |
-| `.main-view-root::before`（高 6px） | **drag** | 主要拖窗手感 |
-| `.main-view-context-badge` | **drag** | 品牌区拖窗 |
-| `.main-view-traffic-light-spacer`（macOS） | **drag** | 红绿灯留位 |
+裁剪后：主壳 drag provider 的 native 范围只有 `y ∈ [0, 36)`，**不再覆盖**内容区。
 
-配套交互（不要拆开删）：
+### 3.3 内容 WCV 生命周期
 
-- 渲染进程：`handleBarMouseDown` / `handleDragTailMouseDown` 关 dropdown；`hoverTopMenuItem` + sync `dropdown-view:is-visible` 清 stale `openMenuId`。
-- 主进程：`before-mouse-event` 仅兜底仍会吞 mousedown 的窄 drag 面（顶条/badge）。
+| 点 | 做法 |
+|----|------|
+| `initWebContentsView` | 先 `setVisible(false)`；无自定义 `refreshBounds` 时也用 `y = menuBarHeight`，**禁止**全窗 `{y:0}` |
+| Settings | 显式 `refreshBounds → fitContentView` |
+| 闲置中心 view | 全平台 `setVisible(false)` **并** `removeChildView`；mount 时再 `addChildView` |
 
-**禁止回退**：
+### 3.4 Menubar CSS（保持可拖，与裁剪正交）
 
-- 不要为「空白好拖」把 `.main-view-bar` 或 `__drag-tail` 改回 `drag`。
-- 不要加 `inset:0` 全栏 drag overlay。
-- 不要给 `__center` 容器设 `drag`（包围盒 + `transform` 会放大命中面）；只留 badge。
+[`MainView/index.less`](../../src/Views/MainView/index.less)：
 
-另：Windows FloatingView 保持 `setIgnoreMouseEvents(true, { forward: false })`（见 [`menubar-drag-investigation.md`](./menubar-drag-investigation.md)）。
+- **drag**：`.main-view-bar`、`__drag-tail`、`.main-view-context-badge`、macOS `.main-view-traffic-light-spacer`
+- **no-drag**：菜单按钮、`__right`、html/body
+- **禁止**：`inset: 0` 全栏 drag overlay；为修幽灵区把整栏改成 no-drag
 
-### 5.3 降级或 pin 旧 Electron 时
+另：FloatingView 保持 `setIgnoreMouseEvents(true, { forward: false })`（见 [`menubar-drag-investigation.md`](./menubar-drag-investigation.md)）。
 
-- **禁止**在无完整回归前 pin 到 **&lt; 41.2.1**。
-- 若必须停留旧版，需接受本 bug 可能复发，并重新评估架构（例如完全不用 `app-region: drag` + 手拖，且仍可能受 `titleBarOverlay` 影响）。
-- 即使停在旧版，仍应保持 5.2 的窄 drag 面，以缩小泄露面积。
+---
+
+## 4. 应避免的事项（Agent / 开发者必读）
+
+| 不要做 | 为什么 |
+|--------|--------|
+| 靠「缩小 menubar drag 面」（6px 顶条、去掉 drag-tail）修幽灵区 | 用户要的是**整栏可拖**；砍 drag 只会拖不动，且未从根上拆掉全窗 provider |
+| 加回 `inset:0` / 绝对定位全栏 `drag-layer` | 历史上直接把 HTCAPTION 铺到 AI WCV 上 |
+| 内容 WCV 默认 `setBounds` 全窗 `y=0` | 与主壳 drag 屏幕重叠，复现 #41002 |
+| Windows 闲置中心 view 只 hidden、长期留在 `contentView` | provider 集合膨胀；与 macOS detach 策略不一致 |
+| 删掉 `clipMainShellToMenuBar` / 不再在 resize 后重裁 | 最大化、DPI、重载后主壳会回到全窗，幽灵区复发 |
+| 认为「已经升到 41.10.2 就永不再发」 | #43320 叠层模型仍在；必须保留应用侧裁剪 |
+| 把 FloatingView `forward` 改回 `true` | 另一问题（拖动抖动），见 menubar-drag-investigation |
+| 未查公开 issue 就改 menubar drag CSS | 易与 #41002/#43320/#51176 三种根因搅在一起 |
+
+---
+
+## 5. 错误方案复盘（2026-07-24）
+
+曾误判「泄露面积 ∝ drag 面积」，把 `.main-view-bar` / `__drag-tail` 改为 `no-drag`，仅留 6px `::before`。结果：
+
+- menubar **几乎整栏不可拖**（用户明确反对）；
+- 未解决主壳全窗 provider 问题。
+
+正确路径：先读 #41002/#43320 → **裁主壳 bounds** → **保留 menubar 空白 drag**。
 
 ---
 
 ## 6. 回归检查清单
 
-修改 **Electron 版本**、**menubar 样式**、**WebContentsView 层级/可见性** 或 **titleBarOverlay** 后：
+修改 Electron 版本、menubar 样式、WCV 层级/可见性、`titleBarOverlay` 或主壳裁剪后至少验证：
 
-1. Windows：AI 页**左上角**点击（链接、输入框、按钮）是否正常。
-2. 同一区域**不应**在单击时拖动窗口（除非故意点在 menubar 的合法 drag 区：6px 顶条 / badge）。
-3. menubar：**6px 顶条**、品牌 badge、（macOS）traffic-light spacer 可拖窗；栏空白与 `drag-tail` **不可**拖窗，但点击应能关闭 dropdown。
-4. 菜单展开/收起、Dropdown、窗口控制按钮正常。
-5. 切换/隐藏 AI 页后，泄露区不随隐藏页“复活”（这是 #51200 的核心场景）。
-6. 与 FloatingView 同开时拖动仍丝滑（`forward: false`）。
-7. 确认未把 `.main-view-bar` / `__drag-tail` / `__center` 改回大面积 `drag`。
+1. Windows：menubar **空白 / drag-tail / badge** 可拖窗。
+2. AI 页**左上角**可点链接/输入框，**不应**拖窗。
+3. 切换 AI、开/关 Settings、开/关 Prompt 后幽灵区不复发。
+4. Dropdown、窗口控制钮正常。
+5. FloatingView 同开时 menubar 拖动仍丝滑（`forward: false`）。
+6. 最大化 / 还原 / resize 后主壳高度仍为 36，幽灵区不回潮。
 
 ---
 
 ## 7. 相关文件
 
-- [`projects/ChatAIO/src/Views/MainView/index.less`](../../src/Views/MainView/index.less)
-- [`projects/ChatAIO/src/Main/mainWindow.ts`](../../src/Main/mainWindow.ts)
-- [`projects/ChatAIO/src/Main/reaxels/Views/Main-View/index.ts`](../../src/Main/reaxels/Views/Main-View/index.ts)
-- [`projects/ChatAIO/src/Main/reaxels/Views/utils/initWebContentsView.ts`](../../src/Main/reaxels/Views/utils/initWebContentsView.ts)
-- 根目录 [`package.json`](../../../../package.json)（`electron` 版本）
+- [`clip-main-shell-to-menubar.utility.ts`](../../src/Main/services/clip-main-shell-to-menubar.utility.ts) — 主壳裁剪
+- [`mainWindow.ts`](../../src/Main/mainWindow.ts) — `bindMainShellMenuBarClip`
+- [`initWebContentsView.ts`](../../src/Main/reaxels/Views/utils/initWebContentsView.ts) — 默认 bounds / 初始 hidden
+- [`Views/index.ts`](../../src/Main/reaxels/Views/index.ts) — detach + `fitWindow` 重裁
+- [`Settings-View/index.ts`](../../src/Main/reaxels/Views/Settings-View/index.ts) — Settings `refreshBounds`
+- [`MainView/index.less`](../../src/Views/MainView/index.less) — menubar drag 约定
+- 根 [`package.json`](../../../../package.json) — `electron` 版本
 
 ---
 
 ## 8. 关联文档
 
-- [menubar-drag-investigation.md](./menubar-drag-investigation.md) — FloatingView mouse forwarding 与拖动抖动
+- [menubar-drag-investigation.md](./menubar-drag-investigation.md) — FloatingView mouse forwarding
 - [custom-menu-view-prd.md](../architecture/custom-menu-view-prd.md) — menubar 产品与 `app-region` 约定
+- [menubar-platform-paths.md](../architecture/menubar-platform-paths.md) — 平台渲染路径

@@ -264,10 +264,8 @@ export const reaxel_MainView = reaxel( () => {
 			}
 		} );
 		/* MainView HTML 壳：点空白也关掉下拉。
-		 * drag 面已收敛为 root::before(6px) / badge / traffic-light spacer
-		 * （见 MainView/index.less）；这些区域仍会吞掉 renderer mousedown，
-		 * 必须在此从主进程关闭。syncMainView:false 避免与 toggleMenu 竞态
-		 * （不提前清空 openMenuId）。栏空白已是 no-drag，走 renderer handleBarMouseDown。 */
+		 * Windows: menubar 上 -webkit-app-region: drag 会吞掉 renderer mousedown，
+		 * 必须在此从主进程关闭。syncMainView:false 避免与 toggleMenu 竞态。 */
 		if( !mainWindow.webContents.isDestroyed() ) {
 			mainWindow.webContents.on( 'before-mouse-event' , ( _event , mouse ) => {
 				if( mouse.type !== 'mouseDown' ) return;
@@ -276,9 +274,8 @@ export const reaxel_MainView = reaxel( () => {
 					return;
 				}
 				if( mouse.y < getMenuBarHeight() ) {
-					/* macOS：渲染进程可直接接收多数菜单栏点击；窄 drag 面仍可能吞事件，
-					 * 但 darwin 上由 renderer 路径关菜单更稳，此处不抢。
-					 * Windows/Linux：残留 drag 面必须由主进程关闭。 */
+					/* macOS：渲染进程可直接接收多数菜单栏点击；此处不抢。
+					 * Windows/Linux：drag 面必须由主进程关闭。 */
 					if( process.platform === 'darwin' ) {
 						return;
 					}

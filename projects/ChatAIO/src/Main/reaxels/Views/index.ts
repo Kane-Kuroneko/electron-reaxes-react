@@ -13,6 +13,7 @@ export const Reaxel_View = reaxel( () => {
 	} );
 
 	function fitWindow(target?:string) {
+		clipMainShellToMenuBar( mainWindow );
 		const { width , height } = mainWindow.getContentBounds();
 		const centerBounds = getCenterBounds( { x : 0 , y : 0 , width , height } );
 		const viewSetBounds = (view:WebContentsView) => setViewBoundsIfChanged( view , centerBounds );
@@ -46,7 +47,10 @@ export const Reaxel_View = reaxel( () => {
 		setViewBoundsIfChanged( view , bounds );
 	}
 
-	/** Detach inactive center views on macOS so the next mount triggers ViewHierarchyChanged + WasShown. */
+	/** Detach inactive center views so drag-region providers leave the hit-test set.
+	 * macOS: also removeChildView（触发 ViewHierarchyChanged + WasShown）。
+	 * Windows: 同样 removeChildView——仅 setVisible(false) 在部分路径上仍可能参与
+	 * HTCAPTION 聚合（electron#51176 族问题；与主壳全窗 drag 叠加重现内容区幽灵拖区）。 */
 	function safeDetachWebContentsView(view:WebContentsView | null | undefined) {
 		if( !view || view.webContents.isDestroyed() ) {
 			return;
@@ -54,26 +58,22 @@ export const Reaxel_View = reaxel( () => {
 		if( view.getVisible() ) {
 			view.setVisible( false );
 		}
-		if( process.platform === 'darwin' ) {
-			try {
-				mainWindow.contentView.removeChildView( view );
-			} catch {
-				/* view may already be detached */
-			}
+		try {
+			mainWindow.contentView.removeChildView( view );
+		} catch {
+			/* view may already be detached */
 		}
 	}
 
-	/** Mount the active center view with explicit bounds and z-order (macOS remounts from contentView). */
+	/** Mount the active center view with explicit bounds and z-order. */
 	function mountActiveCenterView(view:WebContentsView | null | undefined , bounds = getCenterBounds()) {
 		if( !view || view.webContents.isDestroyed() || mainWindow.isDestroyed() ) {
 			return;
 		}
-		if( process.platform === 'darwin' ) {
-			try {
-				mainWindow.contentView.removeChildView( view );
-			} catch {
-				/* view may already be detached */
-			}
+		try {
+			mainWindow.contentView.removeChildView( view );
+		} catch {
+			/* view may already be detached */
 		}
 		mainWindow.contentView.addChildView( view );
 		view.setBounds( bounds );
@@ -619,6 +619,7 @@ import {
 	WebContentsView,
 } from "electron";
 import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
+import { clipMainShellToMenuBar } from '#main/services/clip-main-shell-to-menubar.utility';
 import ElectronStore from "electron-store";
 import { mainWindow } from "#main/mainWindow";
 import { reaxel_AIViews } from "#main/reaxels/Views/AI-Views";

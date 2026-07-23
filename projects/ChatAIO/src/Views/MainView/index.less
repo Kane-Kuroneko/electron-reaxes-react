@@ -2,14 +2,12 @@
  * @description MainView 样式
  * 菜单栏渲染在 mainWindow HTML 中，通过 -webkit-app-region 实现原生窗口拖拽。
  *
- * Windows drag 策略（禁止再扩大，见 docs/issues/menubar-drag-region-leak-below-content.md）：
- *   - 栏本体 / left / center 容器 / drag-tail / right → no-drag
- *     （空白点击须到达 renderer，才能 handleBarMouseDown 关 dropdown）
- *   - 仅保留窄 drag 面：.main-view-root::before（6px 顶条）、
- *     .main-view-context-badge、macOS .main-view-traffic-light-spacer
- *   - 禁止 inset:0 全栏 drag overlay / 整栏 drag / 大块 drag-tail drag
- *     ——Electron 会把 HTCAPTION 聚合泄露到下方 AI WCV
- *   - #react-app-root 高度裁到菜单栏，防止拖拽区几何下溢
+ * 拖拽约定（见 docs/issues/menubar-drag-region-leak-below-content.md）：
+ *   - 栏空白 / drag-tail / badge / macOS traffic-light spacer → drag（整栏可拖窗）
+ *   - 菜单按钮 / right 更新钮 → no-drag 挖洞
+ *   - 禁止 inset:0 全栏 drag overlay
+ *   - 内容区幽灵拖拽须靠主壳 native View 裁到 menubar 高度（clipMainShellToMenuBar），
+ *     不要靠砍掉 menubar drag「修」——那只会让整栏拖不动
  *
  * 垂直几何（见 shared/menubar-geometry.ts）：
  *   barHeight = --menu-item-margin-y * 2 + --menu-item-height = 36
@@ -53,19 +51,6 @@ html, body {
 	-webkit-app-region: no-drag;
 }
 
-/* 6px 顶部拖拽条：覆盖整行 menubar（含 center/right 兄弟区），取代大块 drag-tail */
-.main-view-root::before {
-	content: '';
-	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
-	height: 6px;
-	z-index: 100;
-	-webkit-app-region: drag;
-	pointer-events: auto;
-}
-
 /* macOS traffic light 预留区域（宽度由 geometry 注入） */
 .main-view-traffic-light-spacer {
 	flex-shrink: 0;
@@ -89,9 +74,8 @@ html, body {
 	box-sizing: border-box;
 	overflow: hidden;
 	padding: 0;
-	/* 本体 no-drag：空白点击到达 renderer（handleBarMouseDown 关 dropdown）。
-	 * 拖窗靠 root::before / badge / traffic-light spacer。勿恢复整栏 drag。 */
-	-webkit-app-region: no-drag;
+	/* 栏本体拖拽；菜单 item 用 no-drag 挖洞。勿再加绝对定位全栏 drag-layer */
+	-webkit-app-region: drag;
 }
 
 .main-view-bar__left {
@@ -105,8 +89,7 @@ html, body {
 }
 
 /* 中区：相对整行 menubar（含 macOS 交通灯）水平居中；垂直与左区共用 margin 契约。
- * 容器必须 no-drag——否则整块 Prev/Badge/Next 包围盒都会进 HTCAPTION（含 transform 错位风险）。
- * 仅 .main-view-context-badge 自身保留 drag。 */
+ * 容器 no-drag：避免 Prev/Badge/Next 包围盒 + transform 放大命中面；badge 自身 drag。 */
 .main-view-bar__center {
 	position: absolute;
 	left: 50%;
@@ -125,12 +108,12 @@ html, body {
 	pointer-events: auto;
 }
 
-/* 菜单项右侧剩余空白：布局占位 only，禁止 drag（flex:1 会吞掉大块点击面） */
+/* 菜单项右侧剩余空白：显式拖拽尾区（高度仍锁在 menubar 内） */
 .main-view-bar__drag-tail {
 	flex: 1 1 auto;
 	align-self: stretch;
 	min-width: 12px;
-	-webkit-app-region: no-drag;
+	-webkit-app-region: drag;
 }
 
 /* 右侧：更新图标等（相对 root flex 推到最右） */

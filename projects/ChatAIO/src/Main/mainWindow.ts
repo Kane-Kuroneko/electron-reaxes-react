@@ -68,6 +68,9 @@ export const createMainWindow = async() => {
 	 */
 	loadMainViewHTML();
 
+	/* 主壳 View 裁到 menubar：避免全窗 drag provider 叠进内容区（electron#41002） */
+	bindMainShellMenuBarClip( mainWindow );
+
 	mainWindow.on( 'closed' , () => {
 		mainWindow = null;
 	} );
@@ -108,6 +111,7 @@ const loadMainViewHTML = () => {
 
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import { getMenuBarHeight , getTrafficLightPosition } from '#src/shared/menubar-geometry';
+import { bindMainShellMenuBarClip } from '#main/services/clip-main-shell-to-menubar.utility';
 import { dev } from 'electron-is';
 import {
 	createDevRendererEntryURL ,
