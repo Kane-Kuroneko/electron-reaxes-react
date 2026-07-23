@@ -19,7 +19,7 @@
 			to: "statics"
 		}
 	],
-	electronVersion: "41.0.3",
+	electronVersion: "41.10.2",
 	asar: true,
 
 	mac: {
