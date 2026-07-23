@@ -17,9 +17,8 @@ export const reaxel_SettingsView = reaxel( () => {
 		setState.settingsView( {
 			view : initWebContentsView( {
 				type : 'Settings-View' ,
-				/* 延迟取 Reaxel_View，避免与 Views/index ↔ Settings-View 循环依赖 */
+				/* 须静态 import：Views 为 webpack async module，sync require 得到 Promise */
 				refreshBounds : ( settingsView ) => {
-					const { Reaxel_View } = require( '#main/reaxels/Views' ) as typeof import( '#main/reaxels/Views' );
 					Reaxel_View().fitContentView( settingsView );
 				} ,
 				webPreferences:{
@@ -43,6 +42,7 @@ export const reaxel_SettingsView = reaxel( () => {
 
 
 import { WebContentsView } from "electron";
+import { Reaxel_View } from '#main/reaxels/Views';
 import { initWebContentsView } from "#main/reaxels/Views/utils/initWebContentsView";
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import * as path from 'node:path';
