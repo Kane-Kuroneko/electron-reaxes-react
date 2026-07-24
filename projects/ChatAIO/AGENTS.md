@@ -70,12 +70,15 @@
 - 命令：
 
 ```bash
-python scripts/replace-app-icons/replace-app-icons.py "<PNG绝对路径>" --project ChatAIO
+# 正式版
+python scripts/replace-app-icons/replace-app-icons.py "<PNG绝对路径>" --project ChatAIO --variant prod
+# DEV（写入 gpt-dev / tray-icon-dev…；运行时 !app.isPackaged 选用）
+python scripts/replace-app-icons/replace-app-icons.py "<PNG绝对路径>" --project ChatAIO --variant dev
 # 或
-yarn replace-app-icons -- "<PNG绝对路径>" --project ChatAIO
+yarn replace-app-icons -- "<PNG绝对路径>" --project ChatAIO --variant prod
 ```
 
-源 PNG 只读；会覆盖 `statics/gpt.{ico,icns,png}`、macOS tray template、shared master。未经用户要求不要 commit。
+源 PNG 只读；`prod` 覆盖 `statics/gpt.{ico,icns,png}` 等，`dev` 覆盖对应 `*-dev` 文件。运行时选择见 `src/Main/services/app-icons/`。未经用户要求不要 commit。
 
 ---
 

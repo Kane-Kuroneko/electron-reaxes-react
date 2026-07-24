@@ -17,18 +17,13 @@ const t = (text: string) => {
 export function initTray(): Tray | null {
 	if( trayInstance ) return trayInstance;
 	
-	const staticsDir = app.isPackaged
-		? path.join( process.resourcesPath , 'statics' )
-		: path.join( app.getAppPath() , 'statics' );
-	const iconPath = nativeImage.createFromPath(
-		path.join( staticsDir , process.platform === 'darwin' ? 'tray-icon.macos.png' : 'gpt.ico' ),
-	);
+	const iconImage = loadTrayNativeImage();
 	
 	// macOS Template Image: 深色菜单栏自动反色，浅色菜单栏保留黑色
 	if( process.platform === 'darwin' ) {
-		iconPath.setTemplateImage( true );
+		iconImage.setTemplateImage( true );
 	}
-	trayInstance = new Tray( iconPath );
+	trayInstance = new Tray( iconImage );
 	trayInstance.setToolTip( 'ChatAIO' );
 	
 	updateTrayMenu();
@@ -110,11 +105,10 @@ import {
 	mainWindow ,
 	showMainWindow,
 } from '#main/mainWindow';
+import { loadTrayNativeImage } from '#main/services/app-icons';
 import {
 	app ,
 	BrowserWindow ,
 	Menu ,
-	nativeImage ,
 	Tray,
 } from 'electron';
-import * as path from 'node:path';

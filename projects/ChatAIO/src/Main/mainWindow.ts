@@ -28,6 +28,7 @@ export const createMainWindow = async() => {
 	const defaultOptions:BrowserWindowConstructorOptions = {
 		width : dev() ? width : 1280 ,
 		height : dev() ? height : 720 ,
+		icon : getAppIconPath() ,
 		webPreferences : {
 			nodeIntegration : false ,
 			contextIsolation : true ,
@@ -55,6 +56,7 @@ export const createMainWindow = async() => {
 	};
 	
 	mainWindow = new BrowserWindow( _.merge( {} , defaultOptions ) );
+	applyRuntimeAppIcon( mainWindow );
 
 	// macOS: 主 webContents 仅承载 menubar；透明底色避免 AI WCV 未重绘时露出灰白壳层
 	if( process.platform === 'darwin' ) {
@@ -112,6 +114,10 @@ const loadMainViewHTML = () => {
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import { getMenuBarHeight , getTrafficLightPosition } from '#src/shared/menubar-geometry';
 import { bindMainShellMenuBarClip } from '#main/services/clip-main-shell-to-menubar.utility';
+import {
+	applyRuntimeAppIcon ,
+	getAppIconPath,
+} from '#main/services/app-icons';
 import { dev } from 'electron-is';
 import {
 	createDevRendererEntryURL ,

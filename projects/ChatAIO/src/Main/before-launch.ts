@@ -10,6 +10,11 @@ setAppProfilePath();
 applyPendingDevCleanStart();
 registerBrowserWindowKeyboardGuards();
 
+/* 所有 BrowserWindow（含 Guiding / Floating）统一按 isPackaged 选 gpt / gpt-dev */
+app.on( 'browser-window-created' , ( _event , win ) => {
+	applyRuntimeAppIcon( win );
+} );
+
 export const isFirstLaunchWithoutUserData = !fs.existsSync( app.getPath( 'userData' ) );
 
 // 初始化日志系统
@@ -74,6 +79,7 @@ function getPreLaunchSystemLanguage() {
 
 import './foundation/electron.conf';
 import { applyGlobalBrowserIdentityFallback } from '#main/services/browser-identity';
+import { applyRuntimeAppIcon } from '#main/services/app-icons';
 import { install } from 'source-map-support';
 import logger from 'electron-log/main';
 import { app, BrowserWindow, nativeTheme } from 'electron';

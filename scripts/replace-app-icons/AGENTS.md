@@ -49,8 +49,28 @@ yarn replace-app-icons -- "<PNG绝对路径>" --project ChatAIO
 |------|------|------|
 | `source`（位置参数） | ✅ | **绝对路径** PNG（也接受 jpg/webp，推荐 PNG）。相对路径会直接报错退出。 |
 | `--project` | 否 | 默认 `ChatAIO`。必须是脚本内 `PROJECT_LAYOUTS` 已登记的工程名。 |
+| `--variant` | 否 | `prod`（默认）或 `dev`。`dev` 写入 `*-dev` 文件名（如 `gpt-dev.ico`、`tray-icon-dev.macos.png`）；运行时由 `!app.isPackaged` 选择。 |
 | `--dry-run` | 否 | 只打印将要写入的路径，不写盘。不确定布局时先跑这个。 |
 | `--list-projects` | 否 | 列出已登记工程与输出路径映射后退出。 |
+
+### DEV / 正式版双套图标
+
+ChatAIO 同时维护两套资产；**不要**用手改文件名冒充，一律走本脚本：
+
+```powershell
+# 正式版（electron-builder icon + 打包后托盘）
+python scripts/replace-app-icons/replace-app-icons.py "<prod.png>" --project ChatAIO --variant prod
+
+# DEV 模式（yarn start / 未打包；文件名保持 *-dev）
+python scripts/replace-app-icons/replace-app-icons.py "<dev.png>" --project ChatAIO --variant dev
+```
+
+| variant | 输出示例 |
+|---------|----------|
+| `prod` | `statics/gpt.{ico,icns,png}`、`tray-icon.macos(.@2x).png`、`shared/main-icon-900x900.png` |
+| `dev` | `statics/gpt-dev.{ico,icns,png}`、`tray-icon-dev.macos(.@2x).png`、`shared/main-icon-900x900-dev.png` |
+
+运行时选择：`projects/ChatAIO/src/Main/services/app-icons/`（`!app.isPackaged` → `*-dev`）。`electron-builder.yml` 的 `icon:` 始终指向正式版 `statics/gpt`。
 
 ### 硬性约束（Agent 必须遵守）
 
@@ -89,13 +109,14 @@ yarn replace-app-icons -- "<PNG绝对路径>" --project ChatAIO
 
 ```text
 1. 确认用户给出的 PNG 绝对路径存在（Test-Path / ls）。
-2. （可选）dry-run 预览：
-     python scripts/replace-app-icons/replace-app-icons.py "<abs.png>" --project ChatAIO --dry-run
-3. 正式生成：
-     python scripts/replace-app-icons/replace-app-icons.py "<abs.png>" --project ChatAIO
-4. 确认 stdout 出现 "verified: ... contains 256x256 layer" 与 "Source PNG was NOT modified."
-5. 向用户汇报被覆盖的文件列表；提醒：Windows 资源管理器可能有图标缓存。
-6. 仅当用户明确要求提交时再 git add / commit（在 monorepo 根执行）。
+2. 若同时换 DEV + 正式版：分别用 --variant dev / prod 各跑一次（两张源图）。
+3. （可选）dry-run 预览：
+     python scripts/replace-app-icons/replace-app-icons.py "<abs.png>" --project ChatAIO --variant prod --dry-run
+4. 正式生成：
+     python scripts/replace-app-icons/replace-app-icons.py "<abs.png>" --project ChatAIO --variant prod|dev
+5. 确认 stdout 出现 "verified: ... contains 256x256 layer" 与 "Source PNG was NOT modified."
+6. 向用户汇报被覆盖的文件列表；提醒：Windows 资源管理器可能有图标缓存。
+7. 仅当用户明确要求提交时再 git add / commit（在 monorepo 根执行）。
 ```
 
 ### 成功判定

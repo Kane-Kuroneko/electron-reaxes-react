@@ -92,8 +92,9 @@ PROJECT_LAYOUTS: dict[str, ProjectIconLayout] = {
 		name="ChatAIO",
 		app_icon_stem="statics/gpt",
 		notes=(
-			"electron-builder.yml → icon: \"statics/gpt\" (no extension).",
-			"Windows tray reuses gpt.ico; macOS tray uses tray-icon.macos(.@2x).png + setTemplateImage(true).",
+			"electron-builder.yml → icon: \"statics/gpt\" (no extension; always prod).",
+			"Dev set: --variant dev → gpt-dev / tray-icon-dev… ; runtime picks via !app.isPackaged.",
+			"Windows tray reuses gpt[.ico|-dev.ico]; macOS tray uses tray-icon[-dev].macos(.@2x).png + setTemplateImage(true).",
 			"After Windows rebuild, Explorer may show a cached old icon — refresh icon cache / rename path.",
 		),
 	),
@@ -178,6 +179,33 @@ def resolve_layout(project: str) -> ProjectIconLayout:
 	return PROJECT_LAYOUTS[project]
 
 
+def with_variant_stem(stem: str, variant: str) -> str:
+	"""statics/gpt + dev → statics/gpt-dev"""
+	if variant == "prod":
+		return stem
+	return f"{stem}-dev"
+
+
+def with_variant_filename(rel_path: str, variant: str) -> str:
+	"""Insert -dev after the primary basename stem.
+
+	Examples (variant=dev):
+	  tray-icon.macos.png      → tray-icon-dev.macos.png
+	  tray-icon.macos@2x.png   → tray-icon-dev.macos@2x.png
+	  main-icon-900x900.png    → main-icon-900x900-dev.png
+	"""
+	if variant == "prod":
+		return rel_path
+	p = Path(rel_path)
+	name = p.name
+	if "." in name:
+		primary, rest = name.split(".", 1)
+		new_name = f"{primary}-dev.{rest}"
+	else:
+		new_name = f"{name}-dev"
+	return str(p.with_name(new_name))
+
+
 def load_source(source: Path) -> Image.Image:
 	if not source.is_absolute():
 		raise SystemExit(
@@ -215,33 +243,44 @@ def load_source(source: Path) -> Image.Image:
 	return img
 
 
-def generate(layout: ProjectIconLayout, img: Image.Image, *, dry_run: bool) -> list[Path]:
+def generate(
+	layout: ProjectIconLayout,
+	img: Image.Image,
+	*,
+	variant: str,
+	dry_run: bool,
+) -> list[Path]:
 	project_root = PROJECTS_DIR / layout.name
 	if not project_root.is_dir():
 		raise SystemExit(f"ERROR: project directory not found: {project_root}")
 
-	stem = project_root / layout.app_icon_stem
+	stem = project_root / with_variant_stem(layout.app_icon_stem, variant)
+	tray_macos = with_variant_filename(layout.tray_macos, variant)
+	tray_macos_2x = with_variant_filename(layout.tray_macos_2x, variant)
+	shared_master = with_variant_filename(layout.shared_master, variant)
+	variant_tag = f" [{variant}]" if variant != "prod" else ""
+
 	outputs = [
-		("Windows app+tray ICO", stem.with_suffix(".ico"), lambda p: make_ico(img, p)),
-		("macOS app ICNS", stem.with_suffix(".icns"), lambda p: make_icns(img, p)),
+		(f"Windows app+tray ICO{variant_tag}", stem.with_suffix(".ico"), lambda p: make_ico(img, p)),
+		(f"macOS app ICNS{variant_tag}", stem.with_suffix(".icns"), lambda p: make_icns(img, p)),
 		(
-			f"Linux app PNG ({layout.linux_png_px})",
+			f"Linux app PNG ({layout.linux_png_px}){variant_tag}",
 			stem.with_suffix(".png"),
 			lambda p: save_png(img, p, layout.linux_png_px),
 		),
 		(
-			f"macOS tray template ({layout.tray_macos_px})",
-			project_root / layout.tray_macos,
+			f"macOS tray template ({layout.tray_macos_px}){variant_tag}",
+			project_root / tray_macos,
 			lambda p: make_template_png(img, p, layout.tray_macos_px),
 		),
 		(
-			f"macOS tray template @2x ({layout.tray_macos_2x_px})",
-			project_root / layout.tray_macos_2x,
+			f"macOS tray template @2x ({layout.tray_macos_2x_px}){variant_tag}",
+			project_root / tray_macos_2x,
 			lambda p: make_template_png(img, p, layout.tray_macos_2x_px),
 		),
 		(
-			f"shared master PNG ({layout.shared_master_px})",
-			project_root / layout.shared_master,
+			f"shared master PNG ({layout.shared_master_px}){variant_tag}",
+			project_root / shared_master,
 			lambda p: save_png(img, p, layout.shared_master_px),
 		),
 	]
@@ -287,6 +326,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 		help="Sub-project name under projects/ (default: ChatAIO).",
 	)
 	parser.add_argument(
+		"--variant",
+		choices=("prod", "dev"),
+		default="prod",
+		help=(
+			"Icon set to write. prod → gpt / tray-icon.macos… ; "
+			"dev → gpt-dev / tray-icon-dev.macos… (runtime picks by app.isPackaged)."
+		),
+	)
+	parser.add_argument(
 		"--dry-run",
 		action="store_true",
 		help="Print target paths without writing files.",
@@ -306,15 +354,21 @@ def main(argv: list[str] | None = None) -> int:
 		for name, layout in sorted(PROJECT_LAYOUTS.items()):
 			print(f"{name}:")
 			print(f"  app_icon_stem : {layout.app_icon_stem}.{{ico,icns,png}}")
+			print(f"  app_icon_dev  : {with_variant_stem(layout.app_icon_stem, 'dev')}.{{ico,icns,png}}")
 			print(f"  tray_macos    : {layout.tray_macos} / {layout.tray_macos_2x}")
+			print(
+				f"  tray_macos_dev: {with_variant_filename(layout.tray_macos, 'dev')} / "
+				f"{with_variant_filename(layout.tray_macos_2x, 'dev')}"
+			)
 			print(f"  shared_master : {layout.shared_master}")
+			print(f"  shared_dev    : {with_variant_filename(layout.shared_master, 'dev')}")
 		return 0
 
 	if args.source is None:
 		print(
 			"ERROR: source PNG absolute path is required.\n"
 			"Usage: python scripts/replace-app-icons/replace-app-icons.py "
-			"\"<abs.png>\" --project ChatAIO\n"
+			"\"<abs.png>\" --project ChatAIO [--variant prod|dev]\n"
 			"Docs: scripts/replace-app-icons/AGENTS.md",
 			file=sys.stderr,
 		)
@@ -328,6 +382,7 @@ def main(argv: list[str] | None = None) -> int:
 	print("=== replace-app-icons ===")
 	print(f"monorepo : {MONOREPO_ROOT}")
 	print(f"project  : {layout.name}")
+	print(f"variant  : {args.variant}")
 	print(f"source   : {source}")
 	print(f"dry_run  : {args.dry_run}")
 	print()
@@ -337,7 +392,7 @@ def main(argv: list[str] | None = None) -> int:
 	print(f"loaded   : {img.size[0]}x{img.size[1]} RGBA (source untouched)")
 	print()
 
-	generate(layout, img, dry_run=args.dry_run)
+	generate(layout, img, variant=args.variant, dry_run=args.dry_run)
 
 	print()
 	print("=== Done ===")
@@ -347,6 +402,11 @@ def main(argv: list[str] | None = None) -> int:
 		print("Source PNG was NOT modified.")
 		for note in layout.notes:
 			print(f"NOTE: {note}")
+		if args.variant == "dev":
+			print(
+				"NOTE: Dev filenames use *-dev; runtime selects them when "
+				"!app.isPackaged (see Main/services/app-icons)."
+			)
 	return 0
 
 
