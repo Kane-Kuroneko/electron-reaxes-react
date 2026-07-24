@@ -62,6 +62,7 @@ macOS 与 Windows 的菜单栏在**内容**与**视图**两个层面都不同，
 
 - 左侧 `main-view-traffic-light-spacer`（宽 `TRAFFIC_LIGHT_SPACER_WIDTH = 78`，
   `-webkit-app-region: drag`，背景 = `--menu-view-bg`），为原生红绿灯留位。
+- 红绿灯右侧接 `AppIconButton`（与 Windows 同组件，纯展示）。
 - Prev/Next 导航按钮为「扁平」：`box-shadow:none; border-color:transparent; background:transparent`，
   hover 使用 `--menu-view-hover-bg`。
 - nav 无 `margin-top` 偏移。
@@ -69,6 +70,7 @@ macOS 与 Windows 的菜单栏在**内容**与**视图**两个层面都不同，
 ### Windows 专属（`.win-menu-bar`）
 
 - 无 traffic-light spacer。
+- 左上角 `AppIconButton`（`.main-view-app-icon-slot`）：纯展示 app icon，无点击。
 - Prev/Next 导航按钮为「凸起」：有 border / 白底 / box-shadow（base 样式）。
 - `.win-menu-bar .main-view-bar-item--nav { margin-top: 2px; }` 垂直偏移。
 
@@ -81,6 +83,8 @@ flowchart TD
 	AppRoot -->|darwin| Mac["MacMenuBar (.mac-menu-bar)"]
 	AppRoot -->|其他| Win["WindowsMenuBar (.win-menu-bar)"]
 	Mac --> Shared["共享纯叶子: MenuBar / MenuBarCenterCluster / MenuBarItem / AdjacentNavButton / CurrentContextBadge"]
+	Mac --> AppIcon["AppIconButton（两平台，纯展示）"]
+	Win --> AppIcon
 	Win --> Shared
 	Shared -->|onPress/onHover/onActivate| Reaxel
 ```
@@ -89,7 +93,7 @@ flowchart TD
   `<MacMenuBar/>` 或 `<WindowsMenuBar/>`，不再做 OS 条件渲染或 `[data-platform]` 条件 CSS。
 - **共享纯叶子**：`MenuBar`、`MenuBarCenterCluster`、`MenuBarItem`、`AdjacentNavButton`、
   `CurrentContextBadge` 为跨平台纯视图，被两条路径复用；交互只把事件抛回 reaxel。
-- **平台差异只在**：布局结构（Mac 多一个 traffic-light spacer）+ 作用域 CSS
+- **平台差异只在**：布局结构（Mac：traffic-light spacer + AppIcon；Win：AppIcon 居左）+ 作用域 CSS
   （`.mac-menu-bar` / `.win-menu-bar`）。
 - **几何/样式变量**：`getMenuBarRootStyleVars()`（`menubar-geometry.ts`）为两条路径提供统一的
   高度与 CSS 变量，避免重复。
@@ -107,8 +111,8 @@ flowchart TD
 
 ## 回归清单
 
-- [ ] macOS：左区仅「切换 AI」；原生菜单栏 Application/Edit/View/Window 正常。
-- [ ] Windows：MainView 含 Application / View / 切换 AI；无原生菜单栏。
+- [ ] macOS：左区为红绿灯留位 + App Icon（纯展示）+「切换 AI」；原生菜单栏 Application/Edit/View/Window 正常。
+- [ ] Windows：MainView 含 App Icon（纯展示）+ Application / View / 切换 AI；无原生菜单栏。
 - [ ] 两平台：顶级菜单开合、hover 切换、Prev/Next 动作、拖拽区、light/dark 主题、键盘导航一致可用。
 - [ ] macOS：traffic-light spacer 为红绿灯留位；Prev/Next 扁平样式。
 - [ ] Windows：无 spacer；Prev/Next 凸起样式且有 2px 垂直偏移。

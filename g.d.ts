@@ -100,6 +100,11 @@ declare module '*.gif' {
 	export default gif;
 }
 
+declare module '*.png' {
+	const png:string;
+	export default png;
+}
+
 declare type Languages = 
 	| 'en-US'
 	| 'en-GB'

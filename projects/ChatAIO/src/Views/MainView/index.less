@@ -88,6 +88,43 @@ html, body {
 	-webkit-app-region: no-drag;
 }
 
+/* Windows：左上角 app icon（纯展示） */
+.main-view-app-icon-slot {
+	flex-shrink: 0;
+	display: flex;
+	align-items: stretch;
+	height: 100%;
+	padding: 0 6px 0 8px;
+	background: var(--menu-view-bg, #f5f6f8);
+	border-bottom: 1px solid var(--menu-view-border, rgba(0, 0, 0, 0.08));
+	box-sizing: border-box;
+	-webkit-app-region: drag;
+}
+
+.main-view-app-icon {
+	flex-shrink: 0;
+	box-sizing: border-box;
+	height: 100%;
+	width: auto;
+	margin: 0;
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+	-webkit-app-region: drag;
+}
+
+.main-view-app-icon__img {
+	height: 26px;
+	width: auto;
+	aspect-ratio: 1;
+	object-fit: contain;
+	pointer-events: none;
+	user-select: none;
+	-webkit-user-drag: none;
+}
+
 /* 中区：相对整行 menubar（含 macOS 交通灯）水平居中；垂直与左区共用 margin 契约。
  * 容器 no-drag：避免 Prev/Badge/Next 包围盒 + transform 放大命中面；badge 自身 drag。 */
 .main-view-bar__center {

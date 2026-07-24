@@ -2,6 +2,7 @@
  * @description Windows 菜单栏渲染路径
  * Windows 无原生菜单栏（主进程 setMenu(null)），MainView 完整取代之：
  * 主进程推给 MainView 的 structure 含 Application/View + Switch AI + 可选 Prev/Next。
+ * 左上角 App Icon：纯展示。
  * 无 traffic-light spacer；Prev/Next 为凸起样式。
  * 平台差异见 docs/architecture/menubar-platform-paths.md。
  */
@@ -14,6 +15,9 @@ export const WindowsMenuBar = reaxper( () => {
 			data-theme={ store.theme }
 			style={ getMenuBarRootStyleVars() as React.CSSProperties }
 		>
+			<div className="main-view-app-icon-slot">
+				<AppIconButton />
+			</div>
 			<MenuBar />
 			<MenuBarCenterCluster />
 			<MenuBarRightItems />
@@ -22,6 +26,7 @@ export const WindowsMenuBar = reaxper( () => {
 } );
 
 
+import { AppIconButton } from '#MainView/components/AppIconButton';
 import { MenuBar } from '#MainView/components/MenuBar';
 import { MenuBarCenterCluster } from '#MainView/components/MenuBarCenterCluster';
 import { MenuBarRightItems } from '#MainView/components/MenuBarRightItems';
