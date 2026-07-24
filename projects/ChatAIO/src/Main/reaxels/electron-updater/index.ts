@@ -187,26 +187,11 @@ export const reaxel_AppUpdater = reaxel( () => {
 				latest : null ,
 			};
 		}
-		/* 优先用 updater 缓存的 releaseNotes，失败再走 API */
-		const notes = store.updateInfo?.releaseNotes;
-		let latestBody : string | null = null;
-		if( typeof notes === 'string' ) {
-			latestBody = notes;
-		} else if( Array.isArray( notes ) ) {
-			latestBody = notes
-				.map( ( item ) => ( typeof item === 'string' ? item : item?.note ) )
-				.filter( Boolean )
-				.join( '\n\n' );
-		}
-		if( latestBody ) {
-			return {
-				current ,
-				latest : {
-					version : store.availableVersion ,
-					body : latestBody ,
-				},
-			};
-		}
+		/*
+		 * 始终走 GitHub Releases API 的 markdown body。
+		 * electron-updater 的 updateInfo.releaseNotes 来自 Atom feed 的 content，
+		 * 是 HTML，交给 react-markdown 会整页显示为原始标签。
+		 */
 		const latest = await fetchReleaseBodyByVersion( store.availableVersion );
 		return {
 			current ,

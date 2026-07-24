@@ -13,6 +13,21 @@ const detectOS = (): NodeJS.Platform => {
 	return 'linux';
 };
 
+/** 主进程 loadURL/loadFile 注入的 ?theme=，首帧即可对齐 overlay，不必等 IPC */
+const readBootTheme = (): 'light' | 'dark' | null => {
+	try {
+		const theme = new URLSearchParams( window.location.search ).get( 'theme' );
+		return theme === 'dark' || theme === 'light' ? theme : null;
+	} catch {
+		return null;
+	}
+};
+
+const bootTheme = readBootTheme();
+if( bootTheme ) {
+	document.documentElement.dataset.theme = bootTheme;
+}
+
 export const getBarHeight = (): number => {
 	return getMenuBarHeight();
 };
@@ -72,7 +87,7 @@ export const reaxel_MainView = reaxel( () => {
 		openMenuId : '' ,                 // '' 表示全部关闭；以菜单 id 为唯一标识
 		focusedItemIndex : -1 ,           // 下拉内焦点项：单次打开的临时列表位置，随 DropdownView items 一一对应
 		platform : detectOS() as NodeJS.Platform ,
-		theme : 'light' as 'light' | 'dark' ,
+		theme : ( bootTheme ?? 'light' ) as 'light' | 'dark' ,
 		currentContextLabel : '' ,
 		settingsViewOpened : false ,
 		updateAvailable : false ,

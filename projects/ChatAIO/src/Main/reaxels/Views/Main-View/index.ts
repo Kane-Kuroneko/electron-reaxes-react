@@ -170,6 +170,8 @@ export const reaxel_MainView = reaxel( () => {
 		bindMenubarWebContentsLogging( win.webContents , 'main-view-renderer' );
 		preloadDropdownView();
 		setState( { loaded : true } );
+		/* 尽早对齐 caption overlay / 主壳底色，避免 renderer ready 前关闭区色差 */
+		applyMenubarWindowChrome( win , getCurrentTheme() );
 		console.log( '[Menubar] error log file:' , getMenubarErrorLogPath() );
 
 		if( store.mainViewRendererReady ) {
@@ -207,11 +209,14 @@ export const reaxel_MainView = reaxel( () => {
 	};
 
 	const sendMenuTheme = ( previewAppearance? : Pick<PromptView.Appearance , 'theme'> ) => {
-		if( !store.mainViewRendererReady ) return;
 		if( !mainWindow || mainWindow.isDestroyed() ) return;
-		if( mainWindow.webContents.isDestroyed() ) return;
 
 		const theme = resolveMenubarTheme( previewAppearance );
+		applyMenubarWindowChrome( mainWindow , theme );
+
+		if( !store.mainViewRendererReady ) return;
+		if( mainWindow.webContents.isDestroyed() ) return;
+
 		useIpcMainToRenderer( 'menu-view:command' )
 			.targets( [ mainWindow.webContents ] )
 			.send( {
@@ -882,6 +887,7 @@ import { setMenubarDropdownDismissHandler } from '#main/services/menubar-dropdow
 import type { MenubarErrorReport } from '#main/services/menubar-error-log.utility';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
+import { applyMenubarWindowChrome } from '#main/services/menubar-window-chrome.utility';
 import type { MenuView , MainView } from '#src/Types/MenuView';
 import type { DropdownView } from '#src/Types/DropdownView';
 import type { Settings } from '#src/Types/SettingsTypes';

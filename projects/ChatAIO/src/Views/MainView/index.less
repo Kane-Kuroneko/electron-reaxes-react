@@ -21,8 +21,11 @@ html, body {
 	overflow: hidden;
 	width: 100%;
 	height: 100%;
-	/* 内容区由 AI/Settings WCV 覆盖；全窗口不透明背景会在 macOS compositor 未重绘时露出为“白屏” */
-	background: transparent;
+	/*
+	 * Windows 默认与 menubar / titleBarOverlay 同色，避免首帧透明露出断层。
+	 * macOS 主壳须透明（:has(.mac-menu-bar)），否则 AI WCV 未重绘时露灰白条。
+	 */
+	background: var(--menu-view-bg, #f5f6f8);
 	-webkit-app-region: no-drag;
 	/* 仅 menubar 接收点击；避免全屏 mainWindow.webContents 吞掉 AI 区域事件 */
 	pointer-events: none;
@@ -32,6 +35,13 @@ html, body {
 	height: var(--menu-bar-height, 36px);
 	overflow: hidden;
 	pointer-events: auto;
+	background: var(--menu-view-bg, #f5f6f8);
+}
+
+html:has(.mac-menu-bar),
+html:has(.mac-menu-bar) body,
+html:has(.mac-menu-bar) #react-app-root {
+	background: transparent;
 }
 
 /* ── MainView Root ──────────────────────────────────────── */
@@ -49,6 +59,24 @@ html, body {
 	margin: 0;
 	box-sizing: border-box;
 	-webkit-app-region: no-drag;
+}
+
+/*
+ * Windows titleBarOverlay：原生 min/max/close 占右侧。
+ * menubar 仍铺满整行同色底，仅用 padding-inline-end 把可交互内容收进
+ * env(titlebar-area-*) 安全区——避免更新图标重叠，也避免安全区外露透明底色差。
+ */
+.win-menu-bar.main-view-root {
+	width: 100%;
+	max-width: none;
+	margin-inline-start: 0;
+	background: var(--menu-view-bg, #f5f6f8);
+	border-bottom: 1px solid var(--menu-view-border, rgba(15, 23, 42, 0.08));
+	padding-inline-end: max(
+		0px ,
+		calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw))
+	);
+	box-sizing: border-box;
 }
 
 /* macOS traffic light 预留区域（宽度由 geometry 注入） */
@@ -123,6 +151,7 @@ html, body {
 	pointer-events: none;
 	user-select: none;
 	-webkit-user-drag: none;
+	margin-top: 3px;
 }
 
 /* 中区：相对整行 menubar（含 macOS 交通灯）水平居中；垂直与左区共用 margin 契约。
@@ -153,13 +182,13 @@ html, body {
 	-webkit-app-region: drag;
 }
 
-/* 右侧：更新图标等（相对 root flex 推到最右） */
+/* 右侧：更新图标等（推到安全区最右；Windows 下安全区已排除 caption buttons） */
 .main-view-bar__right {
 	flex-shrink: 0;
 	display: flex;
 	align-items: center;
 	height: 100%;
-	padding-right: 6px;
+	padding-right: 8px;
 	background: var(--menu-view-bg, #f5f6f8);
 	border-bottom: 1px solid var(--menu-view-border, rgba(0, 0, 0, 0.08));
 	box-sizing: border-box;

@@ -4,6 +4,8 @@
  * 主进程推给 MainView 的 structure 含 Application/View + Switch AI + 可选 Prev/Next。
  * 左上角 App Icon：纯展示。
  * 无 traffic-light spacer；Prev/Next 为凸起样式。
+ * 右侧更新图标等须落在 titleBarOverlay 安全区（env(titlebar-area-*)），不可压住 min/max/close；
+ * 栏本身仍全宽同色，overlay color 与 --menu-view-bg 同步，避免关闭区色差。
  * 平台差异见 docs/architecture/menubar-platform-paths.md。
  */
 export const WindowsMenuBar = reaxper( () => {

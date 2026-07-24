@@ -50,6 +50,24 @@ export const bindMainShellMenuBarClip = (win:BrowserWindow) => {
 	win.webContents.on( 'dom-ready' , apply );
 };
 
+/** 主壳 View 底色与 menubar / titleBarOverlay 对齐（Windows 防首帧断层） */
+export const applyMainShellBackgroundColor = (win:BrowserWindow , color:string):boolean => {
+	if( !win || win.isDestroyed() ) {
+		return false;
+	}
+	const shellView = findMainShellWebContentsView( win );
+	if( !shellView ) {
+		return false;
+	}
+	try {
+		shellView.setBackgroundColor( color );
+		return true;
+	} catch ( error ) {
+		console.warn( '[MenubarClip] setBackgroundColor failed:' , error );
+		return false;
+	}
+};
+
 const findMainShellWebContentsView = (win:BrowserWindow):WebContentsView | null => {
 	const match = (view:View):WebContentsView | null => {
 		if( isWebContentsView( view ) && view.webContents === win.webContents ) {

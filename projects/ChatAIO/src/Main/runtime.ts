@@ -65,7 +65,9 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 			if( mainWindow && !mainWindow.isDestroyed() ) {
 				showMainWindow();
 			} else {
-				void createMainWindow().then( ( win ) => {
+				const currentSettings = getSettingsConfigService().getEffectiveSettings();
+				const theme = resolveAppearance( currentSettings.appearance ).theme;
+				void createMainWindow( { theme } ).then( ( win ) => {
 					reaxel_MainView().attachMainWindow();
 					useBeautifulDevtool( win );
 					reaxel_Menu().rebuildMenu();
@@ -76,7 +78,7 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 		initSwitchPerformanceLogging();
 
 		/* Phase 2 — MainWindow + menubar attach（与 AI 无关） */
-		const win = await createMainWindow();
+		const win = await createMainWindow( { theme : resolvedAppearance.theme } );
 		reaxel_MainView().attachMainWindow();
 		useBeautifulDevtool( win );
 
@@ -109,7 +111,9 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 		console.log( '[Runtime] runtime views initialized.' );
 	} else {
 		/* 运行时已启动：只保证窗口与 menubar 宿主仍附着（例如 guiding → runtime） */
-		const win = await createMainWindow();
+		const currentSettings = getSettingsConfigService().getEffectiveSettings();
+		const theme = resolveAppearance( currentSettings.appearance ).theme;
+		const win = await createMainWindow( { theme } );
 		reaxel_MainView().attachMainWindow();
 		reaxel_FloatingView().initFloatingView();
 		useBeautifulDevtool( win );
@@ -154,7 +158,8 @@ import { reaxel_AppUpdater } from '#main/reaxels/electron-updater';
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
 import {
 	applyElectronAppearance ,
-	getAppearanceEnvironment,
+	getAppearanceEnvironment ,
+	resolveAppearance,
 } from '#main/services/appearance';
 import {
 	initTray ,

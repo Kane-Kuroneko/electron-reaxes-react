@@ -5,6 +5,10 @@
  * macOS 勿再单独抬到 42——相对窗口顶边会整体下沉。
  *
  * trafficLightPosition.y = (barHeight - trafficLightSize) / 2
+ *
+ * Windows/Linux titleBarOverlay：
+ * - 自定义可交互内容用 CSS `env(titlebar-area-*)` 收进安全区（padding-inline-end）
+ * - overlay `color` 必须与 menubar `--menu-view-bg` 同色，否则关闭按钮区会色差
  */
 
 export const MENU_ITEM_HEIGHT = 28;
@@ -12,6 +16,18 @@ export const MENU_BAR_HEIGHT = 36;
 export const TRAFFIC_LIGHT_SIZE = 12;
 export const TRAFFIC_LIGHT_INSET_X = 12;
 export const TRAFFIC_LIGHT_SPACER_WIDTH = 78;
+
+/** 与 MainView/index.less 中 --menu-view-bg 保持同步 */
+export const MENUBAR_TITLEBAR_OVERLAY = {
+	light : {
+		color : '#f5f6f8' ,
+		symbolColor : '#5c5c5c' ,
+	} ,
+	dark : {
+		color : '#2d2d30' ,
+		symbolColor : '#cccccc' ,
+	} ,
+} as const;
 
 export const getMenuBarHeight = ():number => MENU_BAR_HEIGHT;
 
@@ -23,6 +39,21 @@ export const getTrafficLightPosition = ():{ x:number; y:number } => {
 	return {
 		x : TRAFFIC_LIGHT_INSET_X ,
 		y : ( MENU_BAR_HEIGHT - TRAFFIC_LIGHT_SIZE ) / 2,
+	};
+};
+
+export const getMenubarTitleBarOverlayOptions = (
+	theme : 'light' | 'dark',
+):{
+	color : string;
+	symbolColor : string;
+	height : number;
+} => {
+	const palette = MENUBAR_TITLEBAR_OVERLAY[theme];
+	return {
+		color : palette.color ,
+		symbolColor : palette.symbolColor ,
+		height : MENU_BAR_HEIGHT ,
 	};
 };
 
