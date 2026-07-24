@@ -94,6 +94,7 @@ node -p "require('electron/package.json').version"   # 应 ≥ 41.2.1
 | `initWebContentsView` | 先 `setVisible(false)`；无自定义 `refreshBounds` 时也用 `y = menuBarHeight`，**禁止**全窗 `{y:0}` |
 | Settings | 显式 `refreshBounds → fitContentView` |
 | 闲置中心 view | 全平台 `setVisible(false)` **并** `removeChildView`；mount 时再 `addChildView` |
+| 活动中心 view mount | **仅 macOS** `removeChildView`+`addChildView` remount；Windows/Linux 只 `addChildView`（禁止对活动视图 remount，否则抢焦点且 alt-tab 后输入框失焦，electron#42339/#28163） |
 
 ### 3.4 Menubar CSS（保持可拖，与裁剪正交）
 

@@ -48,9 +48,9 @@ export const Reaxel_View = reaxel( () => {
 	}
 
 	/** Detach inactive center views so drag-region providers leave the hit-test set.
-	 * macOS: also removeChildView（触发 ViewHierarchyChanged + WasShown）。
-	 * Windows: 同样 removeChildView——仅 setVisible(false) 在部分路径上仍可能参与
-	 * HTCAPTION 聚合（electron#51176 族问题；与主壳全窗 drag 叠加重现内容区幽灵拖区）。 */
+	 * 全平台 removeChildView：仅 setVisible(false) 在部分路径上仍可能参与 HTCAPTION
+	 * 聚合（electron#51176；与主壳全窗 drag 叠加重现内容区幽灵拖区）。
+	 * macOS 另需 remove 才能在下次 mount 触发 ViewHierarchyChanged + WasShown。 */
 	function safeDetachWebContentsView(view:WebContentsView | null | undefined) {
 		if( !view || view.webContents.isDestroyed() ) {
 			return;
@@ -65,15 +65,21 @@ export const Reaxel_View = reaxel( () => {
 		}
 	}
 
-	/** Mount the active center view with explicit bounds and z-order. */
+	/** Mount the active center view with explicit bounds and z-order.
+	 * remount（remove+add）仅 macOS：绕过 compositor 白屏。
+	 * Windows/Linux 禁止对**当前活动**视图 remount——addChildView 会抢焦点
+	 * （electron#42339），且破坏 alt-tab 回来后子 WebContents 的输入焦点恢复
+	 * （electron#28163）。置顶用 addChildView 即可。 */
 	function mountActiveCenterView(view:WebContentsView | null | undefined , bounds = getCenterBounds()) {
 		if( !view || view.webContents.isDestroyed() || mainWindow.isDestroyed() ) {
 			return;
 		}
-		try {
-			mainWindow.contentView.removeChildView( view );
-		} catch {
-			/* view may already be detached */
+		if( process.platform === 'darwin' ) {
+			try {
+				mainWindow.contentView.removeChildView( view );
+			} catch {
+				/* view may already be detached */
+			}
 		}
 		mainWindow.contentView.addChildView( view );
 		view.setBounds( bounds );
@@ -135,6 +141,11 @@ export const Reaxel_View = reaxel( () => {
 
 	function focusCurrentContentView() {
 		mainWindow.focus();
+		focusCenterWebContents();
+	}
+
+	/** 仅聚焦中心内容 WebContents（不碰 BrowserWindow），供窗口 focus 恢复使用。 */
+	function focusCenterWebContents() {
 		const view = getCurrentCenterView();
 		if( !view || view.webContents.isDestroyed() ) {
 			return;
@@ -145,6 +156,42 @@ export const Reaxel_View = reaxel( () => {
 		} catch {
 			view.webContents.focus();
 		}
+	}
+
+	/**
+	 * 主窗口从其它应用切回后，Electron 常把焦点还给 mainWindow.webContents（menubar 壳），
+	 * 而不是 AI/Settings WebContentsView，导致输入框失焦（electron#28163）。
+	 * 在 focus 事件后延迟一拍，把焦点还回中心内容区；若 Prompt 侧栏已持有焦点则不抢。
+	 */
+	function restoreContentViewFocusAfterWindowFocus() {
+		setImmediate( () => {
+			if( !mainWindow || mainWindow.isDestroyed() || !mainWindow.isFocused() ) {
+				return;
+			}
+			const focusedWindow = BrowserWindow.getFocusedWindow();
+			if( focusedWindow && focusedWindow !== mainWindow ) {
+				return;
+			}
+			const promptStore = reaxel_PromptViews.store;
+			for( const side of [ 'left' , 'right' ] as const ) {
+				const promptView = promptStore[side]?.view;
+				if(
+					promptView
+					&& !promptView.webContents.isDestroyed()
+					&& promptView.webContents.isFocused()
+				) {
+					return;
+				}
+			}
+			const view = getCurrentCenterView();
+			if( !view || view.webContents.isDestroyed() ) {
+				return;
+			}
+			if( view.webContents.isFocused() ) {
+				return;
+			}
+			focusCenterWebContents();
+		} );
 	}
 
 	function getCurrentCenterView() {
@@ -482,7 +529,10 @@ export const Reaxel_View = reaxel( () => {
 		mainWindow.on( 'resize' , () => {
 			fitWindow();
 		} );
-		mainWindow.on( 'focus' , registerAISwitchGlobalShortcuts );
+		mainWindow.on( 'focus' , () => {
+			registerAISwitchGlobalShortcuts();
+			restoreContentViewFocusAfterWindowFocus();
+		} );
 		mainWindow.on( 'show' , registerAISwitchGlobalShortcuts );
 		mainWindow.on( 'restore' , registerAISwitchGlobalShortcuts );
 		mainWindow.on( 'blur' , unregisterAISwitchGlobalShortcuts );
@@ -615,6 +665,7 @@ const getMenuBarHeight = () => resolveMenuBarHeight();
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import {
+	BrowserWindow ,
 	type Rectangle ,
 	WebContentsView,
 } from "electron";
