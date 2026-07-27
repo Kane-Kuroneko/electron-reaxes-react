@@ -335,8 +335,12 @@ export const reaxel_FloatingView = reaxel( () => {
 		} );
 
 		if( dev() ) {
-			const url = createDevRendererEntryURL( 'FloatingView' );
-			floatingWindow.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
+			void loadDevRendererEntryWithRetry(
+				floatingWindow.webContents ,
+				'FloatingView' ,
+				{} ,
+				'FloatingView',
+			);
 		} else {
 			floatingWindow.webContents.loadFile( getRendererEntryFilePath( absAppRunningPath , 'FloatingView' ) );
 		}
@@ -414,8 +418,7 @@ export const reaxel_FloatingView = reaxel( () => {
 
 import { mainWindow } from '#main/mainWindow';
 import {
-	createDevRendererEntryURL ,
-	getFreshRendererLoadURLOptions ,
+	loadDevRendererEntryWithRetry ,
 	getRendererEntryFilePath,
 } from '#main/services/dev/renderer-entry';
 import { useIpcMainToRenderer } from '#main/services/ipc';

@@ -1,10 +1,8 @@
 export const RCNetworkPanel = reaxper( () => {
-	
-	
-	return <div className="settings-panel">
+	return <>
 		<GlobalProxy />
 		<ProxyServers />
-	</div>;
+	</>;
 } );
 
 

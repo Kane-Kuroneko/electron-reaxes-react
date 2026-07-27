@@ -23,6 +23,7 @@ export const App = reaxper( () => {
 		theme={ {
 			algorithm : resolvedTheme === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
 		} }
+		modal={ SETTINGS_MODAL_CONFIG }
 	>
 		<div className="settings-root">
 			<div className="settings-body">
@@ -42,7 +43,7 @@ export const App = reaxper( () => {
 					/>
 				</div>
 				<div className="settings-content">
-					<div className="settings-panel">
+					<div className={ `settings-panel${ SETTINGS_FILL_CONTENT_MENUS.has( store.current ) ? ' settings-panel--fill' : '' }` }>
 						<MenuContentComponent />
 					</div>
 				</div>
@@ -170,6 +171,10 @@ import { RCAboutPanel } from '#SettingsView/components/About';
 import { RCVersionPanel } from '#SettingsView/components/Version';
 import { RCManageAIsPanel } from '#SettingsView/components/ManageAIs';
 import { RCNetworkPanel } from '#SettingsView/components/Network';
+import {
+	SETTINGS_FILL_CONTENT_MENUS ,
+	SETTINGS_MODAL_CONFIG ,
+} from '#SettingsView/layout/constants';
 import { devCleanStart } from '#SettingsView/services/Settings';
 import { resolveThemePreference } from '#src/shared/appearance';
 import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";

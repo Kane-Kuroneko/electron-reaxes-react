@@ -72,15 +72,24 @@ const installBrowserIdentitySpoofing = () => {
 };
 
 const applyThemeToDocument = () => {
-	document.documentElement.dataset.chataioTheme = currentEnvironment.theme;
-	document.documentElement.dataset.chataioThemeSource = currentEnvironment.themeSource;
-	document.documentElement.style.colorScheme = currentEnvironment.theme;
+	const root = document.documentElement;
+	if( !root ) {
+		return false;
+	}
+	root.dataset.chataioTheme = currentEnvironment.theme;
+	root.dataset.chataioThemeSource = currentEnvironment.themeSource;
+	root.style.colorScheme = currentEnvironment.theme;
+	return true;
 };
 
 const syncLoadingThemeStyle = () => {
 	const existingStyle = document.getElementById( 'chataio-loading-theme-style' );
 	if( currentEnvironment.theme !== 'dark' ) {
 		existingStyle?.remove();
+		return;
+	}
+	const container = document.head || document.documentElement;
+	if( !container ) {
 		return;
 	}
 	const style = existingStyle || document.createElement( 'style' );
@@ -95,14 +104,47 @@ html[data-chataio-theme="dark"] body {
 }
 `;
 	if( !existingStyle ) {
-		( document.head || document.documentElement ).appendChild( style );
+		container.appendChild( style );
+	}
+};
+
+/**
+ * preload 在文档提交（commit）时即执行，此时解析器可能还没创建 <html>，
+ * document.documentElement 为 null（首字节较慢的站点更容易命中，如 chat.deepseek.com）。
+ * 此时挂 MutationObserver 等 <html> 出现后立刻补应用，避免等到 DOMContentLoaded 造成白屏闪烁。
+ */
+let documentElementObserver:MutationObserver | null = null;
+
+const applyThemeWhenDocumentElementReady = () => {
+	if( documentElementObserver || document.documentElement ) {
+		return;
+	}
+	try {
+		documentElementObserver = new MutationObserver( () => {
+			if( !document.documentElement ) {
+				return;
+			}
+			documentElementObserver?.disconnect();
+			documentElementObserver = null;
+			applyAIPageEnvironment( currentEnvironment );
+		} );
+		documentElementObserver.observe( document , { childList : true } );
+	} catch ( error ) {
+		console.warn( '[AIPagePreload] Failed to observe documentElement creation:' , error );
 	}
 };
 
 const applyAIPageEnvironment = (environment:AIPageEnvironment) => {
 	currentEnvironment = environment;
-	applyThemeToDocument();
-	syncLoadingThemeStyle();
+	try {
+		if( applyThemeToDocument() ) {
+			syncLoadingThemeStyle();
+		} else {
+			applyThemeWhenDocumentElementReady();
+		}
+	} catch ( error ) {
+		console.warn( '[AIPagePreload] Failed to apply page environment:' , error );
+	}
 	installBrowserIdentitySpoofing();
 };
 

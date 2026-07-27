@@ -42,6 +42,57 @@ export const reaxel_MainView = reaxel( () => {
 	let ipcRegistered = false;
 	/* 当前已绑定 menubar 宿主事件的 BrowserWindow；窗口销毁后需重新 attach。 */
 	let boundMainWindow : BrowserWindow | null = null;
+	const rendererReadyWaiters:Array<(ready:boolean) => void> = [];
+
+	const flushRendererReadyWaiters = (ready:boolean) => {
+		if( rendererReadyWaiters.length === 0 ) {
+			return;
+		}
+		const waiters = rendererReadyWaiters.splice( 0 , rendererReadyWaiters.length );
+		waiters.forEach( resolve => {
+			resolve( ready );
+		} );
+	};
+
+	/**
+	 * 等 MainView renderer 发出 menu-view:ready（menubar React 已挂载）。
+	 * 超时后返回 false，调用方仍可继续 AI preload，避免永久卡死。
+	 */
+	const waitUntilRendererReady = ( options:{ timeoutMs?:number } = {} ) => {
+		if( store.mainViewRendererReady ) {
+			return Promise.resolve( true );
+		}
+		const timeoutMs = options.timeoutMs ?? 15000;
+		return new Promise<boolean>( resolve => {
+			let settled = false;
+			const finish = ( ready:boolean ) => {
+				if( settled ) {
+					return;
+				}
+				settled = true;
+				clearTimeout( timer );
+				const index = rendererReadyWaiters.indexOf( onReady );
+				if( index >= 0 ) {
+					rendererReadyWaiters.splice( index , 1 );
+				}
+				resolve( ready );
+			};
+			const onReady = ( ready:boolean ) => {
+				finish( ready );
+			};
+			const timer = setTimeout( () => {
+				console.warn(
+					`[Menubar] waitUntilRendererReady timed out after ${ timeoutMs }ms;`
+					+ ' continuing ContentViews without menubar ready',
+				);
+				finish( false );
+			} , timeoutMs );
+			rendererReadyWaiters.push( onReady );
+			if( store.mainViewRendererReady ) {
+				finish( true );
+			}
+		} );
+	};
 
 	const runMenubarHandler = (
 		scope : string ,
@@ -74,6 +125,7 @@ export const reaxel_MainView = reaxel( () => {
 				preloadDropdownView();
 				sendMenuStructure();
 				sendMenuTheme();
+				flushRendererReadyWaiters( true );
 			} );
 		} );
 
@@ -163,6 +215,7 @@ export const reaxel_MainView = reaxel( () => {
 					mainViewRendererReady : false ,
 					loaded : false ,
 				} );
+				flushRendererReadyWaiters( false );
 			}
 		} );
 
@@ -477,6 +530,10 @@ export const reaxel_MainView = reaxel( () => {
 		} );
 
 		dropdownWindow.webContents.on( 'did-fail-load' , ( _event , errorCode , errorDescription , validatedURL ) => {
+			/* Dev 下 localhost 未就绪由 loadDevRendererEntryWithRetry 重试，避免刷屏假报错 */
+			if( dev() && ( errorCode === -102 || errorCode === -101 || errorCode === -2 ) ) {
+				return;
+			}
 			logMenubarError( {
 				scope : 'dropdown-view:did-fail-load' ,
 				message : `${ errorDescription } (${ errorCode })` ,
@@ -486,8 +543,12 @@ export const reaxel_MainView = reaxel( () => {
 		} );
 
 		if( dev() ) {
-			const url = createDevRendererEntryURL( 'DropdownView' );
-			dropdownWindow.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
+			void loadDevRendererEntryWithRetry(
+				dropdownWindow.webContents ,
+				'DropdownView' ,
+				{} ,
+				'DropdownView',
+			);
 		} else {
 			dropdownWindow.webContents.loadFile( getRendererEntryFilePath(
 				reaxel_ElectronENV().absAppRunningPath ,
@@ -690,6 +751,7 @@ export const reaxel_MainView = reaxel( () => {
 	const rtn = {
 		ensureMenubarHostReady ,
 		attachMainWindow ,
+		waitUntilRendererReady ,
 		initMainView ,
 		sendMenuStructure ,
 		sendMenuTheme ,
@@ -869,8 +931,7 @@ import { reaxel_AppUpdater } from '#main/reaxels/electron-updater';
 import { mainWindow } from '#main/mainWindow';
 import { useIpcMainToRenderer , useIpcRendererToMain , useIpcSync } from '#main/services/ipc';
 import {
-	createDevRendererEntryURL ,
-	getFreshRendererLoadURLOptions ,
+	loadDevRendererEntryWithRetry ,
 	getRendererEntryFilePath,
 } from '#main/services/dev/renderer-entry';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';

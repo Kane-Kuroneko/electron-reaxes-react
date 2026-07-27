@@ -137,8 +137,12 @@ const loadMainViewHTML = ( theme:'light' | 'dark' ) => {
 	mainWindow.webContents.once( 'did-finish-load' , paintEarly );
 
 	if( dev() ) {
-		const url = createDevRendererEntryURL( 'MainView' , { theme } );
-		mainWindow.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
+		void loadDevRendererEntryWithRetry(
+			mainWindow.webContents ,
+			'MainView' ,
+			{ theme } ,
+			'MainView/menubar',
+		);
 		return;
 	}
 
@@ -182,8 +186,7 @@ import {
 } from '#main/services/app-icons';
 import { dev } from 'electron-is';
 import {
-	createDevRendererEntryURL ,
-	getFreshRendererLoadURLOptions ,
+	loadDevRendererEntryWithRetry ,
 	getRendererEntryFilePath,
 } from '#main/services/dev/renderer-entry';
 import {

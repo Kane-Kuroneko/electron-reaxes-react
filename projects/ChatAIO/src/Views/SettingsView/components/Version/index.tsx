@@ -135,13 +135,13 @@ export const RCVersionPanel = reaxper( () => {
 		} ] : [] ),
 	];
 
-	return <div className="settings-section version-section">
+	return <div className="settings-section settings-section--fill version-section">
 		<div className="section-title"><I18n>Version</I18n></div>
 		{ !updateAvailable && updateState?.status === 'not-available' ? (
 			<Alert
 				type="success"
 				showIcon
-				style={ { marginBottom : 16 } }
+				style={ { marginBottom : 16 , flexShrink : 0 } }
 				message={ <I18n>Up to date</I18n> }
 			/>
 		) : null }
@@ -149,7 +149,7 @@ export const RCVersionPanel = reaxper( () => {
 			<Alert
 				type="info"
 				showIcon
-				style={ { marginBottom : 16 } }
+				style={ { marginBottom : 16 , flexShrink : 0 } }
 				message={ <>
 					<I18n>New version available</I18n>
 					{ updateState?.availableVersion ? `: ${ updateState.availableVersion }` : '' }
@@ -157,6 +157,7 @@ export const RCVersionPanel = reaxper( () => {
 			/>
 		) : null }
 		<Tabs
+			className="version-tabs"
 			activeKey={ updateAvailable ? activeTab : 'current' }
 			onChange={ ( key ) => {
 				setState.VersionUI( {

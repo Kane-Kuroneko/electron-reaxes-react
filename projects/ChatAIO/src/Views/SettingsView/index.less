@@ -76,7 +76,11 @@ html, body {
 
 .settings-content {
 	flex: 1;
-	overflow-y: auto;
+	min-height: 0;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
 	padding: 24px 32px;
 	background: var(--settings-bg);
 }
@@ -90,10 +94,26 @@ html, body {
 	border-top: 1px solid var(--settings-border);
 	justify-content: flex-end;
 	box-shadow: 0 -2px 8px var(--settings-shadow);
+	flex-shrink: 0;
 }
 
+/**
+ * 默认：面板自身滚动（多段堆叠页）。
+ * `--fill`：面板锁高，由内部 section / table / markdown 占满并内部滚动。
+ */
 .settings-panel {
+	flex: 1;
+	min-height: 0;
+	min-width: 0;
 	width: 100%;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+.settings-panel--fill {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
 }
 
 .settings-section {
@@ -111,6 +131,32 @@ html, body {
 		padding-bottom: 12px;
 		border-bottom: 1px solid var(--settings-border);
 	}
+}
+
+.settings-section--fill {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	margin-bottom: 0;
+	overflow: hidden;
+
+	> .section-title,
+	> .settings-section__toolbar,
+	> .settings-section__footer {
+		flex-shrink: 0;
+	}
+}
+
+.settings-table-host {
+	flex: 1;
+	min-height: 0;
+	min-width: 0;
+	overflow: hidden;
+}
+
+.settings-column-text-filter {
+	padding: 8px;
 }
 
 .select-option-subtitle {
@@ -271,6 +317,68 @@ html, body {
 	margin-left: auto;
 }
 
+/* Version：Tabs / changelog 占满剩余高度，markdown 在 body 内滚动 */
+.version-section.settings-section--fill {
+	.ant-tabs {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.ant-tabs-nav {
+		flex-shrink: 0;
+	}
+
+	.ant-tabs-content-holder {
+		flex: 1;
+		min-height: 0;
+		overflow: hidden;
+	}
+
+	.ant-tabs-content {
+		height: 100%;
+	}
+
+	.ant-tabs-tabpane {
+		height: 100%;
+		outline: none;
+	}
+
+	.version-latest-panel,
+	.version-changelog {
+		height: 100%;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.version-changelog__meta,
+	.version-update-actions {
+		flex-shrink: 0;
+	}
+
+	.version-changelog__body {
+		flex: 1;
+		min-height: 0;
+	}
+
+	.version-changelog-loading,
+	.version-changelog__empty {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	> .ant-alert {
+		flex-shrink: 0;
+	}
+}
+
 .version-changelog__body {
 	margin: 0;
 	padding: 16px 18px;
@@ -280,7 +388,6 @@ html, body {
 	color: var(--settings-title);
 	font-size: 13.5px;
 	line-height: 1.65;
-	max-height: 480px;
 	overflow: auto;
 	word-break: break-word;
 

@@ -160,6 +160,10 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			dataIndex : 'label' ,
 			ellipsis : true,
 			minWidth : 100,
+			...createColumnTextFilter<AI.AIItem>(
+				record => record.label || '' ,
+				{ placeholderKey : 'Search AI name' } ,
+			) ,
 			render( _value , record ) {
 				const { isNewAI , isModifiedAI , isAIPendingDeletion } = reaxel_SettingsView();
 				const isNew = isNewAI( record.id );
@@ -180,6 +184,10 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			dataIndex : 'AI_family',
 			ellipsis : true,
 			minWidth : 72,
+			...createColumnTextFilter<AI.AIItem>(
+				record => record.AI_family || '' ,
+				{ placeholderKey : 'Search AI family' } ,
+			) ,
 			render( value: AI.AIFamily ) {
 				const color = AI_FAMILY_TAG_COLORS[value] || 'default';
 				return <Tag color={ color }>{ value }</Tag>;
@@ -190,6 +198,10 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			dataIndex : 'url' ,
 			ellipsis : true,
 			minWidth : 140,
+			...createColumnTextFilter<AI.AIItem>(
+				record => record.url || '' ,
+				{ placeholderKey : 'Search AI URL' } ,
+			) ,
 		} ,
 		{
 			title : <I18n>Operations</I18n> ,
@@ -232,6 +244,8 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		} = reaxel_SettingsView();
 		const pendingDeleteAIIds = reaxel_SettingsView.store.UIControls.manage_AIs.pendingDeleteAIIds;
 		const [resetModalVisible , setResetModalVisible] = React.useState( false );
+		const tableHostRef = React.useRef<HTMLDivElement>( null );
+		const tableScrollY = useHostScrollY( tableHostRef );
 		const sensors = useSensors(
 			useSensor( PointerSensor , {
 				activationConstraint : {
@@ -270,37 +284,39 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			}
 		};
 
-		return <div className="settings-section">
+		return <div className="settings-section settings-section--fill">
 			<div className="section-title"><I18n>Manage AIs</I18n></div>
-			<Form
-				layout="vertical"
-				style={ { marginBottom : 16 } }
-			>
-				<Form.Item label={<I18n>Startup AI Page</I18n>}>
-					<Radio.Group
-						value={ reaxel_SettingsView.store.UIControls.manage_AIs.startupAIPageLoadMode }
-						onChange={ event => {
-							setStartupAIPageLoadMode( event.target.value as Startup.AIPageLoadMode );
-						} }
-						style={ { userSelect : 'none' } }
-					>
-						<Space
-							direction="vertical"
-							size={ 4 }
+			<div className="settings-section__toolbar">
+				<Form
+					layout="vertical"
+					style={ { marginBottom : 16 } }
+				>
+					<Form.Item label={<I18n>Startup AI Page</I18n>}>
+						<Radio.Group
+							value={ reaxel_SettingsView.store.UIControls.manage_AIs.startupAIPageLoadMode }
+							onChange={ event => {
+								setStartupAIPageLoadMode( event.target.value as Startup.AIPageLoadMode );
+							} }
+							style={ { userSelect : 'none' } }
 						>
-							<Radio value="last-used-ai"><I18n>Load the AI page used last time before exit</I18n></Radio>
-							<Radio value="first-ai"><I18n>Always load the first AI page when app starts</I18n></Radio>
-						</Space>
-					</Radio.Group>
-				</Form.Item>
-			</Form>
-			<Button
-				type="primary"
-				onClick={ () => {
-					changeEditAIModalVisible( true );
-				} }
-				style={ { marginBottom : 16 } }
-			><I18n>Add AI Page</I18n></Button>
+							<Space
+								direction="vertical"
+								size={ 4 }
+							>
+								<Radio value="last-used-ai"><I18n>Load the AI page used last time before exit</I18n></Radio>
+								<Radio value="first-ai"><I18n>Always load the first AI page when app starts</I18n></Radio>
+							</Space>
+						</Radio.Group>
+					</Form.Item>
+				</Form>
+				<Button
+					type="primary"
+					onClick={ () => {
+						changeEditAIModalVisible( true );
+					} }
+					style={ { marginBottom : 16 } }
+				><I18n>Add AI Page</I18n></Button>
+			</div>
 			<DndContext
 				sensors={ sensors }
 				modifiers={ [ restrictToVerticalAxis ] }
@@ -310,33 +326,40 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 					items={ reaxel_SettingsView.store.Data.AIs.map( ai => ai.id ) }
 					strategy={ verticalListSortingStrategy }
 				>
-					<div style={ { overflowX: 'auto' } }>
+					<div
+						className="settings-table-host"
+						ref={ tableHostRef }
+					>
 						<Table
-						key={ `ais-table-${ pendingDeleteAIIds.join(',') || 'none' }` }
-						className="manage-ais-table"
-						style={ { width: '100%' , minWidth: 600 } }
-						components={ {
-							body : {
-								row : SortableRow,
-							},
-						} }
-						rowKey="id"
-						columns={ columns }
-						dataSource={ reaxel_SettingsView.store.Data.AIs }
-						pagination={ false }
-						size="small"
-						rowClassName={ record => {
-							const { isNewAI , isModifiedAI , isAIPendingDeletion } = reaxel_SettingsView();
-							if( isAIPendingDeletion( record.id ) ) return 'ai-row--pending-delete';
-							if( isNewAI( record.id ) ) return 'ai-row--new';
-							if( isModifiedAI( record.id ) ) return 'ai-row--modified';
-							return '';
-						} }
-					/>
+							key={ `ais-table-${ pendingDeleteAIIds.join(',') || 'none' }` }
+							className="manage-ais-table"
+							style={ { width: '100%' } }
+							components={ {
+								body : {
+									row : SortableRow,
+								},
+							} }
+							rowKey="id"
+							columns={ columns }
+							dataSource={ reaxel_SettingsView.store.Data.AIs }
+							pagination={ false }
+							size="small"
+							scroll={ {
+								x : 600 ,
+								y : tableScrollY ,
+							} }
+							rowClassName={ record => {
+								const { isNewAI , isModifiedAI , isAIPendingDeletion } = reaxel_SettingsView();
+								if( isAIPendingDeletion( record.id ) ) return 'ai-row--pending-delete';
+								if( isNewAI( record.id ) ) return 'ai-row--new';
+								if( isModifiedAI( record.id ) ) return 'ai-row--modified';
+								return '';
+							} }
+						/>
 					</div>
 				</SortableContext>
 			</DndContext>
-			<div style={ { marginTop : 16 , display : 'flex' , justifyContent : 'flex-end' } }>
+			<div className="settings-section__footer" style={ { marginTop : 16 , display : 'flex' , justifyContent : 'flex-end' } }>
 				<Button
 					danger
 					type="primary"
@@ -945,6 +968,8 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	};
 
 	import { DragIconSvg } from "./DragIcon.svg";
+	import { createColumnTextFilter } from '#SettingsView/layout/column-text-filter';
+	import { useHostScrollY } from '#SettingsView/layout/use-host-scroll-y';
 	import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 	import { resetAIsToDefaults } from "#SettingsView/services/Settings";
 	import { AIFamily } from "#src/shared/statics/AI-family";

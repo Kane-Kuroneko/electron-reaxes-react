@@ -11,9 +11,10 @@ export const isMainRuntimeStarted = () => mainRuntimeStarted;
  * Phase 2  MainWindow    — 创建窗口并 load MainView，立刻 attach menubar 宿主
  * Phase 3  OverlayWarm   — FloatingView 预热（独立窗口，不阻塞 menubar）
  * Phase 4  ShellChrome   — tray / 生命周期 / rebuildMenu（structure 在 menu-view:ready 时再推）
- * Phase 5  ContentViews  — AI / Prompt 等 runtime views（与 menubar 握手无关）
+ * Phase 5  ContentViews  — 等 menubar renderer ready（或超时）后再 init AI / Prompt
  *
  * 禁止把 ensureMenubarHostReady / attachMainWindow 排到 initRuntimeViews 之后。
+ * 禁止在 menu-view:ready 之前批量 preload AI（会与 localhost MainView 抢资源）。
  */
 export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) => {
 	console.log( '[Runtime] startMainRuntime:' , options );
@@ -96,7 +97,7 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 			} );
 		}
 
-		/* Phase 3 — OverlayWarm */
+		/* Phase 3 — OverlayWarm（独立窗；dev 下对 localhost 做重试，不阻塞 menubar） */
 		reaxel_FloatingView().initFloatingView();
 
 		/* Phase 4 — ShellChrome */
@@ -106,7 +107,13 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 		reaxel_Menu().rebuildMenu();
 		reaxel_AppUpdater();
 
-		/* Phase 5 — ContentViews（AI）；不得回挡 menubar */
+		/* Phase 5 — ContentViews（AI）：等 menubar renderer ready，避免 AI preload
+		   与 MainView localhost 导航抢 Chromium 资源，造成「menubar 被 AI 挡住」假象。
+		   超时后仍继续，防止 menubar 永久失败时卡死启动。 */
+		const menubarReady = await reaxel_MainView().waitUntilRendererReady( {
+			timeoutMs : 15000,
+		} );
+		console.log( '[Runtime] menubar renderer ready:' , menubarReady );
 		await Reaxel_View().initRuntimeViews();
 		console.log( '[Runtime] runtime views initialized.' );
 	} else {
