@@ -1,0 +1,14 @@
+{
+	"files.exclude": {
+		"**/__Bin": true,
+		"**/__Bin/**": true
+	},
+	"files.watcherExclude": {
+		"**/__Bin": true,
+		"**/__Bin/**": true
+	},
+	"search.exclude": {
+		"**/__Bin": true,
+		"**/__Bin/**": true
+	}
+}
