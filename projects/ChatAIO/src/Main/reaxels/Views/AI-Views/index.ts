@@ -174,12 +174,12 @@ export const reaxel_AIViews = reaxel( () => {
 	};
 
 	/* 上一次已应用的可见性状态，用于跳过冗余 applyVisibility() 调用。
-	   showAIView / turnToInstantiated 已同步调用；obsReaction 负责 attach（ensure）。
-	   本函数只表达「AI 列表里谁该离开中心区」，不负责平台 remount/repaint。
+	   AI 切换必须在此同步 ensure（先于 showSwitchAiBar）：若把 remount 留给
+	   obsReaction microtask，会打在 FloatingView showInactive 之后，macOS/Win
+	   上会把透明 overlay 合成弄挂（表现为 SwitchAiBar「没了」）。
 
 	   必须同时追踪 currentAIViewKey、settingsOpened 和 AIViews 数量：
-	   仅凭 key 判断会遗漏 syncAIViewsWithConfig 预加载新 view 但未切换 key 的场景——
-	   新 WebContentsView 默认挂在 contentView 上，若早期退出则不会 detach，导致叠层。 */
+	   仅凭 key 判断会遗漏 syncAIViewsWithConfig 预加载新 view 但未切换 key 的场景。 */
 	let lastAppliedVisibilityKey: string | null = null;
 	let lastAppliedSettingsOpened: boolean | null = null;
 	let lastAppliedViewCount: number = -1;
@@ -219,15 +219,20 @@ export const reaxel_AIViews = reaxel( () => {
 			Reaxel_View().detachInactiveCenterView( runtimeView.view );
 		} );
 
-		/* key/settings 变化时由 Reaxel_View obsReaction 统一 ensure，避免双重 attach。
-		   仅「预加载导致 view 数量变化、key 未变」时，在此补一次 ensure。 */
-		if( keyOrSettingsChanged ) {
-			return;
-		}
-
 		const activeRuntimeView = store.AIViews.find( runtimeView => {
 			return runtimeView.id === currentAIViewKey;
 		} ) || null;
+
+		/* key 变化：同步 ensure，保证 remount 发生在 FloatingView show 之前 */
+		if( keyOrSettingsChanged ) {
+			Reaxel_View().ensureActiveCenterViewPainted( 'ai-switch' );
+			if( activeRuntimeView?.view && process.platform !== 'darwin' ) {
+				focusRuntimeAIViewIfReady( activeRuntimeView );
+			}
+			return;
+		}
+
+		/* 仅 view 数量变化（预加载）：当前 view 仍不可见时补 ensure */
 		if( activeRuntimeView?.view && !activeRuntimeView.view.getVisible() ) {
 			Reaxel_View().ensureActiveCenterViewPainted( 'ai-switch' );
 			if( process.platform !== 'darwin' ) {

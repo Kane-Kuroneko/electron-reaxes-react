@@ -633,14 +633,25 @@ export const Reaxel_View = reaxel( () => {
 		prepareInstantiatedSwitchAiBar( { silent : true } );
 	} , () => [ reaxel_AIViews.store.AIViews.length ] );
 
-	/* 切换 AI page / Settings 时仅更新当前中心视图的 bounds。
-	   全量 fitWindow()（遍历所有 views）由 mainWindow resize 事件独立驱动，
-	   切换操作无需为隐藏视图重复计算布局。 */
+	/* 切换 AI page / Settings：
+	   - Settings：由此 ensure（打开路径只 setState，不经 applyVisibility）
+	   - AI switch：applyVisibility 已同步 ensure；此处若再 remount 会落在
+	     FloatingView showInactive 之后，把 overlay 打没。已可见则只同步 bounds。 */
 	obsReaction( ( first ) => {
 		if( first ) return;
 
 		fitCurrentCenterView( getCenterBounds() );
-		ensureActiveCenterViewPainted( store.settingsViewOpened ? 'settings-toggle' : 'ai-switch' );
+		if( store.settingsViewOpened ) {
+			ensureActiveCenterViewPainted( 'settings-toggle' );
+			return;
+		}
+		const view = getCurrentCenterView();
+		if( !view || view.webContents.isDestroyed() ) {
+			return;
+		}
+		if( !view.getVisible() ) {
+			ensureActiveCenterViewPainted( 'ai-switch' );
+		}
 	} , () => [
 		store.settingsViewOpened ,
 		store.currentAIViewKey,
