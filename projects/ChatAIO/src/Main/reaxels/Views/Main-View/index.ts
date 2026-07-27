@@ -656,10 +656,8 @@ export const reaxel_MainView = reaxel( () => {
 	};
 
 	const openSettingsViewInRuntime = () => {
+		reaxel_SettingsView().initSettingsView();
 		Reaxel_View.setState( { settingsViewOpened : true } );
-		const settingsView = reaxel_SettingsView().initSettingsView();
-		settingsView.setVisible( true );
-		mainWindow.contentView.addChildView( settingsView );
 		Reaxel_View().fitWindow();
 	};
 

@@ -53,10 +53,7 @@ export const createMainWindow = async( options:CreateMainWindowOptions = {} ) =>
 			nodeIntegration : false ,
 			contextIsolation : true ,
 			preload : path.join( absAppRunningPath , 'preload.js' ),
-			/* macOS: transparent FloatingView overlay must not throttle menubar / AI views (electron#51718). */
-			...( process.platform === 'darwin' && {
-				backgroundThrottling : false ,
-			} ),
+			backgroundThrottling : false ,
 		},
 		// macOS 标题栏：hidden + trafficLightPosition（勿用 hiddenInset：死区/拖拽失效）
 		// 几何见 shared/menubar-geometry.ts：红绿灯与菜单控件共垂直中心

@@ -173,13 +173,13 @@ export const reaxel_AIViews = reaxel( () => {
 		return true;
 	};
 
-	/* 上一次已应用的可见性状态，用于跳过 obsReaction 引发的冗余 applyVisibility() 调用。
-	   showAIView / turnToInstantiatedAiPageByOffset 已同步调用 applyVisibility()，
-	   obsReaction 在 microtask 中二次触发时状态未变，早期退出避免遍历全部 views。
+	/* 上一次已应用的可见性状态，用于跳过冗余 applyVisibility() 调用。
+	   showAIView / turnToInstantiated 已同步调用；obsReaction 负责 attach（ensure）。
+	   本函数只表达「AI 列表里谁该离开中心区」，不负责平台 remount/repaint。
 
 	   必须同时追踪 currentAIViewKey、settingsOpened 和 AIViews 数量：
 	   仅凭 key 判断会遗漏 syncAIViewsWithConfig 预加载新 view 但未切换 key 的场景——
-	   新 WebContentsView 默认可见，若早期退出则不会隐藏它，导致多个 view 同时显示。 */
+	   新 WebContentsView 默认挂在 contentView 上，若早期退出则不会 detach，导致叠层。 */
 	let lastAppliedVisibilityKey: string | null = null;
 	let lastAppliedSettingsOpened: boolean | null = null;
 	let lastAppliedViewCount: number = -1;
@@ -197,26 +197,39 @@ export const reaxel_AIViews = reaxel( () => {
 		) {
 			return;
 		}
+
+		const keyOrSettingsChanged = currentAIViewKey !== lastAppliedVisibilityKey
+			|| settingsOpened !== lastAppliedSettingsOpened;
+
 		lastAppliedVisibilityKey = currentAIViewKey;
 		lastAppliedSettingsOpened = settingsOpened;
 		lastAppliedViewCount = viewCount;
 
-		let activeRuntimeView:RuntimeAIView | null = null;
+		if( settingsOpened ) {
+			store.AIViews.forEach( runtimeView => {
+				Reaxel_View().detachInactiveCenterView( runtimeView.view );
+			} );
+			return;
+		}
 
 		store.AIViews.forEach( runtimeView => {
-			if( !runtimeView.view ) {
+			if( !runtimeView.view || runtimeView.id === currentAIViewKey ) {
 				return;
 			}
-			const visible = !settingsOpened && runtimeView.id === currentAIViewKey;
-			if( visible ) {
-				activeRuntimeView = runtimeView;
-				return;
-			}
-			Reaxel_View().unmountInactiveCenterView( runtimeView.view );
+			Reaxel_View().detachInactiveCenterView( runtimeView.view );
 		} );
 
-		if( activeRuntimeView?.view && !settingsOpened ) {
-			Reaxel_View().mountActiveCenterView( activeRuntimeView.view );
+		/* key/settings 变化时由 Reaxel_View obsReaction 统一 ensure，避免双重 attach。
+		   仅「预加载导致 view 数量变化、key 未变」时，在此补一次 ensure。 */
+		if( keyOrSettingsChanged ) {
+			return;
+		}
+
+		const activeRuntimeView = store.AIViews.find( runtimeView => {
+			return runtimeView.id === currentAIViewKey;
+		} ) || null;
+		if( activeRuntimeView?.view && !activeRuntimeView.view.getVisible() ) {
+			Reaxel_View().ensureActiveCenterViewPainted( 'ai-switch' );
 			if( process.platform !== 'darwin' ) {
 				focusRuntimeAIViewIfReady( activeRuntimeView );
 			}
@@ -640,6 +653,7 @@ export type FocusMonitorFocusSource =
 	| 'apply-visibility'
 	| 'focus-current-content-view'
 	| 'prompt-view-close'
+	| 'window-restore-paint'
 	| 'explicit'
 	| 'unknown';
 

@@ -47,6 +47,15 @@ export const Reaxel_View = reaxel( () => {
 		setViewBoundsIfChanged( view , bounds );
 	}
 
+	function getAllCenterViews() {
+		const views = reaxel_AIViews.store.AIViews.map( runtimeView => runtimeView.view );
+		const settingsView = reaxel_SettingsView.store.settingsView.view;
+		if( settingsView ) {
+			views.push( settingsView );
+		}
+		return views.filter( Boolean );
+	}
+
 	/** Detach inactive center views so drag-region providers leave the hit-test set.
 	 * 全平台 removeChildView：仅 setVisible(false) 在部分路径上仍可能参与 HTCAPTION
 	 * 聚合（electron#51176；与主壳全窗 drag 叠加重现内容区幽灵拖区）。
@@ -70,7 +79,11 @@ export const Reaxel_View = reaxel( () => {
 	 * Windows/Linux 禁止对**当前活动**视图 remount——addChildView 会抢焦点
 	 * （electron#42339），且破坏 alt-tab 回来后子 WebContents 的输入焦点恢复
 	 * （electron#28163）。置顶用 addChildView 即可。 */
-	function mountActiveCenterView(view:WebContentsView | null | undefined , bounds = getCenterBounds()) {
+	function attachActiveCenterView(
+		view:WebContentsView | null | undefined ,
+		reason:CenterViewLifecycleReason = 'explicit' ,
+		bounds = getCenterBounds(),
+	) {
 		if( !view || view.webContents.isDestroyed() || mainWindow.isDestroyed() ) {
 			return;
 		}
@@ -84,18 +97,65 @@ export const Reaxel_View = reaxel( () => {
 		mainWindow.contentView.addChildView( view );
 		view.setBounds( bounds );
 		view.setVisible( true );
-		if( process.platform === 'darwin' ) {
-			scheduleMacCenterViewPaint( view , bounds );
-		}
+		scheduleCenterViewPaint( view , bounds , reason );
 	}
 
-	function unmountInactiveCenterView(view:WebContentsView | null | undefined) {
+	function detachInactiveCenterView(view:WebContentsView | null | undefined) {
 		safeDetachWebContentsView( view );
 	}
 
-	/** macOS compositor paint after AI switch — menubar click leaves focus on mainWindow.webContents. */
-	function scheduleMacCenterViewPaint(view:WebContentsView | null | undefined , bounds:Rectangle) {
-		if( process.platform !== 'darwin' || !view || view.webContents.isDestroyed() ) {
+	/**
+	 * 统一保证当前中心 view 已挂载且可绘制。
+	 * AI 切换 / Settings / show / restore / runtime-init 走此路径；
+	 * window-focus 改走 recoverActiveCenterViewAfterFocus，避免每次 Alt-Tab remount。
+	 */
+	function ensureActiveCenterViewPainted(
+		reason:CenterViewLifecycleReason = 'explicit' ,
+		bounds = getCenterBounds(),
+	) {
+		const activeView = getCurrentCenterView();
+		getAllCenterViews().forEach( view => {
+			if( !view || view === activeView ) {
+				return;
+			}
+			detachInactiveCenterView( view );
+		} );
+		if( !activeView || activeView.webContents.isDestroyed() ) {
+			return;
+		}
+		attachActiveCenterView( activeView , reason , bounds );
+		if( shouldRestoreCenterViewFocus( reason ) ) {
+			restoreActiveCenterViewFocus( reason );
+		}
+	}
+
+	/**
+	 * Alt-Tab / 点击窗口回焦：只做轻量 bounds nudge + 焦点归还。
+	 * 若中心 view 已不可见（被 hide/minimize 后异常路径），再升级为完整 ensure。
+	 */
+	function recoverActiveCenterViewAfterFocus() {
+		const activeView = getCurrentCenterView();
+		if( !activeView || activeView.webContents.isDestroyed() ) {
+			return;
+		}
+		if( !activeView.getVisible() ) {
+			ensureActiveCenterViewPainted( 'window-focus' );
+			return;
+		}
+		const bounds = getCenterBounds();
+		scheduleCenterViewPaint( activeView , bounds , 'window-focus' );
+		restoreActiveCenterViewFocus( 'window-focus' );
+	}
+
+	function scheduleCenterViewPaint(
+		view:WebContentsView | null | undefined ,
+		bounds:Rectangle ,
+		reason:CenterViewLifecycleReason,
+	) {
+		if( !view || view.webContents.isDestroyed() ) {
+			return;
+		}
+		if( process.platform !== 'darwin' && !shouldNudgeCenterViewBounds( reason ) ) {
 			return;
 		}
 		setImmediate( () => {
@@ -107,13 +167,8 @@ export const Reaxel_View = reaxel( () => {
 				height : Math.max( 1 , bounds.height + 1 ),
 			} );
 			view.setBounds( bounds );
-			mainWindow.contentView.addChildView( view );
-			if( !view.webContents.isDestroyed() ) {
-				try {
-					safeFocusViewWithMonitor( view , 'apply-visibility' );
-				} catch {
-					view.webContents.focus();
-				}
+			if( process.platform === 'darwin' && shouldRemountOnPaint( reason ) ) {
+				mainWindow.contentView.addChildView( view );
 			}
 		} );
 	}
@@ -163,7 +218,7 @@ export const Reaxel_View = reaxel( () => {
 	 * 而不是 AI/Settings WebContentsView，导致输入框失焦（electron#28163）。
 	 * 在 focus 事件后延迟一拍，把焦点还回中心内容区；若 Prompt 侧栏已持有焦点则不抢。
 	 */
-	function restoreContentViewFocusAfterWindowFocus() {
+	function restoreActiveCenterViewFocus(reason:CenterViewLifecycleReason = 'window-focus') {
 		setImmediate( () => {
 			if( !mainWindow || mainWindow.isDestroyed() || !mainWindow.isFocused() ) {
 				return;
@@ -190,7 +245,11 @@ export const Reaxel_View = reaxel( () => {
 			if( view.webContents.isFocused() ) {
 				return;
 			}
-			focusCenterWebContents();
+			try {
+				safeFocusViewWithMonitor( view , mapLifecycleReasonToFocusSource( reason ) );
+			} catch {
+				view.webContents.focus();
+			}
 		} );
 	}
 
@@ -524,6 +583,7 @@ export const Reaxel_View = reaxel( () => {
 		reaxel_FloatingView().initFloatingView();
 		reaxel_PromptViews().registerIpc();
 		await onReadyLoadAIView();
+		ensureActiveCenterViewPainted( 'runtime-init' );
 		/* AI 列表就绪后预热 SwitchAiBar：与 menubar Prev/Next 同源（instantiated），避免首次显示重建。 */
 		prepareInstantiatedSwitchAiBar();
 		mainWindow.on( 'resize' , () => {
@@ -531,10 +591,16 @@ export const Reaxel_View = reaxel( () => {
 		} );
 		mainWindow.on( 'focus' , () => {
 			registerAISwitchGlobalShortcuts();
-			restoreContentViewFocusAfterWindowFocus();
+			recoverActiveCenterViewAfterFocus();
 		} );
-		mainWindow.on( 'show' , registerAISwitchGlobalShortcuts );
-		mainWindow.on( 'restore' , registerAISwitchGlobalShortcuts );
+		mainWindow.on( 'show' , () => {
+			registerAISwitchGlobalShortcuts();
+			ensureActiveCenterViewPainted( 'window-show' );
+		} );
+		mainWindow.on( 'restore' , () => {
+			registerAISwitchGlobalShortcuts();
+			ensureActiveCenterViewPainted( 'window-restore' );
+		} );
 		mainWindow.on( 'blur' , unregisterAISwitchGlobalShortcuts );
 		mainWindow.on( 'hide' , unregisterAISwitchGlobalShortcuts );
 		mainWindow.on( 'minimize' , unregisterAISwitchGlobalShortcuts );
@@ -574,8 +640,7 @@ export const Reaxel_View = reaxel( () => {
 		if( first ) return;
 
 		fitCurrentCenterView( getCenterBounds() );
-		reaxel_SettingsView.store.settingsView.view?.setVisible( store.settingsViewOpened );
-		reaxel_AIViews().applyVisibility();
+		ensureActiveCenterViewPainted( store.settingsViewOpened ? 'settings-toggle' : 'ai-switch' );
 	} , () => [
 		store.settingsViewOpened ,
 		store.currentAIViewKey,
@@ -587,8 +652,9 @@ export const Reaxel_View = reaxel( () => {
 		fitContentView ,
 		fitCurrentCenterView ,
 		focusCurrentContentView ,
-		mountActiveCenterView ,
-		unmountInactiveCenterView ,
+		attachActiveCenterView ,
+		detachInactiveCenterView ,
+		ensureActiveCenterViewPainted ,
 		turnToNextAiPage ,
 		turnToPreviousAiPage ,
 		turnToNextInstantiatedAiPage ,
@@ -635,6 +701,53 @@ const isSameBounds = (left:Rectangle , right:Rectangle) => {
 		&& left.height === right.height;
 };
 
+const shouldNudgeCenterViewBounds = (reason:CenterViewLifecycleReason) => {
+	return reason === 'window-show'
+		|| reason === 'window-restore'
+		|| reason === 'window-focus'
+		|| reason === 'settings-toggle'
+		|| reason === 'runtime-init';
+};
+
+/** macOS remount 仅在可见性/层级真正变化时需要；纯 focus 恢复不做 remount。 */
+const shouldRemountOnPaint = (reason:CenterViewLifecycleReason) => {
+	return reason === 'ai-switch'
+		|| reason === 'window-show'
+		|| reason === 'window-restore'
+		|| reason === 'settings-toggle'
+		|| reason === 'runtime-init'
+		|| reason === 'explicit';
+};
+
+const shouldRestoreCenterViewFocus = (reason:CenterViewLifecycleReason) => {
+	return reason === 'ai-switch'
+		|| reason === 'window-show'
+		|| reason === 'window-restore'
+		|| reason === 'window-focus'
+		|| reason === 'explicit';
+};
+
+const mapLifecycleReasonToFocusSource = (reason:CenterViewLifecycleReason):FocusMonitorFocusSource => {
+	if(
+		reason === 'window-show'
+		|| reason === 'window-restore'
+		|| reason === 'window-focus'
+	) {
+		return 'window-restore-paint';
+	}
+	return 'apply-visibility';
+};
+
+export type CenterViewLifecycleReason =
+	| 'ai-switch'
+	| 'window-show'
+	| 'window-restore'
+	| 'window-focus'
+	| 'settings-toggle'
+	| 'layout-resize'
+	| 'runtime-init'
+	| 'explicit';
+
 type SwitchAiBarPayloadItem = {
 	id: string;
 	label: string;
@@ -674,7 +787,10 @@ import { clipMainShellToMenuBar } from '#main/services/clip-main-shell-to-menuba
 import ElectronStore from "electron-store";
 import { mainWindow } from "#main/mainWindow";
 import { reaxel_AIViews } from "#main/reaxels/Views/AI-Views";
-import { safeFocusViewWithMonitor } from "#main/reaxels/Views/AI-Views";
+import {
+	type FocusMonitorFocusSource ,
+	safeFocusViewWithMonitor,
+} from "#main/reaxels/Views/AI-Views";
 import {
 	reaxel_FloatingView ,
 } from "#main/reaxels/Views/FloatingView";

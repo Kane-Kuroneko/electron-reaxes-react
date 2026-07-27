@@ -11,7 +11,9 @@ if(dev()){
 // app.commandLine.appendSwitch('ignore-gpu-blacklist');
 // app.commandLine.appendSwitch('disable-gpu-sandbox');
 // app.commandLine.appendSwitch('enable-features', 'DirectComposition,SkiaGraphite,UseSkiaRenderer,RawDraw');
-// app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion'); // 减少 occlusion 计算
+if( process.platform === 'win32' ) {
+	app.commandLine.appendSwitch( 'disable-features' , 'CalculateNativeWinOcclusion' );
+}
 // app.commandLine.appendSwitch('force-color-profile', 'srgb'); // 避免 color management 开销
 
 

@@ -298,10 +298,8 @@ export const reaxel_Menu = reaxel( () => {
 						type : 'checkbox' ,
 						checked : Reaxel_View.store.settingsViewOpened ,
 						click() {
+							reaxel_SettingsView().initSettingsView();
 							Reaxel_View.setState( { settingsViewOpened : true } );
-							const settingsView = reaxel_SettingsView().initSettingsView();
-							settingsView.setVisible( true );
-							mainWindow.contentView.addChildView( settingsView );
 							Reaxel_View().fitWindow();
 						},
 					} ,

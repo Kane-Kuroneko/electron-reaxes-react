@@ -134,11 +134,10 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 };
 
 export const openSettingsView = (openDevTools = false) => {
-	Reaxel_View.setState( { settingsViewOpened : true } );
 	const settingsView = reaxel_SettingsView().initSettingsView();
-	settingsView.setVisible( true );
-	mainWindow.contentView.addChildView( settingsView );
+	Reaxel_View.setState( { settingsViewOpened : true } );
 	Reaxel_View().fitWindow();
+	/* attach/repaint 由 Reaxel_View obsReaction → ensureActiveCenterViewPainted 统一处理 */
 	if( openDevTools ) {
 		settingsView.webContents.openDevTools();
 	}

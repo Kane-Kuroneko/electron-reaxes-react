@@ -200,10 +200,8 @@ export const reaxel_AppUpdater = reaxel( () => {
 	};
 
 	const openSettingsVersion = ( versionTab : AppUpdater.VersionTab = 'latest' ) => {
-		Reaxel_View.setState( { settingsViewOpened : true } );
 		const settingsView = reaxel_SettingsView().initSettingsView();
-		settingsView.setVisible( true );
-		mainWindow.contentView.addChildView( settingsView );
+		Reaxel_View.setState( { settingsViewOpened : true } );
 		Reaxel_View().fitWindow();
 		reaxel_Menu().scheduleMenuUpdate();
 
