@@ -633,18 +633,34 @@ export const Reaxel_View = reaxel( () => {
 		prepareInstantiatedSwitchAiBar( { silent : true } );
 	} , () => [ reaxel_AIViews.store.AIViews.length ] );
 
-	/* 切换 AI page / Settings：
-	   - Settings：由此 ensure（打开路径只 setState，不经 applyVisibility）
-	   - AI switch：applyVisibility 已同步 ensure；此处若再 remount 会落在
-	     FloatingView showInactive 之后，把 overlay 打没。已可见则只同步 bounds。 */
+	/**
+	 * 中心 view 生命周期归属：
+	 *
+	 * Reaxel_View
+	 *   - attach / detach / ensure / window show|restore|focus 恢复
+	 *   - Settings 的挂载（打开路径只 setState，由此处 ensure）
+	 *
+	 * reaxel_AIViews.applyVisibility
+	 *   - 按 currentAIViewKey / settingsViewOpened 同步「AI 列表谁该离开中心区」
+	 *   - AI key 变化时必须同步 ensure（先于 FloatingView showInactive）
+	 *
+	 * obsReaction(settings|key)
+	 *   - 先 applyVisibility，避免 Settings 开/关路径绕过时 lastApplied* 缓存过期
+	 *   - Settings 打开：ensure settings
+	 *   - AI 且尚未可见：补 ensure（exit-settings 等）
+	 *   - AI 已可见：禁止再 remount（否则打在 FloatingView 之后，overlay 会挂）
+	 */
 	obsReaction( ( first ) => {
 		if( first ) return;
 
 		fitCurrentCenterView( getCenterBounds() );
+		reaxel_AIViews().applyVisibility();
+
 		if( store.settingsViewOpened ) {
 			ensureActiveCenterViewPainted( 'settings-toggle' );
 			return;
 		}
+
 		const view = getCurrentCenterView();
 		if( !view || view.webContents.isDestroyed() ) {
 			return;
@@ -755,7 +771,6 @@ export type CenterViewLifecycleReason =
 	| 'window-restore'
 	| 'window-focus'
 	| 'settings-toggle'
-	| 'layout-resize'
 	| 'runtime-init'
 	| 'explicit';
 
