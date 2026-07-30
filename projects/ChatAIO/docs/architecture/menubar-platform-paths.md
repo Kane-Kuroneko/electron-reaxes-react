@@ -116,4 +116,6 @@ flowchart TD
 - [ ] 两平台：顶级菜单开合、hover 切换、Prev/Next 动作、拖拽区、light/dark 主题、键盘导航一致可用。
 - [ ] macOS：traffic-light spacer 为红绿灯留位；Prev/Next 扁平样式。
 - [ ] Windows：无 spacer；Prev/Next 凸起样式且有 2px 垂直偏移。
+- [ ] macOS：打开 MainView Dropdown 后点原生 Application/Edit/View → Dropdown 与 menubar 高亮应收起（`NSMenuDidBeginTrackingNotification`）。
+- [ ] macOS：原生 View「实际大小 / 放大 / 缩小」显示 ⌘0 / ⌘= / ⌘-，且缩放当前 AI 页（步进 0.5）。
 - [ ] `tsc -p projects/ChatAIO/tsconfig.json --noEmit` 不因本次改动新增错误；`yarn build:webpack` 通过。

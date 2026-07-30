@@ -406,6 +406,7 @@ export const reaxel_Menu = reaxel( () => {
 					{ type : 'separator' } ,
 					{
 						label : t('Actual Size') ,
+						accelerator : 'CmdOrCtrl+0' ,
 						click : () => {
 							const view = reaxel_AIViews().currentAIView?.view;
 							if( view && !view.webContents.isDestroyed() ) {
@@ -426,6 +427,7 @@ export const reaxel_Menu = reaxel( () => {
 					} ,
 					{
 						label : t('Zoom Out') ,
+						accelerator : 'CmdOrCtrl+-' ,
 						click : () => {
 							const view = reaxel_AIViews().currentAIView?.view;
 							if( view && !view.webContents.isDestroyed() ) {

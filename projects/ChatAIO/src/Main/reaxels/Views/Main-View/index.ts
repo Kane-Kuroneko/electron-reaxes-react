@@ -177,6 +177,7 @@ export const reaxel_MainView = reaxel( () => {
 		registerIpc();
 		registerMenuShortcutHandlers();
 		setMenubarDropdownDismissHandler( () => hideDropdownView() );
+		registerDarwinNativeMenuDismiss();
 	};
 
 	/**
@@ -942,7 +943,10 @@ import {
 	toMenubarErrorReport ,
 } from '#main/services/menubar-error-log.utility';
 import { setMenuShortcutHandlers } from '#main/services/shortcuts/window-keyboard';
-import { setMenubarDropdownDismissHandler } from '#main/services/menubar-dropdown-dismiss.utility';
+import {
+	registerDarwinNativeMenuDismiss ,
+	setMenubarDropdownDismissHandler ,
+} from '#main/services/menubar-dropdown-dismiss.utility';
 import type { MenubarErrorReport } from '#main/services/menubar-error-log.utility';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
