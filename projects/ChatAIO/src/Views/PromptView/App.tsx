@@ -50,7 +50,7 @@ export const App = reaxper( () => {
 			<header className="prompt-view-header">
 				<div className="prompt-view-heading">
 					<FileText size={ 14 } />
-					<span className="prompt-view-title"><I18n>Prompt Shelf</I18n></span>
+					<span className="prompt-view-title"><I18n>Prompt Showcase</I18n></span>
 					<span className="prompt-view-side-pill">
 						<I18n>{ store.side === 'left' ? 'Left' : 'Right' }</I18n>
 					</span>

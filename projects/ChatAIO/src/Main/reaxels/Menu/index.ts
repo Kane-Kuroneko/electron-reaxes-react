@@ -184,7 +184,7 @@ export const reaxel_Menu = reaxel( () => {
 						{ id : 'view-sep-1' , label : '' , type : 'separator' , enabled : true } ,
 						{
 							id : 'prompt-left' ,
-							label : t( 'PromptView Left' ) ,
+							label : t( 'Left Prompt Showcase' ) ,
 							type : 'checkbox' as const ,
 							checked : promptViewLeftVisible ,
 							accelerator : 'Alt+,' ,
@@ -193,7 +193,7 @@ export const reaxel_Menu = reaxel( () => {
 						} ,
 						{
 							id : 'prompt-right' ,
-							label : t( 'PromptView Right' ) ,
+							label : t( 'Right Prompt Showcase' ) ,
 							type : 'checkbox' as const ,
 							checked : promptViewRightVisible ,
 							accelerator : 'Alt+.' ,
@@ -361,7 +361,7 @@ export const reaxel_Menu = reaxel( () => {
 					} ,
 					{ type : 'separator' } ,
 					{
-						label : t( 'PromptView Left' ) ,
+						label : t( 'Left Prompt Showcase' ) ,
 						type : 'checkbox' ,
 						checked : promptViewLeftVisible ,
 						accelerator : 'Alt+,' ,
@@ -370,7 +370,7 @@ export const reaxel_Menu = reaxel( () => {
 						},
 					} ,
 					{
-						label : t( 'PromptView Right' ) ,
+						label : t( 'Right Prompt Showcase' ) ,
 						type : 'checkbox' ,
 						checked : promptViewRightVisible ,
 						accelerator : 'Alt+.' ,

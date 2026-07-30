@@ -349,7 +349,8 @@ html:has(.mac-menu-bar) #react-app-root {
 	white-space: nowrap;
 	min-width: 0;
 	font-size: 12px;
-	line-height: 1;
+	/* 勿用 line-height:1：与 overflow:hidden 叠用会裁掉 g/y descender */
+	line-height: 1.25;
 }
 
 .main-view-bar-item__button:hover {

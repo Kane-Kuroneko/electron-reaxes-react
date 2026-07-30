@@ -68,7 +68,11 @@ async function resetElectronBuildOutput() {
 	}
 
 	// Node's fs.rm maxRetries is ignored on Windows; implement our own backoff.
-	// Common lockers: running ChatAIO.exe, Explorer previewing __Bin, AV scanners.
+	// Unlock via LockHunter /unlock (close handles, do not kill IDE), then rm.
+	if( process.platform === 'win32' ) {
+		await unlockBinWithLockHunter( outputPath );
+	}
+
 	const maxAttempts = 10;
 	let lastError: unknown;
 	for( let attempt = 1; attempt <= maxAttempts; attempt++ ) {
@@ -87,17 +91,48 @@ async function resetElectronBuildOutput() {
 			if( !retryable || attempt === maxAttempts ) {
 				break;
 			}
+			if( process.platform === 'win32' && attempt === 1 ) {
+				// One more unlock pass after first failure (handles re-acquired mid-rm).
+				await unlockBinWithLockHunter( outputPath );
+			}
 			const delayMs = 200 * attempt;
 			console.warn( `[ElectronBuild] __Bin locked (${ code }), retry ${ attempt }/${ maxAttempts } in ${ delayMs }ms...` );
 			await sleep( delayMs );
 		}
 	}
 
+	const lockHunter = resolveLockHunterExe();
+	const hint = process.platform === 'win32'
+		? ( lockHunter
+			? `LockHunter unlock may have failed; try manually: "${ lockHunter }" /unlock /silent /exit "${ outputPath }"`
+			: 'Install LockHunter (or set LOCKHUNTER_PATH) so build can /unlock handles without killing IDE.' )
+		: `Close processes holding files under __Bin, then retry.`;
 	throw new Error(
 		`Cannot remove ${ outputPath }\n` +
 		`Reason: ${ lastError instanceof Error ? lastError.message : String( lastError ) }\n` +
-		`Close ChatAIO / any Explorer window inside __Bin, then retry.` ,
+		hint ,
 	);
+}
+
+async function unlockBinWithLockHunter( outputPath:string ) {
+	console.log( `[ElectronBuild] LockHunter unlock: ${ outputPath }` );
+	const result = await unlockPathForBuild( outputPath );
+	for( const killed of result.killedFromTree ) {
+		console.log( `[ElectronBuild] stopped process from __Bin: ${ killed.name } [${ killed.pid }]` );
+	}
+	if( result.method === 'lockhunter' ) {
+		console.log(
+			`[ElectronBuild] LockHunter ${ result.ok ? 'ok' : 'failed' }` +
+			` (exit ${ result.exitCode ?? 'n/a' }) via ${ result.exe }` ,
+		);
+		if( !result.ok ) {
+			console.warn( `[ElectronBuild] LockHunter detail: ${ result.detail }` );
+		}
+	} else {
+		console.warn( `[ElectronBuild] ${ result.detail }` );
+	}
+	// brief settle after handle close / process kill
+	await sleep( 200 );
 }
 
 function clearReadonlyTree( root:string ) {
@@ -171,6 +206,7 @@ function refreshWindowsIconCacheAfterBuild() {
 	}
 }
 
+import { resolveLockHunterExe , unlockPathForBuild } from '../utils/windows-path-unlock';
 import { getProjectPaths } from '../../engine/toolkit/project-paths';
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
