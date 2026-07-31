@@ -36,6 +36,9 @@ PROJECTS_DIR = MONOREPO_ROOT / "projects"
 
 MIN_SOURCE_PX = 256
 RECOMMENDED_SOURCE_PX = 1024
+# Apple macOS icon grid: artwork is 13/16 of the canvas (832/1024),
+# leaving transparent gutter so Dock tiles match system apps.
+MACOS_ICON_CONTENT_RATIO = 13 / 16
 
 # electron-builder / Microsoft recommended ICO layers (must include 256)
 ICO_SIZES = [
@@ -94,6 +97,7 @@ PROJECT_LAYOUTS: dict[str, ProjectIconLayout] = {
 		notes=(
 			"electron-builder.yml → icon: \"statics/gpt\" (no extension; always prod).",
 			"Dev set: --variant dev → gpt-dev / tray-icon-dev… ; runtime picks via !app.isPackaged.",
+			"macOS .icns auto-pads artwork to 13/16 of canvas for Dock sizing; Win/Linux stay full-bleed.",
 			"Windows tray reuses gpt[.ico|-dev.ico]; macOS tray uses tray-icon[-dev].macos(.@2x).png + setTemplateImage(true).",
 			"After Windows rebuild, Explorer may show a cached old icon — refresh icon cache / rename path.",
 		),
@@ -136,13 +140,38 @@ def make_ico(img: Image.Image, path: Path) -> None:
 	base.save(str(path), format="ICO", sizes=ICO_SIZES)
 
 
+def with_macos_dock_padding(img: Image.Image) -> Image.Image:
+	"""Shrink full-bleed artwork and center it on a transparent canvas.
+
+	macOS Dock renders the full canvas; Apple's icon grid expects the
+	squircle/artwork at ~13/16 of the side length. Without this inset,
+	icons look larger than Safari/Finder/etc.
+	"""
+	src = to_rgba(img)
+	side = max(max(src.size), RECOMMENDED_SOURCE_PX)
+	content = int(round(side * MACOS_ICON_CONTENT_RATIO))
+	# Keep even dimensions so centering stays pixel-aligned.
+	if content % 2:
+		content -= 1
+	scaled = resize(src, content)
+	canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+	offset = (side - content) // 2
+	canvas.paste(scaled, (offset, offset), scaled)
+	return canvas
+
+
 def make_icns(img: Image.Image, path: Path) -> None:
-	"""Write a PNG-payload .icns (works cross-platform without iconutil)."""
+	"""Write a PNG-payload .icns (works cross-platform without iconutil).
+
+	Always applies macOS Dock-safe transparent padding before sizing layers.
+	Windows/Linux outputs keep the original full-bleed artwork.
+	"""
 	path.parent.mkdir(parents=True, exist_ok=True)
+	padded = with_macos_dock_padding(img)
 	chunks: list[bytes] = []
 	for ostype, size in ICNS_ENTRIES:
 		buf = io.BytesIO()
-		resize(img, size).convert("RGBA").save(buf, format="PNG")
+		resize(padded, size).convert("RGBA").save(buf, format="PNG")
 		png_data = buf.getvalue()
 		chunk_len = 8 + len(png_data)
 		chunks.append(ostype + struct.pack(">I", chunk_len) + png_data)

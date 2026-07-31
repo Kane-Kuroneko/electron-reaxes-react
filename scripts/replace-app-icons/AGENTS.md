@@ -89,8 +89,8 @@ python scripts/replace-app-icons/replace-app-icons.py "<dev.png>" --project Chat
 | 输出文件 | 用途 | 规格 |
 |----------|------|------|
 | `statics/gpt.ico` | Windows **app icon**（写入 exe）+ **tray**（运行时复用） | 多尺寸 ICO：16/20/24/32/40/48/64/128/**256**（缺 256 时 electron-builder 会失败） |
-| `statics/gpt.icns` | macOS **app icon**（Dock / .app） | ICNS：16…1024 + @2x 变体 |
-| `statics/gpt.png` | Linux **app icon** / 回退 | 512×512 PNG |
+| `statics/gpt.icns` | macOS **app icon**（Dock / .app） | ICNS：16…1024 + @2x；生成时自动将主体缩至 **13/16** 并居中加透明边距 |
+| `statics/gpt.png` | Linux **app icon** / 回退 | 512×512 PNG（满画布，不加 macOS 边距） |
 | `statics/tray-icon.macos.png` | macOS **tray** Template | 18×18，黑 RGB + 原 alpha |
 | `statics/tray-icon.macos@2x.png` | macOS tray Retina | 36×36 Template |
 | `statics/shared/main-icon-900x900.png` | 工程内「母版」参考图 | 1024×1024 PNG（文件名历史遗留，尺寸以脚本为准） |
@@ -159,8 +159,10 @@ Stop-Process -Name explorer -Force; Start-Process explorer
 | 平台 | App Icon | 最低 / 推荐 | Tray |
 |------|----------|-------------|------|
 | Windows | `.ico` 多尺寸 | 必须含 **256×256**；推荐源图 ≥1024 | 推荐 ICO；本仓库复用 app `.ico` |
-| macOS | `.icns` | 源图推荐 1024；含 16–1024 | Template Image：黑+alpha；常用 16/18 + @2x |
+| macOS | `.icns` | 源图推荐 1024；含 16–1024；**生成时自动 Dock padding（主体 13/16）** | Template Image：黑+alpha；常用 16/18 + @2x |
 | Linux | `.png` | 常用 512 | 视实现；本仓库未单独 tray 资产 |
+
+**macOS Dock 边距**：源图按满画布设计即可；`make_icns` 会把主体缩到画布的 **13/16（832/1024）** 并居中贴到透明画布上。Win/Linux 输出保持满画布。运行时 macOS 通过 `getAppIconPath()` 加载 `.icns`（勿再用未加边距的 `gpt.png` 调 `dock.setIcon`）。
 
 macOS Template：像素为黑、靠 alpha 塑形，系统在深浅菜单栏下自动反色。本脚本生成的 tray PNG 即为此格式；运行时仍调用 `setTemplateImage(true)`。
 

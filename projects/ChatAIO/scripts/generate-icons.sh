@@ -37,25 +37,49 @@ echo "[1/3] Generating macOS app icon (.icns)..."
 rm -rf "$ICONSET_DIR"
 mkdir -p "$ICONSET_DIR"
 
+# Apple HIG: artwork = 13/16 of canvas (832/1024), transparent gutter for Dock.
+PADDED_SOURCE="$(mktemp -t chataio-icon-padded).png"
+python3 - "$SOURCE" "$PADDED_SOURCE" <<'PY'
+import sys
+from pathlib import Path
+from PIL import Image
+
+src_path, out_path = Path(sys.argv[1]), Path(sys.argv[2])
+ratio = 13 / 16
+recommended = 1024
+src = Image.open(src_path).convert("RGBA")
+side = max(max(src.size), recommended)
+content = int(round(side * ratio))
+if content % 2:
+	content -= 1
+scaled = src.resize((content, content), Image.LANCZOS)
+canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+offset = (side - content) // 2
+canvas.paste(scaled, (offset, offset), scaled)
+canvas.save(out_path, format="PNG")
+print(f"  padded : {content}x{content} artwork on {side}x{side} canvas")
+PY
+
 # Base (1x) sizes -- physical pixels
-sips -z 16   16   "$SOURCE" --out "$ICONSET_DIR/icon_16x16.png"       > /dev/null
-sips -z 32   32   "$SOURCE" --out "$ICONSET_DIR/icon_32x32.png"       > /dev/null
-sips -z 64   64   "$SOURCE" --out "$ICONSET_DIR/icon_64x64.png"       > /dev/null
-sips -z 128  128  "$SOURCE" --out "$ICONSET_DIR/icon_128x128.png"     > /dev/null
-sips -z 256  256  "$SOURCE" --out "$ICONSET_DIR/icon_256x256.png"     > /dev/null
-sips -z 512  512  "$SOURCE" --out "$ICONSET_DIR/icon_512x512.png"     > /dev/null
+sips -z 16   16   "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_16x16.png"       > /dev/null
+sips -z 32   32   "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_32x32.png"       > /dev/null
+sips -z 64   64   "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_64x64.png"       > /dev/null
+sips -z 128  128  "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_128x128.png"     > /dev/null
+sips -z 256  256  "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_256x256.png"     > /dev/null
+sips -z 512  512  "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_512x512.png"     > /dev/null
 
 # @2x variants (physical pixel dimensions)
-sips -z 32   32   "$SOURCE" --out "$ICONSET_DIR/icon_16x16@2x.png"    > /dev/null
-sips -z 64   64   "$SOURCE" --out "$ICONSET_DIR/icon_32x32@2x.png"    > /dev/null
-sips -z 128  128  "$SOURCE" --out "$ICONSET_DIR/icon_64x64@2x.png"    > /dev/null
-sips -z 256  256  "$SOURCE" --out "$ICONSET_DIR/icon_128x128@2x.png"  > /dev/null
-sips -z 512  512  "$SOURCE" --out "$ICONSET_DIR/icon_256x256@2x.png"  > /dev/null
-sips -z 1024 1024 "$SOURCE" --out "$ICONSET_DIR/icon_512x512@2x.png"  > /dev/null
+sips -z 32   32   "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_16x16@2x.png"    > /dev/null
+sips -z 64   64   "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_32x32@2x.png"    > /dev/null
+sips -z 128  128  "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_64x64@2x.png"    > /dev/null
+sips -z 256  256  "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_128x128@2x.png"  > /dev/null
+sips -z 512  512  "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_256x256@2x.png"  > /dev/null
+sips -z 1024 1024 "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_512x512@2x.png"  > /dev/null
 
 echo "  Generating .icns via iconutil..."
 iconutil -c icns "$ICONSET_DIR" -o "$STATICS_DIR/gpt.icns"
 rm -rf "$ICONSET_DIR"
+rm -f "$PADDED_SOURCE"
 echo "  -> statics/gpt.icns"
 echo ""
 

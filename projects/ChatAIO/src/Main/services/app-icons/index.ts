@@ -34,7 +34,12 @@ const resolveIconFilename = ( prodFilename: string ): string => {
 };
 
 export const getAppIconPath = (): string => {
-	const ext = process.platform === 'win32' ? 'ico' : 'png';
+	/* macOS Dock/runtime 使用带透明边距的 .icns；Win→.ico；Linux→.png */
+	const ext = process.platform === 'win32'
+		? 'ico'
+		: process.platform === 'darwin'
+			? 'icns'
+			: 'png';
 	return path.join( getStaticsDir() , resolveIconFilename( `gpt.${ ext }` ) );
 };
 
