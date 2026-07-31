@@ -33,6 +33,7 @@ Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with n
 - Commit messages must summarize the completed work with the same specificity as the final user-facing completion summary.
 - Prefer a concise subject plus multiple body bullets that cover product/documentation changes, implementation changes, bug fixes, localization or config changes, and verification performed.
 - Do not use a one-line commit message for multi-file or multi-concern changes unless the change is genuinely trivial.
+- Sync with remote using **merge only** (`git pull` / `git merge`). **Never** `git rebase` or `git pull --rebase` unless the user explicitly asks. See `.cursor/rules/git-commit-policy.mdc`.
 
 ## IPC Rules
 

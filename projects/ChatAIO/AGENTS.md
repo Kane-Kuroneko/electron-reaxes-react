@@ -20,6 +20,7 @@
 - **未经用户显式要求，禁止擅自 `git commit` / `push` / `amend`。** 详见根规则：
   - [`.cursor/rules/git-commit-policy.mdc`](../../.cursor/rules/git-commit-policy.mdc)（本目录软链：[`.cursor/rules/git-commit-policy.mdc`](./.cursor/rules/git-commit-policy.mdc)）
   - [`.claude/skills/review-local-changes.md`](../../.claude/skills/review-local-changes.md)
+- **与远程同步一律 `merge`，禁止 `rebase` / `pull --rebase`。**（见同上 `git-commit-policy.mdc`）
 
 ---
 
