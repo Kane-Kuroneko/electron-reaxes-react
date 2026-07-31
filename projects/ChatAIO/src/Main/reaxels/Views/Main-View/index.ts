@@ -594,6 +594,9 @@ export const reaxel_MainView = reaxel( () => {
 				openSettingsViewInRuntime();
 				break;
 			case 'check-updates':
+				/* 与 menubar 右侧更新按钮一致：打开 Settings→Version，再触发检查；
+				   否则 checkForUpdates 只广播状态，用户看不到任何反馈。 */
+				reaxel_AppUpdater().openSettingsVersion( 'latest' );
 				void reaxel_AppUpdater().checkForUpdates();
 				break;
 			case 'reload-view':

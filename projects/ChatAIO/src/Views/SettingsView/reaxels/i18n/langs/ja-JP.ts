@@ -95,6 +95,7 @@ export default {
 	"Version" : "バージョン" ,
 	"Current" : "現在のバージョン" ,
 	"Latest" : "最新バージョン" ,
+	"Checking for updates" : "アップデートを確認中" ,
 	"Up to date" : "最新です" ,
 	"New version available" : "新しいバージョンがあります" ,
 	"Download Update" : "アップデートをダウンロード" ,

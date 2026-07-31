@@ -137,12 +137,28 @@ export const RCVersionPanel = reaxper( () => {
 
 	return <div className="settings-section settings-section--fill version-section">
 		<div className="section-title"><I18n>Version</I18n></div>
+		{ updateState?.status === 'checking' ? (
+			<Alert
+				type="info"
+				showIcon
+				style={ { marginBottom : 16 , flexShrink : 0 } }
+				message={ <I18n>Checking for updates</I18n> }
+			/>
+		) : null }
 		{ !updateAvailable && updateState?.status === 'not-available' ? (
 			<Alert
 				type="success"
 				showIcon
 				style={ { marginBottom : 16 , flexShrink : 0 } }
 				message={ <I18n>Up to date</I18n> }
+			/>
+		) : null }
+		{ !updateAvailable && updateState?.status === 'error' && updateState?.error ? (
+			<Alert
+				type="error"
+				showIcon
+				style={ { marginBottom : 16 , flexShrink : 0 } }
+				message={ updateState.error }
 			/>
 		) : null }
 		{ updateAvailable ? (

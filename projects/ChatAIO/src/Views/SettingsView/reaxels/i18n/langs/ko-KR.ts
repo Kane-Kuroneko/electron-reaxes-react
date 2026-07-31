@@ -95,6 +95,7 @@ export default {
 	"Version" : "버전" ,
 	"Current" : "현재 버전" ,
 	"Latest" : "최신 버전" ,
+	"Checking for updates" : "업데이트 확인 중" ,
 	"Up to date" : "최신 버전입니다" ,
 	"New version available" : "새 버전 사용 가능" ,
 	"Download Update" : "업데이트 다운로드" ,

@@ -95,6 +95,7 @@ export default {
 	"Version" : "版本" ,
 	"Current" : "当前版本" ,
 	"Latest" : "最新版本" ,
+	"Checking for updates" : "正在检查更新" ,
 	"Up to date" : "已是最新版本" ,
 	"New version available" : "发现新版本" ,
 	"Download Update" : "下载更新" ,
