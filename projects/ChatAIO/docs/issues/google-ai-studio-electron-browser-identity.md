@@ -99,21 +99,36 @@ Windows 上输入邮箱后弹出的「插入安全密钥」来自 Google 登录�
 1. 先弹 Windows Security (WebAuthn) 提示
 2. 随后 Google 显示 `This browser or app may not be secure`
 
-这说明 Google 正在用浏览器安全认证能力校验环境。Electron 嵌入式浏览器在该流程中更容易被判定不可信。该弹窗 **与问题相关**，但单独禁用 WebAuthn 不能解决根因；需配合正确的 UA/session 策略。
+这说明 Google 正在用浏览器安全认证能力校验环境。Electron 嵌入式浏览器在该流程中更容易被判定不可信。
+
+**默认策略（与 Chrome 对齐）**：拦截 `navigator.credentials` 的 `publicKey` 调用，并把 `PublicKeyCredential.isConditionalMediationAvailable` 固定为 `false`。依据 [Electron #47147](https://github.com/electron/electron/issues/47147)：Chrome 对 conditional mediation **不弹系统框**；Electron 会误弹 Windows「插入安全密钥」。拦截后 Google 回退到密码等其它方式。另通过 `Permissions-Policy: publickey-credentials-*=()` 双保险。
+
+### 3b. 2026 中起：仅剥 UA 已不够 — `userAgentData` / `window.chrome`
+
+[linux-mail-wrapper 2026-06 验证](https://github.com/jariahh/linux-mail-wrapper/commit/8d7925a70b0dd03e376747a154f27c09cfd4af80) 表明：Chrome UA + Sec-CH-UA 头改写仍不够时，Google 登录门禁还会读 **页内 JS**：
+
+1. `navigator.userAgentData.brands` 只有 `Chromium` / `Not A(Brand`，**没有 `Google Chrome`**
+2. `window.chrome` 在 Electron 里经常是空对象（真 Chrome 有 `app` / `runtime` / `loadTimes` / `csi`）
+
+对策（已落地到 AI Studio mode）：
+
+- Session `onBeforeSendHeaders`：为 AI Studio partition 注入含 `Google Chrome` 的 `Sec-CH-UA*`
+- Preload `contextBridge.executeInMainWorld`：在页面主世界补齐 `userAgentData` + `window.chrome`
+- Dev 默认关闭 `remote-debugging-port`（需 `CHATAIO_REMOTE_DEBUG=1` 才开）
 
 ### 4. 开发模式 vs 生产模式
 
-`electron.conf.ts` 在 dev 模式下启用：
+`electron.conf.ts`：
 
-```ts
-app.commandLine.appendSwitch('remote-debugging-port', '9222');
-```
+- 默认：`disable-blink-features=AutomationControlled`
+- Dev：仅当 `CHATAIO_REMOTE_DEBUG=1` 时开启 `remote-debugging-port=9222`
+- 额外：`enable-features=WebAuthentication,...`（改善 passkey / hybrid 路径）
 
-远程调试端口与 CDP 痕迹可能被 BotGuard / 自动化检测视为风险信号。**生产 build 无此开关**，实测通过。
+远程调试端口与 CDP 痕迹可能被 BotGuard / 自动化检测视为风险信号。**勿在开着 CDP 的情况下否定登录方案。**
 
 ### 5. Popup 处理（待观察项）
 
-当前 `setWindowOpenHandler` 对 Google 域内跳转尽量保留在当前 view，对外链 `openExternal`。部分社区案例表明 Google passkey/OAuth 需要 **真实 popup 子窗口** 才能完成 credential relay（[Comfy-Org/desktop #1662](https://github.com/Comfy-Org/desktop/pull/1662)）。生产环境已通过，暂不改动；若未来回归失败可优先排查此项。
+当前 `setWindowOpenHandler` 对 Google 域内跳转尽量保留在当前 view，对外链 `openExternal`。部分社区案例表明 Google passkey/OAuth 需要 **真实 popup 子窗口** 才能完成 credential relay（[Comfy-Org/desktop #1662](https://github.com/Comfy-Org/desktop/pull/1662)）。若 UA/CH/主世界补丁后仍失败可优先排查此项。
 
 ---
 
@@ -127,15 +142,18 @@ app.commandLine.appendSwitch('remote-debugging-port', '9222');
 | `applyGlobalBrowserIdentityFallback()`           | 启动时清理 `app.userAgentFallback` 中的 `Electron/`、`ChatAIO/` |
 | `applyBrowserIdentityToView()`                   | 对每个 AI view 的 session + webContents 设置清理后的 UA           |
 | `webRequest.onBeforeSendHeaders`                 | 统一覆盖 session 全部请求的 `User-Agent` 与 `Accept-Language`     |
+| `googleChromeClientHints`（AI Studio）            | 同 handler 注入含 `Google Chrome` 的 `Sec-CH-UA*`            |
+| preload `executeInMainWorld`（AI Studio）         | 主世界补齐 `userAgentData` + `window.chrome`                 |
 | `shouldOpenGoogleAuthInCurrentView()`            | Google 域内 OAuth 跳转保留在当前 view，避免 session 断裂              |
-| `resolveBrowserIdentityMode('google-ai-studio')` | 标记 AI Studio 页面，供环境同步与未来扩展                              |
+| `resolveBrowserIdentityMode('google-ai-studio')` | 标记 AI Studio 页面，启用上述 CH / 主世界补丁                          |
 
 
 **刻意不做**：
 
-- 完整 Chrome UA 字符串替换
-- 手工伪造 `Sec-CH-UA` / `Sec-CH-UA-Platform`
+- 完整 Chrome UA 字符串替换（与 Client Hints 失配）
+- 手工伪造与引擎版本不一致的 `Sec-CH-UA`
 - Preload 覆盖 `navigator.userAgent`
+- 用 CDP `Network.setUserAgentOverride`（debugger 本身可被检测；社区已弃用该路径）
 
 ### 其他改动
 
@@ -193,12 +211,20 @@ app.commandLine.appendSwitch('remote-debugging-port', '9222');
 navigator.userAgent
 navigator.webdriver
 navigator.userAgentData?.brands
+window.chrome && Object.keys(window.chrome)
 ```
+
+AI Studio 期望：
+
+- `userAgent` **不含** `Electron/`
+- `userAgentData.brands` **含** `{ brand: 'Google Chrome', ... }`
+- `window.chrome` 含 `app` / `runtime`（非空对象）
 
 ### 诊断请求头（Network → accounts.google.com）
 
 - `User-Agent` 应 **不含** `Electron/`
-- `Sec-CH-UA` 应与 Chromium 版本自然一致，**不应**与 UA 字符串版本明显冲突
+- `Sec-CH-UA` 应含 `"Google Chrome";v="…"`，且 major 与引擎一致
+- **不应**开着 `remote-debugging-port` 测（除非 `CHATAIO_REMOTE_DEBUG=1` 且接受干扰）
 
 ---
 
@@ -250,8 +276,11 @@ projects/ChatAIO/
 ## 变更历史
 
 
-| 日期         | 说明                 |
-| ---------- | ------------------ |
-| 2026-07-11 | 初始文档；生产环境登录与生成验证通过 |
+| 日期         | 说明 |
+| ---------- | ---- |
+| 2026-07-11 | 初始文档；生产环境登录与生成验证通过（`eb22ec7ad`：仅剥离 Electron/ChatAIO） |
+| 2026-08-05 | **回归修复**：merge `d6dadd4f` 误把未验证 `buildChromeLikeUserAgent` 带回；已恢复仅剥离。 |
+| 2026-08-05 | **深度修复**：Google 门禁升级后，仅剥 UA 仍报 `may not be secure`。对齐 [linux-mail-wrapper 8d7925a](https://github.com/jariahh/linux-mail-wrapper/commit/8d7925a70b0dd03e376747a154f27c09cfd4af80)：AI Studio 注入 `Sec-CH-UA`（含 Google Chrome 品牌）+ 主世界 `userAgentData`/`window.chrome`；dev 默认关闭 remote-debugging（`CHATAIO_REMOTE_DEBUG=1`）。 |
+| 2026-08-05 | **Passkey 弹窗**：默认拦截 WebAuthn `publicKey`（主世界 + Permissions-Policy），避免 Electron 误弹 Windows USB 安全密钥框（[Electron #47147](https://github.com/electron/electron/issues/47147)，Chrome 不会如此）；登录回退密码等方式。 |
 
 

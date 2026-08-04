@@ -1,8 +1,14 @@
 app.commandLine.appendSwitch( 'disable-blink-features' , 'AutomationControlled' );
 
 if(dev()){
-	app.commandLine.appendSwitch('remote-debugging-port', '9222');
-	app.commandLine.appendSwitch('remote-allow-origins', '*');
+	/*
+	 * CDP port is a strong BotGuard / automation signal. Keep off by default even in
+	 * unpackaged runs; set CHATAIO_REMOTE_DEBUG=1 when you explicitly need DevTools attach.
+	 */
+	if( process.env.CHATAIO_REMOTE_DEBUG === '1' ) {
+		app.commandLine.appendSwitch('remote-debugging-port', '9222');
+		app.commandLine.appendSwitch('remote-allow-origins', '*');
+	}
 	// Dev webpack HTTPS (localhost:4444) uses mkcert certs; Chromium rejects them unless
 	// the local CA is trusted. NODE_TLS_REJECT_UNAUTHORIZED only covers Node, not webContents.
 	app.commandLine.appendSwitch('ignore-certificate-errors');

@@ -7,8 +7,9 @@ export type BrowserIdentityState = {
 
 /**
  * AI Studio uses a separate MakerSuite control-plane. It has stricter checks than
- * standard Google OAuth, but that does not mean we should spoof a full Chrome
- * fingerprint here — mismatched UA / Client Hints is a stronger rejection signal.
+ * standard Google OAuth. As of mid-2026, Google's accounts.google.com gate also
+ * rejects Electron when in-page JS sees Chromium-only userAgentData / empty
+ * window.chrome — see docs/issues/google-ai-studio-electron-browser-identity.md.
  */
 export const isGoogleAIStudioURL = (url:string):boolean => {
 	try {
@@ -70,43 +71,34 @@ export const resolveBrowserIdentityMode = (domain:string):BrowserIdentityMode =>
 	return isGoogleAIStudioURL( domain ) ? 'google-ai-studio' : 'default';
 };
 
+export const getChromeVersionFull = ():string => {
+	return process.versions.chrome || '146.0.0.0';
+};
+
+export const getChromeVersionMajor = ():string => {
+	return getChromeVersionFull().split( '.' )[0] || '146';
+};
+
+/**
+ * Strip Electron/app product tokens while keeping Chromium's natural UA shape
+ * so Sec-CH-UA / userAgentData stay version-aligned with the engine.
+ */
 export const sanitizeElectronUserAgent = (userAgent:string):string => {
 	return userAgent
 		.replace( /\s*Electron\/\S+/g , '' )
 		.replace( /\s*ChatAIO\/\S+/gi , '' )
+		/* Electron often inserts AppName/version immediately before Chrome/ */
+		.replace( /\s\S+\/\S+(?=\s+Chrome\/)/g , '' )
+		.replace( /\s{2,}/g , ' ' )
 		.trim();
 };
 
-const extractChromeVersion = (userAgent:string):string => {
-	const match = userAgent.match( /Chrome\/([\d.]+)/ );
-	if( match?.[1] ) {
-		return match[1];
-	}
-	return process.versions.chrome || '131.0.0.0';
-};
-
-const getPlatformUserAgentToken = ():string => {
-	if( process.platform === 'darwin' ) {
-		return 'Macintosh; Intel Mac OS X 10_15_7';
-	}
-	if( process.platform === 'win32' ) {
-		return 'Windows NT 10.0; Win64; x64';
-	}
-	return 'X11; Linux x86_64';
-};
-
-const buildChromeLikeUserAgent = (baseUserAgent:string):string => {
-	const chromeVersion = extractChromeVersion( baseUserAgent );
-	return `Mozilla/5.0 (${ getPlatformUserAgentToken() }) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ chromeVersion } Safari/537.36`;
-};
-
-export const resolveBrowserUserAgent = (
-	baseUserAgent:string ,
-	mode:BrowserIdentityMode,
-):string => {
-	if( mode === 'google-ai-studio' ) {
-		return buildChromeLikeUserAgent( baseUserAgent );
-	}
+/**
+ * Default + AI Studio share the same UA string strategy: strip markers only.
+ * Do NOT rebuild a full Chrome UA string — that desyncs Client Hints.
+ * AI Studio additionally gets Sec-CH-UA + main-world Chrome brand patches.
+ */
+export const resolveBrowserUserAgent = (baseUserAgent:string):string => {
 	return sanitizeElectronUserAgent( baseUserAgent );
 };
 
@@ -122,10 +114,9 @@ export const resolveBrowserIdentityState = (
 	domain:string ,
 	baseUserAgent:string,
 ):BrowserIdentityState => {
-	const mode = resolveBrowserIdentityMode( domain );
 	return {
-		mode ,
-		userAgent : resolveBrowserUserAgent( baseUserAgent , mode ),
+		mode : resolveBrowserIdentityMode( domain ) ,
+		userAgent : resolveBrowserUserAgent( baseUserAgent ),
 	};
 };
 
@@ -147,7 +138,9 @@ export const applyBrowserIdentityToView = (
 
 	updateSessionRequestHeaderState( ses , {
 		acceptLanguages ,
-		userAgent : targetUserAgent,
+		userAgent : targetUserAgent ,
+		googleChromeClientHints : identity.mode === 'google-ai-studio' ,
+		blockPublicKeyCredentials : true,
 	} );
 
 	return identity;
@@ -160,17 +153,65 @@ export const mergeBrowserIdentityIntoEnvironment = (
 	return {
 		...environment ,
 		browserIdentityMode : identity.mode ,
-		browserUserAgent : null,
+		browserUserAgent : null ,
+		chromeVersionFull : getChromeVersionFull(),
 	};
+};
+
+type ChromeBrand = {
+	brand:string;
+	version:string;
+};
+
+export const buildGoogleChromeClientHintBrands = (fullVersion:string = getChromeVersionFull()):{
+	brands:ChromeBrand[];
+	fullVersionList:ChromeBrand[];
+	secChUa:string;
+	secChUaFullVersionList:string;
+} => {
+	const major = fullVersion.split( '.' )[0] || '146';
+	const brands:ChromeBrand[] = [
+		{ brand : 'Chromium' , version : major } ,
+		{ brand : 'Google Chrome' , version : major } ,
+		{ brand : 'Not_A Brand' , version : '24' },
+	];
+	const fullVersionList:ChromeBrand[] = [
+		{ brand : 'Chromium' , version : fullVersion } ,
+		{ brand : 'Google Chrome' , version : fullVersion } ,
+		{ brand : 'Not_A Brand' , version : '24.0.0.0' },
+	];
+	const format = (list:ChromeBrand[]) => list
+		.map( item => `"${ item.brand }";v="${ item.version }"` )
+		.join( ', ' );
+	return {
+		brands ,
+		fullVersionList ,
+		secChUa : format( brands ) ,
+		secChUaFullVersionList : format( fullVersionList ),
+	};
+};
+
+const getClientHintPlatform = ():string => {
+	if( process.platform === 'darwin' ) {
+		return '"macOS"';
+	}
+	if( process.platform === 'win32' ) {
+		return '"Windows"';
+	}
+	return '"Linux"';
 };
 
 type SessionRequestHeaderState = {
 	acceptLanguages?:string;
 	userAgent?:string;
+	googleChromeClientHints?:boolean;
+	/** Deny WebAuthn so Windows USB/passkey OS dialogs cannot appear (Chrome-aligned). */
+	blockPublicKeyCredentials?:boolean;
 };
 
 const sessionRequestHeaderStateBySession = new WeakMap<Session , SessionRequestHeaderState>();
 const installedSessionRequestHeaderHandlers = new WeakSet<Session>();
+const installedSessionResponseHeaderHandlers = new WeakSet<Session>();
 
 const updateSessionRequestHeaderState = (
 	ses:Session ,
@@ -182,6 +223,19 @@ const updateSessionRequestHeaderState = (
 	};
 	sessionRequestHeaderStateBySession.set( ses , nextState );
 	installSessionRequestHeaderHandler( ses );
+	installSessionResponseHeaderHandler( ses );
+};
+
+const setRequestHeader = (
+	headers:Record<string , string> ,
+	name:string ,
+	value:string,
+) => {
+	const existingKey = Object.keys( headers ).find( key => key.toLowerCase() === name.toLowerCase() );
+	if( existingKey ) {
+		delete headers[existingKey];
+	}
+	headers[name] = value;
 };
 
 const installSessionRequestHeaderHandler = (ses:Session) => {
@@ -197,16 +251,84 @@ const installSessionRequestHeaderHandler = (ses:Session) => {
 		};
 
 		if( state.acceptLanguages ) {
-			requestHeaders['Accept-Language'] = state.acceptLanguages;
+			setRequestHeader( requestHeaders , 'Accept-Language' , state.acceptLanguages );
 		}
 
 		if( state.userAgent ) {
-			requestHeaders['User-Agent'] = state.userAgent;
+			setRequestHeader( requestHeaders , 'User-Agent' , state.userAgent );
 		} else if( typeof requestHeaders['User-Agent'] === 'string' ) {
-			requestHeaders['User-Agent'] = sanitizeElectronUserAgent( requestHeaders['User-Agent'] );
+			setRequestHeader(
+				requestHeaders ,
+				'User-Agent' ,
+				sanitizeElectronUserAgent( requestHeaders['User-Agent'] ),
+			);
+		} else {
+			const uaKey = Object.keys( requestHeaders ).find( key => key.toLowerCase() === 'user-agent' );
+			if( uaKey && typeof requestHeaders[uaKey] === 'string' ) {
+				setRequestHeader(
+					requestHeaders ,
+					'User-Agent' ,
+					sanitizeElectronUserAgent( requestHeaders[uaKey] ),
+				);
+			}
+		}
+
+		/*
+		 * Google's 2026 gate checks Sec-CH-UA brands. Electron only advertises
+		 * Chromium / Not A(Brand — missing "Google Chrome" → "may not be secure".
+		 * Rewrite hints for AI Studio sessions (includes accounts.google.com hops).
+		 */
+		if( state.googleChromeClientHints ) {
+			const hints = buildGoogleChromeClientHintBrands();
+			setRequestHeader( requestHeaders , 'Sec-CH-UA' , hints.secChUa );
+			setRequestHeader( requestHeaders , 'Sec-CH-UA-Mobile' , '?0' );
+			setRequestHeader( requestHeaders , 'Sec-CH-UA-Platform' , getClientHintPlatform() );
+			setRequestHeader( requestHeaders , 'Sec-CH-UA-Full-Version-List' , hints.secChUaFullVersionList );
+			setRequestHeader( requestHeaders , 'Sec-CH-UA-Full-Version' , `"${ getChromeVersionFull() }"` );
 		}
 
 		callback( { requestHeaders } );
+	} );
+};
+
+const PUBLIC_KEY_CREDENTIALS_PERMISSIONS_POLICY = [
+	'publickey-credentials-get=()' ,
+	'publickey-credentials-create=()',
+].join( ', ' );
+
+const installSessionResponseHeaderHandler = (ses:Session) => {
+	if( installedSessionResponseHeaderHandlers.has( ses ) ) {
+		return;
+	}
+	installedSessionResponseHeaderHandlers.add( ses );
+
+	ses.webRequest.onHeadersReceived( ( details , callback ) => {
+		const state = sessionRequestHeaderStateBySession.get( ses ) || {};
+		const isDocumentFrame = details.resourceType === 'mainFrame'
+			|| details.resourceType === 'subFrame';
+		if( !state.blockPublicKeyCredentials || !isDocumentFrame ) {
+			callback( {} );
+			return;
+		}
+
+		const responseHeaders = {
+			...( details.responseHeaders || {} ),
+		};
+		const existingKey = Object.keys( responseHeaders ).find(
+			key => key.toLowerCase() === 'permissions-policy',
+		);
+		const previous = existingKey
+			? ([] as string[]).concat( responseHeaders[existingKey] || [] )
+			: [];
+		if( existingKey ) {
+			delete responseHeaders[existingKey];
+		}
+		responseHeaders['Permissions-Policy'] = [
+			...previous ,
+			PUBLIC_KEY_CREDENTIALS_PERMISSIONS_POLICY,
+		];
+
+		callback( { responseHeaders } );
 	} );
 };
 

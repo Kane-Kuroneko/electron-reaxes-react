@@ -60,14 +60,232 @@ const installNavigatorEnvironment = () => {
 	installBrowserIdentitySpoofing();
 };
 
+/**
+ * Default pages: light webdriver mask via AutomationControlled + optional override.
+ * AI Studio: skip instance-level webdriver accessor (itself a detection signal) and
+ * instead patch main-world userAgentData / window.chrome — verified 2026-06 against
+ * Google's "This browser or app may not be secure" gate (linux-mail-wrapper).
+ *
+ * All AI pages: block public-key WebAuthn so Electron does not surface the Windows
+ * "insert security key" dialog (Electron #47147 — conditional mediation pops OS UI;
+ * Chrome keeps it silent / autofill-only). Sites fall back to password.
+ */
 const installBrowserIdentitySpoofing = () => {
+	installChromeAlignedWebAuthnGuard();
+	if( currentEnvironment.browserIdentityMode === 'google-ai-studio' ) {
+		installGoogleChromeMainWorldIdentity();
+		return;
+	}
 	try {
 		Object.defineProperty( navigator , 'webdriver' , {
-			get : () => undefined ,
+			get : () => false ,
 			configurable : true,
 		} );
 	} catch ( error ) {
 		console.warn( '[AIPagePreload] Failed to mask navigator.webdriver:' , error );
+	}
+};
+
+/**
+ * Chrome-aligned WebAuthn guard (main world).
+ * Electron advertises conditional mediation then shows a Windows USB/passkey modal;
+ * Chrome does not. Reject publicKey ceremonies so Google uses password / other methods.
+ */
+const installChromeAlignedWebAuthnGuard = () => {
+	try {
+		contextBridge.executeInMainWorld( {
+			func : () => {
+				try {
+					const mark = '__chataioWebAuthnGuard';
+					if( ( window as any )[mark] ) {
+						return;
+					}
+					( window as any )[mark] = true;
+
+					const notSupported = () => new DOMException(
+						'The user agent does not support public key credentials.' ,
+						'NotSupportedError',
+					);
+					const notAllowed = () => new DOMException(
+						'Conditional mediation is not available.' ,
+						'NotAllowedError',
+					);
+
+					const PublicKey = ( window as any ).PublicKeyCredential;
+					if( PublicKey ) {
+						if( typeof PublicKey.isConditionalMediationAvailable === 'function' ) {
+							PublicKey.isConditionalMediationAvailable = async () => false;
+						}
+						if( typeof PublicKey.isUserVerifyingPlatformAuthenticatorAvailable === 'function' ) {
+							PublicKey.isUserVerifyingPlatformAuthenticatorAvailable = async () => false;
+						}
+						if( typeof PublicKey.getClientCapabilities === 'function' ) {
+							PublicKey.getClientCapabilities = async () => ( {
+								conditionalGet : false ,
+								conditionalCreate : false ,
+								hybridTransport : false ,
+								passkeyPlatformAuthenticator : false ,
+								userVerifyingPlatformAuthenticator : false,
+							} );
+						}
+					}
+
+					const proto = CredentialsContainer && CredentialsContainer.prototype;
+					if( !proto ) {
+						return;
+					}
+					const originalGet = proto.get;
+					const originalCreate = proto.create;
+
+					proto.get = async function( options?:CredentialRequestOptions ) {
+						if( options && ( options as any ).publicKey ) {
+							if( ( options as any ).mediation === 'conditional' ) {
+								throw notAllowed();
+							}
+							throw notSupported();
+						}
+						return originalGet.call( this , options );
+					};
+
+					proto.create = async function( options?:CredentialCreationOptions ) {
+						if( options && ( options as any ).publicKey ) {
+							throw notSupported();
+						}
+						return originalCreate.call( this , options );
+					};
+				} catch { /* never break the page */ }
+			} ,
+			args : [],
+		} );
+	} catch ( error ) {
+		console.warn( '[AIPagePreload] Failed to install WebAuthn guard:' , error );
+	}
+};
+
+const resolveChromeVersionFull = ():string => {
+	if( typeof currentEnvironment.chromeVersionFull === 'string' && currentEnvironment.chromeVersionFull ) {
+		return currentEnvironment.chromeVersionFull;
+	}
+	try {
+		return process.versions.chrome || '146.0.0.0';
+	} catch {
+		return '146.0.0.0';
+	}
+};
+
+const resolveClientHintPlatform = ():string => {
+	try {
+		if( process.platform === 'darwin' ) {
+			return 'macOS';
+		}
+		if( process.platform === 'win32' ) {
+			return 'Windows';
+		}
+	} catch { /* fall through */ }
+	return 'Linux';
+};
+
+/**
+ * Must run in the page main world (contextIsolation keeps preload isolated).
+ * Patches land before Google scripts via preload timing + executeInMainWorld.
+ */
+const installGoogleChromeMainWorldIdentity = () => {
+	const full = resolveChromeVersionFull();
+	const platform = resolveClientHintPlatform();
+	try {
+		contextBridge.executeInMainWorld( {
+			func : ( chromeFull:string , platformName:string ) => {
+				try {
+					const major = chromeFull.split( '.' )[0] || '146';
+					const brands = [
+						{ brand : 'Chromium' , version : major } ,
+						{ brand : 'Google Chrome' , version : major } ,
+						{ brand : 'Not_A Brand' , version : '24' },
+					];
+					const fullVersionList = [
+						{ brand : 'Chromium' , version : chromeFull } ,
+						{ brand : 'Google Chrome' , version : chromeFull } ,
+						{ brand : 'Not_A Brand' , version : '24.0.0.0' },
+					];
+					const highEntropy = {
+						architecture : 'x86' ,
+						bitness : '64' ,
+						brands ,
+						fullVersionList ,
+						mobile : false ,
+						model : '' ,
+						platform : platformName ,
+						platformVersion : platformName === 'Windows' ? '15.0.0' : '14.0.0' ,
+						uaFullVersion : chromeFull ,
+						wow64 : false,
+					};
+					const uaData = {
+						brands ,
+						mobile : false ,
+						platform : platformName ,
+						getHighEntropyValues : () => Promise.resolve( highEntropy ) ,
+						toJSON : () => ( { brands , mobile : false , platform : platformName } ),
+					};
+					Object.defineProperty( Navigator.prototype , 'userAgentData' , {
+						get : () => uaData ,
+						configurable : true,
+					} );
+
+					const t = Date.now() / 1000;
+					const chrome = ( window as any ).chrome || {};
+					chrome.app = chrome.app || {
+						isInstalled : false ,
+						InstallState : {
+							DISABLED : 'disabled' ,
+							INSTALLED : 'installed' ,
+							NOT_INSTALLED : 'not_installed',
+						} ,
+						RunningState : {
+							CANNOT_RUN : 'cannot_run' ,
+							READY_TO_RUN : 'ready_to_run' ,
+							RUNNING : 'running',
+						},
+					};
+					chrome.runtime = chrome.runtime || {
+						OnInstalledReason : {} ,
+						OnRestartRequiredReason : {} ,
+						PlatformArch : {} ,
+						PlatformOs : {} ,
+						connect : function(){} ,
+						sendMessage : function(){},
+					};
+					chrome.loadTimes = chrome.loadTimes || function(){
+						return {
+							requestTime : t ,
+							startLoadTime : t ,
+							commitLoadTime : t ,
+							finishDocumentLoadTime : t ,
+							finishLoadTime : t ,
+							firstPaintTime : t ,
+							firstPaintAfterLoadTime : 0 ,
+							navigationType : 'Other' ,
+							wasFetchedViaSpdy : true ,
+							wasNpnNegotiated : true ,
+							npnNegotiatedProtocol : 'h2' ,
+							wasAlternateProtocolAvailable : false ,
+							connectionInfo : 'h2',
+						};
+					};
+					chrome.csi = chrome.csi || function(){
+						return {
+							startE : Date.now() ,
+							onloadT : Date.now() ,
+							pageT : 1000 ,
+							tran : 15,
+						};
+					};
+					( window as any ).chrome = chrome;
+				} catch { /* never break the page */ }
+			} ,
+			args : [ full , platform ],
+		} );
+	} catch ( error ) {
+		console.warn( '[AIPagePreload] Failed to install Google Chrome main-world identity:' , error );
 	}
 };
 
@@ -189,4 +407,4 @@ import type {
 import type { AIPageEnvironment } from '#src/Types/AIPageEnvironment';
 import { initFocusTracker } from './ai-page-preload-focus';
 import { createIpc } from '#generics/toolkit/electron/preload.ipc';
-import { ipcRenderer } from 'electron';
+import { contextBridge , ipcRenderer } from 'electron';
