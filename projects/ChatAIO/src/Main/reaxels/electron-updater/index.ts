@@ -210,7 +210,7 @@ export const reaxel_AppUpdater = reaxel( () => {
 			useIpcMainToRenderer( 'settings-view:navigate' )
 				.targets( [ settingsView.webContents ] )
 				.send( {
-					menu : 'version' ,
+					menu : 'about' ,
 					versionTab ,
 				} );
 		};

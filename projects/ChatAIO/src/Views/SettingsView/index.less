@@ -317,68 +317,6 @@ html, body {
 	margin-left: auto;
 }
 
-/* Version：Tabs / changelog 占满剩余高度，markdown 在 body 内滚动 */
-.version-section.settings-section--fill {
-	.ant-tabs {
-		flex: 1;
-		min-height: 0;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	.ant-tabs-nav {
-		flex-shrink: 0;
-	}
-
-	.ant-tabs-content-holder {
-		flex: 1;
-		min-height: 0;
-		overflow: hidden;
-	}
-
-	.ant-tabs-content {
-		height: 100%;
-	}
-
-	.ant-tabs-tabpane {
-		height: 100%;
-		outline: none;
-	}
-
-	.version-latest-panel,
-	.version-changelog {
-		height: 100%;
-		min-height: 0;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	.version-changelog__meta,
-	.version-update-actions {
-		flex-shrink: 0;
-	}
-
-	.version-changelog__body {
-		flex: 1;
-		min-height: 0;
-	}
-
-	.version-changelog-loading,
-	.version-changelog__empty {
-		flex: 1;
-		min-height: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	> .ant-alert {
-		flex-shrink: 0;
-	}
-}
-
 .version-changelog__body {
 	margin: 0;
 	padding: 16px 18px;

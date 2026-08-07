@@ -238,6 +238,26 @@ export const reaxel_Settings = reaxel( () => {
 		return requestDevCleanStart();
 	} );
 
+	useIpcRpc( 'open-external-url' ).handle( async( _ , url ) => {
+		/* Settings/About 外链：仅放行 http(s)，避免 file/javascript 等协议被 shell 打开 */
+		try {
+			const parsed = new URL( url );
+			if( parsed.protocol !== 'http:' && parsed.protocol !== 'https:' ) {
+				return {
+					success : false ,
+					error : `Unsupported protocol: ${ parsed.protocol }` ,
+				};
+			}
+			await shell.openExternal( parsed.toString() );
+			return { success : true };
+		} catch ( error ) {
+			return {
+				success : false ,
+				error : error instanceof Error ? error.message : String( error ),
+			};
+		}
+	} );
+
 	const rtn = {
 		getCurrentSettings ,
 		applySettings ,
@@ -333,6 +353,7 @@ import {
 	reaxel ,
 	createReaxable,
 } from 'reaxes';
+import { shell } from 'electron';
 import type {
 	Settings ,
 	SettingsApplyResult ,

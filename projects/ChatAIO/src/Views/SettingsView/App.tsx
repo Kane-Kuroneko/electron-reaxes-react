@@ -12,7 +12,6 @@ export const App = reaxper( () => {
 		general : RCGeneralPanel ,
 		net : RCNetworkPanel ,
 		mngeai : RCManageAIsPanel ,
-		version : RCVersionPanel ,
 		about : RCAboutPanel ,
 	}[store.current];
 	
@@ -38,6 +37,9 @@ export const App = reaxper( () => {
 						} ) }
 						onSelect={ ( { key } ) => {
 							setState( { current : key as any } );
+							if( key !== 'about' ) {
+								reaxel_SettingsView.setState.VersionUI( { drawerOpen : false } );
+							}
 						} }
 						selectedKeys={ [ store.current ] }
 					/>
@@ -168,7 +170,6 @@ const showApplyResult = (result:SettingsApplyResult) => {
 
 import { RCGeneralPanel } from '#SettingsView/components/General';
 import { RCAboutPanel } from '#SettingsView/components/About';
-import { RCVersionPanel } from '#SettingsView/components/Version';
 import { RCManageAIsPanel } from '#SettingsView/components/ManageAIs';
 import { RCNetworkPanel } from '#SettingsView/components/Network';
 import {

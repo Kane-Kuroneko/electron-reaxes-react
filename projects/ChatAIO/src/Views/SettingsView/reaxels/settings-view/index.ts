@@ -16,17 +16,14 @@ export const reaxel_SettingsView = reaxel( () => {
 					value : checkAs<Menus>( 'mngeai' ),
 				},
 				{
-					label : 'Version' ,
-					value : checkAs<Menus>( 'version' ),
-				},
-				{
 					label : 'About' ,
 					value : checkAs<Menus>( 'about' ),
 				},
 			],
 		} ,
 		VersionUI : {
-			activeTab : checkAs<AppUpdater.VersionTab>( 'current' ),
+			activeTab : checkAs<AppUpdater.VersionTab>( 'current' ) ,
+			drawerOpen : false ,
 		} ,
 		UIControls : {
 			networks : {
@@ -471,10 +468,12 @@ export const reaxel_SettingsView = reaxel( () => {
 			return JSON.stringify( current ) !== _committedAISnapshot.get( id );
 		},
 		navigateFromMain( payload : AppUpdater.NavigatePayload ) {
-			if( payload.menu !== 'version' ) return;
-			setState.RootMenu( { current : checkAs<Menus>( 'version' ) } );
+			/* `version` 为旧导航别名，统一落到 About */
+			if( payload.menu !== 'about' && payload.menu !== 'version' ) return;
+			setState.RootMenu( { current : checkAs<Menus>( 'about' ) } );
 			setState.VersionUI( {
 				activeTab : payload.versionTab === 'latest' ? 'latest' : 'current' ,
+				drawerOpen : true ,
 			} );
 		},
 	};

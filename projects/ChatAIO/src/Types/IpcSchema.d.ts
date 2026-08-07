@@ -65,6 +65,7 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	'check-for-updates': IpcStructure.IpcRpc<[void], AppUpdater.State>;
 	'fetch-version-changelogs': IpcStructure.IpcRpc<[void], AppUpdater.Changelogs>;
 	'download-and-install-update': IpcStructure.IpcRpc<[void], AppUpdater.DownloadResult>;
+	'open-external-url': IpcStructure.IpcRpc<[url: string], { success: boolean; error?: string }>;
 }
 
 type MainToRendererReply<K extends keyof MainToRendererEvents> = ReplyFromMtrEvents<MainToRendererEvents , K>;

@@ -81,6 +81,7 @@ const getUpdateState = useRpc('get-update-state');
 const checkForUpdates = useRpc('check-for-updates');
 const fetchVersionChangelogs = useRpc('fetch-version-changelogs');
 const downloadAndInstallUpdate = useRpc('download-and-install-update');
+const openExternalUrl = useRpc('open-external-url');
 
 const api = {
 	fetchSettings ,
@@ -133,6 +134,7 @@ const api = {
 	checkForUpdates,
 	fetchVersionChangelogs,
 	downloadAndInstallUpdate,
+	openExternalUrl,
 };
 export type API = typeof api;
 

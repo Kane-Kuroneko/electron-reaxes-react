@@ -5,7 +5,6 @@
  */
 export const SETTINGS_FILL_CONTENT_MENUS = new Set( [
 	'mngeai' ,
-	'version' ,
 ] );
 
 /** SettingsView 内 Modal 统一：限高 + body 内滚动，避免顶出视口 */

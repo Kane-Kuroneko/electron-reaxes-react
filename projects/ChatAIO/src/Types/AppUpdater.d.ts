@@ -31,7 +31,8 @@ export namespace AppUpdater {
 	};
 
 	export type NavigatePayload = {
-		menu : 'version';
+		/** About 页（含版本更新）；`version` 为旧别名，渲染侧映射到 about */
+		menu : 'about' | 'version';
 		versionTab? : VersionTab;
 	};
 
