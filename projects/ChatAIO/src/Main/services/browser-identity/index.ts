@@ -1,4 +1,9 @@
-export type BrowserIdentityMode = 'default' | 'google-ai-studio';
+/**
+ * `google-chrome-identity`: Sec-CH-UA + main-world userAgentData / window.chrome
+ * patches (needed for accounts.google.com). Kept as alias `google-ai-studio` in
+ * older docs; both strings mean the same runtime behavior.
+ */
+export type BrowserIdentityMode = 'default' | 'google-chrome-identity' | 'google-ai-studio';
 
 export type BrowserIdentityState = {
 	mode:BrowserIdentityMode;
@@ -6,11 +11,14 @@ export type BrowserIdentityState = {
 };
 
 /**
- * AI Studio uses a separate MakerSuite control-plane. It has stricter checks than
- * standard Google OAuth. As of mid-2026, Google's accounts.google.com gate also
- * rejects Electron when in-page JS sees Chromium-only userAgentData / empty
- * window.chrome — see docs/issues/google-ai-studio-electron-browser-identity.md.
+ * Google's accounts.google.com gate (ChatGPT / Gemini / AI Studio OAuth, etc.)
+ * rejects Electron when Sec-CH-UA / userAgentData lack a Google Chrome brand or
+ * window.chrome is empty — see docs/issues/google-ai-studio-electron-browser-identity.md.
  */
+const isGoogleChromeIdentityMode = (mode:BrowserIdentityMode):boolean => {
+	return mode === 'google-chrome-identity' || mode === 'google-ai-studio';
+};
+
 export const isGoogleAIStudioURL = (url:string):boolean => {
 	try {
 		const { hostname } = new URL( url );
@@ -60,15 +68,28 @@ export const isGoogleAIStudioRelatedRequestURL = (url:string):boolean => {
 	}
 };
 
+/**
+ * Keep Google OAuth inside the AI WebContentsView (same partition/cookies).
+ * ChatGPT / Gemini open accounts.google.com from a non-Google origin — do not
+ * require currentURL to already be a Google property.
+ */
 export const shouldOpenGoogleAuthInCurrentView = (currentURL:string , nextURL:string):boolean => {
+	if( isGoogleAuthURL( nextURL ) ) {
+		return true;
+	}
 	if( !isGooglePropertyURL( currentURL ) ) {
 		return false;
 	}
-	return isGoogleAuthURL( nextURL ) || isGooglePropertyURL( nextURL );
+	return isGooglePropertyURL( nextURL );
 };
 
-export const resolveBrowserIdentityMode = (domain:string):BrowserIdentityMode => {
-	return isGoogleAIStudioURL( domain ) ? 'google-ai-studio' : 'default';
+/**
+ * Every AI page session may hop to accounts.google.com (ChatGPT Continue with
+ * Google, Gemini, AI Studio, …). Client Hints + main-world patches must be on
+ * the whole partition before that hop — mode cannot be limited to AI Studio.
+ */
+export const resolveBrowserIdentityMode = (_domain:string):BrowserIdentityMode => {
+	return 'google-chrome-identity';
 };
 
 export const getChromeVersionFull = ():string => {
@@ -94,9 +115,9 @@ export const sanitizeElectronUserAgent = (userAgent:string):string => {
 };
 
 /**
- * Default + AI Studio share the same UA string strategy: strip markers only.
+ * Default + Google OAuth share the same UA string strategy: strip markers only.
  * Do NOT rebuild a full Chrome UA string — that desyncs Client Hints.
- * AI Studio additionally gets Sec-CH-UA + main-world Chrome brand patches.
+ * Google-identity mode additionally gets Sec-CH-UA + main-world Chrome brand patches.
  */
 export const resolveBrowserUserAgent = (baseUserAgent:string):string => {
 	return sanitizeElectronUserAgent( baseUserAgent );
@@ -139,7 +160,7 @@ export const applyBrowserIdentityToView = (
 	updateSessionRequestHeaderState( ses , {
 		acceptLanguages ,
 		userAgent : targetUserAgent ,
-		googleChromeClientHints : identity.mode === 'google-ai-studio' ,
+		googleChromeClientHints : isGoogleChromeIdentityMode( identity.mode ) ,
 		blockPublicKeyCredentials : true,
 	} );
 
@@ -276,7 +297,7 @@ const installSessionRequestHeaderHandler = (ses:Session) => {
 		/*
 		 * Google's 2026 gate checks Sec-CH-UA brands. Electron only advertises
 		 * Chromium / Not A(Brand — missing "Google Chrome" → "may not be secure".
-		 * Rewrite hints for AI Studio sessions (includes accounts.google.com hops).
+		 * Rewrite hints for AI sessions that may hop to accounts.google.com.
 		 */
 		if( state.googleChromeClientHints ) {
 			const hints = buildGoogleChromeClientHintBrands();

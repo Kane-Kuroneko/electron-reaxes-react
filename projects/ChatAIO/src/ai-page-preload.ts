@@ -61,10 +61,12 @@ const installNavigatorEnvironment = () => {
 };
 
 /**
- * Default pages: light webdriver mask via AutomationControlled + optional override.
- * AI Studio: skip instance-level webdriver accessor (itself a detection signal) and
- * instead patch main-world userAgentData / window.chrome — verified 2026-06 against
- * Google's "This browser or app may not be secure" gate (linux-mail-wrapper).
+ * Default: light webdriver mask via AutomationControlled + optional override.
+ * Google Chrome identity (all AI pages as of 2026-08): skip instance-level
+ * webdriver accessor (itself a detection signal) and instead patch main-world
+ * userAgentData / window.chrome — verified against Google's
+ * "This browser or app may not be secure" gate (linux-mail-wrapper). Needed for
+ * ChatGPT / Gemini Continue-with-Google as well as AI Studio.
  *
  * All AI pages: block public-key WebAuthn so Electron does not surface the Windows
  * "insert security key" dialog (Electron #47147 — conditional mediation pops OS UI;
@@ -72,7 +74,8 @@ const installNavigatorEnvironment = () => {
  */
 const installBrowserIdentitySpoofing = () => {
 	installChromeAlignedWebAuthnGuard();
-	if( currentEnvironment.browserIdentityMode === 'google-ai-studio' ) {
+	const mode = currentEnvironment.browserIdentityMode;
+	if( mode === 'google-chrome-identity' || mode === 'google-ai-studio' ) {
 		installGoogleChromeMainWorldIdentity();
 		return;
 	}

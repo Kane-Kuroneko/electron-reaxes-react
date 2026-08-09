@@ -4,7 +4,7 @@
 
 记录 ChatAIO 在嵌入式 Electron `WebContentsView` 中加载 `https://aistudio.google.com` 时遇到的登录/生成失败问题，包括症状、根因分析、已验证方案、无效尝试与未来扩展方向。
 
-**验证结论**：生产环境 build 下登录与 Chat 生成已通过；开发模式（`remote-debugging-port=9222`）仍可能失败。
+**验证结论**：生产环境 build 下 AI Studio 登录与 Chat 生成曾通过；**2026-08 起** Google 标准 OAuth 门禁加强后，ChatGPT「Continue with Google」在正式包内也会失败，需对全部 AI session 启用 Chrome 品牌补丁（见变更历史 2026-08-10）。开发模式（`remote-debugging-port=9222`）仍可能失败。
 
 ---
 
@@ -31,16 +31,16 @@
 
 ### 对照现象（关键）
 
-在同一 ChatAIO/Electron 壳内：
+在同一 ChatAIO/Electron 壳内（历史对照；**2026-08 起 Google 门禁已扩到标准 OAuth**）：
 
 
-| 场景                                         | 结果   |
-| ------------------------------------------ | ---- |
-| ChatGPT / Grok / Gemini 使用 Google OAuth 登录 | 通常正常 |
-| Google AI Studio 登录 / 生成                   | 失败   |
+| 场景                                         | 结果（旧） | 结果（2026-08 后） |
+| ------------------------------------------ | ------ | -------------- |
+| ChatGPT / Grok / Gemini 使用 Google OAuth 登录 | 通常正常   | 仅剥 UA 时也会 `may not be secure` |
+| Google AI Studio 登录 / 生成                   | 失败     | 需 Chrome 品牌补丁 |
 
 
-这说明 **不是 Google 账号体系对 Electron 的全域封禁**，而是 AI Studio 路径上有额外检测，且 ChatAIO 早期对 AI Studio 的处理策略不当。
+因此 **不能再只对 AI Studio 开补丁**；凡可能跳到 `accounts.google.com` 的 AI partition（含 ChatGPT）都要启用同一套 Client Hints + 主世界身份。
 
 ---
 
@@ -110,11 +110,12 @@ Windows 上输入邮箱后弹出的「插入安全密钥」来自 Google 登录�
 1. `navigator.userAgentData.brands` 只有 `Chromium` / `Not A(Brand`，**没有 `Google Chrome`**
 2. `window.chrome` 在 Electron 里经常是空对象（真 Chrome 有 `app` / `runtime` / `loadTimes` / `csi`）
 
-对策（已落地到 AI Studio mode）：
+对策（已落地到 **全部 AI page** 的 `google-chrome-identity` mode；旧名 `google-ai-studio` 仍兼容）：
 
-- Session `onBeforeSendHeaders`：为 AI Studio partition 注入含 `Google Chrome` 的 `Sec-CH-UA*`
+- Session `onBeforeSendHeaders`：为 AI partition 注入含 `Google Chrome` 的 `Sec-CH-UA*`
 - Preload `contextBridge.executeInMainWorld`：在页面主世界补齐 `userAgentData` + `window.chrome`
 - Dev 默认关闭 `remote-debugging-port`（需 `CHATAIO_REMOTE_DEBUG=1` 才开）
+- `shouldOpenGoogleAuthInCurrentView`：允许从 **任意当前页**（含 `chatgpt.com`）把 `accounts.google.com` 留在同 view，避免 popup 被 `openExternal` 打断 cookie 会话
 
 ### 4. 开发模式 vs 生产模式
 
@@ -142,10 +143,10 @@ Windows 上输入邮箱后弹出的「插入安全密钥」来自 Google 登录�
 | `applyGlobalBrowserIdentityFallback()`           | 启动时清理 `app.userAgentFallback` 中的 `Electron/`、`ChatAIO/` |
 | `applyBrowserIdentityToView()`                   | 对每个 AI view 的 session + webContents 设置清理后的 UA           |
 | `webRequest.onBeforeSendHeaders`                 | 统一覆盖 session 全部请求的 `User-Agent` 与 `Accept-Language`     |
-| `googleChromeClientHints`（AI Studio）            | 同 handler 注入含 `Google Chrome` 的 `Sec-CH-UA*`            |
-| preload `executeInMainWorld`（AI Studio）         | 主世界补齐 `userAgentData` + `window.chrome`                 |
-| `shouldOpenGoogleAuthInCurrentView()`            | Google 域内 OAuth 跳转保留在当前 view，避免 session 断裂              |
-| `resolveBrowserIdentityMode('google-ai-studio')` | 标记 AI Studio 页面，启用上述 CH / 主世界补丁                          |
+| `googleChromeClientHints`（全部 AI）               | 同 handler 注入含 `Google Chrome` 的 `Sec-CH-UA*`            |
+| preload `executeInMainWorld`（全部 AI）            | 主世界补齐 `userAgentData` + `window.chrome`                 |
+| `shouldOpenGoogleAuthInCurrentView()`            | 任意站点 → Google OAuth 保留在当前 view（同 partition）            |
+| `resolveBrowserIdentityMode('google-chrome-identity')` | 所有 AI page 启用上述 CH / 主世界补丁（不再限 AI Studio）        |
 
 
 **刻意不做**：
@@ -214,7 +215,7 @@ navigator.userAgentData?.brands
 window.chrome && Object.keys(window.chrome)
 ```
 
-AI Studio 期望：
+AI Studio / ChatGPT Google OAuth 期望：
 
 - `userAgent` **不含** `Electron/`
 - `userAgentData.brands` **含** `{ brand: 'Google Chrome', ... }`
@@ -282,5 +283,6 @@ projects/ChatAIO/
 | 2026-08-05 | **回归修复**：merge `d6dadd4f` 误把未验证 `buildChromeLikeUserAgent` 带回；已恢复仅剥离。 |
 | 2026-08-05 | **深度修复**：Google 门禁升级后，仅剥 UA 仍报 `may not be secure`。对齐 [linux-mail-wrapper 8d7925a](https://github.com/jariahh/linux-mail-wrapper/commit/8d7925a70b0dd03e376747a154f27c09cfd4af80)：AI Studio 注入 `Sec-CH-UA`（含 Google Chrome 品牌）+ 主世界 `userAgentData`/`window.chrome`；dev 默认关闭 remote-debugging（`CHATAIO_REMOTE_DEBUG=1`）。 |
 | 2026-08-05 | **Passkey 弹窗**：默认拦截 WebAuthn `publicKey`（主世界 + Permissions-Policy），避免 Electron 误弹 Windows USB 安全密钥框（[Electron #47147](https://github.com/electron/electron/issues/47147)，Chrome 不会如此）；登录回退密码等方式。 |
+| 2026-08-10 | **ChatGPT 正式版回归**：Google 门禁扩到标准 OAuth。正式包内 ChatGPT「Continue with Google」再次 `may not be secure`。修复：全部 AI page 启用 `google-chrome-identity`（Sec-CH-UA + 主世界补丁）；并放行 `chatgpt.com` → `accounts.google.com` 的同 view OAuth popup。 |
 
 

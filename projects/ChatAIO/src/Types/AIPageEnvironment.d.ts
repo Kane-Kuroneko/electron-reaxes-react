@@ -5,9 +5,9 @@ export type AIPageEnvironment = {
 	themeSource: Appearance.Theme;
 	backgroundColor: string;
 	acceptLanguages: string;
-	browserIdentityMode?: 'default' | 'google-ai-studio';
+	browserIdentityMode?: 'default' | 'google-chrome-identity' | 'google-ai-studio';
 	browserUserAgent?: string | null;
-	/** Chromium full version for main-world Google Chrome brand patches (AI Studio). */
+	/** Chromium full version for main-world Google Chrome brand patches (Google OAuth). */
 	chromeVersionFull?: string;
 };
 
