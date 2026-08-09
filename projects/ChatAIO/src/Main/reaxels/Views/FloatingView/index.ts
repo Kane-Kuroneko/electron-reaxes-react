@@ -26,6 +26,32 @@ export const reaxel_FloatingView = reaxel( () => {
 	/** 本进程内是否已对用户做过「hidden→shown」真实展示（冷启动首次调出） */
 	let hasShownOverlayToUser = false;
 
+	/*
+	 * ── Overlay 呈现调度器 ─────────────────────────────────────────────
+	 * desired：switchAiBarLayerActive（SwitchAiBar / GlobalMessage 是否应显示）
+	 * actual ：overlayRevealed（逻辑可见）+ overlaySurfaceStale（surface 需重绑）
+	 * 唯一调度入口：syncOverlayLayerVisibility → reveal / conceal
+	 *
+	 * conceal 平台策略（为什么不能统一 hide()/show()）：
+	 * - win32『opacity』：透明无框窗反复 hide()→show() 是 Electron 已知坏模式
+	 *   （electron#45730 / #40830：isVisible=true、opacity=1 但画面永不出现）；
+	 *   且 backgroundThrottling:false + hide() 触发 FrameEvictor 失步
+	 *   （electron#42378：~5min 后 compositor frame 被驱逐，re-show 时 WasShown
+	 *   被 disable_hidden.patch 短路 → 不再产帧）。透明窗无帧 = 完全不可见，
+	 *   表现即「切后台一段时间后 SwitchAiBar 消失，激活父窗才偶然恢复」。
+	 *   → 窗口保持 OS 可见，仅用 setOpacity(0/1) 切换（社区公认解法）。
+	 * - darwin『hide』：可见透明层会让主窗被 macOS occlusion 节流（ca15e358c），
+	 *   必须真实 hide()；macOS 无上述 Windows 合成器缺陷。
+	 * - linux『hide』：setOpacity 在 Linux 不支持。
+	 * 见 docs/issues/floating-view-missing-after-background.md
+	 */
+	const overlayConcealStrategy:'opacity' | 'hide' = process.platform === 'win32' ? 'opacity' : 'hide';
+	/** 逻辑可见（opacity 策略下 isVisible() 恒 true，不能作为依据） */
+	let overlayRevealed = false;
+	/** bounds / alwaysOnTop / z-order / compositor frame 是否可能过期 */
+	let overlaySurfaceStale = true;
+	let overlayVerifyScheduled = false;
+
 	const clearSwitchAiBarHideTimer = () => {
 		if( switchAiBarHideTimer ) {
 			clearTimeout( switchAiBarHideTimer );
@@ -37,7 +63,7 @@ export const reaxel_FloatingView = reaxel( () => {
 		return switchAiBarLayerActive;
 	};
 
-	/** Keep the transparent overlay hidden unless SwitchAiBar is active (macOS occlusion/throttle fix). */
+	/** 调度器唯一入口：desired（layer active）→ reveal / conceal。透明层仅在 SwitchAiBar/GlobalMessage 激活时逻辑可见。 */
 	const syncOverlayLayerVisibility = (ctxId?:string) => {
 		if( isOverlayLayerActive() ) {
 			showLayerWindow( ctxId );
@@ -54,7 +80,7 @@ export const reaxel_FloatingView = reaxel( () => {
 			if( store.floatingView.loaded ) {
 				sendCommandNow( { type : 'switch-ai-bar:hide' } );
 			}
-			hideLayerWindow();
+			syncOverlayLayerVisibility();
 			flushPendingPrepareAfterHide();
 		} , SWITCH_AI_BAR_LAYER_MS );
 	};
@@ -105,11 +131,73 @@ export const reaxel_FloatingView = reaxel( () => {
 		floatingWindow.setBounds( getFloatingViewBounds() , false );
 	};
 
-	/* 轻量显示：仅 showInactive()，无 syncBounds/moveTop。
-	   syncBounds 由 mainWindow move/resize 事件监听接管；
-	   moveTop 不需要——FloatingView 已设置 alwaysOnTop:true + 'floating' 级别，
-	   在主窗口上方自动保持层级。
-	   用于 SwitchAiBar 显示（每次切换 AI page 调用）。 */
+	/**
+	 * surface 重绑：bounds / 层级 / z-order / 强制产帧。
+	 * stale（conceal 或父窗生命周期扰动）后的 reveal 必须走此路径。
+	 * webContents.invalidate() 是关键：帧被驱逐后 showInactive 并不保证
+	 * compositor 重新提交帧，必须显式强制 repaint。
+	 */
+	const rebindOverlaySurface = (floatingWindow:BrowserWindow) => {
+		syncBounds();
+		floatingWindow.setAlwaysOnTop( true , 'floating' );
+		if( !floatingWindow.isVisible() ) {
+			floatingWindow.showInactive();
+		}
+		floatingWindow.moveTop();
+		floatingWindow.webContents.invalidate();
+		overlaySurfaceStale = false;
+	};
+
+	const revealOverlaySurface = (floatingWindow:BrowserWindow) => {
+		if( overlaySurfaceStale ) {
+			rebindOverlaySurface( floatingWindow );
+		} else if( !floatingWindow.isVisible() ) {
+			/* 父窗最小化时 OS 会自动隐藏 owned window；恢复后补 show */
+			floatingWindow.showInactive();
+		}
+		if( overlayConcealStrategy === 'opacity' ) {
+			floatingWindow.setOpacity( 1 );
+		}
+		overlayRevealed = true;
+		verifyOverlayRevealed( floatingWindow );
+	};
+
+	const concealOverlaySurface = (floatingWindow:BrowserWindow) => {
+		if( overlayConcealStrategy === 'opacity' ) {
+			/* 不 hide()：保持 Chromium 可见性状态，帧不被驱逐、不触发透明窗 re-show 缺陷 */
+			floatingWindow.setOpacity( 0 );
+		} else {
+			floatingWindow.hide();
+			/* hide 后 compositor / z-order 不可信，下次 reveal 必须重绑 */
+			overlaySurfaceStale = true;
+		}
+		overlayRevealed = false;
+	};
+
+	/**
+	 * reveal 后一拍校验：OS 拒绝显示（owned window 激活时序等）时重绑重试一次。
+	 * 只校验 OS 可见性；帧层面由 rebind 中的 invalidate 兜底。
+	 */
+	const verifyOverlayRevealed = (floatingWindow:BrowserWindow) => {
+		if( overlayVerifyScheduled ) {
+			return;
+		}
+		overlayVerifyScheduled = true;
+		setImmediate( () => {
+			overlayVerifyScheduled = false;
+			if( floatingWindow.isDestroyed() || !overlayRevealed || !isOverlayLayerActive() ) {
+				return;
+			}
+			if( !floatingWindow.isVisible() ) {
+				console.warn( '[FloatingView] overlay reveal rejected by OS; rebinding surface' );
+				rebindOverlaySurface( floatingWindow );
+				if( overlayConcealStrategy === 'opacity' ) {
+					floatingWindow.setOpacity( 1 );
+				}
+			}
+		} );
+	};
+
 	const showLayerWindow = (ctxId?:string) => {
 		const floatingWindow = store.floatingView.window;
 		if( !floatingWindow || floatingWindow.isDestroyed() ) {
@@ -119,32 +207,36 @@ export const reaxel_FloatingView = reaxel( () => {
 			return;
 		}
 		const markCtx = ctxId || activeSwitchPerfCtxId;
-		const wasVisible = floatingWindow.isVisible();
-		const isFirstOverlayShow = !hasShownOverlayToUser && !wasVisible;
+		const wasRevealed = overlayRevealed;
+		const needsPromote = overlaySurfaceStale || !wasRevealed;
+		const isFirstOverlayShow = !hasShownOverlayToUser && !wasRevealed;
 		const shouldMark = Boolean( markCtx ) && markCtx !== lastOverlayShowMarkedCtxId;
 		if( shouldMark ) {
 			lastOverlayShowMarkedCtxId = markCtx;
 			perf.mark( PerfPhase.FvShowBegin , 'main' , markCtx , {
-				wasVisible ,
-				overlayWasHidden : !wasVisible ,
+				wasVisible : wasRevealed ,
+				overlayWasHidden : !wasRevealed ,
+				needsPromote ,
 				isFirstOverlayShow ,
 				platform : process.platform ,
 			} );
 			if( isFirstOverlayShow ) {
 				perf.mark( PerfPhase.FvFirstOverlayShow , 'main' , markCtx , {
 					platform : process.platform ,
-					wasVisible ,
+					wasVisible : wasRevealed ,
+					needsPromote ,
 				} );
 			}
 		}
-		floatingWindow.showInactive();
-		if( !wasVisible ) {
+		revealOverlaySurface( floatingWindow );
+		if( !wasRevealed ) {
 			hasShownOverlayToUser = true;
 		}
 		if( shouldMark ) {
 			perf.mark( PerfPhase.FvShowEnd , 'main' , markCtx , {
-				wasVisible ,
-				overlayWasHidden : !wasVisible ,
+				wasVisible : wasRevealed ,
+				overlayWasHidden : !wasRevealed ,
+				needsPromote ,
 				isFirstOverlayShow ,
 				isVisibleAfter : floatingWindow.isVisible() ,
 				platform : process.platform ,
@@ -152,25 +244,10 @@ export const reaxel_FloatingView = reaxel( () => {
 		}
 	};
 
-	/* 完整置顶：syncBounds + showInactive + moveTop。
-	   仅用于窗口从最小化/隐藏恢复时——此时可能有其他应用窗口覆盖。
-	   不在每次 AI page 切换时调用，避免 moveTop() OS 级开销。 */
-	const bringFloatingViewToTop = () => {
-		syncBounds();
-		const floatingWindow = store.floatingView.window;
-		if( !floatingWindow || floatingWindow.isDestroyed() ) {
-			return;
-		}
-		if( mainWindow.isVisible() && !mainWindow.isMinimized() ) {
-			floatingWindow.showInactive();
-			floatingWindow.moveTop();
-		}
-	};
-
 	const hideLayerWindow = () => {
 		const floatingWindow = store.floatingView.window;
 		if( floatingWindow && !floatingWindow.isDestroyed() ) {
-			floatingWindow.hide();
+			concealOverlaySurface( floatingWindow );
 		}
 	};
 
@@ -232,20 +309,25 @@ export const reaxel_FloatingView = reaxel( () => {
 		mainWindow.on( 'resize' , syncBounds );
 		mainWindow.on( 'maximize' , syncBounds );
 		mainWindow.on( 'unmaximize' , syncBounds );
-		/* restore / show：仅当 overlay 确实需要显示时才置顶，避免 macOS 透明层长期遮挡主窗口。 */
-		mainWindow.on( 'restore' , () => {
+		/* restore / show / focus：surface 标记 stale；仅当 overlay 仍应显示时 reveal。
+		   禁止 focus 无条件 show——那会让透明层长期遮挡并触发 macOS occlusion 节流。 */
+		const onParentPresented = () => {
+			overlaySurfaceStale = true;
 			if( isOverlayLayerActive() ) {
-				bringFloatingViewToTop();
+				showLayerWindow();
 			}
-		} );
-		mainWindow.on( 'show' , () => {
-			if( isOverlayLayerActive() ) {
-				bringFloatingViewToTop();
-			}
-		} );
-		mainWindow.on( 'blur' , hideLayerWindow );
-		mainWindow.on( 'hide' , hideLayerWindow );
-		mainWindow.on( 'minimize' , hideLayerWindow );
+		};
+		mainWindow.on( 'restore' , onParentPresented );
+		mainWindow.on( 'show' , onParentPresented );
+		mainWindow.on( 'focus' , onParentPresented );
+		/* 父窗失活/隐藏：conceal（win32=opacity 0，darwin/linux=hide）并标记 stale */
+		const onParentConcealed = () => {
+			overlaySurfaceStale = true;
+			hideLayerWindow();
+		};
+		mainWindow.on( 'blur' , onParentConcealed );
+		mainWindow.on( 'hide' , onParentConcealed );
+		mainWindow.on( 'minimize' , onParentConcealed );
 		mainWindow.on( 'closed' , () => {
 			const floatingWindow = store.floatingView.window;
 			if( floatingWindow && !floatingWindow.isDestroyed() ) {
@@ -295,6 +377,12 @@ export const reaxel_FloatingView = reaxel( () => {
 		floatingWindow.setIgnoreMouseEvents( true , { forward : false } );
 		floatingWindow.setMenu( null );
 		floatingWindow.setAlwaysOnTop( true , 'floating' );
+		if( overlayConcealStrategy === 'opacity' ) {
+			/* opacity 模型：窗口显示后长期保持 OS 可见，仅用透明度切换 */
+			floatingWindow.setOpacity( 0 );
+		}
+		overlayRevealed = false;
+		overlaySurfaceStale = true;
 		setState.floatingView( {
 			window : floatingWindow ,
 			loaded : false ,
@@ -307,31 +395,59 @@ export const reaxel_FloatingView = reaxel( () => {
 
 		floatingWindow.on( 'closed' , () => {
 			pendingCommands = [];
+			overlayRevealed = false;
+			overlaySurfaceStale = true;
 			setState.floatingView( {
 				window : null ,
 				loaded : false ,
 			} );
 		} );
 
-		floatingWindow.webContents.once( 'did-finish-load' , () => {
-			perf.mark( PerfPhase.FvDidFinishLoad , 'main' , bootPerfCtxId , {
-				pendingCommands : pendingCommands.length ,
+		/* 渲染进程崩溃/被杀自愈：reload 后 did-finish-load 会重新 flush 队列并对齐可见性 */
+		floatingWindow.webContents.on( 'render-process-gone' , ( _event , details ) => {
+			console.warn( '[FloatingView] renderer gone:' , details.reason );
+			overlaySurfaceStale = true;
+			setState.floatingView( {
+				loaded : false,
 			} );
+			if( !floatingWindow.isDestroyed() ) {
+				floatingWindow.webContents.reload();
+			}
+		} );
+
+		let bootLoadCompleted = false;
+		floatingWindow.webContents.on( 'did-finish-load' , () => {
+			const isBootLoad = !bootLoadCompleted;
+			bootLoadCompleted = true;
+			if( isBootLoad ) {
+				perf.mark( PerfPhase.FvDidFinishLoad , 'main' , bootPerfCtxId , {
+					pendingCommands : pendingCommands.length ,
+				} );
+			}
 			setState.floatingView( {
 				loaded : true,
 			} );
 			syncBounds();
 			flushCommandQueue();
-			/* 预热透明窗口首次 showInactive，避免第一次真正显示时的合成器冷启动卡顿。
-			   立即 hide，不长期遮挡主窗口（macOS occlusion/throttle 约束仍成立）。 */
-			if( mainWindow.isVisible() && !mainWindow.isMinimized() ) {
+			/* 预热透明窗口首次 showInactive，避免第一次真正显示时的合成器冷启动卡顿。 */
+			if( isBootLoad && mainWindow.isVisible() && !mainWindow.isMinimized() ) {
 				perf.mark( PerfPhase.FvWarmupShow , 'main' , bootPerfCtxId );
-				floatingWindow.showInactive();
-				perf.mark( PerfPhase.FvWarmupHide , 'main' , bootPerfCtxId );
-				floatingWindow.hide();
+				if( overlayConcealStrategy === 'opacity' ) {
+					/* win32：warmup 后不再 hide()——窗口保持 OS 可见（opacity 0），
+					   规避透明窗 hide/show 缺陷与 FrameEvictor 失步（见调度器注释） */
+					floatingWindow.setOpacity( 0 );
+					floatingWindow.showInactive();
+					perf.mark( PerfPhase.FvWarmupHide , 'main' , bootPerfCtxId );
+				} else {
+					floatingWindow.showInactive();
+					perf.mark( PerfPhase.FvWarmupHide , 'main' , bootPerfCtxId );
+					floatingWindow.hide();
+				}
 			}
 			syncOverlayLayerVisibility();
-			perf.flush();
+			if( isBootLoad ) {
+				perf.flush();
+			}
 		} );
 
 		if( dev() ) {
@@ -397,7 +513,7 @@ export const reaxel_FloatingView = reaxel( () => {
 			switchAiBarHideTimer = setTimeout( () => {
 				switchAiBarHideTimer = null;
 				switchAiBarLayerActive = false;
-				hideLayerWindow();
+				syncOverlayLayerVisibility();
 				flushPendingPrepareAfterHide();
 			} , durationMs );
 		},

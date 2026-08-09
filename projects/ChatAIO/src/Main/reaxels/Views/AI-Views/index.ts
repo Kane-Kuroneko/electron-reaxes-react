@@ -103,6 +103,7 @@ export const reaxel_AIViews = reaxel( () => {
 		}
 
 		applyVisibility();
+		Reaxel_View().presentActiveCenterView( 'recover' );
 	};
 
 	const showAIView = ( aiId:string , settings:Settings ) => {
@@ -110,12 +111,16 @@ export const reaxel_AIViews = reaxel( () => {
 		if( !ai ) {
 			return null;
 		}
-		Reaxel_View.setState( {
+		/* 抑制 store 兜底 reaction（setState 内同步触发），由下方显式 present('switch')
+		   负责唯一一次 mount，避免双重 remount。 */
+		Reaxel_View().setCenterStateForImperativeSwitch( {
 			currentAIViewKey : ai.id ,
 			settingsViewOpened : false,
 		} );
 		const view = initAIView( ai , settings );
 		applyVisibility();
+		/* 必须在 FloatingView show 前同步 switch，避免 remount 打在 overlay 之后 */
+		Reaxel_View().presentActiveCenterView( 'switch' );
 		return view;
 	};
 
@@ -157,28 +162,22 @@ export const reaxel_AIViews = reaxel( () => {
 		const currentRuntimeView = runtimeViews[currentIndex];
 
 		destroyAIView( currentRuntimeView.id );
-		if( runtimeViews.length > 1 ) {
-			const nextRuntimeView = runtimeViews[( currentIndex + 1 ) % runtimeViews.length];
-			Reaxel_View.setState( {
-				currentAIViewKey : nextRuntimeView.id ,
-				settingsViewOpened : false,
-			} );
-		} else {
-			Reaxel_View.setState( {
-				currentAIViewKey : '' ,
-				settingsViewOpened : false,
-			} );
-		}
+		const nextRuntimeView = runtimeViews.length > 1
+			? runtimeViews[( currentIndex + 1 ) % runtimeViews.length]
+			: null;
+		/* 抑制 store 兜底 reaction，由下方显式 present('switch') 负责唯一一次 mount */
+		Reaxel_View().setCenterStateForImperativeSwitch( {
+			currentAIViewKey : nextRuntimeView ? nextRuntimeView.id : '' ,
+			settingsViewOpened : false,
+		} );
 		applyVisibility();
+		Reaxel_View().presentActiveCenterView( 'switch' );
 		return true;
 	};
 
-	/* AI 列表可见性同步（非平台生命周期总控）。
-	   - Settings 打开：只 detach 全部 AI，Settings 挂载由 Reaxel_View obsReaction ensure
-	   - AI key 变化：同步 ensure，且必须发生在 showSwitchAiBar 之前
-	     （remount 若落到 FloatingView showInactive 之后会弄挂 overlay）
-	   - 仅 view 数量变化（预加载）：当前 AI 仍 invisible 时补 ensure
-	   lastApplied* 缓存：Settings 开/关若只 setState，依赖 obsReaction 再调一次本函数纠偏。 */
+	/* AI 列表可见性：只负责「谁离开中心区」(detach)。
+	   mount/promote 唯一入口是 Reaxel_View.presentActiveCenterView。
+	   同步切换路径必须在 FloatingView show 之前自行 present('switch')。 */
 	let lastAppliedVisibilityKey: string | null = null;
 	let lastAppliedSettingsOpened: boolean | null = null;
 	let lastAppliedViewCount: number = -1;
@@ -188,7 +187,6 @@ export const reaxel_AIViews = reaxel( () => {
 		const settingsOpened = Reaxel_View.store.settingsViewOpened;
 		const viewCount = store.AIViews.length;
 
-		/* 早期退出：当前 key、settings 状态、view 数量均与上次一致 → 跳过 */
 		if(
 			currentAIViewKey === lastAppliedVisibilityKey
 			&& settingsOpened === lastAppliedSettingsOpened
@@ -196,9 +194,6 @@ export const reaxel_AIViews = reaxel( () => {
 		) {
 			return;
 		}
-
-		const keyOrSettingsChanged = currentAIViewKey !== lastAppliedVisibilityKey
-			|| settingsOpened !== lastAppliedSettingsOpened;
 
 		lastAppliedVisibilityKey = currentAIViewKey;
 		lastAppliedSettingsOpened = settingsOpened;
@@ -217,25 +212,6 @@ export const reaxel_AIViews = reaxel( () => {
 			}
 			Reaxel_View().detachInactiveCenterView( runtimeView.view );
 		} );
-
-		const activeRuntimeView = store.AIViews.find( runtimeView => {
-			return runtimeView.id === currentAIViewKey;
-		} ) || null;
-
-		if( keyOrSettingsChanged ) {
-			Reaxel_View().ensureActiveCenterViewPainted( 'ai-switch' );
-			if( activeRuntimeView?.view && process.platform !== 'darwin' ) {
-				focusRuntimeAIViewIfReady( activeRuntimeView );
-			}
-			return;
-		}
-
-		if( activeRuntimeView?.view && !activeRuntimeView.view.getVisible() ) {
-			Reaxel_View().ensureActiveCenterViewPainted( 'ai-switch' );
-			if( process.platform !== 'darwin' ) {
-				focusRuntimeAIViewIfReady( activeRuntimeView );
-			}
-		}
 	};
 
 	const rtn = {
@@ -344,7 +320,6 @@ export const reaxel_AIViews = reaxel( () => {
 			browserIdentity,
 		);
 		applyAIPageEnvironmentToView( runtimeView.view , nextEnvironment );
-		applyBrowserIdentityToView( runtimeView.view , nextDomain , nextEnvironment.acceptLanguages );
 		const appliedAppearanceKey = getAIPageAppearanceKey( nextEnvironment );
 		applyRuntimeAIViewConfig( runtimeView , ai , nextDomain , appliedProxyKey , appliedAppearanceKey );
 		setAIPageEnvironmentForView( runtimeView.view , environmentWithIdentity );
@@ -624,13 +599,6 @@ function focusViewWithMonitor( view: WebContentsView, source: string ): void {
 /* =================================================================
    AI 视图焦点管理函数
    ================================================================= */
-
-const focusRuntimeAIViewIfReady = (runtimeView:RuntimeAIView) => {
-	if( !runtimeView.ready ) {
-		return;
-	}
-	focusAIViewIfReady( runtimeView.view , 'apply-visibility' );
-};
 
 const focusAIViewIfReady = (view:WebContentsView , source:string = 'unknown') => {
 	if( view.webContents.isDestroyed() || view.webContents.isLoading() ) {

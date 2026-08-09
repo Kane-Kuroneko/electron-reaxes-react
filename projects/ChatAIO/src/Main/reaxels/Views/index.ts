@@ -56,10 +56,23 @@ export const Reaxel_View = reaxel( () => {
 		return views.filter( Boolean );
 	}
 
-	/** Detach inactive center views so drag-region providers leave the hit-test set.
-	 * 全平台 removeChildView：仅 setVisible(false) 在部分路径上仍可能参与 HTCAPTION
-	 * 聚合（electron#51176；与主壳全窗 drag 叠加重现内容区幽灵拖区）。
-	 * macOS 另需 remove 才能在下次 mount 触发 ViewHierarchyChanged + WasShown。 */
+	/**
+	 * 中心 WebContentsView 生命周期 —— 单一所有者模型
+	 * （docs/issues/ai-view-foreground-white-flash.md）
+	 *
+	 * 角色拆分：
+	 * - reaxel_AIViews.applyVisibility：只 detach「不该在中心区的 AI」
+	 * - Reaxel_View.presentActiveCenterView：唯一 mount/promote 入口
+	 *
+	 * 两种意图（禁止 reason 字符串矩阵）：
+	 * - switch：AI / Settings / 冷启动 —— 允许平台级 remount/reorder
+	 * - recover：focus / show / restore —— 只补挂载与可见性，禁止 remount/reorder/nudge
+	 *
+	 * hierarchy（attached∧visible）与 layout（bounds）分离：
+	 * 回前台 bounds 过期只 setBounds，绝不升级为 switch remount。
+	 */
+
+	/** Detach：闲置中心 view 离开 hit-test（electron#51176）与 macOS WasShown 前置。 */
 	function safeDetachWebContentsView(view:WebContentsView | null | undefined) {
 		if( !view || view.webContents.isDestroyed() ) {
 			return;
@@ -70,107 +83,145 @@ export const Reaxel_View = reaxel( () => {
 		try {
 			mainWindow.contentView.removeChildView( view );
 		} catch {
-			/* view may already be detached */
+			/* already detached */
 		}
-	}
-
-	/** Mount the active center view with explicit bounds and z-order.
-	 * remount（remove+add）仅 macOS：绕过 compositor 白屏。
-	 * Windows/Linux 禁止对**当前活动**视图 remount——addChildView 会抢焦点
-	 * （electron#42339），且破坏 alt-tab 回来后子 WebContents 的输入焦点恢复
-	 * （electron#28163）。置顶用 addChildView 即可。 */
-	function attachActiveCenterView(
-		view:WebContentsView | null | undefined ,
-		reason:CenterViewLifecycleReason = 'explicit' ,
-		bounds = getCenterBounds(),
-	) {
-		if( !view || view.webContents.isDestroyed() || mainWindow.isDestroyed() ) {
-			return;
-		}
-		if( process.platform === 'darwin' ) {
-			try {
-				mainWindow.contentView.removeChildView( view );
-			} catch {
-				/* view may already be detached */
-			}
-		}
-		mainWindow.contentView.addChildView( view );
-		view.setBounds( bounds );
-		view.setVisible( true );
-		scheduleCenterViewPaint( view , bounds , reason );
 	}
 
 	function detachInactiveCenterView(view:WebContentsView | null | undefined) {
 		safeDetachWebContentsView( view );
 	}
 
-	/**
-	 * 统一保证当前中心 view 已挂载且可绘制。
-	 * AI 切换 / Settings / show / restore / runtime-init 走此路径；
-	 * window-focus 改走 recoverActiveCenterViewAfterFocus，避免每次 Alt-Tab remount。
-	 */
-	function ensureActiveCenterViewPainted(
-		reason:CenterViewLifecycleReason = 'explicit' ,
-		bounds = getCenterBounds(),
-	) {
-		const activeView = getCurrentCenterView();
+	function isCenterViewAttached(view:WebContentsView | null | undefined) {
+		if( !view || view.webContents.isDestroyed() || mainWindow.isDestroyed() ) {
+			return false;
+		}
+		try {
+			return mainWindow.contentView.children.includes( view );
+		} catch {
+			return false;
+		}
+	}
+
+	/** 层级健康：已在 contentView 且可见。不含 bounds。 */
+	function isCenterViewHierarchyReady(view:WebContentsView | null | undefined) {
+		return Boolean(
+			view
+			&& !view.webContents.isDestroyed()
+			&& isCenterViewAttached( view )
+			&& view.getVisible(),
+		);
+	}
+
+	function detachOtherCenterViews(activeView:WebContentsView | null) {
 		getAllCenterViews().forEach( view => {
 			if( !view || view === activeView ) {
 				return;
 			}
 			detachInactiveCenterView( view );
 		} );
-		if( !activeView || activeView.webContents.isDestroyed() ) {
-			return;
+	}
+
+	/**
+	 * switch：内容换页。Darwin remove+add 触发 WasShown（唯一 compositor 手段）；
+	 * Win/Linux 一律 addChildView（未挂载则挂上，已挂载则置顶）。
+	 * 禁止 bounds±1，禁止二次 addChildView。
+	 */
+	function mountCenterViewForSwitch(view:WebContentsView , bounds:Rectangle) {
+		if( process.platform === 'darwin' && isCenterViewAttached( view ) ) {
+			try {
+				mainWindow.contentView.removeChildView( view );
+			} catch {
+				/* already detached */
+			}
 		}
-		attachActiveCenterView( activeView , reason , bounds );
-		if( shouldRestoreCenterViewFocus( reason ) ) {
-			restoreActiveCenterViewFocus( reason );
+		mainWindow.contentView.addChildView( view );
+		view.setBounds( bounds );
+		view.setVisible( true );
+	}
+
+	/**
+	 * recover：hierarchy 破损时补挂。已挂载则绝不 addChildView（避免 reorder 闪白）。
+	 */
+	function mountCenterViewForRecover(view:WebContentsView , bounds:Rectangle) {
+		if( !isCenterViewAttached( view ) ) {
+			mainWindow.contentView.addChildView( view );
+		}
+		setViewBoundsIfChanged( view , bounds );
+		if( !view.getVisible() ) {
+			view.setVisible( true );
 		}
 	}
 
 	/**
-	 * Alt-Tab / 点击窗口回焦：只做轻量 bounds nudge + 焦点归还。
-	 * 若中心 view 已不可见（被 hide/minimize 后异常路径），再升级为完整 ensure。
+	 * mobx reaction（obsReaction 底层）在 setState 的 action 结束时**同步**执行，
+	 * 早于 setState 之后的语句。命令式切换路径（setState → applyVisibility →
+	 * present('switch')）若不抑制下方 store 兜底 reaction，会先被兜底 remount 一次、
+	 * 再被显式调用 remount 一次——darwin 上即每次切换双重 remove+add，
+	 * Win/Linux 上是二次 addChildView reorder（本文件明令禁止）。
+	 * 调用本入口 = 承诺 setState 返回后**同步**自行 present('switch')。
 	 */
+	let imperativeCenterSwitchInProgress = false;
+	function setCenterStateForImperativeSwitch(patch:{
+		currentAIViewKey:string;
+		settingsViewOpened:boolean;
+	}) {
+		imperativeCenterSwitchInProgress = true;
+		try {
+			setState( patch );
+		} finally {
+			imperativeCenterSwitchInProgress = false;
+		}
+	}
+
+	/**
+	 * 唯一 present 入口。AI 切换路径必须在 FloatingView showInactive **之前**同步调用 switch。
+	 */
+	function presentActiveCenterView(
+		intent:CenterMountIntent ,
+		bounds = getCenterBounds(),
+	) {
+		const activeView = getCurrentCenterView();
+		detachOtherCenterViews( activeView );
+		if( !activeView || activeView.webContents.isDestroyed() ) {
+			return;
+		}
+		if( intent === 'switch' ) {
+			mountCenterViewForSwitch( activeView , bounds );
+		} else {
+			mountCenterViewForRecover( activeView , bounds );
+		}
+		restoreActiveCenterViewFocus( intent );
+	}
+
+	/** L0：Alt-Tab / 点击回焦 —— hierarchy 完好则只还焦点。 */
 	function recoverActiveCenterViewAfterFocus() {
 		const activeView = getCurrentCenterView();
 		if( !activeView || activeView.webContents.isDestroyed() ) {
 			return;
 		}
-		if( !activeView.getVisible() ) {
-			ensureActiveCenterViewPainted( 'window-focus' );
+		if( !isCenterViewHierarchyReady( activeView ) ) {
+			presentActiveCenterView( 'recover' );
 			return;
 		}
-		const bounds = getCenterBounds();
-		scheduleCenterViewPaint( activeView , bounds , 'window-focus' );
-		restoreActiveCenterViewFocus( 'window-focus' );
+		restoreActiveCenterViewFocus( 'recover' );
 	}
 
-	function scheduleCenterViewPaint(
-		view:WebContentsView | null | undefined ,
-		bounds:Rectangle ,
-		reason:CenterViewLifecycleReason,
-	) {
-		if( !view || view.webContents.isDestroyed() ) {
+	/**
+	 * L1：show / restore —— hierarchy 与 layout 拆开处理。
+	 * layout 过期只 setBounds；hierarchy 破损才 recover mount。
+	 */
+	function softRecoverActiveCenterView() {
+		const bounds = getCenterBounds();
+		const activeView = getCurrentCenterView();
+		if( !activeView || activeView.webContents.isDestroyed() ) {
 			return;
 		}
-		if( process.platform !== 'darwin' && !shouldNudgeCenterViewBounds( reason ) ) {
+		if( !isCenterViewHierarchyReady( activeView ) ) {
+			presentActiveCenterView( 'recover' , bounds );
 			return;
 		}
-		setImmediate( () => {
-			if( view.webContents.isDestroyed() || mainWindow.isDestroyed() ) {
-				return;
-			}
-			view.setBounds( {
-				...bounds ,
-				height : Math.max( 1 , bounds.height + 1 ),
-			} );
-			view.setBounds( bounds );
-			if( process.platform === 'darwin' && shouldRemountOnPaint( reason ) ) {
-				mainWindow.contentView.addChildView( view );
-			}
-		} );
+		setViewBoundsIfChanged( activeView , bounds );
+		restoreActiveCenterViewFocus( 'recover' );
 	}
 
 	function getCenterBounds(bounds = mainWindow.getContentBounds()):Rectangle {
@@ -218,7 +269,7 @@ export const Reaxel_View = reaxel( () => {
 	 * 而不是 AI/Settings WebContentsView，导致输入框失焦（electron#28163）。
 	 * 在 focus 事件后延迟一拍，把焦点还回中心内容区；若 Prompt 侧栏已持有焦点则不抢。
 	 */
-	function restoreActiveCenterViewFocus(reason:CenterViewLifecycleReason = 'window-focus') {
+	function restoreActiveCenterViewFocus(intent:CenterMountIntent = 'recover') {
 		setImmediate( () => {
 			if( !mainWindow || mainWindow.isDestroyed() || !mainWindow.isFocused() ) {
 				return;
@@ -245,8 +296,11 @@ export const Reaxel_View = reaxel( () => {
 			if( view.webContents.isFocused() ) {
 				return;
 			}
+			const focusSource:FocusMonitorFocusSource = intent === 'recover'
+				? 'window-restore-paint'
+				: 'apply-visibility';
 			try {
-				safeFocusViewWithMonitor( view , mapLifecycleReasonToFocusSource( reason ) );
+				safeFocusViewWithMonitor( view , focusSource );
 			} catch {
 				view.webContents.focus();
 			}
@@ -426,11 +480,12 @@ export const Reaxel_View = reaxel( () => {
 			aiId : nextRuntimeView.id ,
 			isFirstSwitchInSession ,
 		} );
-		setState( {
+		setCenterStateForImperativeSwitch( {
 			currentAIViewKey : nextRuntimeView.id ,
 			settingsViewOpened : false,
 		} );
 		reaxel_AIViews().applyVisibility();
+		presentActiveCenterView( 'switch' );
 		perf.mark( PerfPhase.SwitchAiViewEnd , 'main' , ctxId , {
 			aiId : nextRuntimeView.id ,
 		} );
@@ -542,11 +597,15 @@ export const Reaxel_View = reaxel( () => {
 	let lastSwitchAt = 0;
 	let lastSwitchDirection:string | null = null;
 
+	/* 仅在「未被忽略」时刷新时间戳：若无条件刷新，<40ms 间隔的连续事件流
+	   （如键盘自动重复）会不断自我续期，导致长按快捷键完全无法连续切换。 */
 	const shouldIgnoreDuplicateSwitch = (direction:string) => {
 		const now = Date.now();
 		const duplicate = direction === lastSwitchDirection && now - lastSwitchAt < 40;
-		lastSwitchAt = now;
-		lastSwitchDirection = direction;
+		if( !duplicate ) {
+			lastSwitchAt = now;
+			lastSwitchDirection = direction;
+		}
 		return duplicate;
 	};
 
@@ -572,18 +631,18 @@ export const Reaxel_View = reaxel( () => {
 			closeCurrent : () => {
 				closeCurrentAIView();
 			},
-				nextInstantiatedTab : () => {
-					turnToNextInstantiatedAiPage();
-				} ,
-				previousInstantiatedTab : () => {
-					turnToPreviousInstantiatedAiPage();
-				},
+			nextInstantiatedTab : () => {
+				turnToNextInstantiatedAiPage();
+			} ,
+			previousInstantiatedTab : () => {
+				turnToPreviousInstantiatedAiPage();
+			},
 		} );
 		registerAISwitchGlobalShortcuts();
 		reaxel_FloatingView().initFloatingView();
 		reaxel_PromptViews().registerIpc();
 		await onReadyLoadAIView();
-		ensureActiveCenterViewPainted( 'runtime-init' );
+		presentActiveCenterView( 'switch' );
 		/* AI 列表就绪后预热 SwitchAiBar：与 menubar Prev/Next 同源（instantiated），避免首次显示重建。 */
 		prepareInstantiatedSwitchAiBar();
 		mainWindow.on( 'resize' , () => {
@@ -595,11 +654,11 @@ export const Reaxel_View = reaxel( () => {
 		} );
 		mainWindow.on( 'show' , () => {
 			registerAISwitchGlobalShortcuts();
-			ensureActiveCenterViewPainted( 'window-show' );
+			softRecoverActiveCenterView();
 		} );
 		mainWindow.on( 'restore' , () => {
 			registerAISwitchGlobalShortcuts();
-			ensureActiveCenterViewPainted( 'window-restore' );
+			softRecoverActiveCenterView();
 		} );
 		mainWindow.on( 'blur' , unregisterAISwitchGlobalShortcuts );
 		mainWindow.on( 'hide' , unregisterAISwitchGlobalShortcuts );
@@ -634,39 +693,28 @@ export const Reaxel_View = reaxel( () => {
 	} , () => [ reaxel_AIViews.store.AIViews.length ] );
 
 	/**
-	 * 中心 view 生命周期归属：
-	 *
-	 * Reaxel_View
-	 *   - attach / detach / ensure / window show|restore|focus 恢复
-	 *   - Settings 的挂载（打开路径只 setState，由此处 ensure）
-	 *
-	 * reaxel_AIViews.applyVisibility
-	 *   - 按 currentAIViewKey / settingsViewOpened 同步「AI 列表谁该离开中心区」
-	 *   - AI key 变化时必须同步 ensure（先于 FloatingView showInactive）
-	 *
-	 * obsReaction(settings|key)
-	 *   - 先 applyVisibility，避免 Settings 开/关路径绕过时 lastApplied* 缓存过期
-	 *   - Settings 打开：ensure settings
-	 *   - AI 且尚未可见：补 ensure（exit-settings 等）
-	 *   - AI 已可见：禁止再 remount（否则打在 FloatingView 之后，overlay 会挂）
+	 * store 变化兜底（Settings 开/关只 setState 的路径）：
+	 * applyVisibility 只 detach；present 由本处或同步切换路径负责。
+	 * 注意：本 reaction 在 setState 内部**同步**触发（mobx action 结束时），
+	 * 早于调用方 setState 之后的显式 present。命令式切换路径通过
+	 * setCenterStateForImperativeSwitch 置位抑制标志，由调用方自行 present('switch')，
+	 * 否则会双重 remount（见该函数注释）。
 	 */
 	obsReaction( ( first ) => {
 		if( first ) return;
+		if( imperativeCenterSwitchInProgress ) return;
 
 		fitCurrentCenterView( getCenterBounds() );
 		reaxel_AIViews().applyVisibility();
 
 		if( store.settingsViewOpened ) {
-			ensureActiveCenterViewPainted( 'settings-toggle' );
+			presentActiveCenterView( 'switch' );
 			return;
 		}
 
 		const view = getCurrentCenterView();
-		if( !view || view.webContents.isDestroyed() ) {
-			return;
-		}
-		if( !view.getVisible() ) {
-			ensureActiveCenterViewPainted( 'ai-switch' );
+		if( !isCenterViewHierarchyReady( view ) ) {
+			presentActiveCenterView( 'switch' );
 		}
 	} , () => [
 		store.settingsViewOpened ,
@@ -679,9 +727,9 @@ export const Reaxel_View = reaxel( () => {
 		fitContentView ,
 		fitCurrentCenterView ,
 		focusCurrentContentView ,
-		attachActiveCenterView ,
 		detachInactiveCenterView ,
-		ensureActiveCenterViewPainted ,
+		presentActiveCenterView ,
+		setCenterStateForImperativeSwitch ,
 		turnToNextAiPage ,
 		turnToPreviousAiPage ,
 		turnToNextInstantiatedAiPage ,
@@ -728,51 +776,8 @@ const isSameBounds = (left:Rectangle , right:Rectangle) => {
 		&& left.height === right.height;
 };
 
-const shouldNudgeCenterViewBounds = (reason:CenterViewLifecycleReason) => {
-	return reason === 'window-show'
-		|| reason === 'window-restore'
-		|| reason === 'window-focus'
-		|| reason === 'settings-toggle'
-		|| reason === 'runtime-init';
-};
-
-/** macOS remount 仅在可见性/层级真正变化时需要；纯 focus 恢复不做 remount。 */
-const shouldRemountOnPaint = (reason:CenterViewLifecycleReason) => {
-	return reason === 'ai-switch'
-		|| reason === 'window-show'
-		|| reason === 'window-restore'
-		|| reason === 'settings-toggle'
-		|| reason === 'runtime-init'
-		|| reason === 'explicit';
-};
-
-const shouldRestoreCenterViewFocus = (reason:CenterViewLifecycleReason) => {
-	return reason === 'ai-switch'
-		|| reason === 'window-show'
-		|| reason === 'window-restore'
-		|| reason === 'window-focus'
-		|| reason === 'explicit';
-};
-
-const mapLifecycleReasonToFocusSource = (reason:CenterViewLifecycleReason):FocusMonitorFocusSource => {
-	if(
-		reason === 'window-show'
-		|| reason === 'window-restore'
-		|| reason === 'window-focus'
-	) {
-		return 'window-restore-paint';
-	}
-	return 'apply-visibility';
-};
-
-export type CenterViewLifecycleReason =
-	| 'ai-switch'
-	| 'window-show'
-	| 'window-restore'
-	| 'window-focus'
-	| 'settings-toggle'
-	| 'runtime-init'
-	| 'explicit';
+/** switch = 换页/Settings/冷启动；recover = 回前台补挂载（禁止 remount）。 */
+export type CenterMountIntent = 'switch' | 'recover';
 
 type SwitchAiBarPayloadItem = {
 	id: string;

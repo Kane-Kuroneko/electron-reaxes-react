@@ -137,7 +137,7 @@ export const openSettingsView = (openDevTools = false) => {
 	const settingsView = reaxel_SettingsView().initSettingsView();
 	Reaxel_View.setState( { settingsViewOpened : true } );
 	Reaxel_View().fitWindow();
-	/* attach/repaint 由 Reaxel_View obsReaction → ensureActiveCenterViewPainted 统一处理 */
+	/* present('switch') 由 Reaxel_View obsReaction 在 settingsViewOpened 变化时统一处理 */
 	if( openDevTools ) {
 		settingsView.webContents.openDevTools();
 	}

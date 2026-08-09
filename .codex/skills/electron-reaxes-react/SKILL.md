@@ -12,7 +12,8 @@ Read these files before changing behavior:
 - `.qoder/rules/ipc-coding.md`
 - `CODING_STANDARD.md`
 - The target subproject docs such as `projects/ChatAIO/docs/architecture/ai-config.md` and `projects/ChatAIO/todo.md`
-- Before changing ChatAIO FloatingView, menubar, transparent windows, or mouse passthrough, read [`menubar-drag-investigation.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md) and [`menubar-drag-region-leak-below-content.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-region-leak-below-content.md) (Windows `app-region` hit-test leak below menubar).
+- Before changing ChatAIO FloatingView, menubar, transparent windows, or mouse passthrough, read [`menubar-drag-investigation.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md), [`menubar-drag-region-leak-below-content.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-region-leak-below-content.md) (Windows `app-region` hit-test leak below menubar), and [`floating-view-missing-after-background.md`](../../../projects/ChatAIO/docs/issues/floating-view-missing-after-background.md) (cold show must promote after blur/hide; never focus-always-show overlay).
+- Before changing center WebContentsView attach/detach/focus/show/restore recovery, read [`ai-view-foreground-white-flash.md`](../../../projects/ChatAIO/docs/issues/ai-view-foreground-white-flash.md). Only `presentActiveCenterView('switch'|'recover')` may mount; never reintroduce focus-path remount, bounds±1 nudge, or `applyVisibility`-owned ensure.
 - Before adding or changing **any** Renderer → Main IPC (especially menubar `openDropdownView` / `menuViewAction`), read `.qoder/rules/ipc-coding.md` §错误 0 and apply `cloneForIPC` to all `reaxel_*.store` payloads.
 
 Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with npm. The local Reaxes implementation is available at `Z:\reaxes` when library behavior is unclear.

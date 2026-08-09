@@ -40,11 +40,15 @@
 
 **影响**：`moveTop()` 是 OS 级别的窗口 z-order 操作，涉及系统调用，相对昂贵。FloatingView 已设置 `alwaysOnTop: true, 'floating'` 级别，在应用内部不需要每次切换都调用 `moveTop()`。
 
+**修正（2026-08-10）**：热路径（overlay 逻辑可见且 surface 未 stale）仍禁止每次 `moveTop`。但 stale 后的冷显示必须 rebind（`syncBounds` + `setAlwaysOnTop` + `moveTop` + `webContents.invalidate()`），且 **Windows 上 overlay 禁止 hide()/show() 循环、改用 setOpacity(0/1)**——否则帧被 FrameEvictor 驱逐后不再产帧，出现「切后台一段时间再切 AI，SwitchAiBar 不见」。见 [`floating-view-missing-after-background.md`](../issues/floating-view-missing-after-background.md)。
+
 #### 5. `showLayerWindow()` 冗余的 `syncBounds()` 调用
 
 **现状**：`showLayerWindow()` 每次调用都执行 `syncBounds()`，读取 `mainWindow.getContentBounds()` 并设置 FloatingView bounds。
 
 **影响**：FloatingView 的 bounds 同步已通过 `mainWindow.on('move'/'resize'/'maximize'/'unmaximize', syncBounds)` 事件监听覆盖。快速切换 AI 页面时 bounds 不会改变，`syncBounds()` 完全是冗余操作。
+
+**修正（2026-08-10）**：热路径可跳过 `syncBounds`；stale 路径必须 `syncBounds`——Win/Linux 子窗不随父窗自动跟位，且显示休眠后可能无 move 事件却已错位。
 
 ### 性能开销量化估计
 
