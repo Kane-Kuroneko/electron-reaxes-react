@@ -1,3 +1,5 @@
+https://github.com/user-attachments/assets/42a1204a-0319-43db-b710-a69243bbdcba
+
 ## Features
 
 - **多 AI 同开，会话互不干扰**  
