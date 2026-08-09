@@ -23,6 +23,8 @@ export namespace AppUpdater {
 		version : string;
 		body : string | null;
 		error? : string | null;
+		/** body 已按 app 语言经 Google 翻译 */
+		translated? : boolean;
 	};
 
 	export type Changelogs = {

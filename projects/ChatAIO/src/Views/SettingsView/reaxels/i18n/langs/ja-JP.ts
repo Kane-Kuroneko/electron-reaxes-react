@@ -106,6 +106,7 @@ export default {
 	"No changelog for this version" : "このバージョンの更新履歴はありません" ,
 	"Refresh" : "再読み込み" ,
 	"Failed to fetch changelog" : "更新履歴の取得に失敗しました" ,
+	"Translated by Google" : "Google 翻訳" ,
 	"Search" : "検索" ,
 	"Search AI name" : "AI 名を検索" ,
 	"Search AI family" : "AI ファミリーを検索" ,

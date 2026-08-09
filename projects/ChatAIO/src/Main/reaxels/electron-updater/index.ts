@@ -178,9 +178,61 @@ export const reaxel_AppUpdater = reaxel( () => {
 		};
 	};
 
-	const fetchVersionChangelogs = async(): Promise<AppUpdater.Changelogs> => {
+	const changelogTranslateCache = new Map<string , { body : string; translated : boolean }>();
+
+	const localizeChangelogEntry = async(
+		entry : AppUpdater.ChangelogEntry ,
+		language? : Languages ,
+	): Promise<AppUpdater.ChangelogEntry> => {
+		if( !entry.body || !language || shouldSkipGoogleTranslate( language ) ) {
+			return {
+				...entry ,
+				translated : false ,
+			};
+		}
+
+		const bodyFingerprint = `${ entry.body.length }:${ entry.body.slice( 0 , 40 ) }:${ entry.body.slice( -40 ) }`;
+		const cacheKey = `${ entry.version }::${ toGoogleTranslateLanguage( language ) }::${ bodyFingerprint }`;
+		const cached = changelogTranslateCache.get( cacheKey );
+		if( cached ) {
+			return {
+				...entry ,
+				body : cached.body ,
+				translated : cached.translated ,
+			};
+		}
+
+		try {
+			const translatedBody = await translateMarkdownViaGoogle( entry.body , language );
+			const translated = translatedBody !== entry.body;
+			changelogTranslateCache.set( cacheKey , {
+				body : translatedBody ,
+				translated ,
+			} );
+			return {
+				...entry ,
+				body : translatedBody ,
+				translated ,
+			};
+		} catch ( error ) {
+			console.warn(
+				'[AppUpdater] translate changelog failed:' ,
+				error instanceof Error ? error.message : error ,
+			);
+			return {
+				...entry ,
+				translated : false ,
+			};
+		}
+	};
+
+	const fetchVersionChangelogs = async( language? : Languages ): Promise<AppUpdater.Changelogs> => {
+		const targetLanguage = language || ( reaxel_I18n().language as Languages );
 		const currentVersion = app.getVersion();
-		const current = await fetchReleaseBodyByVersion( currentVersion );
+		const current = await localizeChangelogEntry(
+			await fetchReleaseBodyByVersion( currentVersion ) ,
+			targetLanguage ,
+		);
 		if( !store.updateAvailable || !store.availableVersion ) {
 			return {
 				current ,
@@ -192,7 +244,10 @@ export const reaxel_AppUpdater = reaxel( () => {
 		 * electron-updater 的 updateInfo.releaseNotes 来自 Atom feed 的 content，
 		 * 是 HTML，交给 react-markdown 会整页显示为原始标签。
 		 */
-		const latest = await fetchReleaseBodyByVersion( store.availableVersion );
+		const latest = await localizeChangelogEntry(
+			await fetchReleaseBodyByVersion( store.availableVersion ) ,
+			targetLanguage ,
+		);
 		return {
 			current ,
 			latest ,
@@ -289,7 +344,7 @@ export const reaxel_AppUpdater = reaxel( () => {
 	useIpcRpc( 'get-app-version' ).handle( async() => app.getVersion() );
 	useIpcRpc( 'get-update-state' ).handle( async() => getPublicState() );
 	useIpcRpc( 'check-for-updates' ).handle( async() => checkForUpdates() );
-	useIpcRpc( 'fetch-version-changelogs' ).handle( async() => fetchVersionChangelogs() );
+	useIpcRpc( 'fetch-version-changelogs' ).handle( async( _ , language ) => fetchVersionChangelogs( language ) );
 	useIpcRpc( 'download-and-install-update' ).handle( async() => downloadAndInstallUpdate() );
 
 	useIpcRendererToMain( 'open-settings-version' ).on( ( _e , versionTab ) => {
@@ -319,6 +374,7 @@ export const reaxel_AppUpdater = reaxel( () => {
 import { reaxel_SettingsView } from '#main/reaxels/Views/Settings-View';
 import { Reaxel_View } from '#main/reaxels/Views';
 import { reaxel_Menu } from '#main/reaxels/Menu';
+import { reaxel_I18n } from '#main/reaxels/I18n';
 import { mainWindow } from '#main/mainWindow';
 import { destroyTray } from '#main/services/tray';
 import {
@@ -326,7 +382,13 @@ import {
 	useIpcRendererToMain ,
 	useIpcRpc ,
 } from '#main/services/ipc';
+import {
+	shouldSkipGoogleTranslate ,
+	toGoogleTranslateLanguage ,
+	translateMarkdownViaGoogle ,
+} from '#src/shared/utils/google-translate.utility';
 import type { AppUpdater } from '#src/Types/AppUpdater';
+import type { Languages } from '#src/Types/Languages';
 import {
 	app ,
 	dialog ,

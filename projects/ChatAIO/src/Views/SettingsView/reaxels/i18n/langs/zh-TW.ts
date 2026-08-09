@@ -106,6 +106,7 @@ export default {
 	"No changelog for this version" : "此版本暫無更新說明" ,
 	"Refresh" : "重新整理" ,
 	"Failed to fetch changelog" : "取得更新說明失敗" ,
+	"Translated by Google" : "由 Google 翻譯" ,
 	"Search" : "搜尋" ,
 	"Search AI name" : "搜尋 AI 名稱" ,
 	"Search AI family" : "搜尋 AI 系列" ,

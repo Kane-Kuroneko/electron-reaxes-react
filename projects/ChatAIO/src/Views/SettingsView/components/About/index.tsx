@@ -4,6 +4,7 @@
  */
 export const RCAboutPanel = reaxper( () => {
 	const { store , setState } = reaxel_SettingsView;
+	const language = reaxel_I18n.store.language;
 	const [ updateState , setUpdateState ] = useState<AppUpdater.State | null>( null );
 	const [ changelogs , setChangelogs ] = useState<AppUpdater.Changelogs | null>( null );
 	const [ loadingChangelogs , setLoadingChangelogs ] = useState( false );
@@ -31,7 +32,7 @@ export const RCAboutPanel = reaxper( () => {
 		setLoadingChangelogs( true );
 		setFetchError( null );
 		try {
-			const result = await api.fetchVersionChangelogs();
+			const result = await api.fetchVersionChangelogs( language );
 			setChangelogs( result );
 		} catch ( error ) {
 			console.error( '[AboutPanel] fetch changelogs failed:' , error );
@@ -63,7 +64,7 @@ export const RCAboutPanel = reaxper( () => {
 	useEffect( () => {
 		if( !drawerOpen ) return;
 		void refreshChangelogs();
-	} , [ drawerOpen , updateState?.availableVersion , updateState?.updateAvailable ] );
+	} , [ drawerOpen , updateState?.availableVersion , updateState?.updateAvailable , language ] );
 
 	useEffect( () => {
 		if( !updateAvailable && activeTab === 'latest' ) {
@@ -133,6 +134,7 @@ export const RCAboutPanel = reaxper( () => {
 			children : <ChangelogBlock
 				version={ changelogs?.current.version || updateState?.currentVersion || '—' }
 				body={ changelogs?.current.body }
+				translated={ changelogs?.current.translated }
 				error={ changelogs?.current.error || fetchError }
 				loading={ loadingChangelogs }
 				onRefresh={ () => void refreshChangelogs() }
@@ -146,6 +148,7 @@ export const RCAboutPanel = reaxper( () => {
 				<ChangelogBlock
 					version={ changelogs?.latest?.version || updateState?.availableVersion || '—' }
 					body={ changelogs?.latest?.body }
+					translated={ changelogs?.latest?.translated }
 					error={ changelogs?.latest?.error || fetchError }
 					loading={ loadingChangelogs }
 					onRefresh={ () => void refreshChangelogs() }
@@ -402,6 +405,7 @@ export const RCAboutPanel = reaxper( () => {
 const ChangelogBlock = reaxper( ( {
 	version ,
 	body ,
+	translated ,
 	error ,
 	loading ,
 	onRefresh ,
@@ -409,6 +413,7 @@ const ChangelogBlock = reaxper( ( {
 } : {
 	version : string;
 	body : string | null | undefined;
+	translated? : boolean;
 	error? : string | null;
 	loading : boolean;
 	onRefresh : () => void;
@@ -434,6 +439,9 @@ const ChangelogBlock = reaxper( ( {
 		<div className="version-changelog__meta">
 			<span className="version-changelog__label"><I18n>Version</I18n></span>
 			<span className="version-changelog__value">{ version }</span>
+			{ translated ? (
+				<span className="version-changelog__translated"><I18n>Translated by Google</I18n></span>
+			) : null }
 			{ refreshButton }
 		</div>
 		{ error ? (
@@ -523,6 +531,7 @@ const CHATAIO_RELEASES_URL = 'https://github.com/Kane-Kuroneko/ChatAIO-Releases'
 
 
 import { reaxel_SettingsView } from '#SettingsView/reaxels/settings-view';
+import { reaxel_I18n } from '#SettingsView/reaxels/i18n';
 import { I18n , i18n } from '#SettingsView/reaxels/exports';
 import type { AppUpdater } from '#src/Types/AppUpdater';
 import appIconProd from '../../../../../statics/gpt.png';
