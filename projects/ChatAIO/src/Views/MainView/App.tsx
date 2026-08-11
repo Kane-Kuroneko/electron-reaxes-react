@@ -10,10 +10,12 @@
 export const App = reaxper( () => {
 	const { store } = reaxel_MainView;
 	
-	return {
+	const platformMenuBar: Partial<Record<NodeJS.Platform, React.ReactNode>> = {
 		'darwin' : <MacMenuBar /> ,
 		'win32' : <WindowsMenuBar /> ,
-	}[store.platform];
+	};
+	
+	return platformMenuBar[store.platform];
 } );
 
 
