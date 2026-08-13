@@ -5,6 +5,7 @@
 - **症状**：Alt-Tab / 托盘唤回 / 反最小化后，当前 AI `WebContentsView` 闪白或白屏。
 - **状态**：ARCH FIXED（2026-08-13）——单一所有者 + **默认 `backgroundThrottling`**；回前台 hierarchy 完好只 focus / 对齐 bounds，禁止踢绘。
 - **历史**：`509a8e662` 把「踢绘」绑到每次 focus/show/restore，是闪白主因；强制 `backgroundThrottling:false` 后曾叠加 invalidate / 两阶段 ±1 rebind，短切后台反而稳定闪白，已撤回。
+- **复盘**：见 [`ai-view-background-throttling-postmortem.md`](./ai-view-background-throttling-postmortem.md)（agent 决策树、禁止项、日志速查）。
 
 ---
 

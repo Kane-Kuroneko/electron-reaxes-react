@@ -2,7 +2,7 @@
 
 ## 目的
 
-回前台白闪/白屏（见 [`ai-view-foreground-white-flash.md`](../issues/ai-view-foreground-white-flash.md)）仍可能复现。本模块**生产与开发一律启用**，只做**观察**，不自动 remount / 不自行踢绘。
+回前台白闪/白屏排查：**先读** [`ai-view-background-throttling-postmortem.md`](../issues/ai-view-background-throttling-postmortem.md)，再读 [`ai-view-foreground-white-flash.md`](../issues/ai-view-foreground-white-flash.md)。本模块**生产与开发一律启用**，只做**观察**，不自动 remount / 不自行踢绘。
 
 核心要求：
 

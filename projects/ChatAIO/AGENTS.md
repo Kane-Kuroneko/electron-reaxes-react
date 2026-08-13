@@ -60,9 +60,10 @@
 
 改 FloatingView、menubar、透明窗、鼠标穿透、中心 WebContentsView 生命周期前必读：
 
+- [`docs/issues/ai-view-background-throttling-postmortem.md`](./docs/issues/ai-view-background-throttling-postmortem.md) — **Alt-Tab 闪白复盘 + agent 决策树（改节流/回前台前必读）**
+- [`docs/issues/ai-view-foreground-white-flash.md`](./docs/issues/ai-view-foreground-white-flash.md)
 - [`docs/issues/menubar-drag-investigation.md`](./docs/issues/menubar-drag-investigation.md)
 - [`docs/issues/menubar-drag-region-leak-below-content.md`](./docs/issues/menubar-drag-region-leak-below-content.md)
-- [`docs/issues/ai-view-foreground-white-flash.md`](./docs/issues/ai-view-foreground-white-flash.md)
 - [`docs/issues/floating-view-missing-after-background.md`](./docs/issues/floating-view-missing-after-background.md)
 
 ### 替换 App / Tray 图标（Agent）
