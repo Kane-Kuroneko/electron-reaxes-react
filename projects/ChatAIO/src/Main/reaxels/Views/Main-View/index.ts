@@ -499,7 +499,6 @@ export const reaxel_MainView = reaxel( () => {
 			webPreferences : {
 				nodeIntegration : false ,
 				contextIsolation : true ,
-				backgroundThrottling : false ,
 				preload : path.join( reaxel_ElectronENV().absAppRunningPath , 'preload.js' ),
 			},
 		} );
@@ -692,14 +691,14 @@ export const reaxel_MainView = reaxel( () => {
 
 	const handleZoom = ( level : number ) => {
 		const view = reaxel_AIViews().currentAIView?.view;
-		if( view && !view.webContents.isDestroyed() ) {
+		if( isWebContentsViewAlive( view ) ) {
 			view.webContents.setZoomLevel( level );
 		}
 	};
 
 	const handleZoomRelative = ( delta : number ) => {
 		const view = reaxel_AIViews().currentAIView?.view;
-		if( view && !view.webContents.isDestroyed() ) {
+		if( isWebContentsViewAlive( view ) ) {
 			view.webContents.setZoomLevel( view.webContents.getZoomLevel() + delta );
 		}
 	};
@@ -931,6 +930,7 @@ import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import { reaxel_SettingsView } from '#main/reaxels/Views/Settings-View';
 import { reaxel_AppUpdater } from '#main/reaxels/electron-updater';
 import { mainWindow } from '#main/mainWindow';
+import { isWebContentsViewAlive } from '#main/services/web-contents-view-alive.utility';
 import { useIpcMainToRenderer , useIpcRendererToMain , useIpcSync } from '#main/services/ipc';
 import {
 	loadDevRendererEntryWithRetry ,

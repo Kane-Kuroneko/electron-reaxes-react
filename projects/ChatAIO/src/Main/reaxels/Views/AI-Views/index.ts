@@ -177,7 +177,11 @@ export const reaxel_AIViews = reaxel( () => {
 
 	/* AI 列表可见性：只负责「谁离开中心区」(detach)。
 	   mount/promote 唯一入口是 Reaxel_View.presentActiveCenterView。
-	   同步切换路径必须在 FloatingView show 之前自行 present('switch')。 */
+	   同步切换路径必须在 FloatingView show 之前自行 present('switch')。
+
+	   未首展（!hasPresented）的预加载页：只 soft-hide，不 removeChildView。
+	   过早 detach 会让 Chromium 在无 compositor 缓冲时完成 load，
+	   首次 present 时必闪（见 docs/issues/ai-view-preload-first-switch-flash.md）。 */
 	let lastAppliedVisibilityKey: string | null = null;
 	let lastAppliedSettingsOpened: boolean | null = null;
 	let lastAppliedViewCount: number = -1;
@@ -206,8 +210,22 @@ export const reaxel_AIViews = reaxel( () => {
 			return;
 		}
 
+		const incoming = store.AIViews.find( item => item.id === currentAIViewKey );
+		/* 切到未首展页时，保留上一中心页可见，供 present cover-handoff 遮盖首帧。 */
+		const preserveCoverForPreloadHandoff = Boolean( incoming && !incoming.hasPresented );
+		const coverView = preserveCoverForPreloadHandoff
+			? Reaxel_View().getLastPresentedCenterView()
+			: null;
+
 		store.AIViews.forEach( runtimeView => {
 			if( !runtimeView.view || runtimeView.id === currentAIViewKey ) {
+				return;
+			}
+			if( coverView && runtimeView.view === coverView ) {
+				return;
+			}
+			if( !runtimeView.hasPresented ) {
+				Reaxel_View().softHideInactiveCenterView( runtimeView.view );
 				return;
 			}
 			Reaxel_View().detachInactiveCenterView( runtimeView.view );
@@ -264,8 +282,9 @@ export const reaxel_AIViews = reaxel( () => {
 		if( typeof options.visible === 'boolean' ) {
 			view.setVisible( options.visible );
 		}
-		/* FocusMonitor: 注册新创建的 AI view 到监控器 */
+		/* FocusMonitor / WhiteScreenMonitor: 注册新创建的 AI view */
 		instrumentViewWithMonitor( view , ai.id );
+		instrumentViewWithWhiteScreenMonitor( view , ai.id );
 		bindRuntimeAIViewReadyHandlers( ai.id , view );
 		return {
 			id : ai.id ,
@@ -277,7 +296,9 @@ export const reaxel_AIViews = reaxel( () => {
 			config : ai ,
 			proxyKey : getRuntimeAIProxyKey( ai , settings ) ,
 			appearanceKey : getAIPageAppearanceKey( environment ) ,
-			ready : false,
+			ready : false ,
+			/* 从未作为中心页 present 过：预加载首切前保持 soft-hold，避免无帧缓冲闪白 */
+			hasPresented : false,
 		};
 	};
 
@@ -493,7 +514,7 @@ const sendAIPageEnvironmentToView = (
 	environment:AIPageEnvironment ,
 	id:string,
 ) => {
-	if( view.webContents.isDestroyed() ) {
+	if( isWebContentsViewDead( view ) ) {
 		return;
 	}
 	useIpcMainToRenderer( 'ai-page-environment-change' ).targets( [
@@ -509,9 +530,12 @@ const closeRuntimeWebContentsView = (
 ) => {
 	try {
 		mainWindow.contentView.removeChildView( view );
-		deleteRegisteredAIPageEnvironment( view.webContents );
-		if( !view.webContents.isDestroyed() ) {
-			view.webContents.close();
+		const webContents = view.webContents;
+		if( webContents ) {
+			deleteRegisteredAIPageEnvironment( webContents );
+			if( !webContents.isDestroyed() ) {
+				webContents.close();
+			}
 		}
 	} catch ( error ) {
 		console.warn( '[AIViews] Failed to close AI view:' , context , id , error );
@@ -533,20 +557,36 @@ try {
 	/* 非 dev 环境或模块未编译时静默降级 */
 }
 
+/**
+ * WhiteScreenMonitor：生产/开发一律启用（静态导入进 prod main bundle）。
+ * 只注册 viewId；调度链埋点在 Reaxel_View（唯一 mount 所有者），避免双重侵入。
+ * 日志：userData/logs/white-screen-monitor.jsonl
+ */
+const whiteScreenMonitorInstance = getWhiteScreenMonitor();
+console.info(
+	'[AIViews] WhiteScreenMonitor ready:' ,
+	`enabled=${ whiteScreenMonitorInstance.enabled }` ,
+	`mode=schedule-trace` ,
+	`packaged=${ app.isPackaged }` ,
+);
+
 /** WebContents → AI view ID 映射（由 instrumentViewWithMonitor 注册） */
 const focusViewIdByWebContents = new WeakMap<WebContents , string>();
 
 /** FocusMonitor 实例引用 */
-let focusMonitorInstance: { instrumentView: (view: WebContentsView, viewId: string) => void; wrapFocus: (view: WebContentsView, viewId: string, source: string, fn: () => void) => void; } | null = null;
+let focusMonitorInstance: {
+	instrumentView: (view: WebContentsView, viewId: string) => void;
+	wrapFocus: (view: WebContentsView, viewId: string, source: string, fn: () => void) => void;
+} | null = null;
+let focusMonitorResolved = false;
 
 /**
  * 确保 FocusMonitor 实例已就绪
- * 实例在模块加载时由模块级代码初始化，此函数仅获取引用
  */
 function ensureFocusMonitor(): void {
-	if( focusMonitorInstance !== undefined ) return;
+	if( focusMonitorResolved ) return;
+	focusMonitorResolved = true;
 
-	/* 尝试在运行时再次初始化（模块级初始化可能因 require 失败未生效） */
 	try {
 		const mod = require( './focus-monitor.retexel' );
 		if( mod && mod.getFocusMonitor ) {
@@ -573,6 +613,12 @@ function instrumentViewWithMonitor( view: WebContentsView, viewId: string ): voi
 	}
 }
 
+function instrumentViewWithWhiteScreenMonitor( view: WebContentsView, viewId: string ): void {
+	if( whiteScreenMonitorInstance.enabled ) {
+		whiteScreenMonitorInstance.instrumentView( view, viewId );
+	}
+}
+
 /**
  * 通过 view.webContents 反向查询 viewId
  */
@@ -585,14 +631,20 @@ function getViewIdByWebContents( webContents: WebContents ): string {
  */
 function focusViewWithMonitor( view: WebContentsView, source: string ): void {
 	ensureFocusMonitor();
-	const viewId = getViewIdByWebContents( view.webContents );
+	const webContents = getAliveWebContents( view );
+	if( !webContents ) {
+		return;
+	}
+	const viewId = getViewIdByWebContents( webContents );
 
 	if( focusMonitorInstance ) {
 		focusMonitorInstance.wrapFocus( view, viewId, source, () => {
-			view.webContents.focus();
+			if( !isWebContentsViewDead( view ) ) {
+				view.webContents.focus();
+			}
 		} );
 	} else {
-		view.webContents.focus();
+		webContents.focus();
 	}
 }
 
@@ -601,7 +653,8 @@ function focusViewWithMonitor( view: WebContentsView, source: string ): void {
    ================================================================= */
 
 const focusAIViewIfReady = (view:WebContentsView , source:string = 'unknown') => {
-	if( view.webContents.isDestroyed() || view.webContents.isLoading() ) {
+	const webContents = getAliveWebContents( view );
+	if( !webContents || webContents.isLoading() ) {
 		return;
 	}
 	focusViewWithMonitor( view , source );
@@ -632,19 +685,31 @@ export function safeFocusViewWithMonitor(
 	view: WebContentsView,
 	source: FocusMonitorFocusSource = 'unknown',
 ): void {
+	const webContents = getAliveWebContents( view );
+	if( !webContents ) {
+		return;
+	}
 	ensureFocusMonitor();
-	const viewId = getViewIdByWebContents( view.webContents );
+	const viewId = getViewIdByWebContents( webContents );
 
 	if( focusMonitorInstance && viewId !== 'unknown' ) {
 		focusMonitorInstance.wrapFocus( view, viewId, source, () => {
-			if( !view.webContents.isDestroyed() ) {
+			if( !isWebContentsViewDead( view ) ) {
 				view.webContents.focus();
 			}
 		} );
-	} else if( !view.webContents.isDestroyed() ) {
-		view.webContents.focus();
+	} else {
+		webContents.focus();
 	}
 }
+
+export type {
+	ViewScheduleTrigger ,
+	ViewHierarchySnapshot ,
+	WhiteScreenProbeTrigger ,
+	WhiteScreenHierarchySnapshot ,
+} from './white-screen-monitor.retexel';
+
 export type RuntimeAIView = {
 	id: string;
 	label: string;
@@ -656,6 +721,8 @@ export type RuntimeAIView = {
 	proxyKey: string;
 	appearanceKey: string;
 	ready: boolean;
+	/** 是否曾作为中心页成功 present（有 compositor 缓冲后切走才可硬 detach） */
+	hasPresented: boolean;
 };
 
 type CreateRuntimeAIViewOptions = {
@@ -680,6 +747,7 @@ type PersistedAIPartitionDiscoveryResult = {
 };
 
 import { getAIDomainByFamily } from './data';
+import { getWhiteScreenMonitor } from './white-screen-monitor.retexel';
 import type { AI } from '#src/Types/SettingsTypes/AI';
 import type { Settings } from '#src/Types/SettingsTypes';
 import { initWebContentsView } from '#main/reaxels/Views/utils/initWebContentsView';
@@ -706,6 +774,10 @@ import {
 	useIpcSync,
 } from '#main/services/ipc';
 import { mainWindow } from '#main/mainWindow';
+import {
+	getAliveWebContents ,
+	isWebContentsViewDead,
+} from '#main/services/web-contents-view-alive.utility';
 import { Reaxel_View } from '../';
 import {
 	createReaxable ,

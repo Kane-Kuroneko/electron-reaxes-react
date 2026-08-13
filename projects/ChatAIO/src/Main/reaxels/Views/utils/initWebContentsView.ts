@@ -190,16 +190,14 @@ const safeLoadFile = async(
 };
 
 const normalizeViewOptions = (options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
-	const sharedBackgroundThrottling = {
-		backgroundThrottling : false as const,
-	};
+	/* 使用 Electron 默认 backgroundThrottling:true，走正常 WasHidden/WasShown。
+	   强制 false 会踩 disable_hidden.patch，反而要靠踢绘 workaround（已证会闪）。 */
 	if( options.type !== 'AI-View' ) {
 		return {
 			...options ,
 			webPreferences : {
 				nodeIntegration : false ,
 				contextIsolation : true ,
-				...sharedBackgroundThrottling ,
 				...( options.webPreferences || {} ),
 			},
 		};
@@ -209,7 +207,6 @@ const normalizeViewOptions = (options:WebContentsViewConstructorOptions&ExtraBro
 		webPreferences : {
 			nodeIntegration : false ,
 			contextIsolation : true ,
-			...sharedBackgroundThrottling ,
 			...( options.webPreferences || {} ) ,
 			preload : path.join( absAppRunningPath , 'ai-page-preload.js' ) ,
 		},

@@ -49,7 +49,7 @@ export const reaxel_PromptViews = reaxel( () => {
 	const initPromptView = (side:PromptView.Side) => {
 		registerIpc();
 		const sideState = getSideState( side );
-		if( sideState.view && !sideState.view.webContents.isDestroyed() ) {
+		if( isWebContentsViewAlive( sideState.view ) ) {
 			return sideState.view;
 		}
 		
@@ -110,7 +110,7 @@ export const reaxel_PromptViews = reaxel( () => {
 	const syncSideBounds = (side:PromptView.Side , bounds:Rectangle) => {
 		const sideState = getSideState( side );
 		const view = sideState.view;
-		if( !view || view.webContents.isDestroyed() ) {
+		if( isWebContentsViewDead( view ) ) {
 			return;
 		}
 		const width = Math.max( 0 , Math.round( sideState.width ) );
@@ -294,7 +294,7 @@ const syncSideBoundsWithWidth = (
 ) => {
 	const sideState = reaxel_PromptViews.store[side];
 	const view = sideState.view;
-	if( !view || view.webContents.isDestroyed() ) {
+	if( isWebContentsViewDead( view ) ) {
 		return;
 	}
 	const roundedWidth = Math.max( 0 , Math.round( width ) );
@@ -315,7 +315,7 @@ const broadcastPromptViewAppearanceState = (state:PromptView.AppearanceState) =>
 		reaxel_PromptViews.store.right.view,
 	]
 		.filter( ( view ):view is WebContentsView => {
-			return !!view && !view.webContents.isDestroyed();
+			return isWebContentsViewAlive( view );
 		} )
 		.map( view => view.webContents );
 
@@ -402,6 +402,10 @@ import {
 	useIpcRpc,
 } from '#main/services/ipc';
 import { mainWindow } from '#main/mainWindow';
+import {
+	isWebContentsViewAlive ,
+	isWebContentsViewDead,
+} from '#main/services/web-contents-view-alive.utility';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
 import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
 import type { PromptView } from '#src/Types/PromptView';

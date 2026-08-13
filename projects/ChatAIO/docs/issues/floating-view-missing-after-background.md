@@ -3,25 +3,26 @@
 ## 文档状态
 
 - **症状**：App 切后台较久（约 ≥5 分钟）再回前台，切换 AI 时 SwitchAiBar（FloatingView）不出现；点击 menubar（激活父窗）后才「回来」。
-- **状态**：ARCH FIXED（2026-08-10）——overlay 呈现调度器：desired/actual 分离 + 平台化 conceal 策略；Windows 弃用 hide()/show() 循环。
-- **历史**：2026-08-09 曾只修 z-order/bounds promote，无效——问题不在层级，在 **compositor 不再产帧**。
+- **状态**：ARCH FIXED（2026-08-10）——overlay 呈现调度器：desired/actual 分离 + 平台化 conceal 策略；Windows 弃用 hide()/show() 循环。2026-08-13 起 overlay 亦恢复默认 `backgroundThrottling`（仍靠 opacity conceal，不依赖关节流保活）。
+- **历史**：2026-08-09 曾只修 z-order/bounds promote，无效——问题不在层级，在 **compositor 不再产帧**（当时 `backgroundThrottling:false` + hide/show）。
 - **相关**：[`ai-view-foreground-white-flash.md`](./ai-view-foreground-white-flash.md)（中心 WCV）；[`menubar-drag-investigation.md`](./menubar-drag-investigation.md)（禁 `forward:true`）。
 
 ---
 
 ## 1. 根因（Electron 上游缺陷，非本项目时序 bug）
 
-FloatingView 是 `transparent:true` + `backgroundThrottling:false` 的无框子窗，原模型在 `blur/hide/minimize` 时 `hide()`、要显示时 `showInactive()`。这个 hide↔show 循环踩中两个已知缺陷：
+FloatingView 是 `transparent:true` 的无框子窗。旧模型在 `blur/hide/minimize` 时 `hide()`、要显示时 `showInactive()`，且曾关 `backgroundThrottling`。这个 hide↔show 循环踩中两个已知缺陷：
 
 ### 1a. FrameEvictor 失步（electron#42378）
 
-`backgroundThrottling:false` 依赖 Electron 的 `disable_hidden.patch`，它把 `RenderWidgetHostImpl::WasHidden` 短路。窗口 `hide()` 后，Chromium 的 `FrameEvictionManager`（**5 分钟**定时器）驱逐 compositor frame；re-show 时 `WasShown → DelegatedFrameHost::WasShown → 产新帧` 这条路径又被同一个 patch 短路——**帧没了，也不会再生产**。
+当时 `backgroundThrottling:false` 依赖 Electron 的 `disable_hidden.patch`，把 `RenderWidgetHostImpl::WasHidden` 短路。窗口 `hide()` 后，Chromium 的 `FrameEvictionManager`（**5 分钟**定时器）驱逐 compositor frame；re-show 时 `WasShown → DelegatedFrameHost::WasShown → 产新帧` 这条路径又被同一个 patch 短路——**帧没了，也不会再生产**。
 
-- 普通窗口：无帧 = 白屏（正是中心 WCV 白闪问题的同族根源）。
+- 普通窗口：无帧 = 白屏。
 - **透明窗口：无帧 = 完全不可见**。`isVisible()===true`、`getOpacity()===1`，用户什么都看不到。
 
 「一段时间」正好对应 5 分钟驱逐定时器；点 menubar 激活父窗迫使 DWM 重新合成，偶然救回。
 
+现已恢复默认节流；Windows 主修复仍是 **勿 hide()/show()，改用 setOpacity**。
 ### 1b. Windows 透明无框窗 hide()→show() 本身不可靠（electron#45730、#40830、#27265）
 
 多个上游 issue 证实：透明窗二次 `show()` 后可能永不显示（表象同上）。社区公认解法就是**不要对透明 overlay 用 hide()/show()**：
@@ -77,7 +78,7 @@ warmup(win32)：boot 后 showInactive + opacity 0，窗口从此保持 OS 可见
 | 反模式 | 原因 |
 |--------|------|
 | Windows 上对 FloatingView `hide()` 再 `show()/showInactive()` | electron#45730/#40830/#27265 + #42378，本 bug 根源 |
-| 切后台时 `setBackgroundThrottling` 动态开关 | #42378 触发条件之一；只在创建时设一次 |
+| 切后台时 `setBackgroundThrottling` 动态开关 / 强制 `false` | #42378；现默认节流，靠 opacity conceal |
 | 用 `isVisible()` 判断 overlay 逻辑可见 | opacity 策略下恒 true |
 | `focus` 无条件 reveal | 透明层长期存在 → macOS occlusion 节流主窗 |
 | 每次热切换 `moveTop`/`syncBounds` | 热路径 OS 开销；stale 门控已覆盖冷路径 |

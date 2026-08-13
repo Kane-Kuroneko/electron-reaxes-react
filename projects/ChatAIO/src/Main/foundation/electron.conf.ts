@@ -19,11 +19,9 @@ if(dev()){
 // app.commandLine.appendSwitch('enable-features', 'DirectComposition,SkiaGraphite,UseSkiaRenderer,RawDraw');
 if( process.platform === 'win32' ) {
 	/*
-	 * 降低 Alt-Tab 遮挡时 Chromium 把窗口标成 occluded 并停绘的概率，
-	 * 让活动 WebContentsView 更易保留 compositor surface。
-	 * 应用侧回前台禁止用 remount/±1「踢醒」；见 ai-view-foreground-white-flash.md。
-	 * 不在此叠加 disable-renderer-backgrounding 等核按钮——由 backgroundThrottling:false
-	 *（main + 内容 WCV）按视图关闭节流即可。
+	 * 降低 Alt-Tab 遮挡时 Chromium 把窗口标成 occluded 并停绘的概率。
+	 * 回前台禁止 remount/±1 踢绘；内容 view 使用默认 backgroundThrottling（true），
+	 * 走正常 WasHidden/WasShown。见 ai-view-foreground-white-flash.md。
 	 */
 	app.commandLine.appendSwitch( 'disable-features' , 'CalculateNativeWinOcclusion' );
 }

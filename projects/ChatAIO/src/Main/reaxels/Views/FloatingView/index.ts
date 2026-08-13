@@ -35,11 +35,8 @@ export const reaxel_FloatingView = reaxel( () => {
 	 * conceal 平台策略（为什么不能统一 hide()/show()）：
 	 * - win32『opacity』：透明无框窗反复 hide()→show() 是 Electron 已知坏模式
 	 *   （electron#45730 / #40830：isVisible=true、opacity=1 但画面永不出现）；
-	 *   且 backgroundThrottling:false + hide() 触发 FrameEvictor 失步
-	 *   （electron#42378：~5min 后 compositor frame 被驱逐，re-show 时 WasShown
-	 *   被 disable_hidden.patch 短路 → 不再产帧）。透明窗无帧 = 完全不可见，
-	 *   表现即「切后台一段时间后 SwitchAiBar 消失，激活父窗才偶然恢复」。
-	 *   → 窗口保持 OS 可见，仅用 setOpacity(0/1) 切换（社区公认解法）。
+ *   且若再叠加 backgroundThrottling:false + hide() 易触发 FrameEvictor 失步；
+ *   现已恢复默认节流，win32 仍只用 setOpacity conceal。
 	 * - darwin『hide』：可见透明层会让主窗被 macOS occlusion 节流（ca15e358c），
 	 *   必须真实 hide()；macOS 无上述 Windows 合成器缺陷。
 	 * - linux『hide』：setOpacity 在 Linux 不支持。
@@ -125,7 +122,7 @@ export const reaxel_FloatingView = reaxel( () => {
 
 	const syncBounds = () => {
 		const floatingWindow = store.floatingView.window;
-		if( !floatingWindow || floatingWindow.isDestroyed() || mainWindow.isDestroyed() ) {
+		if( !floatingWindow || floatingWindow.isDestroyed() || !mainWindow || mainWindow.isDestroyed() ) {
 			return;
 		}
 		floatingWindow.setBounds( getFloatingViewBounds() , false );
@@ -203,7 +200,7 @@ export const reaxel_FloatingView = reaxel( () => {
 		if( !floatingWindow || floatingWindow.isDestroyed() ) {
 			return;
 		}
-		if( !( mainWindow.isVisible() && !mainWindow.isMinimized() ) ) {
+		if( !mainWindow || mainWindow.isDestroyed() || !( mainWindow.isVisible() && !mainWindow.isMinimized() ) ) {
 			return;
 		}
 		const markCtx = ctxId || activeSwitchPerfCtxId;
@@ -366,7 +363,7 @@ export const reaxel_FloatingView = reaxel( () => {
 			webPreferences : {
 				nodeIntegration : false ,
 				contextIsolation : true ,
-				backgroundThrottling : false ,
+				/* 默认节流；win32 仍用 opacity conceal，不依赖 false+hide 保活 */
 				preload : path.join( absAppRunningPath , 'preload.js' ),
 			},
 		} );
@@ -430,7 +427,7 @@ export const reaxel_FloatingView = reaxel( () => {
 			syncBounds();
 			flushCommandQueue();
 			/* 预热透明窗口首次 showInactive，避免第一次真正显示时的合成器冷启动卡顿。 */
-			if( isBootLoad && mainWindow.isVisible() && !mainWindow.isMinimized() ) {
+			if( isBootLoad && mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible() && !mainWindow.isMinimized() ) {
 				perf.mark( PerfPhase.FvWarmupShow , 'main' , bootPerfCtxId );
 				if( overlayConcealStrategy === 'opacity' ) {
 					/* win32：warmup 后不再 hide()——窗口保持 OS 可见（opacity 0），

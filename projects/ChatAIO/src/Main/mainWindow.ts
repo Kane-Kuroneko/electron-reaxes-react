@@ -53,7 +53,7 @@ export const createMainWindow = async( options:CreateMainWindowOptions = {} ) =>
 			nodeIntegration : false ,
 			contextIsolation : true ,
 			preload : path.join( absAppRunningPath , 'preload.js' ),
-			backgroundThrottling : false ,
+			/* 默认节流：与浏览器一致的隐藏/显示产帧路径 */
 		},
 		// macOS 标题栏：hidden + trafficLightPosition（勿用 hiddenInset：死区/拖拽失效）
 		// 几何见 shared/menubar-geometry.ts：红绿灯与菜单控件共垂直中心
