@@ -35,6 +35,7 @@ export const reaxel_AIViews = reaxel( () => {
 		if( !runtimeView?.view ) {
 			return;
 		}
+		clearPreloadFreezeTimer( runtimeView.view );
 		closeRuntimeWebContentsView( runtimeView.view , id , 'destroy' );
 		mutate( s => {
 			s.AIViews = s.AIViews.filter( item => item.id !== id );
@@ -56,6 +57,7 @@ export const reaxel_AIViews = reaxel( () => {
 
 		// 销毁所有view
 		viewsCopy.forEach( rv => {
+			clearPreloadFreezeTimer( rv.view );
 			closeRuntimeWebContentsView( rv.view , rv.id , 'reset' );
 		} );
 
@@ -175,13 +177,8 @@ export const reaxel_AIViews = reaxel( () => {
 		return true;
 	};
 
-	/* AI 列表可见性：只负责「谁离开中心区」(detach)。
-	   mount/promote 唯一入口是 Reaxel_View.presentActiveCenterView。
-	   同步切换路径必须在 FloatingView show 之前自行 present('switch')。
-
-	   未首展（!hasPresented）的预加载页：只 soft-hide，不 removeChildView。
-	   过早 detach 会让 Chromium 在无 compositor 缓冲时完成 load，
-	   首次 present 时必闪（见 docs/issues/ai-view-preload-first-switch-flash.md）。 */
+	/* AI 列表可见性：只 park 未首展预加载。load 中且有盖才 visible，load 完 hidden。
+	   已首展闲置页的 detach 归 present。禁止在此 addChildView。 */
 	let lastAppliedVisibilityKey: string | null = null;
 	let lastAppliedSettingsOpened: boolean | null = null;
 	let lastAppliedViewCount: number = -1;
@@ -203,32 +200,13 @@ export const reaxel_AIViews = reaxel( () => {
 		lastAppliedSettingsOpened = settingsOpened;
 		lastAppliedViewCount = viewCount;
 
-		if( settingsOpened ) {
-			store.AIViews.forEach( runtimeView => {
-				Reaxel_View().detachInactiveCenterView( runtimeView.view );
-			} );
-			return;
-		}
-
-		const incoming = store.AIViews.find( item => item.id === currentAIViewKey );
-		/* 切到未首展页时，保留上一中心页可见，供 present cover-handoff 遮盖首帧。 */
-		const preserveCoverForPreloadHandoff = Boolean( incoming && !incoming.hasPresented );
-		const coverView = preserveCoverForPreloadHandoff
-			? Reaxel_View().getLastPresentedCenterView()
-			: null;
-
 		store.AIViews.forEach( runtimeView => {
-			if( !runtimeView.view || runtimeView.id === currentAIViewKey ) {
+			if( !runtimeView.view || runtimeView.hasPresented ) {
 				return;
 			}
-			if( coverView && runtimeView.view === coverView ) {
-				return;
+			if( settingsOpened || runtimeView.id !== currentAIViewKey ) {
+				Reaxel_View().parkUnpresentedPreloadView( runtimeView.view );
 			}
-			if( !runtimeView.hasPresented ) {
-				Reaxel_View().softHideInactiveCenterView( runtimeView.view );
-				return;
-			}
-			Reaxel_View().detachInactiveCenterView( runtimeView.view );
 		} );
 	};
 
@@ -262,7 +240,17 @@ export const reaxel_AIViews = reaxel( () => {
 			aiConfig : ai ,
 			settings ,
 			refreshBounds : view => {
-				Reaxel_View().fitContentView( view );
+				if(
+					ai.id === Reaxel_View.store.currentAIViewKey
+					&& !Reaxel_View.store.settingsViewOpened
+				) {
+					Reaxel_View().fitContentView( view );
+					return;
+				}
+				const runtimeView = store.AIViews.find( item => item.view === view );
+				if( runtimeView && !runtimeView.hasPresented ) {
+					Reaxel_View().parkUnpresentedPreloadView( view );
+				}
 			} ,
 			webPreferences : {
 				partition,
@@ -286,6 +274,12 @@ export const reaxel_AIViews = reaxel( () => {
 		instrumentViewWithMonitor( view , ai.id );
 		instrumentViewWithWhiteScreenMonitor( view , ai.id );
 		bindRuntimeAIViewReadyHandlers( ai.id , view );
+		if(
+			ai.id !== Reaxel_View.store.currentAIViewKey
+			|| Reaxel_View.store.settingsViewOpened
+		) {
+			Reaxel_View().parkUnpresentedPreloadView( view );
+		}
 		return {
 			id : ai.id ,
 			label : ai.label ,
@@ -297,9 +291,32 @@ export const reaxel_AIViews = reaxel( () => {
 			proxyKey : getRuntimeAIProxyKey( ai , settings ) ,
 			appearanceKey : getAIPageAppearanceKey( environment ) ,
 			ready : false ,
-			/* 从未作为中心页 present 过：预加载首切前保持 soft-hold，避免无帧缓冲闪白 */
+			/* 未首展：load 中盖下可见暖机；load 完 hidden 减合成层。detach 会饿死后台 load / SPA */
 			hasPresented : false,
 		};
+	};
+
+	const PRELOAD_FREEZE_AFTER_LOAD_MS = 400;
+	const preloadFreezeTimers = new WeakMap<WebContentsView , ReturnType<typeof setTimeout>>();
+
+	const clearPreloadFreezeTimer = (view:WebContentsView | null | undefined) => {
+		if( !view ) {
+			return;
+		}
+		const timer = preloadFreezeTimers.get( view );
+		if( timer ) {
+			clearTimeout( timer );
+			preloadFreezeTimers.delete( view );
+		}
+	};
+
+	const schedulePreloadFreezeAfterHydrate = (view:WebContentsView) => {
+		clearPreloadFreezeTimer( view );
+		const timer = setTimeout( () => {
+			preloadFreezeTimers.delete( view );
+			Reaxel_View().parkUnpresentedPreloadView( view );
+		} , PRELOAD_FREEZE_AFTER_LOAD_MS );
+		preloadFreezeTimers.set( view , timer );
 	};
 
 	const bindRuntimeAIViewReadyHandlers = (aiId:string , view:WebContentsView) => {
@@ -312,8 +329,15 @@ export const reaxel_AIViews = reaxel( () => {
 			} );
 			focusAIViewIfCurrent( aiId , view );
 		};
-		view.webContents.on( 'did-stop-loading' , markViewReady );
-		view.webContents.on( 'did-fail-load' , markViewReady );
+		const onLoadSettled = () => {
+			markViewReady();
+			const runtimeView = store.AIViews.find( item => item.id === aiId );
+			if( runtimeView?.view === view && !runtimeView.hasPresented ) {
+				schedulePreloadFreezeAfterHydrate( view );
+			}
+		};
+		view.webContents.on( 'did-stop-loading' , onLoadSettled );
+		view.webContents.on( 'did-fail-load' , onLoadSettled );
 	};
 
 	const updateRuntimeAIView = async(
@@ -563,6 +587,7 @@ try {
  * 日志：userData/logs/white-screen-monitor.jsonl
  */
 const whiteScreenMonitorInstance = getWhiteScreenMonitor();
+const preloadFlashProbeInstance = getPreloadFlashProbe();
 console.info(
 	'[AIViews] WhiteScreenMonitor ready:' ,
 	`enabled=${ whiteScreenMonitorInstance.enabled }` ,
@@ -617,6 +642,7 @@ function instrumentViewWithWhiteScreenMonitor( view: WebContentsView, viewId: st
 	if( whiteScreenMonitorInstance.enabled ) {
 		whiteScreenMonitorInstance.instrumentView( view, viewId );
 	}
+	preloadFlashProbeInstance.instrumentView( view , viewId );
 }
 
 /**
@@ -748,6 +774,7 @@ type PersistedAIPartitionDiscoveryResult = {
 
 import { getAIDomainByFamily } from './data';
 import { getWhiteScreenMonitor } from './white-screen-monitor.retexel';
+import { getPreloadFlashProbe } from './preload-flash-probe.retexel';
 import type { AI } from '#src/Types/SettingsTypes/AI';
 import type { Settings } from '#src/Types/SettingsTypes';
 import { initWebContentsView } from '#main/reaxels/Views/utils/initWebContentsView';

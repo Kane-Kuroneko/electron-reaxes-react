@@ -16,18 +16,21 @@ export const Reaxel_View = reaxel( () => {
 		clipMainShellToMenuBar( mainWindow );
 		const { width , height } = mainWindow.getContentBounds();
 		const centerBounds = getCenterBounds( { x : 0 , y : 0 , width , height } );
-		const viewSetBounds = (view:WebContentsView) => setViewBoundsIfChanged( view , centerBounds );
-
+		/* 当前中心页 + 未首展预加载（盖下全尺寸）。已首展闲置仍 detach，不要拉回中心区。 */
 		if( target ) {
-			const runtimeView = reaxel_AIViews.store.AIViews.find( item => item.id === target );
-			viewSetBounds( runtimeView?.view );
+			if( !store.settingsViewOpened && target === store.currentAIViewKey ) {
+				fitCurrentCenterView( centerBounds );
+			}
+			layoutUnpresentedPreloadViews( centerBounds );
 			reaxel_PromptViews().syncBounds( { x : 0 , y : 0 , width , height } );
 			return;
 		}
-		reaxel_AIViews.store.AIViews.forEach( runtimeView => {
-			viewSetBounds( runtimeView.view );
-		} );
-		viewSetBounds( reaxel_SettingsView.store.settingsView.view );
+		fitCurrentCenterView( centerBounds );
+		layoutUnpresentedPreloadViews( centerBounds );
+		const settingsView = reaxel_SettingsView.store.settingsView.view;
+		if( store.settingsViewOpened && settingsView && !isWebContentsViewDead( settingsView ) ) {
+			setViewBoundsIfChanged( settingsView , centerBounds );
+		}
 		reaxel_PromptViews().syncBounds( { x : 0 , y : 0 , width , height } );
 	}
 
@@ -61,8 +64,11 @@ export const Reaxel_View = reaxel( () => {
 	 * （docs/issues/ai-view-foreground-white-flash.md）
 	 *
 	 * 角色拆分：
-	 * - reaxel_AIViews.applyVisibility：只 detach「不该在中心区的 AI」
-	 * - Reaxel_View.presentActiveCenterView：唯一 mount/promote 入口
+	 * - reaxel_AIViews.applyVisibility：只 park 未首展预加载（不 detach、不 addChildView）
+	 * - Reaxel_View.presentActiveCenterView：唯一 mount/promote 入口；先置顶，拆页放到下一拍
+	 *   未首展 load 中：attach + visible + 全尺寸盖下，让 SPA hydrate
+	 *   未首展 load 完：仍 attach+全尺寸，但 visible=false，避免 7 层同时合成卡住切换
+	 *   已首展闲置：硬 detach（二次切换已验证丝滑）
 	 *
 	 * 两种意图（禁止 reason 字符串矩阵）：
 	 * - switch：AI / Settings / 冷启动 —— 允许平台级 remount/reorder
@@ -131,55 +137,88 @@ export const Reaxel_View = reaxel( () => {
 		}
 	}
 
-	function detachInactiveCenterView(view:WebContentsView | null | undefined) {
-		safeDetachWebContentsView( view );
+	/**
+	 * 预加载 v8：未首展页保持 attach + 全尺寸。
+	 * load 中且有可见顶页盖住 → visible=true（盖下 hydrate）。
+	 * load 完 → visible=false，只留 1 层在合成，避免 Win 上多层 WebContentsView 切换卡顿。
+	 * 已首展闲置页仍硬 detach。拆页放到 setImmediate，不跟 promote 抢同一帧 GPU。
+	 * 禁止 cover-handoff / 热路径 capturePage / backgroundThrottling:false。
+	 * applyVisibility / park 不得 addChildView。
+	 */
+	function isUnpresentedPreloadView(view:WebContentsView | null | undefined) {
+		const runtimeView = findRuntimeAIViewByWebContentsView( view );
+		return Boolean( runtimeView && !runtimeView.hasPresented );
 	}
 
-	/**
-	 * 预加载暖机：保持挂在 contentView 上但不可见，让 load/首帧有机会在 hierarchy 内完成。
-	 * 禁止用于已首展过的闲置页（那些走硬 detach）。
-	 */
-	function softHideInactiveCenterView(view:WebContentsView | null | undefined) {
+	function isVisibleCoverReady(cover:WebContentsView | null | undefined , parked:WebContentsView) {
+		return Boolean(
+			cover
+			&& cover !== parked
+			&& !isWebContentsViewDead( cover )
+			&& isCenterViewAttached( cover )
+			&& cover.getVisible(),
+		);
+	}
+
+	function isCenterWebContentsLoading(view:WebContentsView) {
+		return Boolean( getAliveWebContents( view )?.isLoading() );
+	}
+
+	/** 未首展：不 detach、不 addChildView。仍在 load 才盖下露出，load 完藏起来减合成层。 */
+	function parkUnpresentedPreloadView(view:WebContentsView | null | undefined) {
 		if( isWebContentsViewDead( view ) ) {
+			return;
+		}
+		const runtimeView = findRuntimeAIViewByWebContentsView( view );
+		if( runtimeView?.hasPresented ) {
+			return;
+		}
+		if( !isCenterViewAttached( view ) ) {
 			return;
 		}
 		const mon = centerScheduleMonitor;
 		const tracing = mon.enabled && Boolean( mon.activeChainId );
 		const viewId = tracing ? mon.getViewId( view ) : '';
-		if( !isCenterViewAttached( view ) ) {
-			try {
-				mainWindow.contentView.addChildView( view );
-				fitContentView( view );
-				if( tracing ) {
-					safeSchedule( () => {
-						mon.note( {
-							op: 'mount-recover' ,
-							phase: 'action' ,
-							decision: 'soft-hide→reattach-for-warmup' ,
-							viewId ,
-						} );
-					} );
-				}
-			} catch {
-				/* already attached / parent gone */
-			}
-		} else {
-			fitContentView( view );
-		}
-		if( view.getVisible() ) {
-			view.setVisible( false );
+		setViewBoundsIfChanged( view , getCenterBounds() );
+		const coverReady = isVisibleCoverReady( getCurrentCenterView() , view );
+		const loading = isCenterWebContentsLoading( view );
+		const shouldShow = coverReady && loading;
+		if( view.getVisible() !== shouldShow ) {
+			view.setVisible( shouldShow );
 			if( tracing ) {
 				safeSchedule( () => {
 					mon.note( {
 						op: 'set-visible' ,
 						phase: 'action' ,
-						decision: 'soft-hide→visible-false' ,
+						decision: shouldShow
+							? 'preload-park→visible-under-cover'
+							: 'preload-park→hidden-after-load' ,
 						viewId ,
-						detail: { visible: false } ,
+						detail: { visible: shouldShow , loading } ,
 					} );
 				} );
 			}
 		}
+	}
+
+	function layoutUnpresentedPreloadViews(bounds:Rectangle) {
+		reaxel_AIViews.store.AIViews.forEach( runtimeView => {
+			if( runtimeView.hasPresented || isWebContentsViewDead( runtimeView.view ) ) {
+				return;
+			}
+			if( !isCenterViewAttached( runtimeView.view ) ) {
+				return;
+			}
+			setViewBoundsIfChanged( runtimeView.view , bounds );
+		} );
+	}
+
+	function detachInactiveCenterView(view:WebContentsView | null | undefined) {
+		if( isUnpresentedPreloadView( view ) ) {
+			parkUnpresentedPreloadView( view );
+			return;
+		}
+		safeDetachWebContentsView( view );
 	}
 
 	function isCenterViewAttached(view:WebContentsView | null | undefined) {
@@ -193,13 +232,33 @@ export const Reaxel_View = reaxel( () => {
 		}
 	}
 
-	/** 层级健康：已在 contentView 且可见。不含 bounds。 */
+	/** 中心区（AI/Settings）里最上层的那一个。Prompt 等非中心子 view 不算。 */
+	function isTopMostCenterView(view:WebContentsView | null | undefined) {
+		if( isWebContentsViewDead( view ) || !mainWindow || mainWindow.isDestroyed() ) {
+			return false;
+		}
+		try {
+			const centerSet = new Set( getAllCenterViews() );
+			let top: WebContentsView | null = null;
+			mainWindow.contentView.children.forEach( child => {
+				if( centerSet.has( child as WebContentsView ) ) {
+					top = child as WebContentsView;
+				}
+			} );
+			return top === view;
+		} catch {
+			return false;
+		}
+	}
+
+	/** 层级健康：已在 contentView、可见、且是中心区顶层。不含 bounds。 */
 	function isCenterViewHierarchyReady(view:WebContentsView | null | undefined) {
 		return Boolean(
 			view
 			&& !isWebContentsViewDead( view )
 			&& isCenterViewAttached( view )
-			&& view.getVisible(),
+			&& view.getVisible()
+			&& isTopMostCenterView( view ),
 		);
 	}
 
@@ -217,18 +276,20 @@ export const Reaxel_View = reaxel( () => {
 		}
 	}
 
+	/**
+	 * 非 active：已首展硬 detach；未首展已经 park 过的不要再碰（再 park 会在切换热路径
+	 * 里扫一遍 bounds，而且曾把 load 完的页重新 setVisible(true) 叠成 7 层）。
+	 * 拆页必须在 active 已经置顶之后；调用方用 setImmediate 错开 promote 同一帧。
+	 */
 	function detachOtherCenterViews(activeView:WebContentsView | null) {
 		getAllCenterViews().forEach( view => {
 			if( !view || view === activeView ) {
 				return;
 			}
-			const runtimeView = findRuntimeAIViewByWebContentsView( view );
-			/* Settings / 已首展 AI：硬 detach。未首展预加载页：soft-hide 暖机。 */
-			if( runtimeView && !runtimeView.hasPresented ) {
-				softHideInactiveCenterView( view );
+			if( isUnpresentedPreloadView( view ) ) {
 				return;
 			}
-			detachInactiveCenterView( view );
+			safeDetachWebContentsView( view );
 		} );
 	}
 
@@ -241,7 +302,10 @@ export const Reaxel_View = reaxel( () => {
 		const mon = centerScheduleMonitor;
 		const viewId = mon.enabled ? mon.getViewId( view ) : '';
 		const attachedBefore = isCenterViewAttached( view );
-		if( process.platform === 'darwin' && attachedBefore ) {
+		const alreadyTop = attachedBefore && isTopMostCenterView( view );
+		/* 盖下暖机的未首展页已在树里，darwin remove+add 会 WasHidden 再闪。 */
+		const warmingInPlace = attachedBefore && isUnpresentedPreloadView( view );
+		if( process.platform === 'darwin' && attachedBefore && !warmingInPlace && !alreadyTop ) {
 			try {
 				mainWindow.contentView.removeChildView( view );
 				safeSchedule( () => {
@@ -265,15 +329,21 @@ export const Reaxel_View = reaxel( () => {
 				} );
 			}
 		}
-		mainWindow.contentView.addChildView( view );
-		view.setBounds( bounds );
-		view.setVisible( true );
+		if( !alreadyTop ) {
+			mainWindow.contentView.addChildView( view );
+		}
+		setViewBoundsIfChanged( view , bounds );
+		if( !view.getVisible() ) {
+			view.setVisible( true );
+		}
 		safeSchedule( () => {
 			mon.note( {
 				op: 'mount-switch' ,
 				phase: 'action' ,
 				intent: 'switch' ,
-				decision: attachedBefore ? 'addChildView-reorder-or-remount' : 'addChildView-fresh' ,
+				decision: alreadyTop
+					? 'already-top-skip-addChildView'
+					: attachedBefore ? 'addChildView-reorder-or-remount' : 'addChildView-fresh' ,
 				viewId ,
 				snapshot: snapshotActiveCenter( view , viewId ) ,
 				detail: { platform: process.platform , bounds } ,
@@ -282,20 +352,24 @@ export const Reaxel_View = reaxel( () => {
 	}
 
 	/**
-	 * recover：hierarchy 破损时补挂。已挂载则绝不 addChildView（避免 reorder 闪白）。
+	 * recover：hierarchy 破损时补挂。已在顶层则绝不 addChildView（避免 reorder 闪白）。
+	 * 未首展预加载会占着更高 z-order，启动 recover 必须把当前页抬上来。
 	 */
 	function mountCenterViewForRecover(view:WebContentsView , bounds:Rectangle) {
 		const mon = centerScheduleMonitor;
 		const viewId = mon.enabled ? mon.getViewId( view ) : '';
 		const attachedBefore = isCenterViewAttached( view );
-		if( !attachedBefore ) {
+		const needsPromote = !attachedBefore || !isTopMostCenterView( view );
+		if( needsPromote ) {
 			mainWindow.contentView.addChildView( view );
 			safeSchedule( () => {
 				mon.note( {
 					op: 'mount-recover' ,
 					phase: 'action' ,
 					intent: 'recover' ,
-					decision: 'addChildView-missing' ,
+					decision: attachedBefore
+						? 'addChildView-promote-under-preload'
+						: 'addChildView-missing' ,
 					viewId ,
 				} );
 			} );
@@ -305,7 +379,7 @@ export const Reaxel_View = reaxel( () => {
 					op: 'mount-recover' ,
 					phase: 'action' ,
 					intent: 'recover' ,
-					decision: 'skip-addChildView-already-attached' ,
+					decision: 'skip-addChildView-already-top' ,
 					viewId ,
 				} );
 			} );
@@ -323,6 +397,31 @@ export const Reaxel_View = reaxel( () => {
 				} );
 			} );
 		}
+	}
+
+	let centerDetachGeneration = 0;
+	function scheduleDetachOtherCenterViews(activeView:WebContentsView | null) {
+		const token = ++centerDetachGeneration;
+		const held = activeView;
+		const mon = centerScheduleMonitor;
+		safeSchedule( () => {
+			mon.note( {
+				op: 'detach' ,
+				phase: 'action' ,
+				decision: 'detach-others-deferred' ,
+				viewId: mon.enabled ? resolveCenterViewId( held ) : '' ,
+			} );
+		} );
+		setImmediate( () => {
+			if( token !== centerDetachGeneration ) {
+				return;
+			}
+			const current = getCurrentCenterView();
+			if( held && current !== held ) {
+				return;
+			}
+			detachOtherCenterViews( current );
+		} );
 	}
 
 	/**
@@ -349,12 +448,9 @@ export const Reaxel_View = reaxel( () => {
 	/**
 	 * 唯一 present 入口。AI 切换路径必须在 FloatingView showInactive **之前**同步调用 switch。
 	 *
-	 * 预加载首切：目标尚未 hasPresented 时，用上一中心页遮盖至目标可绘再 promote，
-	 * 避免「detach 旧页 → 挂上无帧缓冲的新页」白闪。
+	 * 预加载 v8：先把目标置顶；已首展闲置页的 detach 放到下一拍，避免与 promote 抢同一帧 GPU。
+	 * 未首展 load 中盖下可见；load 完 hidden 减合成层。
 	 */
-	let lastPresentedCenterView: WebContentsView | null = null;
-	let preloadHandoffToken = 0;
-
 	function presentActiveCenterView(
 		intent:CenterMountIntent ,
 		bounds = getCenterBounds(),
@@ -388,6 +484,7 @@ export const Reaxel_View = reaxel( () => {
 			}
 		} );
 		if( isWebContentsViewDead( activeView ) ) {
+			centerDetachGeneration += 1;
 			detachOtherCenterViews( activeView );
 			safeSchedule( () => {
 				mon.note( {
@@ -407,53 +504,32 @@ export const Reaxel_View = reaxel( () => {
 		const targetRuntime = store.settingsViewOpened
 			? null
 			: findRuntimeAIViewByWebContentsView( activeView );
-		const coverView = lastPresentedCenterView;
-		const needsPreloadCoverHandoff = intent === 'switch'
-			&& Boolean( targetRuntime )
-			&& !targetRuntime!.hasPresented
-			&& Boolean( coverView )
-			&& coverView !== activeView
-			&& !isWebContentsViewDead( coverView )
-			&& isCenterViewHierarchyReady( coverView );
-
-		if( needsPreloadCoverHandoff ) {
-			preloadHandoffToken += 1;
-			const handoffToken = preloadHandoffToken;
-			mountCenterViewUnderCover( activeView , coverView! , bounds );
-			safeSchedule( () => {
-				mon.note( {
-					op: 'mount-switch' ,
-					phase: 'action' ,
-					intent: 'switch' ,
-					decision: 'preload-cover-handoff-armed' ,
-					viewId ,
-					detail: { coverViewId: resolveCenterViewId( coverView ) } ,
-				} );
-			} );
-			schedulePreloadCoverHandoffPromote( {
-				token: handoffToken ,
-				activeView ,
-				coverView: coverView! ,
-				targetRuntime: targetRuntime! ,
-				ownsChain ,
-				viewId ,
-			} );
-			return;
-		}
-
-		preloadHandoffToken += 1;
-		detachOtherCenterViews( activeView );
+		const wasFirstPresent = Boolean( targetRuntime && !targetRuntime.hasPresented );
 		if( intent === 'switch' ) {
+			if( wasFirstPresent && targetRuntime ) {
+				preloadFlashProbe.beginFirstSwitch( {
+					view: activeView ,
+					viewId: viewId || targetRuntime.id ,
+					ready: targetRuntime.ready ,
+					hasPresented: targetRuntime.hasPresented ,
+					attached: isCenterViewAttached( activeView ),
+				} );
+			}
 			mountCenterViewForSwitch( activeView , bounds );
 			markCenterAIViewPresented( activeView );
-			lastPresentedCenterView = activeView;
+			if( wasFirstPresent && targetRuntime ) {
+				preloadFlashProbe.finalizeFirstSwitch( {
+					viewId: viewId || targetRuntime.id ,
+				} );
+			}
 		} else {
 			mountCenterViewForRecover( activeView , bounds );
 			if( isCenterViewHierarchyReady( activeView ) ) {
 				markCenterAIViewPresented( activeView );
-				lastPresentedCenterView = activeView;
 			}
 		}
+		/* 先置顶；拆页下一拍，避免 removeChildView 跟 promote 抢同一帧。 */
+		scheduleDetachOtherCenterViews( activeView );
 		restoreActiveCenterViewFocus( intent );
 		safeSchedule( () => {
 			mon.note( {
@@ -471,154 +547,6 @@ export const Reaxel_View = reaxel( () => {
 				} );
 			}
 		} );
-	}
-
-	/**
-	 * 把目标插到遮盖页之下并设可见，用户仍只看到 cover，目标可在下方产帧。
-	 * addChildView(view, index) 插入后原 index 及之后的 child 上移，cover 保持顶层。
-	 */
-	function mountCenterViewUnderCover(
-		view:WebContentsView ,
-		coverView:WebContentsView ,
-		bounds:Rectangle,
-	) {
-		const mon = centerScheduleMonitor;
-		const viewId = mon.enabled ? mon.getViewId( view ) : '';
-		try {
-			const children = mainWindow.contentView.children;
-			const coverIndex = children.indexOf( coverView );
-			if( coverIndex >= 0 ) {
-				mainWindow.contentView.addChildView( view , coverIndex );
-			} else {
-				mainWindow.contentView.addChildView( view );
-				mainWindow.contentView.addChildView( coverView );
-			}
-		} catch {
-			mainWindow.contentView.addChildView( view );
-			try {
-				mainWindow.contentView.addChildView( coverView );
-			} catch { /* cover already top */ }
-		}
-		view.setBounds( bounds );
-		view.setVisible( true );
-		coverView.setVisible( true );
-		safeSchedule( () => {
-			mon.note( {
-				op: 'mount-switch' ,
-				phase: 'action' ,
-				intent: 'switch' ,
-				decision: 'addChildView-under-cover' ,
-				viewId ,
-				detail: { platform: process.platform , bounds } ,
-			} );
-		} );
-	}
-
-	function waitForPreloadHandoffPaint(view:WebContentsView):Promise<void> {
-		return new Promise( resolve => {
-			let settled = false;
-			const finish = () => {
-				if( settled ) {
-					return;
-				}
-				settled = true;
-				resolve();
-			};
-			const webContents = getAliveWebContents( view );
-			if( !webContents ) {
-				finish();
-				return;
-			}
-			/* 遮盖下双 rAF，尽量等一帧合成；失败则短超时兜底 */
-			void webContents
-				.executeJavaScript(
-					'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))' ,
-				)
-				.then( finish )
-				.catch( finish );
-			setTimeout( finish , 160 );
-		} );
-	}
-
-	function schedulePreloadCoverHandoffPromote(options:{
-		token:number;
-		activeView:WebContentsView;
-		coverView:WebContentsView;
-		targetRuntime:RuntimeAIView;
-		ownsChain:boolean;
-		viewId:string;
-	}) {
-		const {
-			token ,
-			activeView ,
-			coverView ,
-			targetRuntime ,
-			ownsChain ,
-			viewId ,
-		} = options;
-		const mon = centerScheduleMonitor;
-
-		const promote = async() => {
-			if( token !== preloadHandoffToken ) {
-				return;
-			}
-			if( getCurrentCenterView() !== activeView || isWebContentsViewDead( activeView ) ) {
-				return;
-			}
-			if( !targetRuntime.ready ) {
-				const webContents = getAliveWebContents( activeView );
-				if( webContents && webContents.isLoading() ) {
-					await new Promise<void>( resolve => {
-						let done = false;
-						const finish = () => {
-							if( done ) {
-								return;
-							}
-							done = true;
-							resolve();
-						};
-						webContents.once( 'did-stop-loading' , finish );
-						webContents.once( 'did-fail-load' , finish );
-						setTimeout( finish , 8000 );
-					} );
-				} else {
-					targetRuntime.ready = true;
-				}
-			}
-			if( token !== preloadHandoffToken || getCurrentCenterView() !== activeView ) {
-				return;
-			}
-			await waitForPreloadHandoffPaint( activeView );
-			if( token !== preloadHandoffToken || getCurrentCenterView() !== activeView ) {
-				return;
-			}
-			try {
-				mainWindow.contentView.addChildView( activeView );
-			} catch { /* already top */ }
-			activeView.setVisible( true );
-			markCenterAIViewPresented( activeView );
-			lastPresentedCenterView = activeView;
-			detachOtherCenterViews( activeView );
-			restoreActiveCenterViewFocus( 'switch' );
-			safeSchedule( () => {
-				mon.note( {
-					op: 'present' ,
-					phase: 'exit' ,
-					intent: 'switch' ,
-					decision: 'preload-cover-handoff-promoted' ,
-					viewId ,
-					snapshot: snapshotActiveCenter( activeView , viewId ) ,
-				} );
-				if( ownsChain ) {
-					mon.end( {
-						decision: 'present-handoff-done' ,
-						snapshot: snapshotActiveCenter( activeView , viewId ) ,
-					} );
-				}
-			} );
-		};
-
-		void promote();
 	}
 
 	/** L0：Alt-Tab / 点击回焦 —— hierarchy 完好则只还焦点（默认节流下由 Chromium 产帧）。 */
@@ -1329,7 +1257,8 @@ export const Reaxel_View = reaxel( () => {
 
 	/**
 	 * store 变化兜底（Settings 开/关只 setState 的路径）：
-	 * applyVisibility 只 detach；present 由本处或同步切换路径负责。
+	 * applyVisibility：未首展 park；已首展闲置页的 detach 归 present。
+	 * present 由本处或同步切换路径负责。
 	 * 注意：本 reaction 在 setState 内部**同步**触发（mobx action 结束时），
 	 * 早于调用方 setState 之后的显式 present。命令式切换路径通过
 	 * setCenterStateForImperativeSwitch 置位抑制标志，由调用方自行 present('switch')，
@@ -1363,8 +1292,7 @@ export const Reaxel_View = reaxel( () => {
 		fitCurrentCenterView ,
 		focusCurrentContentView ,
 		detachInactiveCenterView ,
-		softHideInactiveCenterView ,
-		getLastPresentedCenterView : () => lastPresentedCenterView ,
+		parkUnpresentedPreloadView ,
 		presentActiveCenterView ,
 		setCenterStateForImperativeSwitch ,
 		turnToNextAiPage ,
@@ -1464,6 +1392,7 @@ import {
 	getWhiteScreenMonitor ,
 	snapshotCenterViewHierarchy ,
 } from "#main/reaxels/Views/AI-Views/white-screen-monitor.retexel";
+import { getPreloadFlashProbe } from "#main/reaxels/Views/AI-Views/preload-flash-probe.retexel";
 import {
 	reaxel_FloatingView ,
 } from "#main/reaxels/Views/FloatingView";
@@ -1489,3 +1418,5 @@ import {
 
 /** 中心 view 调度链追踪（无 capturePage 副作用） */
 const centerScheduleMonitor = getWhiteScreenMonitor();
+/** 预加载首切探针（只写 jsonl；禁止热路径 capturePage） */
+const preloadFlashProbe = getPreloadFlashProbe();
