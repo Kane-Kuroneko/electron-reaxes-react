@@ -5,7 +5,7 @@
 - **症状**：Alt-Tab / 托盘唤回 / 反最小化后，当前 AI `WebContentsView` 闪白或白屏。
 - **状态**：ARCH FIXED（2026-08-13）——单一所有者 + **默认 `backgroundThrottling`**；回前台 hierarchy 完好只 focus / 对齐 bounds，禁止踢绘。
 - **历史**：`509a8e662` 把「踢绘」绑到每次 focus/show/restore，是闪白主因；强制 `backgroundThrottling:false` 后曾叠加 invalidate / 两阶段 ±1 rebind，短切后台反而稳定闪白，已撤回。
-- **复盘**：见 [`ai-view-background-throttling-postmortem.md`](./ai-view-background-throttling-postmortem.md)（agent 决策树、禁止项、日志速查）。
+- **复盘**：见 [`ai-view-background-throttling-postmortem.md`](./ai-view-background-throttling-postmortem.md)（agent 决策树、禁止项、日志速查）。预加载第一次 present 卡顿是另一件事，见 [`ai-view-first-present-warmup-postmortem.md`](./ai-view-first-present-warmup-postmortem.md)。文档索引：[`docs/README.md`](../README.md)。
 
 ---
 
@@ -90,5 +90,5 @@ FloatingView 自身由独立的 overlay 呈现调度器管理（Windows 禁 hide
 2. 托盘 hide→show、最小化→还原 → 无白闪  
 3. Ctrl+[/] 切换 AI → 置顶正确；SwitchAiBar 正常（尤其 macOS）  
 4. Settings 开/关 → 层级正确  
-5. 配置同步预加载其它 AI → 当前页不闪、不丢；**首次切到预加载 AI 无白闪**（见 [`ai-view-preload-first-switch-flash.md`](./ai-view-preload-first-switch-flash.md)）  
+5. 配置同步预加载其它 AI → 当前页不闪、不丢；**首次切到预加载 AI 无白闪**（park 见 [`ai-view-preload-first-switch-flash.md`](./ai-view-preload-first-switch-flash.md)）。第一次 present 的合成卡顿是接受项，见 [`ai-view-first-present-warmup-postmortem.md`](./ai-view-first-present-warmup-postmortem.md)  
 6. 切后台较久再回 → 切 AI 时 SwitchAiBar 仍出现（FloatingView 冷 promote）  

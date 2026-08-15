@@ -52,16 +52,19 @@
 
 ## 本子工程文档
 
+- **总索引（按症状）**：[`docs/README.md`](./docs/README.md)
 - [`fixme.md`](./fixme.md) — 问题清单（P0–P3）
 - [`todo.md`](./todo.md)
 - [`docs/architecture/`](./docs/architecture/) — AI 配置、构建、i18n、menubar 等
 - [`docs/features/`](./docs/features/)
-- [`docs/issues/`](./docs/issues/) — 含 menubar 拖拽 / 鼠标穿透调查
+- [`docs/issues/`](./docs/issues/) — 复盘 / 决策树 / 禁止项
 
-改 FloatingView、menubar、透明窗、鼠标穿透、中心 WebContentsView 生命周期前必读：
+改 FloatingView、menubar、透明窗、鼠标穿透、中心 WebContentsView 生命周期、预加载 park 前必读：
 
 - [`docs/issues/ai-view-background-throttling-postmortem.md`](./docs/issues/ai-view-background-throttling-postmortem.md) — **Alt-Tab 闪白复盘 + agent 决策树（改节流/回前台前必读）**
 - [`docs/issues/ai-view-foreground-white-flash.md`](./docs/issues/ai-view-foreground-white-flash.md)
+- [`docs/issues/ai-view-first-present-warmup-postmortem.md`](./docs/issues/ai-view-first-present-warmup-postmortem.md) — **预加载暖不了可见态；跟手优先，接受第一次 present 卡顿（改 park / 想「画暖」后台页前必读）**
+- [`docs/issues/ai-view-preload-first-switch-flash.md`](./docs/issues/ai-view-preload-first-switch-flash.md) — v8 park 不变量
 - [`docs/issues/menubar-drag-investigation.md`](./docs/issues/menubar-drag-investigation.md)
 - [`docs/issues/menubar-drag-region-leak-below-content.md`](./docs/issues/menubar-drag-region-leak-below-content.md)
 - [`docs/issues/floating-view-missing-after-background.md`](./docs/issues/floating-view-missing-after-background.md)

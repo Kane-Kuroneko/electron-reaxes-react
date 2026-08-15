@@ -14,6 +14,7 @@ Read these files before changing behavior:
 - The target subproject docs such as `projects/ChatAIO/docs/architecture/ai-config.md` and `projects/ChatAIO/todo.md`
 - Before changing ChatAIO FloatingView, menubar, transparent windows, or mouse passthrough, read [`menubar-drag-investigation.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md), [`menubar-drag-region-leak-below-content.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-region-leak-below-content.md) (Windows `app-region` hit-test leak below menubar), and [`floating-view-missing-after-background.md`](../../../projects/ChatAIO/docs/issues/floating-view-missing-after-background.md) (cold show must promote after blur/hide; never focus-always-show overlay).
 - Before changing center WebContentsView attach/detach/focus/show/restore recovery, read **[`ai-view-background-throttling-postmortem.md`](../../../projects/ChatAIO/docs/issues/ai-view-background-throttling-postmortem.md)** first (why Alt-Tab flash happened, wrong fixes, agent decision tree), then [`ai-view-foreground-white-flash.md`](../../../projects/ChatAIO/docs/issues/ai-view-foreground-white-flash.md) (current architecture). Only `presentActiveCenterView('switch'|'recover')` may mount; **never** reintroduce `backgroundThrottling:false` on content views, focus-path remount, bounds±1/invalidate kick-paints, or `applyVisibility`-owned ensure.
+- Before changing preload park / first-present / “warm hidden AI pages”, read **[`ai-view-first-present-warmup-postmortem.md`](../../../projects/ChatAIO/docs/issues/ai-view-first-present-warmup-postmortem.md)** then [`ai-view-preload-first-switch-flash.md`](../../../projects/ChatAIO/docs/issues/ai-view-preload-first-switch-flash.md). Click must switch immediately; first-present hitch is accepted. Do not delay `setVisible`, disable throttling, or restack unpresented views as visible layers. Docs index: [`docs/README.md`](../../../projects/ChatAIO/docs/README.md).
 - Before adding or changing **any** Renderer → Main IPC (especially menubar `openDropdownView` / `menuViewAction`), read `.qoder/rules/ipc-coding.md` §错误 0 and apply `cloneForIPC` to all `reaxel_*.store` payloads.
 
 Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with npm. The local Reaxes implementation is available at `Z:\reaxes` when library behavior is unclear.
@@ -80,8 +81,10 @@ Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with n
 - Do not copy FloatingView `overlaySurfaceStale` / rebind logic onto the center view — different surface model (opacity overlay vs embedded WCV).
 
 **Related but different bugs**:
-- First switch to preloaded AI flashes → [`ai-view-preload-first-switch-flash.md`](../../../projects/ChatAIO/docs/issues/ai-view-preload-first-switch-flash.md)
+- First present of a preloaded AI hitches (accepted; do not delay switch) → [`ai-view-first-present-warmup-postmortem.md`](../../../projects/ChatAIO/docs/issues/ai-view-first-present-warmup-postmortem.md)
+- Preload v1–v8 park invariants → [`ai-view-preload-first-switch-flash.md`](../../../projects/ChatAIO/docs/issues/ai-view-preload-first-switch-flash.md)
 - SwitchAiBar missing after long background → [`floating-view-missing-after-background.md`](../../../projects/ChatAIO/docs/issues/floating-view-missing-after-background.md)
+- Docs index → [`docs/README.md`](../../../projects/ChatAIO/docs/README.md)
 
 ## Validation
 

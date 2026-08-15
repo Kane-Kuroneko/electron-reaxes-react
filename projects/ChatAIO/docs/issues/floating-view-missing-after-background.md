@@ -5,7 +5,7 @@
 - **症状**：App 切后台较久（约 ≥5 分钟）再回前台，切换 AI 时 SwitchAiBar（FloatingView）不出现；点击 menubar（激活父窗）后才「回来」。
 - **状态**：ARCH FIXED（2026-08-10）——overlay 呈现调度器：desired/actual 分离 + 平台化 conceal 策略；Windows 弃用 hide()/show() 循环。2026-08-13 起 overlay 亦恢复默认 `backgroundThrottling`（仍靠 opacity conceal，不依赖关节流保活）。
 - **历史**：2026-08-09 曾只修 z-order/bounds promote，无效——问题不在层级，在 **compositor 不再产帧**（当时 `backgroundThrottling:false` + hide/show）。
-- **相关**：[`ai-view-foreground-white-flash.md`](./ai-view-foreground-white-flash.md)（中心 WCV）；[`menubar-drag-investigation.md`](./menubar-drag-investigation.md)（禁 `forward:true`）。
+- **相关**：[`ai-view-foreground-white-flash.md`](./ai-view-foreground-white-flash.md)（中心 WCV）；[`ai-view-first-present-warmup-postmortem.md`](./ai-view-first-present-warmup-postmortem.md)（overlay **第一次**露出卡顿是另一件事，接受）；[`menubar-drag-investigation.md`](./menubar-drag-investigation.md)（禁 `forward:true`）；[文档索引](../README.md)。
 
 ---
 

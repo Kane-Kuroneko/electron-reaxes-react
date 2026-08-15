@@ -33,6 +33,7 @@ Skills in `.claude/skills/` are **workflows/guides** — procedural knowledge an
 - Electron mouse forwarding conflicts with dragging another BrowserWindow and causes menubar jitter, flicker, and sticky lag even when FloatingView is hidden.
 - Keep `{ forward: false }`; if forwarded mouse movement ever becomes necessary, disable forwarding for the full window move/resize interval and rerun the regression matrix.
 - Read [`menubar-drag-investigation.md`](../projects/ChatAIO/docs/issues/menubar-drag-investigation.md) before changing FloatingView, menubar drag regions, transparent windows, or mouse passthrough.
+- ChatAIO 文档按症状索引：[`projects/ChatAIO/docs/README.md`](../projects/ChatAIO/docs/README.md)。改预加载 park / 想「画暖」隐藏 AI 页前读 [`ai-view-first-present-warmup-postmortem.md`](../projects/ChatAIO/docs/issues/ai-view-first-present-warmup-postmortem.md)。
 
 ## Path Aliases
 

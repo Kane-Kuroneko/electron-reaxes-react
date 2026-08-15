@@ -30,9 +30,12 @@ Known caveat: current tsconfigs may surface pre-existing `typeRoots`/generic-ser
 
 ## Project-Specific Docs
 
+- `projects/ChatAIO/docs/README.md` — **ChatAIO docs index (by symptom)**
 - `CODING_STANDARD.md` — Human-readable coding standards (root)
 - `projects/ChatAIO/docs/issues/ai-view-background-throttling-postmortem.md` — **Center WCV Alt-Tab flash postmortem (read before changing throttling/recover)**
 - `projects/ChatAIO/docs/issues/ai-view-foreground-white-flash.md` — Center view lifecycle architecture
+- `projects/ChatAIO/docs/issues/ai-view-first-present-warmup-postmortem.md` — **Preload cannot warm compositor frames; first-present hitch accepted (read before changing park / “warming” hidden AI views)**
+- `projects/ChatAIO/docs/issues/ai-view-preload-first-switch-flash.md` — v8 park invariants
 - `projects/ChatAIO/docs/architecture/ai-config.md` — AI config dual-layer system
 - `projects/ChatAIO/docs/architecture/build-pipeline-and-dev-refresh.md` — Build system
 - `projects/ChatAIO/docs/architecture/i18n.md` — i18n architecture

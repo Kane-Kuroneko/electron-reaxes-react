@@ -13,7 +13,8 @@
 | **本文** | 为什么错、怎么修、agent 决策树 |
 | [`ai-view-foreground-white-flash.md`](./ai-view-foreground-white-flash.md) | 现行架构约束（单一所有者、L0/L1、禁止项） |
 | [`ai-view-white-screen-monitor.md`](../features/ai-view-white-screen-monitor.md) | 调度链 JSONL 监控（只观察、不踢绘） |
-| [`ai-view-preload-first-switch-flash.md`](./ai-view-preload-first-switch-flash.md) | 预加载 AI **首次**切换闪白（不同根因） |
+| [`ai-view-preload-first-switch-flash.md`](./ai-view-preload-first-switch-flash.md) | 预加载 v1–v8 park |
+| [`ai-view-first-present-warmup-postmortem.md`](./ai-view-first-present-warmup-postmortem.md) | 预加载暖不了可见态；接受第一次 present 卡顿 |
 | [`floating-view-missing-after-background.md`](./floating-view-missing-after-background.md) | FloatingView overlay（opacity conceal，独立调度器） |
 
 ---

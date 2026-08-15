@@ -7,7 +7,7 @@
   2. 多层全尺寸可见 WebContentsView 同时合成，**切换卡顿**；JS `present-done` 本身只有 2–9ms。
 - **状态**：FIXED（2026-08-15）——**v8：盖下 hydrate，load 完 hidden 减合成层；拆页 defer；热路径无 capturePage**。
 - **已接受（2026-08-16）**：每个 AI **第一次 present** 仍可能卡一下（hidden 页没有可见态合成帧）。点击必须立刻换页；默认节流保持开启。二次切换已验证丝滑。不要为这一下关节流、推迟 `setVisible`、或把未首展页重新叠成多层可见。
-- **关联**：[`ai-view-white-screen-monitor.md`](../features/ai-view-white-screen-monitor.md)、[`ai-view-background-throttling-postmortem.md`](./ai-view-background-throttling-postmortem.md)。
+- **关联**：[`ai-view-first-present-warmup-postmortem.md`](./ai-view-first-present-warmup-postmortem.md)（**本次探索结论与决策树**）、[`ai-view-white-screen-monitor.md`](../features/ai-view-white-screen-monitor.md)、[`ai-view-background-throttling-postmortem.md`](./ai-view-background-throttling-postmortem.md)、[文档索引](../README.md)。
 
 ---
 

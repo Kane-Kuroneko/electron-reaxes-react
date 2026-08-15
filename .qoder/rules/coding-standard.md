@@ -170,4 +170,6 @@ interface IUserData {}
 - **EditorConfig**: `.editorconfig`
 - **TypeScript 配置**: `tsconfig.json`
 - **项目结构**: `generic-services/reaxels/` (reaxel 命名参考)
+- **ChatAIO 文档索引**: [`docs/README.md`](../../projects/ChatAIO/docs/README.md)
 - **ChatAIO FloatingView 拖拽陷阱**: [`menubar-drag-investigation.md`](../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md)
+- **ChatAIO 预加载首切 / 暖机**: [`ai-view-first-present-warmup-postmortem.md`](../../projects/ChatAIO/docs/issues/ai-view-first-present-warmup-postmortem.md)

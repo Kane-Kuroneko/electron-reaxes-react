@@ -25,7 +25,7 @@
 | 模式 | `schedule-trace`（观察调度链） |
 | 堆栈 | 开发开 / 生产关 |
 
-预加载首切的架构与已接受的第一次 present 卡顿见 [`ai-view-preload-first-switch-flash.md`](../issues/ai-view-preload-first-switch-flash.md)。不要再加专用探针。
+预加载首切的架构与已接受的第一次 present 卡顿见 [`ai-view-first-present-warmup-postmortem.md`](../issues/ai-view-first-present-warmup-postmortem.md) 与 [`ai-view-preload-first-switch-flash.md`](../issues/ai-view-preload-first-switch-flash.md)。不要再加专用探针。文档索引：[`docs/README.md`](../README.md)。
 
 ## 链上会看到什么
 
