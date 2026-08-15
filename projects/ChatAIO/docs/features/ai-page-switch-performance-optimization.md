@@ -190,3 +190,9 @@ const applyVisibility = () => {
 5. 确认切换后当前 AI page 正确显示在最上层
 6. 确认 Settings 打开/关闭时 z-order 正确（Settings 覆盖 AI view）
 7. 确认 Prompt views 展开/收起时不影响中心视图 z-order
+
+## 预加载首切：接受第一次 present 卡顿（2026-08-16）
+
+预加载只能暖网络 / 文档 / JS 堆。`did-stop-loading` 后未首展页必须 `hidden`，否则会回到多层全尺寸同时合成（已证伪）。点击后中心页必须立刻换页；内容 view 保持默认 `backgroundThrottling`。
+
+因此每个 AI 第一次 `present` 仍可能卡一下（`WasShown` + SPA 可见态 hydrate，常与 SwitchAiBar 首显抢 GPU）。二次切换同一页是热路径。不要用推迟 `setVisible`、关节流、或常驻多层可见去消这下卡顿。架构细节见 [`ai-view-preload-first-switch-flash.md`](../issues/ai-view-preload-first-switch-flash.md)。

@@ -14,7 +14,6 @@
 | 文件 | 职责 |
 |------|------|
 | `white-screen-monitor.retexel.ts` | begin/note/end、快照、JSONL |
-| `preload-flash-probe.retexel.ts` | **预加载首切**诊断（v8：hydrate 后 hidden 减合成层；只写 jsonl，无 capturePage） |
 | `Views/index.ts` | **唯一调度所有者**上埋点（present / L0 / L1 / mount / detach / bounds / focus / blur|hide|minimize） |
 | `AI-Views/index.ts` | 仅 `instrumentView` 注册 viewId（不散落探针） |
 
@@ -26,21 +25,7 @@
 | 模式 | `schedule-trace`（观察调度链） |
 | 堆栈 | 开发开 / 生产关 |
 
-## 预加载首切探针（PreloadFlashProbe）
-
-针对「开启 preload 后首次切换仍闪 / 切过去才 load」：
-
-| | 行为 |
-|--|--|
-| 日志 | `%APPDATA%/<app>/logs/preload-flash-probe.jsonl`（**只写文件，不打控制台**） |
-| 暖机 | v8 未首展 load 中盖下可见，load 完 attach+hidden+全尺寸；记录 load 时间线 |
-| 首切 | `!hasPresented`：pre 快照 + 立即 verdict（**无 capturePage**） |
-| 副作用 | 观察 only；日常回前台与首切热路径均无 capturePage |
-| 控制台 | 无。Agent 自己读 jsonl |
-
-Verdict 含义见 [`ai-view-preload-first-switch-flash.md`](../issues/ai-view-preload-first-switch-flash.md) §Probe。
-
-复现后 **不要**让用户复制控制台；直接读 `userData/logs/preload-flash-probe.jsonl`。
+预加载首切的架构与已接受的第一次 present 卡顿见 [`ai-view-preload-first-switch-flash.md`](../issues/ai-view-preload-first-switch-flash.md)。不要再加专用探针。
 
 ## 链上会看到什么
 
@@ -63,7 +48,6 @@ exit                        → focus-only-done | bounds-focus-done | …
 
 ```
 %APPDATA%/<app>/logs/white-screen-monitor.jsonl
-%APPDATA%/<app>/logs/preload-flash-probe.jsonl
 ```
 
 `session-start` 含 `mode: schedule-trace`、`sideEffect: none-observe-only`、`agentHint`、runtime 版本信息。
@@ -73,7 +57,6 @@ exit                        → focus-only-done | bounds-focus-done | …
 1. 按 `chainId` 过滤，按 `seq` 排序。
 2. 看 `decision=hierarchy-broken|hierarchy-ready→focus-only|hierarchy-ready→bounds+focus|mount-*|detach`。
 3. 与前一条 `blur`/`hide`/`minimize` 对照。
-4. 预加载首切：读 `userData/logs/preload-flash-probe.jsonl`（warmup → first-switch-pre → verdict），**不要**让用户复制控制台。
 
 ## 禁止事项
 

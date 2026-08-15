@@ -501,27 +501,9 @@ export const Reaxel_View = reaxel( () => {
 			return;
 		}
 
-		const targetRuntime = store.settingsViewOpened
-			? null
-			: findRuntimeAIViewByWebContentsView( activeView );
-		const wasFirstPresent = Boolean( targetRuntime && !targetRuntime.hasPresented );
 		if( intent === 'switch' ) {
-			if( wasFirstPresent && targetRuntime ) {
-				preloadFlashProbe.beginFirstSwitch( {
-					view: activeView ,
-					viewId: viewId || targetRuntime.id ,
-					ready: targetRuntime.ready ,
-					hasPresented: targetRuntime.hasPresented ,
-					attached: isCenterViewAttached( activeView ),
-				} );
-			}
 			mountCenterViewForSwitch( activeView , bounds );
 			markCenterAIViewPresented( activeView );
-			if( wasFirstPresent && targetRuntime ) {
-				preloadFlashProbe.finalizeFirstSwitch( {
-					viewId: viewId || targetRuntime.id ,
-				} );
-			}
 		} else {
 			mountCenterViewForRecover( activeView , bounds );
 			if( isCenterViewHierarchyReady( activeView ) ) {
@@ -1392,7 +1374,6 @@ import {
 	getWhiteScreenMonitor ,
 	snapshotCenterViewHierarchy ,
 } from "#main/reaxels/Views/AI-Views/white-screen-monitor.retexel";
-import { getPreloadFlashProbe } from "#main/reaxels/Views/AI-Views/preload-flash-probe.retexel";
 import {
 	reaxel_FloatingView ,
 } from "#main/reaxels/Views/FloatingView";
@@ -1418,5 +1399,3 @@ import {
 
 /** 中心 view 调度链追踪（无 capturePage 副作用） */
 const centerScheduleMonitor = getWhiteScreenMonitor();
-/** 预加载首切探针（只写 jsonl；禁止热路径 capturePage） */
-const preloadFlashProbe = getPreloadFlashProbe();

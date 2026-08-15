@@ -6,7 +6,7 @@
   1. 预加载页被硬 detach 或 `setVisible(false)+1×1`，Chromium / SPA 停转，**切过去才开始 load**。
   2. 多层全尺寸可见 WebContentsView 同时合成，**切换卡顿**；JS `present-done` 本身只有 2–9ms。
 - **状态**：FIXED（2026-08-15）——**v8：盖下 hydrate，load 完 hidden 减合成层；拆页 defer；热路径无 capturePage**。
-- **残留（不是 v8 present）**：冷启动**第一次**调出 SwitchAiBar 仍可能卡一下，见文末。
+- **已接受（2026-08-16）**：每个 AI **第一次 present** 仍可能卡一下（hidden 页没有可见态合成帧）。点击必须立刻换页；默认节流保持开启。二次切换已验证丝滑。不要为这一下关节流、推迟 `setVisible`、或把未首展页重新叠成多层可见。
 - **关联**：[`ai-view-white-screen-monitor.md`](../features/ai-view-white-screen-monitor.md)、[`ai-view-background-throttling-postmortem.md`](./ai-view-background-throttling-postmortem.md)。
 
 ---
@@ -50,7 +50,7 @@ v7 日志（2026-08-15）：
 5. `applyVisibility` / `park` **不得 `addChildView`**；mount 唯一入口仍是 `presentActiveCenterView`。
 6. 热路径：已在顶层则跳过 `addChildView`；bounds 未变则跳过 `setBounds`；不要扫一遍未首展 park。
 7. Darwin：已在树里暖机的未首展页 **不要** remove+add；只置顶。
-8. 热路径 **禁止 `capturePage`**。不设 `backgroundThrottling:false`。探针只写 jsonl。不要 cover-handoff。
+8. 热路径 **禁止 `capturePage`**。不设 `backgroundThrottling:false`。不要 cover-handoff。不要为消卡而推迟点击后的 `setVisible`。
 
 行为：
 
@@ -60,37 +60,17 @@ v7 日志（2026-08-15）：
 4. **首切**：同步置顶（可能 `setVisible(true)` 唤醒一层）。其它未首展保持 hidden，不重新露出。
 5. **已首展再切走**：下一拍硬 detach。
 
-若首切露出时出现 **1 帧** compositor hitch，那是单层 surface 重建，比 v7 的 7 层 reorder 轻。若 SPA 又在 hidden 下冻住（切过去才 `did-stop-loading`），不要回到 7 层常驻可见，只加长 400ms 画窗。
+首切露出时可能有 **1 帧** compositor hitch：单层 surface 重建 + SPA 可见态 hydrate。这比 v7 的 7 层 reorder 轻，也是当前架构下接受的代价。Electron 没有「隐藏着把画面画完」的 API（[electron#42140](https://github.com/electron/electron/issues/42140)）。不要回到 7 层常驻可见，不要加长画窗来「再暖一点」，不要推迟点击后的 `setVisible`。
+
+调度回归用 [`ai-view-white-screen-monitor.md`](../features/ai-view-white-screen-monitor.md) 的 `schedule-trace`。不要再加首切专用探针。
 
 ---
 
-## Probe（复现）
+## 已接受：第一次 present / 第一次调出 overlay
 
-日志：`%APPDATA%/ChatAIO-dev/logs/preload-flash-probe.jsonl`  
-不要让用户复制控制台。Agent 自己读。过滤 `type=preload-flash`。
+不是 `present` JS 热路径（`present-done` 仍是几毫秒）。
 
-等预加载跑完再切（约 1–2s 后）：期望 `first-switch-pre` 为 `attached=true visible=false`，bounds 为中心全尺寸（不是 1×1），`loading=false`，verdict **`hydrated-then-frozen`**。  
-若在 load / 400ms 画窗内就切：`visible=true`，verdict `under-cover-warmed`。  
-白屏监控：切换时中心可见层应接近 1，而不是 7。  
-首切后 2s 内不应再出现 `did-finish-load`；若立刻又 `did-stop-loading`，对照是否又冻在 hidden。
+1. **每个尚未 `hasPresented` 的 AI**：load 完后 `visible=false`，点击才 `WasShown`。网络/文档可以早已结束；可见态首帧发生在点击当下，并可能和 SwitchAiBar 抢 GPU。
+2. **冷启动第一次调出 SwitchAiBar**：`fv:first-overlay-show` 自己还有一次合成器首显。
 
-| Verdict | 含义（v8） |
-|---------|------------|
-| `hydrated-then-frozen` | **预期（等 load 完再切）**：attach+hidden+全尺寸，SPA 已 hydrate |
-| `under-cover-warmed` | 仍在 load / 画窗内盖下可见 |
-| `still-hidden-on-switch` | 从未 load 完就 hidden：盖未就绪，切过去 SPA 可能醒 |
-| `tiny-bounds-on-switch` | 回归 1×1：首切会从 1px 撑开 |
-| `still-loading-on-switch` | 切太早，或后台导航仍被饿死 |
-| `detached-before-switch` | 回归：又被硬 detach，load 会被饿死 |
-
----
-
-## 残留：冷启动第一次切换仍卡
-
-不是 v8 `present` 热路径。2026-08-15 最新 session：
-
-- 探针 verdict `hydrated-then-frozen`；`present-done` **4ms**；预加载页 `visible=false` + 全尺寸。
-- 同一次切换带 `fv:first-overlay-show`。`switch:first-show-stats`：`minFps=11`，`maxFrameDeltaMs=90`，`msToFirstComplete=309`。
-- 第二次及以后：`fv:show` 0–1ms；swiper ~300ms 是动画时长，不是 hitch。
-
-这是 SwitchAiBar overlay 冷启动首显（合成器 / 首帧），与预加载盖下 hydrate 无关。不要为此把未首展页重新叠成多层可见。
+二次切换同一 AI 已验证丝滑。跟手优先于消卡；默认 `backgroundThrottling` 保持开启。

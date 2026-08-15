@@ -587,7 +587,6 @@ try {
  * 日志：userData/logs/white-screen-monitor.jsonl
  */
 const whiteScreenMonitorInstance = getWhiteScreenMonitor();
-const preloadFlashProbeInstance = getPreloadFlashProbe();
 console.info(
 	'[AIViews] WhiteScreenMonitor ready:' ,
 	`enabled=${ whiteScreenMonitorInstance.enabled }` ,
@@ -642,7 +641,6 @@ function instrumentViewWithWhiteScreenMonitor( view: WebContentsView, viewId: st
 	if( whiteScreenMonitorInstance.enabled ) {
 		whiteScreenMonitorInstance.instrumentView( view, viewId );
 	}
-	preloadFlashProbeInstance.instrumentView( view , viewId );
 }
 
 /**
@@ -774,7 +772,6 @@ type PersistedAIPartitionDiscoveryResult = {
 
 import { getAIDomainByFamily } from './data';
 import { getWhiteScreenMonitor } from './white-screen-monitor.retexel';
-import { getPreloadFlashProbe } from './preload-flash-probe.retexel';
 import type { AI } from '#src/Types/SettingsTypes/AI';
 import type { Settings } from '#src/Types/SettingsTypes';
 import { initWebContentsView } from '#main/reaxels/Views/utils/initWebContentsView';
