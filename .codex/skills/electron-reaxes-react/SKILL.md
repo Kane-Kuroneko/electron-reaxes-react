@@ -13,7 +13,7 @@ Read these files before changing behavior:
 - `CODING_STANDARD.md`
 - The target subproject docs such as `projects/ChatAIO/docs/architecture/ai-config.md` and `projects/ChatAIO/todo.md`
 - Before changing ChatAIO FloatingView, menubar, transparent windows, or mouse passthrough, read [`menubar-drag-investigation.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-investigation.md), [`menubar-drag-region-leak-below-content.md`](../../../projects/ChatAIO/docs/issues/menubar-drag-region-leak-below-content.md) (Windows `app-region` hit-test leak below menubar), and [`floating-view-missing-after-background.md`](../../../projects/ChatAIO/docs/issues/floating-view-missing-after-background.md) (cold show must promote after blur/hide; never focus-always-show overlay).
-- Before changing center WebContentsView attach/detach/focus/show/restore recovery, read **[`ai-view-background-throttling-postmortem.md`](../../../projects/ChatAIO/docs/issues/ai-view-background-throttling-postmortem.md)** first (why Alt-Tab flash happened, wrong fixes, agent decision tree), then [`ai-view-foreground-white-flash.md`](../../../projects/ChatAIO/docs/issues/ai-view-foreground-white-flash.md) (current architecture). Only `presentActiveCenterView('switch'|'recover')` may mount; **never** reintroduce `backgroundThrottling:false` on content views, focus-path remount, bounds±1/invalidate kick-paints, or `applyVisibility`-owned ensure.
+- Before changing center WebContentsView attach/detach/focus/show/restore recovery, read **[`ai-view-foreground-white-flash.md`](../../../projects/ChatAIO/docs/issues/ai-view-foreground-white-flash.md)** (current lifecycle), then [`ai-view-background-throttling-postmortem.md`](../../../projects/ChatAIO/docs/issues/ai-view-background-throttling-postmortem.md) (wrong fixes already tried). Only `presentActiveCenterView('switch'|'recover')` may mount; **never** reintroduce `backgroundThrottling:false`, occlusion/renderer-backgrounding flags as a flash fix, focus-path remount, bounds±1/invalidate kick-paints, collapsed `0×0`/`1×1` layout, or `applyVisibility`-owned ensure.
 - Before changing preload park / first-present / “warm hidden AI pages”, read **[`ai-view-first-present-warmup-postmortem.md`](../../../projects/ChatAIO/docs/issues/ai-view-first-present-warmup-postmortem.md)** then [`ai-view-preload-first-switch-flash.md`](../../../projects/ChatAIO/docs/issues/ai-view-preload-first-switch-flash.md). Click must switch immediately; first-present hitch is accepted. Do not delay `setVisible`, disable throttling, or restack unpresented views as visible layers. Docs index: [`docs/README.md`](../../../projects/ChatAIO/docs/README.md).
 - Before adding or changing **any** Renderer → Main IPC (especially menubar `openDropdownView` / `menuViewAction`), read `.qoder/rules/ipc-coding.md` §错误 0 and apply `cloneForIPC` to all `reaxel_*.store` payloads.
 
@@ -70,13 +70,13 @@ Use `rg`/`rg --files` first. This repo uses Yarn; do not install packages with n
 **Symptom**: white flash or blank center AI view after Alt-Tab, tray hide/show, or unminimize.
 
 **Canonical docs** (read in order):
-1. [`ai-view-background-throttling-postmortem.md`](../../../projects/ChatAIO/docs/issues/ai-view-background-throttling-postmortem.md) — postmortem, wrong paths (throttling off + kick-paint), agent decision tree
-2. [`ai-view-foreground-white-flash.md`](../../../projects/ChatAIO/docs/issues/ai-view-foreground-white-flash.md) — current L0/L1 + single-owner rules
-3. [`ai-view-white-screen-monitor.md`](../../../projects/ChatAIO/docs/features/ai-view-white-screen-monitor.md) — schedule-trace logs (`userData/logs/white-screen-monitor.jsonl`); observe only, no capturePage
+1. [`ai-view-foreground-white-flash.md`](../../../projects/ChatAIO/docs/issues/ai-view-foreground-white-flash.md) — current lifecycle
+2. [`ai-view-background-throttling-postmortem.md`](../../../projects/ChatAIO/docs/issues/ai-view-background-throttling-postmortem.md) — wrong paths (throttling off, kick-paint, Occlusion flag, 1×1)
+3. [`ai-view-white-screen-monitor.md`](../../../projects/ChatAIO/docs/features/ai-view-white-screen-monitor.md) — schedule-trace logs; observe only, no capturePage
 
 **Hard rules**:
 - Content WCV and main window use **default** `backgroundThrottling` (do **not** set `false` to “keep alive”).
-- Foreground recover when hierarchy is healthy: **focus only** (L0) or **setBounds + focus** (L1). No remount, no ±1 bounds, no `webContents.invalidate()` kick on every blur.
+- Foreground recover when hierarchy is healthy: **default no-op**. Occluded resume (taskbar/tray) may `setBoundsIfChanged` only; **never** `webContents.focus()` on restore/show or the following window `focus`. Alt-Tab (window stayed visible) may restore input focus once (electron#28163). Never apply collapsed `0×0` / `1×1` content bounds (Windows maximized-minimize resize). No remount, no ±1 bounds, no `webContents.invalidate()` kick on every blur.
 - Only `Reaxel_View.presentActiveCenterView('switch'|'recover')` may mount/promote; `applyVisibility` only detaches.
 - Do not copy FloatingView `overlaySurfaceStale` / rebind logic onto the center view — different surface model (opacity overlay vs embedded WCV).
 

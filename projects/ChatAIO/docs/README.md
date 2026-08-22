@@ -10,7 +10,7 @@ Agent 总览仍是 [`AGENTS.md`](../AGENTS.md)。本文只索引 `docs/`。
 
 | 你遇到什么 | 先读 |
 |------------|------|
-| Alt-Tab / 托盘 hide→show / 最小化还原后中心 AI **闪白、白屏** | [`issues/ai-view-background-throttling-postmortem.md`](./issues/ai-view-background-throttling-postmortem.md) → [`issues/ai-view-foreground-white-flash.md`](./issues/ai-view-foreground-white-flash.md) |
+| Alt-Tab / 托盘 hide→show / 最小化还原后中心 AI **闪白、白屏** | [`issues/ai-view-foreground-white-flash.md`](./issues/ai-view-foreground-white-flash.md)（现行架构）→ 若要避免重蹈覆辙再读 [`issues/ai-view-background-throttling-postmortem.md`](./issues/ai-view-background-throttling-postmortem.md) |
 | 冷启动**第一次**切到预加载 AI 卡顿；「切过去才加载」；想把后台页画暖 | [`issues/ai-view-first-present-warmup-postmortem.md`](./issues/ai-view-first-present-warmup-postmortem.md) → [`issues/ai-view-preload-first-switch-flash.md`](./issues/ai-view-preload-first-switch-flash.md) |
 | 连点 Ctrl+[/] 卡片动画不跟手 | [`features/floating-view-rapid-switch-optimization.md`](./features/floating-view-rapid-switch-optimization.md) |
 | 切后台一段时间再切 AI，SwitchAiBar **不见** | [`issues/floating-view-missing-after-background.md`](./issues/floating-view-missing-after-background.md) |
@@ -21,8 +21,8 @@ Agent 总览仍是 [`AGENTS.md`](../AGENTS.md)。本文只索引 `docs/`。
 
 **中心 WebContentsView / 预加载 / 节流** 改动前，按这个簇读完再写代码：
 
-1. 节流复盘（Alt-Tab）
-2. 单一所有者 + L0/L1
+1. **回前台架构**（窗口生命周期不是产帧所有者；坍缩客户区不是 layout 源）
+2. 错误路径复盘（关节流 / 踢绘 / Occlusion flag / 1×1）
 3. **第一次 present 暖机复盘（跟手优先，接受首切卡顿）**
 4. v8 park 不变量
 5. 白屏监控（只观察）
@@ -65,8 +65,8 @@ Agent 总览仍是 [`AGENTS.md`](../AGENTS.md)。本文只索引 `docs/`。
 
 | 文档 | 内容 |
 |------|------|
-| [`ai-view-background-throttling-postmortem.md`](./issues/ai-view-background-throttling-postmortem.md) | Alt-Tab 闪白：关节流 + 踢绘为什么错 |
-| [`ai-view-foreground-white-flash.md`](./issues/ai-view-foreground-white-flash.md) | 现行 center view 生命周期 |
+| [`ai-view-background-throttling-postmortem.md`](./issues/ai-view-background-throttling-postmortem.md) | 闪白错误路径：关节流 / 踢绘 / Occlusion / 1×1 |
+| [`ai-view-foreground-white-flash.md`](./issues/ai-view-foreground-white-flash.md) | **现行**中心 WCV 回前台生命周期 |
 | [`ai-view-first-present-warmup-postmortem.md`](./issues/ai-view-first-present-warmup-postmortem.md) | **预加载暖不了可见态；接受首切卡顿** |
 | [`ai-view-preload-first-switch-flash.md`](./issues/ai-view-preload-first-switch-flash.md) | 预加载 v1–v8 证伪与 park 不变量 |
 | [`floating-view-missing-after-background.md`](./issues/floating-view-missing-after-background.md) | overlay 冷 reveal；Win 禁 hide/show 循环 |

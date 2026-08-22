@@ -700,7 +700,7 @@ export type FocusMonitorFocusSource =
 	| 'apply-visibility'
 	| 'focus-current-content-view'
 	| 'prompt-view-close'
-	| 'window-restore-paint'
+	| 'window-focus-input'
 	| 'explicit'
 	| 'unknown';
 

@@ -13,7 +13,7 @@
 | **本文** | 2026-08-15～16 探索全过程、日志证据、为什么暖机无效、禁止项、决策树 |
 | [`ai-view-preload-first-switch-flash.md`](./ai-view-preload-first-switch-flash.md) | v1–v8 证伪表与现行 park 不变量 |
 | [`ai-view-background-throttling-postmortem.md`](./ai-view-background-throttling-postmortem.md) | 为什么内容 view **不能**关 `backgroundThrottling` |
-| [`ai-view-foreground-white-flash.md`](./ai-view-foreground-white-flash.md) | 单一所有者、`present(switch\|recover)`、L0/L1 |
+| [`ai-view-foreground-white-flash.md`](./ai-view-foreground-white-flash.md) | 单一所有者、`present(switch\|recover)`、回前台空操作 |
 | [`ai-page-switch-performance-optimization.md`](../features/ai-page-switch-performance-optimization.md) | 切换热路径 CPU / z-order 优化（另一类问题） |
 | [`floating-view-rapid-switch-optimization.md`](../features/floating-view-rapid-switch-optimization.md) | SwitchAiBar 连点动画（Interrupt & Redirect） |
 | [`docs/README.md`](../README.md) | 子工程文档总索引 |

@@ -13,6 +13,9 @@ export const Reaxel_View = reaxel( () => {
 	} );
 
 	function fitWindow(target?:string) {
+		if( !hasUsableBrowserWindowContent( mainWindow ) ) {
+			return;
+		}
 		clipMainShellToMenuBar( mainWindow );
 		const { width , height } = mainWindow.getContentBounds();
 		const centerBounds = getCenterBounds( { x : 0 , y : 0 , width , height } );
@@ -72,13 +75,14 @@ export const Reaxel_View = reaxel( () => {
 	 *
 	 * 两种意图（禁止 reason 字符串矩阵）：
 	 * - switch：AI / Settings / 冷启动 —— 允许平台级 remount/reorder
-	 * - recover：focus / show / restore —— 只补挂载与可见性，禁止 remount/reorder/nudge
+	 * - recover：仅 hierarchy 破损时补挂；禁止 remount/reorder/nudge
 	 *
-	 * hierarchy（attached∧visible）与 layout（bounds）分离：
-	 * 回前台 bounds 过期只 setBounds，绝不升级为 switch remount。
-	 *
-	 * 内容 WebContents 使用默认 backgroundThrottling（true），走正常 WasHidden/WasShown，
-	 * 回前台 hierarchy 完好时只 focus / 对齐 bounds——禁止 ±1 / invalidate 踢绘（会闪）。
+	 * 窗口生命周期 ≠ 产帧所有者（2026-08-22）：
+	 * - 遮挡还原（minimize/hide → restore/show）：只修破损 hierarchy / 过期 layout，
+	 *   产帧交给 Chromium WasShown。禁止 webContents.focus()（electron#28255）。
+	 * - Alt-Tab（blur 时窗口仍可见）：hierarchy 完好则只还输入焦点（electron#28163）。
+	 * - 坍缩客户区（最大化后最小化的 0×0 / 1×1）不是 layout 源，禁止写进 WCV。
+	 * 禁止 ±1 / invalidate 踢绘、禁止 backgroundThrottling:false。
 	 */
 
 	/** 监控不得抛穿业务调度。 */
@@ -86,6 +90,24 @@ export const Reaxel_View = reaxel( () => {
 		try {
 			fn();
 		} catch { /* 监控不得中断调度 */ }
+	}
+
+	/**
+	 * 窗口回前台策略。遮挡还原（任务栏/托盘）不是 paint 入口；
+	 * 只有「窗口一直可见的失焦」（Alt-Tab）才还 WCV 输入焦点。
+	 */
+	let occludedResumePending = false;
+
+	function markOccludedResume(): void {
+		occludedResumePending = true;
+	}
+
+	function consumeOccludedResume(): boolean {
+		if( !occludedResumePending ) {
+			return false;
+		}
+		occludedResumePending = false;
+		return true;
 	}
 
 	/** Detach：闲置中心 view 离开 hit-test（electron#51176）与 macOS WasShown 前置。 */
@@ -512,7 +534,9 @@ export const Reaxel_View = reaxel( () => {
 		}
 		/* 先置顶；拆页下一拍，避免 removeChildView 跟 promote 抢同一帧。 */
 		scheduleDetachOtherCenterViews( activeView );
-		restoreActiveCenterViewFocus( intent );
+		if( intent === 'switch' || !occludedResumePending ) {
+			restoreActiveCenterViewFocus( intent );
+		}
 		safeSchedule( () => {
 			mon.note( {
 				op: 'present' ,
@@ -531,60 +555,105 @@ export const Reaxel_View = reaxel( () => {
 		} );
 	}
 
-	/** L0：Alt-Tab / 点击回焦 —— hierarchy 完好则只还焦点（默认节流下由 Chromium 产帧）。 */
+	function noteHierarchyDecision(
+		trigger: 'focus' | 'show' | 'restore' ,
+		viewId: string ,
+		activeView: WebContentsView | null | undefined ,
+		decision: string ,
+	) {
+		safeSchedule( () => {
+			centerScheduleMonitor.note( {
+				op: 'hierarchy-check' ,
+				phase: 'decision' ,
+				decision ,
+				trigger ,
+				viewId ,
+				snapshot: snapshotActiveCenter( activeView , viewId ) ,
+			} );
+		} );
+	}
+
+	/**
+	 * 层级破了才 present('recover')。健康树不在窗口事件上 mount / focus / 踢绘。
+	 * 返回是否已委托 present。
+	 */
+	function repairCenterHierarchyIfBroken(
+		trigger: 'focus' | 'show' | 'restore' ,
+		viewId: string ,
+		activeView: WebContentsView | null | undefined ,
+		bounds?: Rectangle ,
+	): boolean {
+		if( isWebContentsViewDead( activeView ) ) {
+			safeSchedule( () => {
+				centerScheduleMonitor.end( { decision: 'no-active-view' } );
+			} );
+			return true;
+		}
+		if( isCenterViewHierarchyReady( activeView ) ) {
+			return false;
+		}
+		noteHierarchyDecision( trigger , viewId , activeView , 'hierarchy-broken→present-recover' );
+		if( bounds ) {
+			presentActiveCenterView( 'recover' , bounds );
+		} else {
+			presentActiveCenterView( 'recover' );
+		}
+		safeSchedule( () => {
+			centerScheduleMonitor.end( {
+				decision: 'delegated-present-recover' ,
+				snapshot: snapshotActiveCenter( activeView , viewId ) ,
+			} );
+		} );
+		return true;
+	}
+
+	/** 窗口 `focus`：破了才补挂；遮挡还原空操作；仅 Alt-Tab 还输入焦点。 */
 	function recoverActiveCenterViewAfterFocus() {
 		withForegroundScheduleFlag( () => {
 			const mon = centerScheduleMonitor;
 			const activeView = getCurrentCenterView();
 			const viewId = mon.enabled ? resolveCenterViewId( activeView ) : '';
+			const compositorOwned = occludedResumePending;
 			safeSchedule( () => {
 				mon.begin( {
 					trigger: 'focus' ,
 					op: 'recover-after-focus' ,
 					viewId ,
 					snapshot: snapshotActiveCenter( activeView , viewId ) ,
+					detail: {
+						resumePolicy: compositorOwned ? 'compositor-owned' : 'alt-tab-input' ,
+					} ,
 				} );
 			} );
-			if( isWebContentsViewDead( activeView ) ) {
-				safeSchedule( () => {
-					mon.end( { decision: 'no-active-view' } );
-				} );
+			if( repairCenterHierarchyIfBroken( 'focus' , viewId , activeView ) ) {
+				consumeOccludedResume();
 				return;
 			}
-			if( !isCenterViewHierarchyReady( activeView ) ) {
-				safeSchedule( () => {
-					mon.note( {
-						op: 'hierarchy-check' ,
-						phase: 'decision' ,
-						decision: 'hierarchy-broken→present-recover' ,
-						trigger: 'focus' ,
-						viewId ,
-						snapshot: snapshotActiveCenter( activeView , viewId ) ,
-					} );
-				} );
-				presentActiveCenterView( 'recover' );
+			if( consumeOccludedResume() ) {
+				noteHierarchyDecision( 'focus' , viewId , activeView , 'hierarchy-ready→compositor-owned-noop' );
 				safeSchedule( () => {
 					mon.end( {
-						decision: 'delegated-present-recover' ,
+						decision: 'compositor-owned-noop' ,
 						snapshot: snapshotActiveCenter( activeView , viewId ) ,
 					} );
 				} );
 				return;
 			}
-			safeSchedule( () => {
-				mon.note( {
-					op: 'hierarchy-check' ,
-					phase: 'decision' ,
-					decision: 'hierarchy-ready→focus-only' ,
-					trigger: 'focus' ,
-					viewId ,
-					snapshot: snapshotActiveCenter( activeView , viewId ) ,
+			if( !isWebContentsViewDead( activeView ) && activeView.webContents.isFocused() ) {
+				noteHierarchyDecision( 'focus' , viewId , activeView , 'hierarchy-ready→noop' );
+				safeSchedule( () => {
+					mon.end( {
+						decision: 'noop-already-focused' ,
+						snapshot: snapshotActiveCenter( activeView , viewId ) ,
+					} );
 				} );
-			} );
+				return;
+			}
+			noteHierarchyDecision( 'focus' , viewId , activeView , 'hierarchy-ready→input-focus' );
 			restoreActiveCenterViewFocus( 'recover' );
 			safeSchedule( () => {
 				mon.end( {
-					decision: 'focus-only-done' ,
+					decision: 'input-focus-scheduled' ,
 					snapshot: snapshotActiveCenter( activeView , viewId ) ,
 				} );
 			} );
@@ -592,8 +661,8 @@ export const Reaxel_View = reaxel( () => {
 	}
 
 	/**
-	 * L1：show / restore —— hierarchy 与 layout 拆开。
-	 * layout 过期只 setBounds；hierarchy 破损才 recover mount。禁止踢绘。
+	 * show / restore：只修层级与（可用客户区上的）layout。
+	 * 产帧与输入焦点都不在这条路上。
 	 */
 	function softRecoverActiveCenterView(trigger: 'show' | 'restore' = 'show') {
 		withForegroundScheduleFlag( () => {
@@ -607,50 +676,30 @@ export const Reaxel_View = reaxel( () => {
 					op: 'soft-recover' ,
 					viewId ,
 					snapshot: snapshotActiveCenter( activeView , viewId ) ,
-					detail: { targetBounds: bounds } ,
+					detail: {
+						targetBounds: bounds ,
+						resumePolicy: occludedResumePending ? 'compositor-owned' : 'layout-only' ,
+					} ,
 				} );
 			} );
-			if( isWebContentsViewDead( activeView ) ) {
-				safeSchedule( () => {
-					mon.end( { decision: 'no-active-view' } );
-				} );
+			if( repairCenterHierarchyIfBroken( trigger , viewId , activeView , bounds ) ) {
 				return;
 			}
-			if( !isCenterViewHierarchyReady( activeView ) ) {
-				safeSchedule( () => {
-					mon.note( {
-						op: 'hierarchy-check' ,
-						phase: 'decision' ,
-						decision: 'hierarchy-broken→present-recover' ,
-						trigger ,
-						viewId ,
-						snapshot: snapshotActiveCenter( activeView , viewId ) ,
-					} );
-				} );
-				presentActiveCenterView( 'recover' , bounds );
-				safeSchedule( () => {
-					mon.end( {
-						decision: 'delegated-present-recover' ,
-						snapshot: snapshotActiveCenter( activeView , viewId ) ,
-					} );
-				} );
-				return;
+			let boundsChanged = false;
+			if( hasUsableBrowserWindowContent( mainWindow ) ) {
+				boundsChanged = setViewBoundsIfChanged( activeView , bounds );
 			}
-			safeSchedule( () => {
-				mon.note( {
-					op: 'hierarchy-check' ,
-					phase: 'decision' ,
-					decision: 'hierarchy-ready→bounds+focus' ,
-					trigger ,
-					viewId ,
-					snapshot: snapshotActiveCenter( activeView , viewId ) ,
-				} );
-			} );
-			setViewBoundsIfChanged( activeView , bounds );
-			restoreActiveCenterViewFocus( 'recover' );
+			noteHierarchyDecision(
+				trigger ,
+				viewId ,
+				activeView ,
+				boundsChanged
+					? 'hierarchy-ready→bounds-applied'
+					: 'hierarchy-ready→layout-noop' ,
+			);
 			safeSchedule( () => {
 				mon.end( {
-					decision: 'bounds-focus-done' ,
+					decision: boundsChanged ? 'bounds-applied-done' : 'layout-noop-done' ,
 					snapshot: snapshotActiveCenter( activeView , viewId ) ,
 				} );
 			} );
@@ -670,6 +719,14 @@ export const Reaxel_View = reaxel( () => {
 		viewId: string ,
 	) {
 		try {
+			let windowBackgroundColor: string | undefined;
+			try {
+				if( !mainWindow.isDestroyed() ) {
+					windowBackgroundColor = mainWindow.getBackgroundColor();
+				}
+			} catch {
+				windowBackgroundColor = undefined;
+			}
 			return snapshotCenterViewHierarchy( {
 				view ,
 				viewId ,
@@ -684,13 +741,37 @@ export const Reaxel_View = reaxel( () => {
 				childrenCount: mainWindow.isDestroyed()
 					? undefined
 					: mainWindow.contentView.children.length ,
+				windowBackgroundColor ,
 			} );
 		} catch {
 			return null;
 		}
 	}
 
-	/** >0 表示处于 L0/L1 回前台链内，present 只挂接不自封链 */
+	/** 窗口事件同步探针：先于 recover，保留事件瞬间的 window / view bounds */
+	function probeWindowLifecycle(
+		trigger: 'focus' | 'show' | 'restore' | 'blur' | 'hide' | 'minimize' ,
+	) {
+		if( !centerScheduleMonitor.enabled ) {
+			return;
+		}
+		try {
+			const activeView = getCurrentCenterView();
+			const viewId = resolveCenterViewId( activeView );
+			centerScheduleMonitor.noteWindowLifecycle( {
+				trigger ,
+				win: mainWindow ,
+				viewId ,
+				activeView ,
+				snapshot: snapshotActiveCenter( activeView , viewId ) ,
+				detail: {
+					resumePolicy: occludedResumePending ? 'compositor-owned' : 'alt-tab-input' ,
+				} ,
+			} );
+		} catch { /* 监控不得中断调度 */ }
+	}
+
+	/** >0 表示处于窗口回前台链内，present 只挂接不自封链 */
 	let foregroundScheduleDepth = 0;
 	function withForegroundScheduleFlag(fn: () => void): void {
 		foregroundScheduleDepth += 1;
@@ -712,12 +793,26 @@ export const Reaxel_View = reaxel( () => {
 		};
 	}
 
-	function setViewBoundsIfChanged(view:WebContentsView | null | undefined , bounds:Rectangle) {
+	function setViewBoundsIfChanged(view:WebContentsView | null | undefined , bounds:Rectangle): boolean {
 		if( isWebContentsViewDead( view ) ) {
-			return;
+			return false;
+		}
+		const tracing = centerScheduleMonitor.enabled && Boolean( centerScheduleMonitor.activeChainId );
+		if( isCollapsedWindowContentRect( bounds ) ) {
+			if( tracing ) {
+				safeSchedule( () => {
+					centerScheduleMonitor.note( {
+						op: 'set-bounds' ,
+						phase: 'action' ,
+						decision: 'skipped-collapsed-bounds' ,
+						viewId: centerScheduleMonitor.getViewId( view ) || resolveCenterViewId( view ) ,
+						detail: { bounds } ,
+					} );
+				} );
+			}
+			return false;
 		}
 		const prev = view.getBounds();
-		const tracing = centerScheduleMonitor.enabled && Boolean( centerScheduleMonitor.activeChainId );
 		if( isSameBounds( prev , bounds ) ) {
 			if( tracing && centerScheduleMonitor.shouldLogBoundsSkipped() ) {
 				safeSchedule( () => {
@@ -730,7 +825,7 @@ export const Reaxel_View = reaxel( () => {
 					} );
 				} );
 			}
-			return;
+			return false;
 		}
 		view.setBounds( bounds );
 		if( tracing ) {
@@ -747,6 +842,7 @@ export const Reaxel_View = reaxel( () => {
 				} );
 			} );
 		}
+		return true;
 	}
 
 	function focusCurrentContentView() {
@@ -771,27 +867,55 @@ export const Reaxel_View = reaxel( () => {
 	/**
 	 * 主窗口从其它应用切回后，Electron 常把焦点还给 mainWindow.webContents（menubar 壳），
 	 * 而不是 AI/Settings WebContentsView，导致输入框失焦（electron#28163）。
-	 * 在 focus 事件后延迟一拍，把焦点还回中心内容区；若 Prompt 侧栏已持有焦点则不抢。
+	 * 只在 Alt-Tab（窗口一直可见）和用户换页 present('switch') 上还焦点；
+	 * 禁止叠在 minimize/restore 还原动画上（electron#28255）。
 	 */
 	function restoreActiveCenterViewFocus(intent:CenterMountIntent = 'recover') {
 		const chainId = centerScheduleMonitor.activeChainId;
 		setImmediate( () => {
-			const noteFocus = (decision: string , viewId?: string , detail?: Record<string , unknown>) => {
+			const noteFocus = (
+				decision: string ,
+				viewId?: string ,
+				detail?: Record<string , unknown> ,
+				snapshotView?: WebContentsView | null ,
+			) => {
 				if( !centerScheduleMonitor.enabled ) {
 					return;
 				}
+				const resolvedId = viewId || resolveCenterViewId( snapshotView );
 				centerScheduleMonitor.note( {
 					op: 'restore-focus' ,
 					phase: 'action' ,
 					intent ,
 					decision ,
-					viewId ,
+					viewId: resolvedId ,
+					snapshot: snapshotActiveCenter( snapshotView ?? getCurrentCenterView() , resolvedId ) ,
 					detail ,
 					chainId: chainId || undefined ,
 				} );
 			};
-			if( !mainWindow || mainWindow.isDestroyed() || !mainWindow.isFocused() ) {
+			if( !mainWindow || mainWindow.isDestroyed() ) {
 				noteFocus( 'skip-main-not-focused' );
+				return;
+			}
+			if( !mainWindow.isVisible() || mainWindow.isMinimized() ) {
+				noteFocus( 'skip-window-not-presented' , undefined , {
+					window: {
+						focused: mainWindow.isFocused() ,
+						minimized: mainWindow.isMinimized() ,
+						visible: mainWindow.isVisible() ,
+					} ,
+				} );
+				return;
+			}
+			if( !mainWindow.isFocused() ) {
+				noteFocus( 'skip-main-not-focused' , undefined , {
+					window: {
+						focused: false ,
+						minimized: mainWindow.isMinimized() ,
+						visible: mainWindow.isVisible() ,
+					} ,
+				} );
 				return;
 			}
 			const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -816,13 +940,13 @@ export const Reaxel_View = reaxel( () => {
 				return;
 			}
 			if( view.webContents.isFocused() ) {
-				noteFocus( 'already-focused' , resolveCenterViewId( view ) );
+				noteFocus( 'already-focused' , resolveCenterViewId( view ) , undefined , view );
 				return;
 			}
 			const focusSource:FocusMonitorFocusSource = intent === 'recover'
-				? 'window-restore-paint'
+				? 'window-focus-input'
 				: 'apply-visibility';
-			noteFocus( 'focus-webContents' , resolveCenterViewId( view ) , { focusSource } );
+			noteFocus( 'focus-webContents' , resolveCenterViewId( view ) , { focusSource } , view );
 			try {
 				safeFocusViewWithMonitor( view , focusSource );
 			} catch {
@@ -1169,11 +1293,28 @@ export const Reaxel_View = reaxel( () => {
 		presentActiveCenterView( 'switch' );
 		/* AI 列表就绪后预热 SwitchAiBar：与 menubar Prev/Next 同源（instantiated），避免首次显示重建。 */
 		prepareInstantiatedSwitchAiBar();
+		try {
+			const settings = getRuntimeSettings();
+			centerScheduleMonitor.noteSessionEnv( {
+				gpu_acceleration: settings.system?.gpu_acceleration !== false ,
+				appearanceTheme: settings.appearance?.theme ,
+				windowBackgroundColor: !mainWindow.isDestroyed()
+					? mainWindow.getBackgroundColor()
+					: null ,
+				contentChildren: mainWindow.isDestroyed()
+					? 0
+					: mainWindow.contentView.children.length ,
+				isPackaged: app.isPackaged ,
+			} );
+		} catch ( error ) {
+			console.warn( '[Views] WhiteScreenMonitor session-env failed:' , error );
+		}
 		mainWindow.on( 'resize' , () => {
 			fitWindow();
 		} );
 		mainWindow.on( 'focus' , () => {
 			try {
+				probeWindowLifecycle( 'focus' );
 				registerAISwitchGlobalShortcuts();
 				recoverActiveCenterViewAfterFocus();
 			} catch ( error ) {
@@ -1182,6 +1323,7 @@ export const Reaxel_View = reaxel( () => {
 		} );
 		mainWindow.on( 'show' , () => {
 			try {
+				probeWindowLifecycle( 'show' );
 				registerAISwitchGlobalShortcuts();
 				softRecoverActiveCenterView( 'show' );
 			} catch ( error ) {
@@ -1190,6 +1332,8 @@ export const Reaxel_View = reaxel( () => {
 		} );
 		mainWindow.on( 'restore' , () => {
 			try {
+				markOccludedResume();
+				probeWindowLifecycle( 'restore' );
 				registerAISwitchGlobalShortcuts();
 				softRecoverActiveCenterView( 'restore' );
 			} catch ( error ) {
@@ -1197,14 +1341,24 @@ export const Reaxel_View = reaxel( () => {
 			}
 		} );
 		mainWindow.on( 'blur' , () => {
+			try {
+				if( !mainWindow.isDestroyed() && ( mainWindow.isMinimized() || !mainWindow.isVisible() ) ) {
+					markOccludedResume();
+				}
+			} catch { /* 只更新回前台策略 */ }
+			probeWindowLifecycle( 'blur' );
 			centerScheduleMonitor.markBackground( 'blur' );
 			unregisterAISwitchGlobalShortcuts();
 		} );
 		mainWindow.on( 'hide' , () => {
+			markOccludedResume();
+			probeWindowLifecycle( 'hide' );
 			centerScheduleMonitor.markBackground( 'hide' );
 			unregisterAISwitchGlobalShortcuts();
 		} );
 		mainWindow.on( 'minimize' , () => {
+			markOccludedResume();
+			probeWindowLifecycle( 'minimize' );
 			centerScheduleMonitor.markBackground( 'minimize' );
 			unregisterAISwitchGlobalShortcuts();
 		} );
@@ -1356,12 +1510,17 @@ const getMenuBarHeight = () => resolveMenuBarHeight();
 import { reaxel_SettingsView } from "#main/reaxels/Views/Settings-View";
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import {
+	app ,
 	BrowserWindow ,
 	type Rectangle ,
 	WebContentsView,
 } from "electron";
 import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
 import { clipMainShellToMenuBar } from '#main/services/clip-main-shell-to-menubar.utility';
+import {
+	hasUsableBrowserWindowContent ,
+	isCollapsedWindowContentRect,
+} from '#main/services/usable-window-content.utility';
 import { getAliveWebContents , isWebContentsViewDead } from '#main/services/web-contents-view-alive.utility';
 import ElectronStore from "electron-store";
 import { mainWindow } from "#main/mainWindow";

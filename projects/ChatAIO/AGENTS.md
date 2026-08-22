@@ -61,8 +61,8 @@
 
 改 FloatingView、menubar、透明窗、鼠标穿透、中心 WebContentsView 生命周期、预加载 park 前必读：
 
-- [`docs/issues/ai-view-background-throttling-postmortem.md`](./docs/issues/ai-view-background-throttling-postmortem.md) — **Alt-Tab 闪白复盘 + agent 决策树（改节流/回前台前必读）**
-- [`docs/issues/ai-view-foreground-white-flash.md`](./docs/issues/ai-view-foreground-white-flash.md)
+- [`docs/issues/ai-view-foreground-white-flash.md`](./docs/issues/ai-view-foreground-white-flash.md) — **中心 WCV 回前台现行架构（改 present / fitWindow / 节流前必读）**
+- [`docs/issues/ai-view-background-throttling-postmortem.md`](./docs/issues/ai-view-background-throttling-postmortem.md) — 闪白错误路径（关节流 / 踢绘 / Occlusion / 1×1）
 - [`docs/issues/ai-view-first-present-warmup-postmortem.md`](./docs/issues/ai-view-first-present-warmup-postmortem.md) — **预加载暖不了可见态；跟手优先，接受第一次 present 卡顿（改 park / 想「画暖」后台页前必读）**
 - [`docs/issues/ai-view-preload-first-switch-flash.md`](./docs/issues/ai-view-preload-first-switch-flash.md) — v8 park 不变量
 - [`docs/issues/menubar-drag-investigation.md`](./docs/issues/menubar-drag-investigation.md)

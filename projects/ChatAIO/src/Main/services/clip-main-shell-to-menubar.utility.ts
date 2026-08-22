@@ -17,6 +17,9 @@ export const clipMainShellToMenuBar = (win:BrowserWindow):boolean => {
 	if( !win || win.isDestroyed() ) {
 		return false;
 	}
+	if( !hasUsableBrowserWindowContent( win ) ) {
+		return false;
+	}
 	const menuBarHeight = getMenuBarHeight();
 	const { width } = win.getContentBounds();
 	const target = {
@@ -104,6 +107,7 @@ const isSameBounds = (a:Rectangle , b:Rectangle) => {
 };
 
 
+import { hasUsableBrowserWindowContent } from '#main/services/usable-window-content.utility';
 import { getMenuBarHeight } from '#src/shared/menubar-geometry';
 import {
 	type BrowserWindow ,

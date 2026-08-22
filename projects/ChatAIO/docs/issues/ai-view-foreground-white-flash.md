@@ -1,94 +1,142 @@
-# AI View：从后台切回前台白屏闪烁
+# 中心 WebContentsView：回前台生命周期
 
-## 文档状态
+现行架构。改 `present` / `fitWindow` / window `focus|show|restore|resize` / 节流 之前必读。
 
-- **症状**：Alt-Tab / 托盘唤回 / 反最小化后，当前 AI `WebContentsView` 闪白或白屏。
-- **状态**：ARCH FIXED（2026-08-13）——单一所有者 + **默认 `backgroundThrottling`**；回前台 hierarchy 完好只 focus / 对齐 bounds，禁止踢绘。
-- **历史**：`509a8e662` 把「踢绘」绑到每次 focus/show/restore，是闪白主因；强制 `backgroundThrottling:false` 后曾叠加 invalidate / 两阶段 ±1 rebind，短切后台反而稳定闪白，已撤回。
-- **复盘**：见 [`ai-view-background-throttling-postmortem.md`](./ai-view-background-throttling-postmortem.md)（agent 决策树、禁止项、日志速查）。预加载第一次 present 卡顿是另一件事，见 [`ai-view-first-present-warmup-postmortem.md`](./ai-view-first-present-warmup-postmortem.md)。文档索引：[`docs/README.md`](../README.md)。
+预加载第一次 present 卡顿是另一件事：[`ai-view-first-present-warmup-postmortem.md`](./ai-view-first-present-warmup-postmortem.md)。  
+错误路径与决策树：[`ai-view-background-throttling-postmortem.md`](./ai-view-background-throttling-postmortem.md)。  
+调度链日志：[`ai-view-white-screen-monitor.md`](../features/ai-view-white-screen-monitor.md)。
 
 ---
 
-## 1. 目标架构（必须遵守）
+## 1. 不变量
 
 ```text
-reaxel_AIViews.applyVisibility
-  └─ 只 detach：谁不该留在中心区
-       │
-Reaxel_View.presentActiveCenterView(intent)
-  └─ 唯一 mount / promote 入口
-       ├─ intent = 'switch'   AI换页 / Settings / 冷启动
-       │    Darwin: remove+add（唯一 compositor 恢复手段）
-       │    Win/Linux: addChildView 置顶（切换必要代价）
-       │    禁止 bounds±1，禁止二次 addChildView
-       └─ intent = 'recover'  focus / show / restore 破损补挂
-            未挂载才 addChildView；已挂载绝不 reorder
-            setVisible / setBounds；禁止 remount
+reaxel_AIViews.applyVisibility     → 只 detach / park，不 mount
+Reaxel_View.presentActiveCenterView
+  ├─ switch   换页 / Settings / 冷启动（允许平台 remount）
+  └─ recover  仅 hierarchy 破损时补挂（禁止 reorder）
 
-回前台分层：
-  L0 focus   hierarchy 完好 → 只 webContents.focus()
-  L1 show|restore  hierarchy 完好 → setBounds（若布局过期）+ focus
-                 hierarchy 破损 → present('recover')
-  hierarchy ≠ layout：bounds 过期不得升级为 switch remount
+窗口生命周期 ≠ 产帧所有者
+  健康遮挡还原（任务栏 / 托盘）→ 空操作，交给 Chromium WasShown
+  Alt-Tab（窗口一直可见）    → 最多还一次输入焦点（electron#28163）
 
-节流：
-  内容 WCV / mainWindow 使用 Electron 默认 backgroundThrottling（true）
-  走正常 WasHidden / WasShown，与浏览器一致；禁止再关节流后靠踢绘「补」
+layout 源 = 可用客户区
+  未最小化 且 getContentBounds() 两边 ≥ 32px
+  禁止把 Windows 最大化最小化时的 0×0 写成 WCV 1×1
+
+节流 = Electron 默认 backgroundThrottling（true）
+  禁止 false；禁止 ±1 / invalidate / capturePage 踢绘
 ```
 
-同步 AI 切换必须在 FloatingView `showInactive` **之前**调用 `present('switch')`（macOS remount 若落在 overlay 后会弄挂 SwitchAiBar）。
-
-**reaction 时序陷阱（2026-08-10 修复）**：reaxes `obsReaction` 底层是 mobx `reaction`（无 scheduler），在 `setState` 的 action 结束时**同步**执行——早于 setState 之后的语句。命令式切换路径（setState → applyVisibility → present('switch')）若不抑制 store 兜底 reaction，兜底会先 remount 一次、显式调用再 remount 一次（darwin 双 remove+add，Win/Linux 二次 addChildView reorder）。修复：`setCenterStateForImperativeSwitch` 在 setState 期间置位抑制标志，兜底 reaction 直接跳过；调用方承诺随后同步 present('switch')。切换路径新增 setState 时**禁止**绕过该入口。
-
-FloatingView 自身由独立的 overlay 呈现调度器管理（Windows 禁 hide()/show() 循环，用 setOpacity）。见 [`floating-view-missing-after-background.md`](./floating-view-missing-after-background.md)。
+命令式换页必须走 `setCenterStateForImperativeSwitch`，随后**同步** `present('switch')`（在 FloatingView `showInactive` 之前）。reaxes `obsReaction` 在 `setState` 的 action 结束时同步跑，不抑制会双重 remount。
 
 ---
 
-## 2. Electron 约束（设计依据）
+## 2. 回前台状态机
+
+`occludedResumePending`：minimize / hide / 最小化时的 blur / restore 置位；只在下一次 window `focus` 消费。遮挡周期里的假 blur 清不掉它。
+
+| 事件 | hierarchy 破了 | hierarchy 完好 |
+|------|----------------|----------------|
+| `minimize` / `hide` | 只卸快捷键 + 监控 | 同左；**不碰 WCV** |
+| `restore` / `show` | `present('recover')` | 客户区可用才 `setBoundsIfChanged`；**禁止 `webContents.focus()`** |
+| `focus`（遮挡还原） | `present('recover')` | **`compositor-owned-noop`**，禁止 focus |
+| `focus`（Alt-Tab） | `present('recover')` | 中心未持焦才 `webContents.focus()` |
+| `resize` / `fitWindow` | — | 客户区不可用则 **整段 return**，保持上一帧 bounds |
+
+任务栏短切实际链（生产已验证）：
+
+```text
+minimize → restore（~0–10ms）→ window focus
+健康时：layout-noop + compositor-owned-noop
+整链不得出现 restore-focus / focus-webContents
+```
+
+Alt-Tab（窗口未最小化）允许 `hierarchy-ready→input-focus`。托盘 / 任务栏还原后键盘焦点可能仍在 menubar 壳，要点一下内容区（electron#28255：还原动画里 focus 会闪）。
+
+---
+
+## 3. Layout 源：坍缩客户区不是布局
+
+Windows 把**已最大化**窗口最小化时，会先 `resize` 并把 `getContentBounds()` 报成 `0×0`（坐标落到 `-17061` 一类占位）。若此时 `Math.max(1, 0)` 写入中心 WCV，view 变成 **1×1**；还原最大化再拉满，DWM 第一帧就是近白衬底（`#F5F6F8`）。
+
+**窗口化**最小化通常不发这条 resize，WCV 保持原尺寸，所以不闪。
+
+门闩：`hasUsableBrowserWindowContent`（`usable-window-content.utility.ts`）。所有从客户区推导 bounds 的路径共用：
+
+- `Reaxel_View.fitWindow`
+- `clipMainShellToMenuBar`
+- Prompt `syncBounds`
+- FloatingView overlay `syncBounds`
+
+日志判定：最大化后 minimize 探针的 `snapshot.bounds` **必须仍是全屏**，不得为 `1×1`。
+
+---
+
+## 4. Electron 约束
 
 | 事实 | 含义 |
 |------|------|
-| `addChildView` 对已有子 view = reorder/native remount | 回前台对健康 view 调用 = 闪白 |
-| electron#28163 | 回前台要 `webContents.focus()`，不要 remount |
+| `addChildView` 对已有子 view = reorder | 回前台对健康 view 调用 = 闪白 |
+| electron#28163 | Alt-Tab 后焦点常落在 menubar 壳 |
+| electron#28255 | 还原动画期间 `webContents.focus()` 会白屏 |
 | electron#42339 | Windows remount 抢焦点 |
-| CalculateNativeWinOcclusion | 遮挡停绘；可关 feature，但不可替代正确生命周期 |
-| `backgroundThrottling:false` + hide | electron#42378：WasShown 短路，易丢帧；应用侧再 ±1/invalidate 会闪 |
+| electron#42378 | `backgroundThrottling:false` + hide 短路 WasShown |
+| `attached∧visible∧bounds` ≠ 屏幕有帧 | 健康短切去 setBounds / focus 会打出近白衬底 |
+
+Chromium flag、改衬底色、关节流 **都不是** 这条问题的修复。
 
 ---
 
-## 3. 禁止事项
+## 5. 禁止
 
 | 不要做 | 为什么 |
 |--------|--------|
-| 在 `applyVisibility` 里 `present` / `ensure` | 破坏单一所有者；FloatingView 时序难推理 |
-| focus/show/restore 走 `present('switch')` | 健康 view 被 remount |
-| 把 bounds 不一致当成 hierarchy 破损 | layout 问题用 setBounds |
-| Darwin 上 remount **再** ±1 **再** addChildView | 双重 hack |
-| 热路径每次 focus 做 ±1 / invalidate 踢绘 | 短切闪白 |
-| 内容 view 强制 `backgroundThrottling:false` 再靠踢绘补 | 南辕北辙 |
-| `disable-renderer-backgrounding` 等进程级核按钮「补」闪白 | 烧电掩盖生命周期错误 |
-| 新增 `CenterViewLifecycleReason` 布尔矩阵 | 用 `CenterMountIntent` 两种意图即可 |
+| `applyVisibility` 里 `present` / ensure | 破坏单一所有者 |
+| focus/show/restore 走 `present('switch')` | 健康 view remount |
+| 遮挡还原上 `webContents.focus()` | 叠在 DWM 上必闪 |
+| 50ms coalesce 仍 focus | 只是把 focus 挪到 5ms 后的 `focus` 事件 |
+| ±1 / invalidate / `capturePage` 踢绘 | 短切稳定闪白 |
+| `backgroundThrottling: false` | 打断 WasShown |
+| `disable-renderer-backgrounding` / 关 `CalculateNativeWinOcclusion` 当修复 | 核按钮；`509a8e662` 开过 Occlusion 开关，无效且污染架构 |
+| 最小化 / 0×0 上 `fitWindow` → 1×1 | 最大化还原必闪 |
+| 把 FloatingView overlay rebind 抄到中心 WCV | 不同 surface 模型 |
+| 新增 `CenterViewLifecycleReason` 布尔矩阵 | 两种 `CenterMountIntent` 即可 |
 
 ---
 
-## 4. 实现落点
+## 6. 落点
 
 | 模块 | 职责 |
 |------|------|
-| `Views/index.ts` | `presentActiveCenterView` / L0 focus-only / L1 bounds+focus / Settings 兜底 |
-| `AI-Views/index.ts` | `applyVisibility` 仅 detach；`showAIView` / close 经抑制入口 setState 后调用 present |
-| `initWebContentsView.ts` / `mainWindow.ts` | 默认节流（不设 `backgroundThrottling:false`） |
-| `electron.conf.ts` | 仅 `CalculateNativeWinOcclusion` |
-
-运行时证据（调度链追踪、默认无 `capturePage`）：见 [`ai-view-white-screen-monitor.md`](../features/ai-view-white-screen-monitor.md)。
+| `Views/index.ts` | `present`；`occludedResumePending`；`fitWindow` / `setViewBoundsIfChanged` 拒绝坍缩客户区 |
+| `usable-window-content.utility.ts` | layout 源门闩 |
+| `clip-main-shell-to-menubar.utility.ts` / Prompt / FloatingView | 同样拒绝 0×0 |
+| `AI-Views/index.ts` | `applyVisibility` 只 detach |
+| `initWebContentsView.ts` / `mainWindow.ts` | 不设 `backgroundThrottling:false` |
+| `electron.conf.ts` | **不**为闪白关 Occlusion / 关节流 |
 
 ---
 
-## 5. 验证矩阵
+## 7. 验证
 
-1. Alt-Tab 来回 → 无白闪；输入焦点可恢复  
-2. 托盘 hide→show、最小化→还原 → 无白闪  
-3. Ctrl+[/] 切换 AI → 置顶正确；SwitchAiBar 正常（尤其 macOS）  
-4. Settings 开/关 → 层级正确  
-5. 配置同步预加载其它 AI → 当前页不闪、不丢；**首次切到预加载 AI 无白闪**（park 见 [`ai-view-preload-first-switch-flash.md`](./ai-view-preload-first-switch-flash.md)）。第一次 present 的合成卡顿是接受项，见 [`ai-view-first-present-warmup-postmortem.md`](./ai-view-first-present-warmup-postmortem.md)  
-6. 切后台较久再回 → 切 AI 时 SwitchAiBar 仍出现（FloatingView 冷 promote）  
+1. 窗口化任务栏短切 → 无白闪；`compositor-owned-noop`；无 `focus-webContents`
+2. **最大化**后再短切 → 无白闪；minimize 时 WCV bounds ≠ `1×1`
+3. Alt-Tab → 无白闪；输入焦点可恢复
+4. 托盘 hide→show → 无白闪
+5. Ctrl+[/] 换 AI、Settings 开/关 → 层级正确
+6. 预加载 AI 首次切换无白闪（park）；第一次 present 卡顿是接受项
+7. 长后台再切 AI，SwitchAiBar 仍在（FloatingView 冷 promote）
+
+---
+
+## 8. 提交史（为什么调度器有锅）
+
+| 提交 | 做了什么 | 结果 |
+|------|----------|------|
+| 调度器之前 | `focus/show/restore` 几乎只注册快捷键 | 不闪 |
+| `afab9c78f` | 每个 window `focus` 上 `webContents.focus()`（#28163） | Alt-Tab 输入可用；任务栏还原也会打到 |
+| **`509a8e662`** | 自称 stop resume flash：show/restore ensure、关节流、关 Occlusion | **分水岭，开始闪** |
+| 其后踢绘层 | blur stale、`invalidate`、±1、`capturePage` | 短切更闪 |
+| `e9b0f0233` | 恢复默认节流，拆踢绘 | Alt-Tab 好了；restore/focus 仍动 WCV |
+| 2026-08-22 | 遮挡还原空操作 + 拒绝 0×0 layout 源 | 最大化短切用户验证通过 |

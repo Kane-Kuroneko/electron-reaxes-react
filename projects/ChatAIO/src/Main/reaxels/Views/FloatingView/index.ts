@@ -125,6 +125,9 @@ export const reaxel_FloatingView = reaxel( () => {
 		if( !floatingWindow || floatingWindow.isDestroyed() || !mainWindow || mainWindow.isDestroyed() ) {
 			return;
 		}
+		if( !hasUsableBrowserWindowContent( mainWindow ) ) {
+			return;
+		}
 		floatingWindow.setBounds( getFloatingViewBounds() , false );
 	};
 
@@ -535,6 +538,7 @@ import {
 	getRendererEntryFilePath,
 } from '#main/services/dev/renderer-entry';
 import { useIpcMainToRenderer } from '#main/services/ipc';
+import { hasUsableBrowserWindowContent } from '#main/services/usable-window-content.utility';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
 import { getMenuBarHeight } from '#src/shared/menubar-geometry';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';

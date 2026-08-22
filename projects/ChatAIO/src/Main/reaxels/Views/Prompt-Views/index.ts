@@ -78,6 +78,9 @@ export const reaxel_PromptViews = reaxel( () => {
 	};
 	
 	const syncBounds = (bounds = mainWindow.getContentBounds()) => {
+		if( !hasUsableBrowserWindowContent( mainWindow ) ) {
+			return;
+		}
 		syncSideBounds( 'left' , bounds );
 		syncSideBounds( 'right' , bounds );
 	};
@@ -402,6 +405,7 @@ import {
 	useIpcRpc,
 } from '#main/services/ipc';
 import { mainWindow } from '#main/mainWindow';
+import { hasUsableBrowserWindowContent } from '#main/services/usable-window-content.utility';
 import {
 	isWebContentsViewAlive ,
 	isWebContentsViewDead,
