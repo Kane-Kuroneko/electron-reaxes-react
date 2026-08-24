@@ -47,6 +47,7 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	'update-ai': IpcStructure.IpcRpc<[id: string, updates: Partial<AI.AIItem>], AI.AIItem | null>;
 	'add-ai': IpcStructure.IpcRpc<[ai: Omit<AI.AIItem, 'id'> & { id?: string }], AI.AIItem>;
 	'delete-ai': IpcStructure.IpcRpc<[id: string], boolean>;
+	'reorder-ais': IpcStructure.IpcRpc<[enabledIds: string[]], { success: boolean, error?: string }>;
 	'reset-ais-to-defaults': IpcStructure.IpcRpc<[void], { success: boolean, error?: string }>;
 	'get-preload-ai-families': IpcStructure.IpcRpc<[void], string[]>; /* 返回预加载 AI 的 ID 列表而非 family 列表 */
 	'get-appearance-environment': IpcStructure.IpcRpc<[void], AppearanceEnvironment>;

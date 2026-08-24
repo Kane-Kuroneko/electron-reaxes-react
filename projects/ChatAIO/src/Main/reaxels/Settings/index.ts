@@ -202,6 +202,30 @@ export const reaxel_Settings = reaxel( () => {
 		await syncRuntimeViews();
 		return deleted;
 	} );
+
+	useIpcRpc( 'reorder-ais' ).handle( async( { event } , enabledIds ) => {
+		try {
+			const result = aiConfigService.reorderEnabledAIs(
+				Array.isArray( enabledIds ) ? enabledIds.map( String ) : [],
+			);
+			if( !result.success ) {
+				return {
+					success : false ,
+					error : result.error,
+				};
+			}
+			if( result.changed ) {
+				await syncRuntimeViews();
+			}
+			return { success : true };
+		} catch ( error ) {
+			console.error( '[Settings] Failed to reorder AIs:' , error );
+			return {
+				success : false ,
+				error : error?.message || String( error ),
+			};
+		}
+	} );
 	
 	useIpcRpc( 'reset-ais-to-defaults' ).handle( async() => {
 		try {

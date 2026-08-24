@@ -72,6 +72,9 @@ export const App = reaxper( () => {
 			className="dropdown-view-root"
 			data-theme={ store.theme }
 			style={ windowSizeStyle }
+			onContextMenuCapture={ ( e ) => {
+				e.preventDefault();
+			} }
 			onMouseDown={ ( e ) => {
 				const target = e.target as HTMLElement;
 				if( !target.closest( '.menu-dropdown' ) ) {
@@ -91,6 +94,14 @@ export const App = reaxper( () => {
 	);
 } );
 
+const isSwitchAiItem = ( item : MenuView.Item ) => {
+	return item.action === 'switch-ai' && typeof item.actionPayload === 'string';
+};
+
+const switchAiIdsOf = ( items : MenuView.Item[] ) => {
+	return items.filter( isSwitchAiItem ).map( item => item.actionPayload as string );
+};
+
 /**
  * 下拉菜单容器
  */
@@ -106,6 +117,27 @@ const MenuDropdown = ( {
 	panelHeight : number;
 } ) => {
 	const listRef = useRef<HTMLDivElement | null>( null );
+	const draggingRef = useRef( false );
+	const persistingRef = useRef( false );
+	const [ isSorting , setIsSorting ] = useState( false );
+	const switchAiItemsFromProps = items.filter( isSwitchAiItem );
+	const footerItems = items.filter( item => !isSwitchAiItem( item ) );
+	const isSwitchAiMenu = switchAiItemsFromProps.length > 0;
+	const [ aiItems , setAiItems ] = useState( switchAiItemsFromProps );
+	const sensors = useSensors(
+		useSensor( RightClickMouseSensor , {
+			activationConstraint : {
+				distance : 8,
+			},
+		} ),
+	);
+
+	useEffect( () => {
+		if( draggingRef.current || persistingRef.current ) {
+			return;
+		}
+		setAiItems( items.filter( isSwitchAiItem ) );
+	} , [ items ] );
 
 	useEffect( () => {
 		if( focusedIndex < 0 || !listRef.current ) return;
@@ -113,9 +145,61 @@ const MenuDropdown = ( {
 		focusedEl?.scrollIntoView( { block : 'nearest' } );
 	} , [ focusedIndex ] );
 
+	const persistOrder = async( nextItems : MenuView.Item[] , previousItems : MenuView.Item[] ) => {
+		const nextIds = switchAiIdsOf( nextItems );
+		const previousIds = switchAiIdsOf( previousItems );
+		if( enabledAIIdsEqual( nextIds , previousIds ) ) {
+			return;
+		}
+		persistingRef.current = true;
+		setAiItems( nextItems );
+		try {
+			const result = await api.reorderAIs( cloneForIPC( nextIds ) );
+			if( !result?.success ) {
+				setAiItems( previousItems );
+				reportMenubarRendererError( 'reorderAIs' , result?.error || 'reorder failed' , 'dropdown-view-renderer' , {
+					nextIds,
+				} );
+			}
+		} catch ( error ) {
+			setAiItems( previousItems );
+			reportMenubarRendererError( 'reorderAIs' , error , 'dropdown-view-renderer' , {
+				nextIds,
+			} );
+		} finally {
+			persistingRef.current = false;
+		}
+	};
+
+	const onDragStart = () => {
+		draggingRef.current = true;
+		setIsSorting( true );
+	};
+
+	const onDragEnd = ( event : DragEndEvent ) => {
+		draggingRef.current = false;
+		setIsSorting( false );
+		const { active , over } = event;
+		if( !over || active.id === over.id ) {
+			return;
+		}
+		const oldIndex = aiItems.findIndex( item => item.id === active.id );
+		const newIndex = aiItems.findIndex( item => item.id === over.id );
+		if( oldIndex === -1 || newIndex === -1 ) {
+			return;
+		}
+		const nextItems = arrayMove( aiItems.slice() , oldIndex , newIndex );
+		void persistOrder( nextItems , aiItems );
+	};
+
+	const onDragCancel = () => {
+		draggingRef.current = false;
+		setIsSorting( false );
+	};
+
 	return (
 		<div
-			className="menu-dropdown"
+			className={ `menu-dropdown${ isSorting ? ' menu-dropdown--sorting' : '' }` }
 			role="menu"
 			ref={ listRef }
 			style={ {
@@ -123,7 +207,41 @@ const MenuDropdown = ( {
 				height : `${ panelHeight }px` ,
 			} as React.CSSProperties }
 		>
-			{ items.map( ( item , index ) => (
+			{ isSwitchAiMenu ? (
+				<>
+					<DndContext
+						sensors={ sensors }
+						collisionDetection={ closestCenter }
+						modifiers={ [ restrictToVerticalAxis ] }
+						onDragStart={ onDragStart }
+						onDragEnd={ onDragEnd }
+						onDragCancel={ onDragCancel }
+					>
+						<SortableContext
+							items={ aiItems.map( item => item.id ) }
+							strategy={ verticalListSortingStrategy }
+						>
+							{ aiItems.map( ( item , index ) => (
+								<SortableSwitchAiItem
+									key={ item.id }
+									item={ item }
+									focused={ focusedIndex === index }
+									itemIndex={ index }
+									sortableDisabled={ aiItems.length < 2 }
+								/>
+							) ) }
+						</SortableContext>
+					</DndContext>
+					{ footerItems.map( ( item , index ) => (
+						<MenuItemComponent
+							key={ item.id }
+							item={ item }
+							focused={ focusedIndex === aiItems.length + index }
+							itemIndex={ aiItems.length + index }
+						/>
+					) ) }
+				</>
+			) : items.map( ( item , index ) => (
 				<MenuItemComponent
 					key={ item.id }
 					item={ item }
@@ -135,6 +253,47 @@ const MenuDropdown = ( {
 	);
 };
 
+const SortableSwitchAiItem = ( {
+	item ,
+	focused ,
+	itemIndex ,
+	sortableDisabled ,
+} : {
+	item : MenuView.Item;
+	focused : boolean;
+	itemIndex : number;
+	sortableDisabled : boolean;
+} ) => {
+	const sortable = useSortable( {
+		id : item.id ,
+		disabled : sortableDisabled ,
+	} );
+	const style : React.CSSProperties = {
+		transform : CSS.Translate.toString( sortable.transform ) ,
+		transition : sortable.transition ,
+		...( sortable.isDragging ? {
+			position : 'relative' ,
+			zIndex : 2 ,
+			opacity : 0.92,
+		} : {} ),
+	};
+
+	return (
+		<MenuItemComponent
+			item={ item }
+			focused={ focused }
+			itemIndex={ itemIndex }
+			sortable={ {
+				setNodeRef : sortable.setNodeRef ,
+				style ,
+				listeners : sortableDisabled ? undefined : sortable.listeners ,
+				attributes : sortable.attributes ,
+				isDragging : sortable.isDragging,
+			} }
+		/>
+	);
+};
+
 /**
  * 单个菜单项组件
  */
@@ -142,10 +301,18 @@ const MenuItemComponent = ( {
 	item ,
 	focused = false ,
 	itemIndex ,
+	sortable ,
 } : {
 	item : MenuView.Item;
 	focused? : boolean;
 	itemIndex : number;
+	sortable? : {
+		setNodeRef : ( node : HTMLElement | null ) => void;
+		style? : React.CSSProperties;
+		listeners? : ReturnType<typeof useSortable>['listeners'];
+		attributes? : ReturnType<typeof useSortable>['attributes'];
+		isDragging? : boolean;
+	};
 } ) => {
 	const [ showSubmenu , setShowSubmenu ] = useState( false );
 	const [ submenuFlipLeft , setSubmenuFlipLeft ] = useState( false );
@@ -178,6 +345,7 @@ const MenuItemComponent = ( {
 
 	const hasSubmenu = item.submenu && item.submenu.length > 0;
 	const loadStateClass = item.loadState ? `menu-item--load-${ item.loadState }` : '';
+	const sortingClass = sortable?.isDragging ? ' menu-item--sorting' : '';
 
 	const handleClick = ( e : React.MouseEvent ) => {
 		e.stopPropagation();
@@ -196,12 +364,25 @@ const MenuItemComponent = ( {
 		} );
 	};
 
+	const setItemNode = ( node : HTMLDivElement | null ) => {
+		itemRef.current = node;
+		sortable?.setNodeRef( node );
+	};
+
 	return (
 		<div
-			ref={ itemRef }
-			className={ `menu-item ${ item.type === 'checkbox' || item.type === 'radio' ? 'menu-item--checkable' : '' } ${ !item.enabled ? 'menu-item--disabled' : '' } ${ focused ? 'menu-item--focused' : '' } ${ loadStateClass }` }
+			ref={ setItemNode }
+			className={ `menu-item ${ item.type === 'checkbox' || item.type === 'radio' ? 'menu-item--checkable' : '' } ${ !item.enabled ? 'menu-item--disabled' : '' } ${ focused ? 'menu-item--focused' : '' } ${ loadStateClass }${ sortingClass }` }
+			style={ sortable?.style }
 			data-item-index={ itemIndex }
+			{ ...( sortable?.listeners ?? {} ) }
+			{ ...( sortable?.attributes ?? {} ) }
+			role="none"
+			tabIndex={ -1 }
 			onClick={ handleClick }
+			onContextMenu={ ( e ) => {
+				e.preventDefault();
+			} }
 			onPointerEnter={ () => {
 				clearCloseTimer();
 				if( hasSubmenu ) setShowSubmenu( true );
@@ -212,7 +393,6 @@ const MenuItemComponent = ( {
 					closeTimerRef.current = window.setTimeout( () => setShowSubmenu( false ) , 180 );
 				}
 			} }
-			role="none"
 		>
 			<button
 				className="menu-item__button"
@@ -304,7 +484,7 @@ const formatAcceleratorParts = ( accelerator : string ) => {
 		Ctrl : 'Ctrl' ,
 		Alt : isMac ? '⌥' : 'Alt' ,
 		Option : isMac ? '⌥' : 'Alt' ,
-		Shift : isMac ? '⇧' : 'Shift' ,
+		Shift : '⇧' ,
 	};
 
 	return accelerator.split( '+' ).map( token => {
@@ -331,9 +511,26 @@ const triggerAction = ( action : MenuView.Action ) => {
 };
 
 
+import { RightClickMouseSensor } from './right-click-mouse-sensor.utility';
 import { reaxel_DropdownView } from '#DropdownView/reaxels/dropdown-view';
-import { reaxper } from 'reaxes-react';
-import type { MenuView } from '#src/Types/MenuView';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import { enabledAIIdsEqual } from '#src/shared/utils/merge-enabled-ai-order.utility';
 import { reportMenubarRendererError } from '#src/shared/utils/menubar-error-report.utility';
+import type { MenuView } from '#src/Types/MenuView';
+import {
+	closestCenter ,
+	DndContext ,
+	useSensor ,
+	useSensors ,
+	type DragEndEvent ,
+} from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import {
+	arrayMove ,
+	SortableContext ,
+	useSortable ,
+	verticalListSortingStrategy ,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { reaxper } from 'reaxes-react';
 import './index.less';

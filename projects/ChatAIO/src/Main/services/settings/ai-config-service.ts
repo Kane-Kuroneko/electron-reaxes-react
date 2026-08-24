@@ -197,6 +197,29 @@ class AIConfigService {
 		this.replaceAllAIs( filteredAIs );
 		return true;
 	}
+
+	reorderEnabledAIs( enabledIds:string[] ):{ success:boolean; changed:boolean; error?:string } {
+		const current = this.getEffectiveAIs();
+		const merged = mergeEnabledAIOrder( current , enabledIds );
+		if( !merged ) {
+			return {
+				success : false ,
+				changed : false ,
+				error : 'Enabled AI id list does not match current settings',
+			};
+		}
+		if( enabledAIIdsEqual( current.map( ai => ai.id ) , merged.map( ai => ai.id ) ) ) {
+			return {
+				success : true ,
+				changed : false,
+			};
+		}
+		this.replaceAllAIs( merged );
+		return {
+			success : true ,
+			changed : true,
+		};
+	}
 	
 	private generateUniqueId():string {
 		return `ai-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 , 11 ) }`;
@@ -243,4 +266,8 @@ import { app } from 'electron';
 import { AI_FAMILY_DEFAULT_URLS } from '#src/shared/statics/ai-family-defaults';
 import defaultAIsData from '#src/shared/statics/default-ais.json';
 import { cloneObservableToPlain } from '#src/shared/utils/clone-for-ipc.utility';
+import {
+	enabledAIIdsEqual ,
+	mergeEnabledAIOrder,
+} from '#src/shared/utils/merge-enabled-ai-order.utility';
 import { AI } from '#src/Types/SettingsTypes/AI';
