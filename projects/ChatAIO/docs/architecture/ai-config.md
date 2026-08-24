@@ -104,9 +104,12 @@ window.api.getDefaultAIs()
 window.api.updateAI(id, updates)
 window.api.addAI(aiConfig)
 window.api.deleteAI(id)
+window.api.reorderAIs(orderedIds)
 window.api.resetAIsToDefaults()
 window.api.getPreloadAIFamilies()
 ```
+
+列表顺序就是 `ais` 数组下标。Switch AI 右键拖与 Manage AIs 表拖都通过 `reorderAIs` **立即写盘**，不走 Apply。细节与不变量见 [`../features/ai-list-reorder.md`](../features/ai-list-reorder.md)。
 
 ## Usage in Settings UI
 

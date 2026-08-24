@@ -124,8 +124,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		const settings = buildSettingsFromStore();
 		// 测试 URL 是输入时即时持久化字段，不参与底部 Apply/Save 的 dirty 判断。
 		delete ( settings.networks as Partial<Settings['networks']> ).proxy_test_urls;
-		// AI 列表顺序也是即时持久化，dirty 只比较条目内容，不比较排列。
-		settings.AIs = settings.AIs.slice().sort( ( a , b ) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0 );
+		settings.AIs = canonicalizeAIsForDirtySnapshot( settings.AIs );
 		return settings;
 	}
 	
@@ -391,6 +390,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		setState.UIControls.manage_AIs( { startupAIPageLoadMode : aiPageLoadMode } );
 	};
 
+	/** Switch AI menubar 拖完后同步表格；只改顺序，保留未 Apply 的新项/改名字段。 */
 	const applyExternalEnabledAIOrder = ( enabledIds:string[] ) => {
 		const current = store.Data.AIs;
 		const next = applyEnabledAIOrder( current , enabledIds );
@@ -410,6 +410,7 @@ export const reaxel_SettingsView = reaxel( () => {
 				if( generation !== _aiOrderPersistGeneration ) {
 					return { success : true };
 				}
+				/* 未 Apply 的新建项还不在 user-ais.json，不能进 payload，否则 resolveReorderedAIs 会拒写。 */
 				const orderedIds = store.Data.AIs
 					.filter( ai => _committedAIIds.has( ai.id ) )
 					.map( ai => ai.id );
@@ -669,6 +670,7 @@ import {
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import {
 	applyEnabledAIOrder ,
+	canonicalizeAIsForDirtySnapshot ,
 	enabledAIIdsEqual,
 } from '#src/shared/utils/merge-enabled-ai-order.utility';
 import {

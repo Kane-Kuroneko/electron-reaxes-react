@@ -103,7 +103,9 @@ const switchAiIdsOf = ( items : MenuView.Item[] ) => {
 };
 
 /**
- * 下拉菜单容器
+ * 下拉菜单容器。
+ * Switch AI：仅 AI radio 可右键拖；Prev/Next 等 footer 钉死。左键仍切页。
+ * 其它菜单（Application / View）不接 DnD。
  */
 const MenuDropdown = ( {
 	items ,

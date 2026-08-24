@@ -215,6 +215,7 @@ export const reaxel_Settings = reaxel( () => {
 			}
 			if( result.changed ) {
 				await syncRuntimeViews();
+				/* Settings 自己拖完已经改了 store；再 echo 会盖掉未保存的新增行或进行中的下一次拖拽。 */
 				const settingsWebContents = reaxel_SettingsView.store.settingsView.view?.webContents;
 				if( settingsWebContents && !settingsWebContents.isDestroyed() && event.sender !== settingsWebContents ) {
 					notifySettingsAIOrder( normalizedIds );

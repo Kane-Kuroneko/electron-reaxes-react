@@ -17,7 +17,7 @@ Agent 总览仍是 [`AGENTS.md`](../AGENTS.md)。本文只索引 `docs/`。
 | Windows 拖 menubar 抖动 / 透明窗鼠标穿透 | [`issues/menubar-drag-investigation.md`](./issues/menubar-drag-investigation.md) |
 | menubar 下方拖拽区挡住内容 | [`issues/menubar-drag-region-leak-below-content.md`](./issues/menubar-drag-region-leak-below-content.md) |
 | Google AI Studio 登录 / passkey / Chrome 身份 | [`issues/google-ai-studio-electron-browser-identity.md`](./issues/google-ai-studio-electron-browser-identity.md) |
-| 调度链日志怎么读（不踢绘） | [`features/ai-view-white-screen-monitor.md`](./features/ai-view-white-screen-monitor.md) |
+| 改 Switch AI / Manage AIs **拖拽排序**、顺序写盘、Settings dirty 和菜单不同步 | [`features/ai-list-reorder.md`](./features/ai-list-reorder.md) |
 
 **中心 WebContentsView / 预加载 / 节流** 改动前，按这个簇读完再写代码：
 
@@ -47,6 +47,7 @@ Agent 总览仍是 [`AGENTS.md`](../AGENTS.md)。本文只索引 `docs/`。
 
 | 文档 | 内容 |
 |------|------|
+| [`ai-list-reorder.md`](./features/ai-list-reorder.md) | Switch AI / Manage AIs 立即持久化排序 |
 | [`ai-page-switch-performance-optimization.md`](./features/ai-page-switch-performance-optimization.md) | 切换热路径 CPU / z-order；文末：接受第一次 present 卡顿 |
 | [`ai-view-white-screen-monitor.md`](./features/ai-view-white-screen-monitor.md) | `white-screen-monitor.jsonl` 调度链 |
 | [`floating-view-rapid-switch-optimization.md`](./features/floating-view-rapid-switch-optimization.md) | SwitchAiBar 连点 Interrupt & Redirect |

@@ -255,6 +255,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			} ),
 		);
 
+		/* 顺序即时写盘，不走 Apply；失败由 persistCommittedAIOrder 回滚。 */
 		const onDragEnd = ( { active , over }:DragEndEvent ) => {
 			if( !over || active.id === over.id ) {
 				return;
