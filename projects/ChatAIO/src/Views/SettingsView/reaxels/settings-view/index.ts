@@ -124,7 +124,11 @@ export const reaxel_SettingsView = reaxel( () => {
 		const settings = buildSettingsFromStore();
 		// 测试 URL 是输入时即时持久化字段，不参与底部 Apply/Save 的 dirty 判断。
 		delete ( settings.networks as Partial<Settings['networks']> ).proxy_test_urls;
-		settings.AIs = canonicalizeAIsForDirtySnapshot( settings.AIs );
+		/* 顺序不计；待删除行不在 Apply 快照里所以仍会 dirty。见 docs/features/ai-list-reorder.md */
+		settings.AIs = snapshotAIsForDirty(
+			settings.AIs ,
+			store.UIControls.manage_AIs.pendingDeleteAIIds,
+		);
 		return settings;
 	}
 	
@@ -410,10 +414,8 @@ export const reaxel_SettingsView = reaxel( () => {
 				if( generation !== _aiOrderPersistGeneration ) {
 					return { success : true };
 				}
-				/* 未 Apply 的新建项还不在 user-ais.json，不能进 payload，否则 resolveReorderedAIs 会拒写。 */
-				const orderedIds = store.Data.AIs
-					.filter( ai => _committedAIIds.has( ai.id ) )
-					.map( ai => ai.id );
+				/* 未 Apply 新建项不能进 reorder-ais；待删除仍已提交，必须带着走。见 docs/features/ai-list-reorder.md */
+				const orderedIds = committedAIIdsInVisualOrder( store.Data.AIs , _committedAIIds );
 				if( orderedIds.length === 0 ) {
 					return { success : true };
 				}
@@ -670,8 +672,9 @@ import {
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import {
 	applyEnabledAIOrder ,
-	canonicalizeAIsForDirtySnapshot ,
-	enabledAIIdsEqual,
+	committedAIIdsInVisualOrder ,
+	enabledAIIdsEqual ,
+	snapshotAIsForDirty,
 } from '#src/shared/utils/merge-enabled-ai-order.utility';
 import {
 	createDefaultGlobalProxy as defaultGlobalProxyFields ,

@@ -215,9 +215,9 @@ export const reaxel_Settings = reaxel( () => {
 			}
 			if( result.changed ) {
 				await syncRuntimeViews();
-				/* Settings 自己拖完已经改了 store；再 echo 会盖掉未保存的新增行或进行中的下一次拖拽。 */
+				/* Settings 自己当 sender 时禁止 echo，见 docs/features/ai-list-reorder.md */
 				const settingsWebContents = reaxel_SettingsView.store.settingsView.view?.webContents;
-				if( settingsWebContents && !settingsWebContents.isDestroyed() && event.sender !== settingsWebContents ) {
+				if( shouldEchoAIOrderToSettings( event.sender , settingsWebContents ) ) {
 					notifySettingsAIOrder( normalizedIds );
 				}
 			}
@@ -389,6 +389,7 @@ import { getAIConfigService } from '#main/services/settings/ai-config-service';
 import { syncTrayState , updateTrayMenu } from '#main/services/tray';
 import { requestDevCleanStart } from '#main/services/dev/clean-start';
 import { cloneObservableToPlain } from '#src/shared/utils/clone-for-ipc.utility';
+import { shouldEchoAIOrderToSettings } from '#src/shared/utils/merge-enabled-ai-order.utility';
 import {
 	reaxel ,
 	createReaxable,

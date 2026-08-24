@@ -1,16 +1,12 @@
 /**
- * AI 列表排序（Switch AI 右键拖 / Settings 表拖）的纯函数。
+ * AI 列表排序的产品契约函数（写盘 / dirty / echo / Settings payload）。
+ * 交互与禁止项见 docs/features/ai-list-reorder.md。改前跑 `yarn test:ai-order`。
  *
- * 契约见 docs/features/ai-list-reorder.md。改 reorder-ais 或 dirty 判定前先跑
- * `yarn test:ai-order`（ChatAIO package.json）。
- *
- * 两条写盘路径共用 resolveReorderedAIs：
- * - Switch AI 只传 enabled id → 槽位合并，disabled 下标不动
- * - Settings 传全表 id（含 disabled）→ 整表置换
+ * 测试按用户可见结果锁契约，不要把内部槽位合并 / 全表置换拆成两套对偶用例。
  */
 
 /** Switch AI：enabled 新序填回原 enabled 槽；disabled 保持下标。集合对不上返回 null。 */
-export const mergeEnabledAIOrder = <T extends { id : string; disabled? : boolean }>(
+const mergeEnabledAIOrder = <T extends { id : string; disabled? : boolean }>(
 	ais : T[] ,
 	enabledIds : string[] ,
 ) : T[] | null => {
@@ -49,7 +45,7 @@ export const enabledAIIdsEqual = ( a : string[] , b : string[] ) => {
 	return a.length === b.length && a.every( ( id , index ) => id === b[index] );
 };
 
-export const isIdPermutation = ( ids : string[] , universe : string[] ) => {
+const isIdPermutation = ( ids : string[] , universe : string[] ) => {
 	if( !Array.isArray( ids ) || !Array.isArray( universe ) || ids.length !== universe.length ) {
 		return false;
 	}
@@ -68,7 +64,8 @@ export const isIdPermutation = ( ids : string[] , universe : string[] ) => {
 };
 
 /**
- * reorder-ais 写盘决策：全表置换或 enabled 槽位合并，否则 null（不写盘）。
+ * `reorder-ais` 写盘决策：payload 能解释成磁盘新序则返回新数组，否则 null（不写盘）。
+ * Switch AI 给 enabled id；Settings 给已提交全表 id（含 disabled / 待删除，不含未 Apply 新建项）。
  */
 export const resolveReorderedAIs = <T extends { id : string; disabled? : boolean }>(
 	current : T[] ,
@@ -85,9 +82,67 @@ export const resolveReorderedAIs = <T extends { id : string; disabled? : boolean
 	return mergeEnabledAIOrder( current , orderedIds );
 };
 
-/** Settings dirty 快照用：去掉排列差异，只比较条目集合/字段。 */
-export const canonicalizeAIsForDirtySnapshot = <T extends { id : string }>( ais : T[] ) : T[] => {
+/** Settings dirty：去掉排列差异，只比较条目集合/字段。 */
+const canonicalizeAIsForDirtySnapshot = <T extends { id : string }>( ais : T[] ) : T[] => {
 	return ais.slice().sort( ( a , b ) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0 );
+};
+
+/**
+ * Apply/dirty 看到的 AIs：待删除行不在快照里，顺序不计。
+ * 只改顺序时指纹不变；改名 / 启用 / 从快照拿掉一行必须变。
+ */
+export const snapshotAIsForDirty = <T extends { id : string }>(
+	ais : T[] ,
+	pendingDeleteIds : Iterable<string> = [] ,
+) : T[] => {
+	if( !Array.isArray( ais ) ) {
+		return [];
+	}
+	const pending = pendingDeleteIds instanceof Set
+		? pendingDeleteIds
+		: new Set( pendingDeleteIds );
+	const remaining = pending.size === 0
+		? ais
+		: ais.filter( ai => !pending.has( ai.id ) );
+	return canonicalizeAIsForDirtySnapshot( remaining );
+};
+
+/**
+ * Settings 松手写盘的 id 列表：按当前表序，只含已提交项。
+ * 待删除仍已提交，必须带着走；未 Apply 的新建项不能进 `reorder-ais`。
+ */
+export const committedAIIdsInVisualOrder = <T extends { id : string }>(
+	ais : T[] ,
+	committedIds : ReadonlySet<string> | readonly string[] ,
+) : string[] => {
+	if( !Array.isArray( ais ) ) {
+		return [];
+	}
+	const committed = committedIds instanceof Set
+		? committedIds
+		: new Set( committedIds );
+	return ais.filter( ai => committed.has( ai.id ) ).map( ai => ai.id );
+};
+
+type SettingsOrderEchoTarget = {
+	isDestroyed? : () => boolean;
+} | null | undefined;
+
+/**
+ * menubar 重排成功后才把新序 echo 给已打开的 Settings。
+ * Settings 自己当 sender 时禁止 echo：会盖掉未保存新建项或打断连续拖拽。
+ */
+export const shouldEchoAIOrderToSettings = (
+	sender : unknown ,
+	settingsWebContents : SettingsOrderEchoTarget ,
+) : boolean => {
+	if( !settingsWebContents ) {
+		return false;
+	}
+	if( typeof settingsWebContents.isDestroyed === 'function' && settingsWebContents.isDestroyed() ) {
+		return false;
+	}
+	return sender !== settingsWebContents;
 };
 
 /**
