@@ -205,9 +205,8 @@ export const reaxel_Settings = reaxel( () => {
 
 	useIpcRpc( 'reorder-ais' ).handle( async( { event } , enabledIds ) => {
 		try {
-			const result = aiConfigService.reorderEnabledAIs(
-				Array.isArray( enabledIds ) ? enabledIds.map( String ) : [],
-			);
+			const normalizedIds = Array.isArray( enabledIds ) ? enabledIds.map( String ) : [];
+			const result = aiConfigService.reorderEnabledAIs( normalizedIds );
 			if( !result.success ) {
 				return {
 					success : false ,
@@ -216,6 +215,10 @@ export const reaxel_Settings = reaxel( () => {
 			}
 			if( result.changed ) {
 				await syncRuntimeViews();
+				const settingsWebContents = reaxel_SettingsView.store.settingsView.view?.webContents;
+				if( settingsWebContents && !settingsWebContents.isDestroyed() && event.sender !== settingsWebContents ) {
+					notifySettingsAIOrder( normalizedIds );
+				}
 			}
 			return { success : true };
 		} catch ( error ) {
@@ -349,11 +352,22 @@ const formatResetAIDataError = (errors:{ target:string; error:string }[]) => {
 	}`;
 };
 
+const notifySettingsAIOrder = ( enabledIds:string[] ) => {
+	const settingsView = reaxel_SettingsView.store.settingsView.view;
+	if( !settingsView || settingsView.webContents.isDestroyed() ) {
+		return;
+	}
+	useIpcMainToRenderer( 'ais-order-changed' )
+		.targets( [ settingsView.webContents ] )
+		.send( cloneObservableToPlain( enabledIds ) );
+};
+
 export type Reaxel_Settings = typeof reaxel_Settings;
 
 import {
 	useIpcRpc ,
-	useIpcRendererToMain,
+	useIpcRendererToMain ,
+	useIpcMainToRenderer,
 } from '#main/services/ipc';
 import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
@@ -361,6 +375,7 @@ import { reaxel_MainView } from '#main/reaxels/Views/Main-View';
 import { reaxel_Menu } from '#main/reaxels/Menu';
 import { reaxel_I18n } from '#main/reaxels/I18n';
 import { Reaxel_View } from '#main/reaxels/Views';
+import { reaxel_SettingsView } from '#main/reaxels/Views/Settings-View';
 import { rehancer_ipcReceive } from './rehancer_ipcReceive';
 import { applyElectronAppearance } from '#main/services/appearance';
 import {

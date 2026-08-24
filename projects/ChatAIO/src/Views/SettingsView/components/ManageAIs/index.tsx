@@ -239,6 +239,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	export const RCManageAIsPanel = reaxper( () => {
 		const {
 			changeEditAIModalVisible ,
+			persistCommittedAIOrder ,
 			reloadSettings ,
 			setStartupAIPageLoadMode,
 		} = reaxel_SettingsView();
@@ -258,6 +259,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			if( !over || active.id === over.id ) {
 				return;
 			}
+			const previousAIs = reaxel_SettingsView.store.Data.AIs.slice();
 			reaxel_SettingsView.mutate.Data( state => {
 				const activeIndex = state.AIs.findIndex( ai => ai.id === active.id );
 				const overIndex = state.AIs.findIndex( ai => ai.id === over.id );
@@ -265,6 +267,16 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 					return;
 				}
 				state.AIs = arrayMove( state.AIs.slice() , activeIndex , overIndex );
+			} );
+			if( enabledAIIdsEqual(
+				previousAIs.map( ai => ai.id ) ,
+				reaxel_SettingsView.store.Data.AIs.map( ai => ai.id ),
+			) ) {
+				return;
+			}
+			void persistCommittedAIOrder( previousAIs ).catch( error => {
+				console.error( '[ManageAIs] Reorder failed:' , error );
+				message.error( i18n( 'Failed to reorder AI pages' ) );
 			} );
 		};
 
@@ -975,6 +987,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	import { AIFamily } from "#src/shared/statics/AI-family";
 	import { getAIDomainByFamily } from "#src/shared/statics/ai-family-defaults";
 	import { createDefaultProxyConf as defaultProxyConf } from "#src/shared/statics/default-proxy";
+	import { enabledAIIdsEqual } from '#src/shared/utils/merge-enabled-ai-order.utility';
 	import { AI } from "#src/Types/SettingsTypes/AI";
 	import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 	import type { Startup } from "#src/Types/SettingsTypes/Startup";

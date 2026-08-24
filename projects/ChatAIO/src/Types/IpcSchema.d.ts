@@ -29,6 +29,7 @@ export interface MainToRendererEvents extends Record<string , IpcStructure.MainT
 	'dropdown-view:command' : IpcStructure.MainToRendererEvent<[DropdownView.Command]>;
 	'update-state-changed' : IpcStructure.MainToRendererEvent<[AppUpdater.State]>;
 	'settings-view:navigate' : IpcStructure.MainToRendererEvent<[AppUpdater.NavigatePayload]>;
+	'ais-order-changed' : IpcStructure.MainToRendererEvent<[enabledIds: string[]]>;
 }
 
 export interface IpcSyncRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , unknown>> {

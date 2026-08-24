@@ -35,6 +35,10 @@ export const deleteAI = (id: string) => {
 	return api.deleteAI(id);
 }
 
+export const reorderAIs = (enabledIds: string[]) => {
+	return api.reorderAIs(cloneForIPC(enabledIds));
+}
+
 export const resetAIsToDefaults = () => {
 	return api.resetAIsToDefaults();
 }

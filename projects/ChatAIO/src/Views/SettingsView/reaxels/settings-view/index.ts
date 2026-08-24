@@ -101,6 +101,8 @@ export const reaxel_SettingsView = reaxel( () => {
 	// 已提交的 AI 快照，用于判断是否已修改
 	let _committedAISnapshot = new Map<string , string>();
 	let _proxyTestURLSubmitQueue:Promise<unknown> = Promise.resolve();
+	let _aiOrderPersistQueue:Promise<unknown> = Promise.resolve();
+	let _aiOrderPersistGeneration = 0;
 	
 	function updateSnapshot() {
 		_lastSavedSnapshot = JSON.stringify( buildDirtySettingsSnapshot() );
@@ -122,6 +124,8 @@ export const reaxel_SettingsView = reaxel( () => {
 		const settings = buildSettingsFromStore();
 		// 测试 URL 是输入时即时持久化字段，不参与底部 Apply/Save 的 dirty 判断。
 		delete ( settings.networks as Partial<Settings['networks']> ).proxy_test_urls;
+		// AI 列表顺序也是即时持久化，dirty 只比较条目内容，不比较排列。
+		settings.AIs = settings.AIs.slice().sort( ( a , b ) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0 );
 		return settings;
 	}
 	
@@ -387,6 +391,48 @@ export const reaxel_SettingsView = reaxel( () => {
 		setState.UIControls.manage_AIs( { startupAIPageLoadMode : aiPageLoadMode } );
 	};
 
+	const applyExternalEnabledAIOrder = ( enabledIds:string[] ) => {
+		const current = store.Data.AIs;
+		const next = applyEnabledAIOrder( current , enabledIds );
+		if( enabledAIIdsEqual( current.map( ai => ai.id ) , next.map( ai => ai.id ) ) ) {
+			return;
+		}
+		mutate.Data( state => {
+			state.AIs = next;
+		} );
+	};
+
+	const persistCommittedAIOrder = ( previousAIs:AI.AIItem[] ) => {
+		const generation = ++_aiOrderPersistGeneration;
+		_aiOrderPersistQueue = _aiOrderPersistQueue
+			.catch( () => null )
+			.then( async() => {
+				if( generation !== _aiOrderPersistGeneration ) {
+					return { success : true };
+				}
+				const orderedIds = store.Data.AIs
+					.filter( ai => _committedAIIds.has( ai.id ) )
+					.map( ai => ai.id );
+				if( orderedIds.length === 0 ) {
+					return { success : true };
+				}
+				const result = await reorderAIs( cloneForIPC( orderedIds ) );
+				if( !result?.success ) {
+					throw new Error( result?.error || 'Failed to reorder AI pages' );
+				}
+				return result;
+			} )
+			.catch( error => {
+				if( generation === _aiOrderPersistGeneration ) {
+					mutate.Data( state => {
+						state.AIs = previousAIs;
+					} );
+				}
+				throw error;
+			} );
+		return _aiOrderPersistQueue;
+	};
+
 	const setProxyTestURL = async( target:NetworkProxy.ProxyTestTarget , url:string ) => {
 		const nextProxyTestURLs:NetworkProxy.ProxyTestURLs = {
 			...store.UIControls.networks.proxy_test_urls ,
@@ -423,6 +469,8 @@ export const reaxel_SettingsView = reaxel( () => {
 		setAIEnabled ,
 		createDefaultAIName ,
 		setStartupAIPageLoadMode ,
+		applyExternalEnabledAIOrder ,
+		persistCommittedAIOrder ,
 		setProxyTestURL ,
 		submitSettings ,
 		exitSettings ,
@@ -608,6 +656,7 @@ import {
 	fetchSettings as fetchSettingsService ,
 	getAppearanceEnvironment ,
 	previewPromptViewAppearance ,
+	reorderAIs ,
 	submitSettings ,
 	turnToNextAiPage ,
 	turnToPreviousAiPage,
@@ -618,6 +667,10 @@ import {
 	resolveThemePreference,
 } from '#src/shared/appearance';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import {
+	applyEnabledAIOrder ,
+	enabledAIIdsEqual,
+} from '#src/shared/utils/merge-enabled-ai-order.utility';
 import {
 	createDefaultGlobalProxy as defaultGlobalProxyFields ,
 	createDefaultProxyConf as defaultProxyConf ,

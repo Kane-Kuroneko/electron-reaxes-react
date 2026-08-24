@@ -198,9 +198,13 @@ class AIConfigService {
 		return true;
 	}
 
-	reorderEnabledAIs( enabledIds:string[] ):{ success:boolean; changed:boolean; error?:string } {
+	reorderEnabledAIs( orderedIds:string[] ):{ success:boolean; changed:boolean; error?:string } {
 		const current = this.getEffectiveAIs();
-		const merged = mergeEnabledAIOrder( current , enabledIds );
+		const byId = new Map( current.map( ai => [ ai.id , ai ] as const ) );
+		const allIds = current.map( ai => ai.id );
+		const merged = isIdPermutation( orderedIds , allIds )
+			? orderedIds.map( id => byId.get( id )! )
+			: mergeEnabledAIOrder( current , orderedIds );
 		if( !merged ) {
 			return {
 				success : false ,
@@ -208,7 +212,7 @@ class AIConfigService {
 				error : 'Enabled AI id list does not match current settings',
 			};
 		}
-		if( enabledAIIdsEqual( current.map( ai => ai.id ) , merged.map( ai => ai.id ) ) ) {
+		if( enabledAIIdsEqual( allIds , merged.map( ai => ai.id ) ) ) {
 			return {
 				success : true ,
 				changed : false,
@@ -268,6 +272,7 @@ import defaultAIsData from '#src/shared/statics/default-ais.json';
 import { cloneObservableToPlain } from '#src/shared/utils/clone-for-ipc.utility';
 import {
 	enabledAIIdsEqual ,
+	isIdPermutation ,
 	mergeEnabledAIOrder,
 } from '#src/shared/utils/merge-enabled-ai-order.utility';
 import { AI } from '#src/Types/SettingsTypes/AI';

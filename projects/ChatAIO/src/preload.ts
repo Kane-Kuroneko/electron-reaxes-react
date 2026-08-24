@@ -73,6 +73,11 @@ const onSettingsViewNavigate = (callback:(payload:AppUpdater.NavigatePayload) =>
 		callback( payload );
 	} );
 };
+const onAIsOrderChanged = (callback:(enabledIds:string[]) => void) => {
+	return useMtr( 'ais-order-changed' )( ( _ , enabledIds ) => {
+		callback( enabledIds );
+	} );
+};
 const isDropdownVisible = (): boolean => {
 	return ipcRenderer.sendSync( 'JSON_SYNC' , { channel : 'dropdown-view:is-visible' } );
 };
@@ -127,6 +132,7 @@ const api = {
 	onDropdownViewCommand,
 	onUpdateStateChanged,
 	onSettingsViewNavigate,
+	onAIsOrderChanged,
 	menuViewReady,
 	menuViewResize,
 	onMenuViewCommand,
