@@ -6,8 +6,10 @@ alwaysApply: true
 # Monorepo 子工程工作区
 
 - 当前目录 `projects/ChatAIO` 是 **electron-reaxes-react** monorepo 的子工程，不是独立 git 仓库。
-- 编码规范、IPC、架构规则以 monorepo 根文档为准；本目录下 `.claude/`、`.qoder/`、`CODING_STANDARD.md` 等为指向根目录的软链接。
-- 入口文档：本工程 [`AGENTS.md`](../../AGENTS.md)（相对 `.cursor/rules/` 为 `../../AGENTS.md`）。
+- 编码规范、IPC、架构规则以仓库根 [`.agents/`](../../../../.agents/) 和 [`AGENTS.md`](../../../../AGENTS.md) 为准。本目录 `.claude/` / `.qoder/` / `.codex/` 是整棵方言目录软链（工作区发现根配置）。`.agents/` 是真实目录，里面只有单文件软链（`skills/<name>/SKILL.md`、`rules/*.md`）指向仓库根 `.agents/`；不要再把整棵 `.agents` 做成目录软链。`CODING_STANDARD.md` 等同理是单文件软链。
+- 本目录 [`AGENTS.md`](../../AGENTS.md) 是 **ChatAIO 入口**（真文件）：顶部指向根 [`AGENTS.md`](../../../../AGENTS.md) 作为全局规则，下面是本工程文档索引。`CLAUDE.md` / `DOCS.md` 指向本目录 `AGENTS.md`。
+- 不要把本工程 issue / 设计写进根 `AGENTS.md`；新文档加进本目录 `AGENTS.md` 的本工程段，或直接放 `docs/`。
+- **新增功能**：必须沉淀设计文档，并在关键代码 / 模块写注释。完整约定见 [`docs/agent/feature-design-and-comments.md`](../../docs/agent/feature-design-and-comments.md)。
 - **需要 git 提交 / 查看仓库状态时**：将工作目录切换到 monorepo 根（`projects/ChatAIO/../..`），再执行 git；禁止在子工程目录当作仓库根操作。
-- 未经用户显式要求，不得 `git commit` / `push` / `amend`（见 `git-commit-policy.mdc`）。
-- **软链 / 新机**：`.git/config` 不进版本库。新 clone 或新机器上，Windows Git 常把本地 `core.symlinks` 写成 `false`，软链会退化成普通文本文件。在 monorepo 根先跑 `yarn setup:git-symlinks`（已退化则加 `--restore`）。详见 `AGENTS.md`「软链接说明」。
+- 未经用户显式要求，不得 `git commit` / `push` / `amend`（见 [git-commit-policy.md](../../../../.agents/rules/git-commit-policy.md)）。
+- **软链 / 新机**：`.git/config` 不进版本库。新 clone 或新机器上，Windows Git 常把本地 `core.symlinks` 写成 `false`，软链会退化成普通文本文件。在 monorepo 根先跑 `yarn setup:git-symlinks`（已退化则加 `--restore`）。详见仓库根 [`AGENTS.md`](../../../../AGENTS.md)「新机 / 新 clone」。

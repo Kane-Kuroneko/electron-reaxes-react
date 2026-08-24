@@ -1,0 +1,1 @@
+../../../../.agents/rules/ipc-coding.md

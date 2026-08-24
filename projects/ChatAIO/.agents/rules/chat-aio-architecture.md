@@ -1,0 +1,1 @@
+../../../../.agents/rules/chat-aio-architecture.md

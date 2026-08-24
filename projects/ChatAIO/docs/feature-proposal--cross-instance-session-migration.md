@@ -2,7 +2,7 @@
 
 > 状态：调研完成，待实现
 > 创建日期：2026-06-16
-> 关联文档：`docs/architecture/ai-config.md`、`.claude/rules/ipc-coding.md`
+> 关联文档：`docs/architecture/ai-config.md`、`.agents/rules/ipc-coding.md`
 
 ---
 

@@ -1,167 +1,113 @@
-# ChatAIO — Agent Coding Guide
+# ChatAIO
 
-本目录是 monorepo **子工程**。当前工作区若以本目录为根打开，请先建立「根仓库」心智模型，再改代码。
+全仓库不变量见仓库根 [AGENTS.md](../../AGENTS.md)，本文不重复。
 
-| 角色 | 路径 |
+`CLAUDE.md`、`DOCS.md` 指向本文件。issue / 设计 / 复盘都在 `docs/`；**本文只做索引**。新文档加到下面对应条目，不要写进根 `AGENTS.md`。
+
+新增功能先读 [设计文档与关键注释](./docs/agent/feature-design-and-comments.md)。架构摘要：[ChatAIO 架构](../../.agents/rules/chat-aio-architecture.md)。
+
+`docs/README.md` 只指向本文，不在 `docs/` 里再维护一份总目录。
+
+## 按任务 / 症状
+
+### 中心 AI 页闪白、回前台
+
+- [现行生命周期](./docs/issues/ai-view-foreground-white-flash.md)
+- [已经证伪的修法](./docs/issues/ai-view-background-throttling-postmortem.md)（关节流 / 踢绘 / Occlusion / 1×1）
+- [白屏监控（只观察）](./docs/features/ai-view-white-screen-monitor.md)
+
+### 第一次切到预加载 AI 卡顿
+
+- [暖机复盘](./docs/issues/ai-view-first-present-warmup-postmortem.md)（跟手优先，接受首切卡顿）
+- [预加载 v1–v8 与 park 不变量](./docs/issues/ai-view-preload-first-switch-flash.md)
+
+### Switch AI / 浮层卡片
+
+- [连点 Ctrl+[/] 动画不跟手](./docs/features/floating-view-rapid-switch-optimization.md)
+- [切后台后再切 AI，SwitchAiBar 不见](./docs/issues/floating-view-missing-after-background.md)
+- [拖拽排序、顺序写盘](./docs/features/ai-list-reorder.md)
+- [卡片 UX](./docs/features/floating-view-card-ux-optimization.md)、[Swiper 迁移](./docs/features/floating-view-swiper-migration.md)
+- [切换热路径](./docs/features/ai-page-switch-performance-optimization.md)
+
+### menubar / 透明窗
+
+- [Windows 拖 menubar 抖动](./docs/issues/menubar-drag-investigation.md)（禁止 `forward: true`）
+- [拖拽区漏到内容下方](./docs/issues/menubar-drag-region-leak-below-content.md)
+- [平台 menubar 路径](./docs/architecture/menubar-platform-paths.md)
+
+### 登录 / 身份 / 代理
+
+- [Google AI Studio / Chrome 身份](./docs/issues/google-ai-studio-electron-browser-identity.md)
+- [AI 配置双层](./docs/architecture/ai-config.md)
+- [敏感地区访问阻断](./docs/features/sensitive-region-access-blocking.md)
+
+### Prompt / Settings / 外观
+
+- [Prompt View](./docs/features/prompt-view.md)、[bugfix 与 UX](./docs/features/prompt-view-bugfix-and-ux.md)、[视觉](./docs/features/prompt-view-visual-refresh.md)
+- [Settings 退出丢弃 / 滚动条](./docs/features/settings-exit-discard-and-prompt-scrollbar.md)
+- [外观 / 主题](./docs/architecture/appearance-theme-environment.md)、[i18n](./docs/architecture/i18n.md)
+
+### 换图标
+
+- 仓库根 [替换 App / Tray 图标](../../scripts/replace-app-icons/AGENTS.md)（不要手改 `.ico` / `.icns`）
+
+硬约束见上表对应 `docs/issues`（尤其是回前台闪白、menubar 拖拽），不要把禁止项再抄进本文。
+
+## 按目录翻
+
+### architecture/
+
+| 文档 | 内容 |
 |------|------|
-| **Monorepo 根**（git 仓库根、Yarn workspace、engine 构建入口） | [`../../`](../../) → `electron-reaxes-react/` |
-| **本子工程** | `.` → `projects/ChatAIO/` |
+| [ai-config.md](./docs/architecture/ai-config.md) | AI 配置双层（用户项 / 运行时 view） |
+| [appearance-theme-environment.md](./docs/architecture/appearance-theme-environment.md) | 外观 / 主题注入 AI 页 |
+| [build-pipeline-and-dev-refresh.md](./docs/architecture/build-pipeline-and-dev-refresh.md) | 构建与 dev 热更新 |
+| [i18n.md](./docs/architecture/i18n.md) | 国际化 |
+| [main-view.md](./docs/architecture/main-view.md) | 主壳 / Main View |
+| [menubar-platform-paths.md](./docs/architecture/menubar-platform-paths.md) | 平台 menubar 路径 |
+| [custom-menu-view-prd.md](./docs/architecture/custom-menu-view-prd.md) | 自定义菜单 PRD |
 
-> 根目录相对本文件：`../..`（即 `projects/ChatAIO/../..`）。
+### features/
 
----
+| 文档 | 内容 |
+|------|------|
+| [ai-list-reorder.md](./docs/features/ai-list-reorder.md) | Switch AI / Manage AIs 立即持久化排序 |
+| [ai-page-switch-performance-optimization.md](./docs/features/ai-page-switch-performance-optimization.md) | 切换热路径 CPU / z-order |
+| [ai-view-white-screen-monitor.md](./docs/features/ai-view-white-screen-monitor.md) | `white-screen-monitor.jsonl` 调度链 |
+| [floating-view-rapid-switch-optimization.md](./docs/features/floating-view-rapid-switch-optimization.md) | SwitchAiBar 连点 Interrupt & Redirect |
+| [floating-view-card-ux-optimization.md](./docs/features/floating-view-card-ux-optimization.md) | 切换卡片 UX |
+| [floating-view-swiper-migration.md](./docs/features/floating-view-swiper-migration.md) | Swiper 迁移 |
+| [focus-stealing-analysis.md](./docs/features/focus-stealing-analysis.md) | AI 页抢焦点 |
+| [prompt-view.md](./docs/features/prompt-view.md) | Prompt View |
+| [prompt-view-bugfix-and-ux.md](./docs/features/prompt-view-bugfix-and-ux.md) | Prompt 修复与 UX |
+| [prompt-view-visual-refresh.md](./docs/features/prompt-view-visual-refresh.md) | Prompt 视觉 |
+| [sensitive-region-access-blocking.md](./docs/features/sensitive-region-access-blocking.md) | 敏感地区访问阻断 |
+| [settings-exit-discard-and-prompt-scrollbar.md](./docs/features/settings-exit-discard-and-prompt-scrollbar.md) | Settings 退出丢弃 / 滚动条 |
 
-## Git / 提交（必读）
+### issues/
 
-**Git 仓库在 monorepo 根，不在本子工程目录。**
+| 文档 | 内容 |
+|------|------|
+| [ai-view-background-throttling-postmortem.md](./docs/issues/ai-view-background-throttling-postmortem.md) | 闪白错误路径 |
+| [ai-view-foreground-white-flash.md](./docs/issues/ai-view-foreground-white-flash.md) | 现行中心 WCV 回前台生命周期 |
+| [ai-view-first-present-warmup-postmortem.md](./docs/issues/ai-view-first-present-warmup-postmortem.md) | 预加载暖不了可见态 |
+| [ai-view-preload-first-switch-flash.md](./docs/issues/ai-view-preload-first-switch-flash.md) | 预加载 v1–v8 与 park |
+| [floating-view-missing-after-background.md](./docs/issues/floating-view-missing-after-background.md) | overlay 冷 reveal |
+| [menubar-drag-investigation.md](./docs/issues/menubar-drag-investigation.md) | Windows `forward: true` |
+| [menubar-drag-region-leak-below-content.md](./docs/issues/menubar-drag-region-leak-below-content.md) | 拖拽区漏到内容下方 |
+| [google-ai-studio-electron-browser-identity.md](./docs/issues/google-ai-studio-electron-browser-identity.md) | AI Studio / Chrome 身份 |
+| [i18n-architecture-issues.md](./docs/issues/i18n-architecture-issues.md) | i18n 架构问题 |
+| [i18n-fixes.md](./docs/issues/i18n-fixes.md) | i18n 修复记录 |
 
-- 本目录下**没有**独立 `.git`；所有 `git status` / `git diff` / `git commit` / `git push` 都必须在 **monorepo 根路径**执行。
-- 若用户要求提交：先把 cwd / agent workspace 切到 monorepo 根（`../../`），再执行 git 操作；不要在本子工程目录假装「本地仓库」。
-- **未经用户显式要求，禁止擅自 `git commit` / `push` / `amend`。** 详见根规则：
-  - [`.cursor/rules/git-commit-policy.mdc`](../../.cursor/rules/git-commit-policy.mdc)（本目录软链：[`.cursor/rules/git-commit-policy.mdc`](./.cursor/rules/git-commit-policy.mdc)）
-  - [`.claude/skills/review-local-changes.md`](../../.claude/skills/review-local-changes.md)
-- **与远程同步一律 `merge`，禁止 `rebase` / `pull --rebase`。**（见同上 `git-commit-policy.mdc`）
+### 其它
 
----
-
-## Monorepo 根文档索引（请优先读这些）
-
-以下路径均相对 **monorepo 根**；本子工程内同名路径多为**软链接副本**，内容与根目录保持一致。
-
-| 文档 | 根路径 | 本目录软链 / 入口 |
-|------|--------|-------------------|
-| Agent 总览（Claude） | [`.claude/CLAUDE.md`](../../.claude/CLAUDE.md) | [`.claude/CLAUDE.md`](./.claude/CLAUDE.md) |
-| 编码规范（人读） | [`CODING_STANDARD.md`](../../CODING_STANDARD.md) | [`CODING_STANDARD.md`](./CODING_STANDARD.md) |
-| 编码规范（agent rule） | [`.claude/rules/coding-standard.md`](../../.claude/rules/coding-standard.md) | [`.claude/rules/coding-standard.md`](./.claude/rules/coding-standard.md) |
-| IPC 规范 | [`.claude/rules/ipc-coding.md`](../../.claude/rules/ipc-coding.md) | [`.claude/rules/ipc-coding.md`](./.claude/rules/ipc-coding.md) |
-| ChatAIO 架构要点 | [`.claude/rules/chat-aio-architecture.md`](../../.claude/rules/chat-aio-architecture.md) | [`.claude/rules/chat-aio-architecture.md`](./.claude/rules/chat-aio-architecture.md) |
-| Reaxes 开发 skill | [`.claude/skills/reaxes-development.md`](../../.claude/skills/reaxes-development.md) | [`.claude/skills/reaxes-development.md`](./.claude/skills/reaxes-development.md) |
-| Qoder 规则 / skills | [`.qoder/`](../../.qoder/) | [`.qoder/`](./.qoder/) |
-| Codex skill | [`.codex/skills/electron-reaxes-react/SKILL.md`](../../.codex/skills/electron-reaxes-react/SKILL.md) | [`.codex/`](./.codex/) |
-| 根 README（构建说明） | [`readme.md`](../../readme.md) | — |
-
-各家工具入口约定：
-
-- **通用 / Cursor / Codex 等**：读本文件 [`AGENTS.md`](./AGENTS.md)
-- **Claude Code**：[`CLAUDE.md`](./CLAUDE.md) → 软链到本文件；并加载 [`.claude/`](./.claude/)
-- **Cursor Rules**：[`.cursor/rules/`](./.cursor/rules/)
-- **Qoder**：[`.qoder/`](./.qoder/)
-- **Codex**：本文件 + [`.codex/`](./.codex/)
-
----
-
-## 本子工程文档
-
-- **总索引（按症状）**：[`docs/README.md`](./docs/README.md)
-- [`fixme.md`](./fixme.md) — 问题清单（P0–P3）
-- [`todo.md`](./todo.md)
-- [`docs/architecture/`](./docs/architecture/) — AI 配置、构建、i18n、menubar 等
-- [`docs/features/`](./docs/features/)
-- [`docs/issues/`](./docs/issues/) — 复盘 / 决策树 / 禁止项
-
-改 FloatingView、menubar、透明窗、鼠标穿透、中心 WebContentsView 生命周期、预加载 park 前必读：
-
-- [`docs/issues/ai-view-foreground-white-flash.md`](./docs/issues/ai-view-foreground-white-flash.md) — **中心 WCV 回前台现行架构（改 present / fitWindow / 节流前必读）**
-- [`docs/issues/ai-view-background-throttling-postmortem.md`](./docs/issues/ai-view-background-throttling-postmortem.md) — 闪白错误路径（关节流 / 踢绘 / Occlusion / 1×1）
-- [`docs/issues/ai-view-first-present-warmup-postmortem.md`](./docs/issues/ai-view-first-present-warmup-postmortem.md) — **预加载暖不了可见态；跟手优先，接受第一次 present 卡顿（改 park / 想「画暖」后台页前必读）**
-- [`docs/issues/ai-view-preload-first-switch-flash.md`](./docs/issues/ai-view-preload-first-switch-flash.md) — v8 park 不变量
-- [`docs/issues/menubar-drag-investigation.md`](./docs/issues/menubar-drag-investigation.md)
-- [`docs/issues/menubar-drag-region-leak-below-content.md`](./docs/issues/menubar-drag-region-leak-below-content.md)
-- [`docs/issues/floating-view-missing-after-background.md`](./docs/issues/floating-view-missing-after-background.md)
-
-### 替换 App / Tray 图标（Agent）
-
-用户要求更换应用图标时，**不要手改 `.ico` / `.icns`**，在 monorepo 根调用统一脚本（附完整 agent 手册）：
-
-- 手册：[`../../scripts/replace-app-icons/AGENTS.md`](../../scripts/replace-app-icons/AGENTS.md)
-- 命令：
-
-```bash
-# 正式版
-python scripts/replace-app-icons/replace-app-icons.py "<PNG绝对路径>" --project ChatAIO --variant prod
-# DEV（写入 gpt-dev / tray-icon-dev…；运行时 !app.isPackaged 选用）
-python scripts/replace-app-icons/replace-app-icons.py "<PNG绝对路径>" --project ChatAIO --variant dev
-# 或
-yarn replace-app-icons -- "<PNG绝对路径>" --project ChatAIO --variant prod
-```
-
-源 PNG 只读；`prod` 覆盖 `statics/gpt.{ico,icns,png}` 等，`dev` 覆盖对应 `*-dev` 文件。运行时选择见 `src/Main/services/app-icons/`。未经用户要求不要 commit。
-
----
-
-## 新机 / 新 clone 检查清单
-
-1. 工作目录切到 **monorepo 根**（git 仓库根）。
-2. 跑 `yarn setup:git-symlinks`（`.git/config` **不会**进版本库，每台机器都要设；否则 Windows 上软链会退化成文本文件）。
-3. `yarn` 安装依赖；勿用 `npm i`。
-
----
-
-## 快速命令
-
-依赖安装与 engine 均在 **monorepo 根**；本仓库使用 **Yarn**，勿用 `npm i`。
-
-在 monorepo 根：
-
-```bash
-yarn build:webpack
-# 或
-npm start ChatAIO
-```
-
-在本子工程目录（脚本内部会 `--cwd ../..`）：
-
-```bash
-yarn start:webpack
-yarn start:electron
-yarn build:webpack
-```
-
-类型检查（建议在 monorepo 根执行）：
-
-```bash
-./node_modules/.bin/tsc.cmd -p projects/ChatAIO/tsconfig.json --noEmit
-```
-
----
-
-## 编码要点（摘要）
-
-完整规范见根目录 [`CODING_STANDARD.md`](../../CODING_STANDARD.md) / [`.claude/rules/coding-standard.md`](../../.claude/rules/coding-standard.md)。
-
-- **import/export 放文件底部**；顺序：相对路径 → 别名 → 第三方 → 样式
-- 缩进优先 **Tab**（或 3 空格）；单引号 + 分号
-- Reaxel：`reaxel_*`；组件常用 `reaxper`；hooks 多为全局注入
-- IPC：渲染进程只用 `window.api`；主进程用 `useIpc*`；store 相关 payload 先 `cloneForIPC`
-- AI 身份用 `AI.AIItem.id`，不要用 `AI_family` 当实例 id
-- Windows FloatingView：**禁止** `setIgnoreMouseEvents(true, { forward: true })`
-
-路径别名（相对 monorepo）：`#root/*`、`#root-projects/*`、`#project/*`、`#generics/*`、`#main/*`、`#src/*`
-
-本地 Reaxes 实现参考：`Z:\reaxes`（行为不清时查阅）
-
----
-
-## 软链接说明
-
-本目录下 `.claude/`、`.cursor/rules/`（共享规则）、`.qoder/`、`.codex/`、`CODING_STANDARD.md`、`CLAUDE.md` 为指向 monorepo 根的**软链接副本**，避免与根文档分叉。  
-若链接失效，以 monorepo 根路径下的原文为准，并按上表相对路径修复链接。
-
-### Git 必须启用 `core.symlinks`（新机 / 新 clone 必做）
-
-**`.git/config` 不会进入版本库。** 某台机器上设好的 `core.symlinks=true` 不会随 commit/push 带到其他机器。  
-Windows 上 Git 常在 clone/init 时把**本地** `core.symlinks` 写成 `false`，检出时会把软链**退化成只含目标路径的普通文本文件**。本仓库依赖真实软链。
-
-**Agent / 开发者在新机首次拉代码后，必须先在 monorepo 根执行一次：**
-
-```bash
-yarn setup:git-symlinks
-# 若软链已退化成普通文件：
-yarn tsx scripts/setup-git-symlinks.ts --restore
-
-# 或手动
-git config --local core.symlinks true
-```
-
-前置：Windows 开发人员模式，或已启用 `SeCreateSymbolicLinkPrivilege`。  
-验证：`git config --local --get core.symlinks` 应为 `true`；`Get-Item projects/ChatAIO/CLAUDE.md` 的 `LinkType` 应为 `SymbolicLink`。
+| 文档 | 内容 |
+|------|------|
+| [feature-design-and-comments.md](./docs/agent/feature-design-and-comments.md) | 新增功能：设计文档 + 关键注释 |
+| [menu-label-width.md](./docs/modules/menu-label-width.md) | 菜单标签宽度 |
+| [feature-proposal--cross-instance-session-migration.md](./docs/feature-proposal--cross-instance-session-migration.md) | 跨实例会话迁移提案 |
+| [prompt-view-improvements.md](./docs/prompt-view-improvements.md) | Prompt 改进笔记 |
+| [prompt-view-redesign.md](./docs/prompt-view-redesign.md) | Prompt 重设计 |
+| [prompt-view-settings-fixes.md](./docs/prompt-view-settings-fixes.md) | Prompt / Settings 修复 |
+| [fixme.md](./fixme.md) | 问题清单（P0–P3） |
+| [todo.md](./todo.md) | 待办 |

@@ -32,9 +32,8 @@ ChatAIO 当前打包构建流程可运行，但架构边界不够清晰：公共
 
 本次分析依据包括：
 
-- 根规则：`CODING_STANDARD.md`、`.qoder/rules/coding-standard.md`、`.qoder/rules/ipc-coding.md`。
-- Codex skill：`.codex/skills/electron-reaxes-react/SKILL.md`。
-- Qoder skill：`.qoder/skills/reaxes-development/SKILL.md`。
+- 根规则：`CODING_STANDARD.md`、`.agents/rules/coding-standard.md`、`.agents/rules/ipc-coding.md`。
+- Reaxes skill：`.agents/skills/reaxes-development/SKILL.md`。
 - `.cursor`：当前目录为空，未发现可读规则文件。
 - ChatAIO 文档：`todo.md`、`fixme.md`、`docs/architecture/*`、`docs/features/*`、`docs/issues/*`。
 - 构建入口：`engine/webpack/*`、`scripts/webpack.start/*`、`scripts/webpack.build/*`、`scripts/electron.start/*`、`scripts/utils/*`。

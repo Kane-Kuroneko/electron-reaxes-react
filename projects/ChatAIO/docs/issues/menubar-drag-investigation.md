@@ -88,7 +88,7 @@ floatingWindow.setIgnoreMouseEvents( true , { forward : false } );
 
 ### 相关 IPC 规范（menubar 改动时）
 
-修改 menubar / DropdownView 的 Renderer → Main IPC 时，**必须**对来自 `reaxel_MainView.store` 的载荷使用 `cloneForIPC`（`openDropdownView.items`、`menuViewAction` 等）。主进程首次下发的 plain JSON 写入 store 后会变为 observable，不能因「菜单数据本是 JSON」而省略克隆。详见 [`.qoder/rules/ipc-coding.md`](../../../.qoder/rules/ipc-coding.md) §错误 0 / Store 往返。
+修改 menubar / DropdownView 的 Renderer → Main IPC 时，**必须**对来自 `reaxel_MainView.store` 的载荷使用 `cloneForIPC`（`openDropdownView.items`、`menuViewAction` 等）。主进程首次下发的 plain JSON 写入 store 后会变为 observable，不能因「菜单数据本是 JSON」而省略克隆。详见 [`.agents/rules/ipc-coding.md`](../../../.agents/rules/ipc-coding.md) §错误 0 / Store 往返。
 
 ## 2. 症状和评分
 

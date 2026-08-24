@@ -1,3 +1,8 @@
+---
+name: review-local-changes
+description: 审查未提交的 git 改动并分类、建议提交。仅在用户明确要求时才 commit。用户要看本地改动或准备提交时使用。
+---
+
 # 审查本地改动
 
 > 审查本地代码仓库中所有未提交的改动(working tree diff / staged diff / untracked files)，帮助用户决定"哪些该提交、哪些该丢弃、哪些需要进一步处理"。最终决策权始终在用户手里。
@@ -6,7 +11,7 @@
 
 1. **禁止擅自 `git commit`**。任何时候都不能在用户没有明确说"commit"、"提交"、"帮我commit这些"之类指令前执行提交操作，哪怕用户已经认可了你的分类结果或提交方案。认可方案 ≠ 授权提交，必须等待独立的、明确的提交指令。
 2. **禁止擅自 `git push`**。同理，即使已经commit(无论是用户自己commit还是经明确授权由你commit)，也不能主动push到remote，除非用户单独明确要求push。
-3. **禁止 `rebase`**：与远程整合一律用 `merge`（`git pull` / `git merge`），不得使用 `git rebase`、`git pull --rebase` 或等价改写历史操作。详见 `.cursor/rules/git-commit-policy.mdc`。
+3. **禁止 `rebase`**：与远程整合一律用 `merge`（`git pull` / `git merge`），不得使用 `git rebase`、`git pull --rebase` 或等价改写历史操作。详见 [git-commit-policy.md](../../rules/git-commit-policy.md)。
 4. 如果用户的指令模糊(比如"按你的建议来")，视为对**分类/分组方案**的确认，不能视为对commit/push动作本身的授权。此时应该反问一句"确认要我执行commit吗?"再动手。
 5. 上述红线不因"看起来改动很小/很安全""用户很着急"等理由放松。
 

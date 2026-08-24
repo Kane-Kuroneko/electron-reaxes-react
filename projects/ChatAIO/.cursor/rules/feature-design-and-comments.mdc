@@ -1,0 +1,16 @@
+---
+description: 新增功能必须沉淀设计文档，并在关键代码/模块写注释
+alwaysApply: true
+---
+
+# 新增功能：设计文档与关键注释
+
+每次新增或明显扩展功能，**代码与文档必须一起交**：
+
+1. 写独立设计文档（默认 `docs/features/`；结构放 `docs/architecture/`；复盘放 `docs/issues/`）。
+2. 在子工程根 [`AGENTS.md`](../../AGENTS.md) 的本工程段索引（`DOCS.md` 是它的别名）。全仓库不变量才写进根 [`AGENTS.md`](../../../../AGENTS.md)。
+3. 在模块入口、生命周期、IPC、平台分叉处写中文注释，并指向该设计文档。
+
+缺文档或关键注释视为未完成。全文、检查清单与反例：[`docs/agent/feature-design-and-comments.md`](../../docs/agent/feature-design-and-comments.md)。
+
+纯文案 / 已有文档覆盖的局部 bugfix 可更新原文，不必另起空文。不确定时写短文档。

@@ -14,13 +14,52 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const restore = process.argv.includes('--restore');
 
+/**
+ * Tracked 软链必须是**单文件**（mode 120000）。
+ * 禁止把 skills 包目录或整棵 `.agents` 做成目录软链：Git 对目录软链内部
+ * pathspec 会报 `fatal: pathspec '...' is beyond a symbolic link`。
+ * 方言 `.claude/skills/<name>/` 等应是真实目录，只软链其中的 `SKILL.md`。
+ * 子工程 `projects/ChatAIO/.claude` 等整棵方言目录软链是工作区发现入口，另论。
+ */
 const trackedSymlinkPaths = [
+	'CLAUDE.md',
+	'.claude/CLAUDE.md',
+	'.claude/rules/coding-standard.md',
+	'.claude/rules/ipc-coding.md',
+	'.claude/rules/git-commit-policy.md',
+	'.claude/rules/chat-aio-architecture.md',
+	'.claude/skills/reaxes-development/SKILL.md',
+	'.claude/skills/review-local-changes/SKILL.md',
+	'.qoder/rules/coding-standard.md',
+	'.qoder/rules/ipc-coding.md',
+	'.qoder/rules/git-commit-policy.md',
+	'.qoder/rules/chat-aio-architecture.md',
+	'.qoder/skills/reaxes-development/SKILL.md',
+	'.qoder/skills/review-local-changes/SKILL.md',
+	'.cursor/rules/git-commit-policy.mdc',
+	'.cursor/rules/coding-standard.mdc',
+	'.cursor/rules/ipc-coding.mdc',
+	'.cursor/rules/chat-aio-architecture.mdc',
+	'.codex/AGENTS.md',
+	'.codex/skills/reaxes-development/SKILL.md',
+	'.codex/skills/review-local-changes/SKILL.md',
 	'projects/ChatAIO/CLAUDE.md',
+	'projects/ChatAIO/DOCS.md',
 	'projects/ChatAIO/CODING_STANDARD.md',
+	'projects/ChatAIO/.agents/README.md',
+	'projects/ChatAIO/.agents/rules/chat-aio-architecture.md',
+	'projects/ChatAIO/.agents/rules/coding-standard.md',
+	'projects/ChatAIO/.agents/rules/git-commit-policy.md',
+	'projects/ChatAIO/.agents/rules/ipc-coding.md',
+	'projects/ChatAIO/.agents/skills/reaxes-development/SKILL.md',
+	'projects/ChatAIO/.agents/skills/review-local-changes/SKILL.md',
 	'projects/ChatAIO/.claude',
 	'projects/ChatAIO/.qoder',
 	'projects/ChatAIO/.codex',
 	'projects/ChatAIO/.cursor/rules/git-commit-policy.mdc',
+	'projects/ChatAIO/.cursor/rules/coding-standard.mdc',
+	'projects/ChatAIO/.cursor/rules/ipc-coding.mdc',
+	'projects/ChatAIO/.cursor/rules/chat-aio-architecture.mdc',
 ];
 
 function git(args: string[]): string {

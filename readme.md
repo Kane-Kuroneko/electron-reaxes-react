@@ -35,7 +35,7 @@ Electron monorepo powered by **[Reaxes](https://www.npmjs.com/package/reaxes)** 
 
 | 子工程 | 简介 | 状态 | 文档 |
 |--------|------|------|------|
-| **[ChatAIO](./projects/ChatAIO/)** | **旗舰项目**：多 AI Web 服务统一桌面壳。每家 AI 独立登录态与 session 分区；支持自定义网页、跨 AI 提示词橱窗、全局/按 AI 代理、托盘与多语言等。 | 活跃维护 | [readme](./projects/ChatAIO/readme.md) · [docs/](./projects/ChatAIO/docs/) · [AGENTS.md](./projects/ChatAIO/AGENTS.md) |
+| **[ChatAIO](./projects/ChatAIO/)** | **旗舰项目**：多 AI Web 服务统一桌面壳。每家 AI 独立登录态与 session 分区；支持自定义网页、跨 AI 提示词橱窗、全局/按 AI 代理、托盘与多语言等。 | 活跃维护 | [readme](./projects/ChatAIO/readme.md) · [AGENTS.md](./projects/ChatAIO/AGENTS.md) |
 | **[Life's-Too-Short](./projects/Life's-Too-Short/)** | 基于 OpenRouter 的 AI 桌面客户端（订阅/渠道、聊天定制、本地 SQLite 等）。 | 开发中 | [todo.md](./projects/Life's-Too-Short/todo.md) |
 | **[AI-WebTools-AIO](./projects/AI-WebTools-AIO/)** | 多「孢子」(Spore) WebContentsView 拼版工作台：左侧分配栏 + 可拖拽分屏 DropPad，用于同时编排多家 AI 网页工具。 | 实验 / 演进中 | [doc.md](./projects/AI-WebTools-AIO/doc.md) |
 | **[Autohotkey-GUI](./projects/Autohotkey-GUI/)** | AutoHotkey 相关小工具的 Electron GUI 宿主；其下再挂多个子应用。 | 见子目录 | 见下表 |
@@ -81,7 +81,8 @@ electron-reaxes-react/
 ├── scripts/                  # 根级 CLI：webpack/electron start·build、postinstall、图标替换等
 ├── patches/                  # patch-package 补丁
 ├── CODING_STANDARD.md        # 人读编码规范
-├── .claude/ / .qoder/ …      # Agent / 规则与 skills
+├── .agents/                  # Agent 规则 / skills 真源
+├── .claude/ / .cursor/ …     # 各工具加载入口（软链到 .agents 或 AGENTS.md）
 └── package.json              # workspaces + 根脚本
 ```
 
@@ -208,10 +209,9 @@ yarn tsx scripts/electron.start/index.ts Autohotkey-GUI/War3
 | 文档 | 说明 |
 |------|------|
 | [CODING_STANDARD.md](./CODING_STANDARD.md) | 编码规范（import 置底、缩进、命名等） |
-| [.claude/CLAUDE.md](./.claude/CLAUDE.md) | Monorepo Agent 总览与规则索引 |
-| [.claude/rules/ipc-coding.md](./.claude/rules/ipc-coding.md) | Electron IPC 约定 |
-| [projects/ChatAIO/AGENTS.md](./projects/ChatAIO/AGENTS.md) | ChatAIO 开发 / Agent 入口 |
-| [projects/ChatAIO/docs/](./projects/ChatAIO/docs/) | ChatAIO 架构、特性与已知问题 |
+| [AGENTS.md](./AGENTS.md) | 全仓约定索引；改代码须读 [Reaxes 开发文档](./.agents/skills/reaxes-development/SKILL.md) |
+| [.agents/rules/ipc-coding.md](./.agents/rules/ipc-coding.md) | Electron IPC 约定 |
+| [projects/ChatAIO/AGENTS.md](./projects/ChatAIO/AGENTS.md) | ChatAIO 入口（`DOCS.md` / `CLAUDE.md` 为其别名） |
 
 要点摘要：
 

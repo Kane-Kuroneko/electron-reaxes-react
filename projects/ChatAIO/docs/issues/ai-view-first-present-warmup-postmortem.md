@@ -16,9 +16,9 @@
 | [`ai-view-foreground-white-flash.md`](./ai-view-foreground-white-flash.md) | 单一所有者、`present(switch\|recover)`、回前台空操作 |
 | [`ai-page-switch-performance-optimization.md`](../features/ai-page-switch-performance-optimization.md) | 切换热路径 CPU / z-order 优化（另一类问题） |
 | [`floating-view-rapid-switch-optimization.md`](../features/floating-view-rapid-switch-optimization.md) | SwitchAiBar 连点动画（Interrupt & Redirect） |
-| [`docs/README.md`](../README.md) | 子工程文档总索引 |
+| [`AGENTS.md`](../../AGENTS.md) | 本工程入口（顶部全局规则指针 + 本工程索引；`DOCS.md` 为其别名） |
 
-产品索引入口：[`AGENTS.md`](../../AGENTS.md)「本子工程文档」。
+产品索引入口：子工程根 [`AGENTS.md`](../../AGENTS.md)。全局规则见仓库根 [`AGENTS.md`](../../../../AGENTS.md)。
 
 ---
 
