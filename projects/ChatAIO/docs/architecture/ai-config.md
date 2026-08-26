@@ -1,5 +1,7 @@
 # AI Configuration Management
 
+> **改造中**：目录单一事实源、远程签名更新见分批提案 [`../feature-proposal--ai-catalog-source.md`](../feature-proposal--ai-catalog-source.md)。本文描述**当前**双层实现；在对应批次落地前不要按提案目标模型改代码。
+
 ## Architecture Overview
 
 The AI configuration management system separates default configurations from user modifications:

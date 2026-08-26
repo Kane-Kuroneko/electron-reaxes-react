@@ -275,6 +275,8 @@ Electron 的安全模型要求 renderer 通过 preload 暴露的 API 与 main �
 
 ## P2-01 默认 AI 配置存在多处数据源
 
+消化方案（分批，尚未落地代码）：[`docs/feature-proposal--ai-catalog-source.md`](./docs/feature-proposal--ai-catalog-source.md) 批次 1–2。未做完批次 2 前本条仍有效。
+
 ### 问题现状
 
 默认 AI family 和 URL 分散在多个文件：
@@ -323,6 +325,8 @@ ChatAIO 的核心业务是管理多个 AI 服务页面。默认 AI 是菜单、�
 - 新增 family 后，不需要在 4 到 5 个文件中重复手工同步。
 
 ## P2-02 AI 配置持久化策略与文档描述不一致
+
+文档与整表落盘对齐放在提案批次 3（只改文档承认现状，本阶段不改成 delta）：[`docs/feature-proposal--ai-catalog-source.md`](./docs/feature-proposal--ai-catalog-source.md)。
 
 ### 问题现状
 
