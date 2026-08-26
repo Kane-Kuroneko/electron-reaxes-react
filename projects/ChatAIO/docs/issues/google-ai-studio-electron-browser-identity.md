@@ -6,6 +6,8 @@
 
 **验证结论**：生产环境 build 下 AI Studio 登录与 Chat 生成曾通过；**2026-08 起** Google 标准 OAuth 门禁加强后，ChatGPT「Continue with Google」在正式包内也会失败，需对全部 AI session 启用 Chrome 品牌补丁（见变更历史 2026-08-10）。开发模式（`remote-debugging-port=9222`）仍可能失败。
 
+> **2026-08-27 回归（未修）**：同一账号在系统浏览器里 AI Studio 正常，ChatAIO 内被强制跳到 `https://ai.google.dev/gemini-api/docs/available-regions`。这是 MakerSuite 资格/环境门，不是本文的 `accounts.google.com`「不安全浏览器」门；现行 CH / `window.chrome` 补丁已不够。调研、CDP/Playwright 接管方案与禁止项见 [google-ai-studio-available-regions-redirect.md](./google-ai-studio-available-regions-redirect.md)。当前分支不改运行时代码。
+
 ---
 
 ## 症状
@@ -231,6 +233,8 @@ AI Studio / ChatGPT Google OAuth 期望：
 
 ## 若未来再次失败
 
+若落地页是 **`ai.google.dev/gemini-api/docs/available-regions`** 且系统浏览器正常：不要按下面 OAuth 清单空转，改走 [available-regions 回归](./google-ai-studio-available-regions-redirect.md)（agent CDP / Playwright 接管）。
+
 按优先级排查：
 
 1. **确认测试环境**：是否 production build；dev 下 remote-debugging 会干扰
@@ -284,5 +288,6 @@ projects/ChatAIO/
 | 2026-08-05 | **深度修复**：Google 门禁升级后，仅剥 UA 仍报 `may not be secure`。对齐 [linux-mail-wrapper 8d7925a](https://github.com/jariahh/linux-mail-wrapper/commit/8d7925a70b0dd03e376747a154f27c09cfd4af80)：AI Studio 注入 `Sec-CH-UA`（含 Google Chrome 品牌）+ 主世界 `userAgentData`/`window.chrome`；dev 默认关闭 remote-debugging（`CHATAIO_REMOTE_DEBUG=1`）。 |
 | 2026-08-05 | **Passkey 弹窗**：默认拦截 WebAuthn `publicKey`（主世界 + Permissions-Policy），避免 Electron 误弹 Windows USB 安全密钥框（[Electron #47147](https://github.com/electron/electron/issues/47147)，Chrome 不会如此）；登录回退密码等方式。 |
 | 2026-08-10 | **ChatGPT 正式版回归**：Google 门禁扩到标准 OAuth。正式包内 ChatGPT「Continue with Google」再次 `may not be secure`。修复：全部 AI page 启用 `google-chrome-identity`（Sec-CH-UA + 主世界补丁）；并放行 `chatgpt.com` → `accounts.google.com` 的同 view OAuth popup。 |
+| 2026-08-27 | **资格门回归（只记不修）**：ChatAIO 跳 available-regions，系统浏览器正常。见 [google-ai-studio-available-regions-redirect.md](./google-ai-studio-available-regions-redirect.md)。 |
 
 

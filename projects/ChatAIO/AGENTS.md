@@ -38,6 +38,7 @@
 ### 登录 / 身份 / 代理
 
 - [Google AI Studio / Chrome 身份](./docs/issues/google-ai-studio-electron-browser-identity.md)
+- [AI Studio 跳 available-regions（补丁失效；CDP renderer + inspect main）](./docs/issues/google-ai-studio-available-regions-redirect.md)
 - [AI 配置双层](./docs/architecture/ai-config.md)
 - [提案：AI 目录单一事实源（分批）](./docs/feature-proposal--ai-catalog-source.md)
 - [敏感地区访问阻断](./docs/features/sensitive-region-access-blocking.md)
@@ -97,6 +98,7 @@
 | [menubar-drag-investigation.md](./docs/issues/menubar-drag-investigation.md) | Windows `forward: true` |
 | [menubar-drag-region-leak-below-content.md](./docs/issues/menubar-drag-region-leak-below-content.md) | 拖拽区漏到内容下方 |
 | [google-ai-studio-electron-browser-identity.md](./docs/issues/google-ai-studio-electron-browser-identity.md) | AI Studio / Chrome 身份 |
+| [google-ai-studio-available-regions-redirect.md](./docs/issues/google-ai-studio-available-regions-redirect.md) | AI Studio 跳地区页；9222 CDP + 9229 main inspect |
 | [i18n-architecture-issues.md](./docs/issues/i18n-architecture-issues.md) | i18n 架构问题 |
 | [i18n-fixes.md](./docs/issues/i18n-fixes.md) | i18n 修复记录 |
 
