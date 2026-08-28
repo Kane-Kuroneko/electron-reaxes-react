@@ -93,6 +93,8 @@ export namespace MainView {
 		anchorRect : { x : number; y : number; width : number; height : number };
 		menuId : string;
 		focusedIndex? : number;
+		/** 缺省 start：贴锚点左缘。label：anchor.x 为文字左缘，面板左移使 AI name 与其对齐。 */
+		anchorAlign? : 'start' | 'label';
 	}
 }
 

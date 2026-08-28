@@ -46,7 +46,8 @@
 BrowserWindow（titleBarStyle: hidden + titleBarOverlay）
 ├── 主壳 WebContentsView ← 只渲染 MainView menubar HTML
 │     但默认 native bounds = 全 client 高度   ← 根因
-│     CSS: .main-view-bar / drag-tail / badge = drag
+│     CSS: .main-view-bar / drag-tail = drag
+│     CurrentContextBadge 现为 no-drag（见 docs/features/menubar-current-ai-dropdown.md）
 └── contentView 子 WebContentsView
       AI / Settings / Prompt（y ≥ menuBarHeight = 36）
 

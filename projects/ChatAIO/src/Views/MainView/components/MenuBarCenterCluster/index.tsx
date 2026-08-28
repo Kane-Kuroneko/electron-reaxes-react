@@ -1,6 +1,15 @@
+/**
+ * 中区 Prev / Current AI / Next。
+ * badge 只把左键抛给 reaxel（虚拟菜单 current-ai），不接 hover。
+ * Settings 打开时 badge 零交互。
+ * 设计：docs/features/menubar-current-ai-dropdown.md
+ */
 export const MenuBarCenterCluster = reaxper( () => {
 	const { store } = reaxel_MainView;
-	const { activateItem } = reaxel_MainView();
+	const {
+		activateItem ,
+		pressTopMenuItem ,
+	} = reaxel_MainView();
 	const { centerNav , currentContextLabel } = store;
 
 	if( !centerNav && !currentContextLabel ) {
@@ -16,7 +25,12 @@ export const MenuBarCenterCluster = reaxper( () => {
 				/>
 			) : null }
 			{ currentContextLabel ? (
-				<CurrentContextBadge label={ currentContextLabel } />
+				<CurrentContextBadge
+					label={ currentContextLabel }
+					isOpen={ store.openMenuId === CURRENT_AI_MENU_ID }
+					interactive={ !store.settingsViewOpened }
+					onPress={ () => pressTopMenuItem( CURRENT_AI_MENU_ID ) }
+				/>
 			) : null }
 			{ centerNav ? (
 				<AdjacentNavButton
@@ -29,6 +43,7 @@ export const MenuBarCenterCluster = reaxper( () => {
 } );
 
 
+import { CURRENT_AI_MENU_ID } from '#MainView/reaxels/main-view/current-ai-menu.utility';
 import { reaxel_MainView } from '#MainView/reaxels/main-view';
 import { AdjacentNavButton } from '#MainView/components/AdjacentNavButton';
 import { CurrentContextBadge } from '#MainView/components/CurrentContextBadge';

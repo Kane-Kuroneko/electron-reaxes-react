@@ -4,6 +4,8 @@
  * 菜单结构通过 IPC 从主进程推送，操作事件通过 IPC 发回主进程执行。
  * 没有 resizeMenuView IPC——因为 MainView 渲染在 mainWindow HTML 中，
  * WebContentsViews 有 y=menuBarHeight 偏移，菜单栏固定在顶部。
+ * 中区 Current AI badge 用虚拟菜单 id `current-ai` 打开精简 Switch AI 下拉，
+ * 见 docs/features/menubar-current-ai-dropdown.md。
  */
 
 const detectOS = (): NodeJS.Platform => {
@@ -36,12 +38,30 @@ const findTopMenu = ( structure : MenuView.Structure , menuId : string ) => {
 	return structure.find( item => item.id === menuId ) ?? null;
 };
 
+const getSubmenuForMenu = ( structure : MenuView.Structure , menuId : string ) : MenuView.Item[] => {
+	if( menuId === CURRENT_AI_MENU_ID ) {
+		return getCurrentAiMenuItems( structure );
+	}
+	return findTopMenu( structure , menuId )?.submenu || [];
+};
+
 const getMenuButtonRect = ( menuId : string ) => {
 	const el = document.querySelector( `[data-menu-id="${ menuId }"]` ) as HTMLElement | null;
 	if( !el ) {
 		return { x : 0 , y : 0 , width : 0 , height : getBarHeight() };
 	}
 	const rect = el.getBoundingClientRect();
+	if( menuId === CURRENT_AI_MENU_ID ) {
+		/* x 用文字左缘，主进程再扣 checkmark/dot 让 AI name 与 badge 文案对齐 */
+		const label = el.querySelector( '.main-view-context-badge__label' ) as HTMLElement | null;
+		const labelLeft = label?.getBoundingClientRect().left ?? rect.left;
+		return {
+			x : labelLeft ,
+			y : rect.top ,
+			width : rect.width ,
+			height : rect.height ,
+		};
+	}
 	return {
 		x : rect.left ,
 		y : rect.top ,
@@ -56,16 +76,17 @@ const openDropdownForMenu = (
 	focusedIndex = -1 ,
 ) => {
 	try {
-		const topItem = findTopMenu( structure , menuId );
-		if( !topItem || !( topItem.submenu?.length > 0 ) ) {
+		const items = getSubmenuForMenu( structure , menuId );
+		if( !( items.length > 0 ) ) {
 			api.closeDropdownView();
 			return;
 		}
 		api.openDropdownView( {
-			items : cloneForIPC( topItem.submenu ) ,
+			items : cloneForIPC( items ) ,
 			anchorRect : getMenuButtonRect( menuId ) ,
 			menuId ,
 			focusedIndex ,
+			anchorAlign : menuId === CURRENT_AI_MENU_ID ? 'label' : 'start' ,
 		} );
 	} catch ( error ) {
 		reportMenubarRendererError( 'openDropdownForMenu' , error , 'main-view-renderer' , {
@@ -106,8 +127,8 @@ export const reaxel_MainView = reaxel( () => {
 	const updateStructure = ( structure : MenuView.Structure ) => {
 		applyStructurePartition( structure );
 		if( !store.openMenuId ) return;
-		const openItem = findTopMenu( structure , store.openMenuId );
-		if( !openItem || !( openItem.submenu?.length > 0 ) ) {
+		const submenu = getSubmenuForMenu( structure , store.openMenuId );
+		if( !( submenu.length > 0 ) ) {
 			/* 原本展开的菜单在新结构中已消失/无子菜单 → 关闭，避免 stale id 悬挂 */
 			closeAllMenus();
 			return;
@@ -117,9 +138,11 @@ export const reaxel_MainView = reaxel( () => {
 
 	/** 展开某顶级菜单，并同步 DropdownView（以 id 标识） */
 	const openMenu = ( menuId : string ) => {
-		const topItem = findTopMenu( store.structure , menuId );
-		if( !topItem ) return;
-		if( !( topItem.submenu?.length > 0 ) ) {
+		if( menuId === CURRENT_AI_MENU_ID && store.settingsViewOpened ) {
+			return;
+		}
+		const submenu = getSubmenuForMenu( store.structure , menuId );
+		if( !( submenu.length > 0 ) ) {
 			closeAllMenus();
 			return;
 		}
@@ -167,7 +190,7 @@ export const reaxel_MainView = reaxel( () => {
 	};
 
 	const moveFocusedItem = ( delta : number ) => {
-		const items = findTopMenu( store.structure , store.openMenuId )?.submenu || [];
+		const items = getSubmenuForMenu( store.structure , store.openMenuId );
 		if( items.length === 0 ) return;
 		let nextIndex = store.focusedItemIndex;
 		if( nextIndex < 0 ) {
@@ -190,12 +213,11 @@ export const reaxel_MainView = reaxel( () => {
 
 	const triggerFocusedItem = () => {
 		const topItem = findTopMenu( store.structure , store.openMenuId );
-		if( !topItem ) return;
-		if( !topItem.submenu?.length ) {
+		if( topItem && !( topItem.submenu?.length ) ) {
 			activateItem( topItem );
 			return;
 		}
-		const item = topItem.submenu?.[store.focusedItemIndex];
+		const item = getSubmenuForMenu( store.structure , store.openMenuId )[store.focusedItemIndex];
 		if( !item || !item.enabled || item.type === 'separator' || item.submenu?.length ) return;
 		triggerAction( {
 			type : item.type === 'checkbox' || item.type === 'radio' ? 'toggle' : 'execute' ,
@@ -231,6 +253,13 @@ export const reaxel_MainView = reaxel( () => {
 
 	/** 顶级菜单项按下：有子菜单则开合，否则触发其动作（以 id 标识） */
 	const pressTopMenuItem = ( menuId : string ) => {
+		if( menuId === CURRENT_AI_MENU_ID ) {
+			if( store.settingsViewOpened ) {
+				return;
+			}
+			toggleMenu( menuId );
+			return;
+		}
 		const item = findTopMenu( store.structure , menuId );
 		if( !item ) return;
 		if( item.submenu?.length > 0 ) {
@@ -307,6 +336,9 @@ export const reaxel_MainView = reaxel( () => {
 				currentContextLabel : command.payload.chrome.currentContextLabel ,
 				settingsViewOpened : command.payload.chrome.settingsViewOpened ,
 			} );
+			if( command.payload.chrome.settingsViewOpened && store.openMenuId === CURRENT_AI_MENU_ID ) {
+				closeAllMenus();
+			}
 			updateStructure( command.payload.structure );
 		} else if( command.type === 'menu-view:theme-update' ) {
 			applyMenubarTheme( command.payload.theme );
@@ -358,6 +390,10 @@ import type { AppUpdater } from '#src/Types/AppUpdater';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import { getMenuBarHeight } from '#src/shared/menubar-geometry';
 import { reportMenubarRendererError } from '#src/shared/utils/menubar-error-report.utility';
+import {
+	CURRENT_AI_MENU_ID ,
+	getCurrentAiMenuItems ,
+} from './current-ai-menu.utility';
 import {
 	partitionStructure ,
 	type CenterNavPartition ,

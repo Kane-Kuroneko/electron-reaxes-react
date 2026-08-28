@@ -8,7 +8,7 @@ Switch AI 菜单与 Settings → Manage AIs 共用一套**立即持久化**的�
 
 1. **菜单顺序 = 持久化 `AIs` 数组顺序**，disabled 项不出现在 Switch AI。
 2. **排序松手即写盘**。Settings 拖拽不再进入 Apply dirty；启用 / 改名 / 删除仍要 Apply。
-3. **左键切 AI，右键拖排序**。Application / View 菜单、Switch AI 底栏 Prev/Next 不参与拖拽。
+3. **左键切 AI，右键拖排序**。Application / View 菜单、Switch AI 底栏 Prev/Next 不参与拖拽。中区 Current AI 精简下拉同样走这条手势（无 footer）。
 4. **禁止**为排序改 menubar `-webkit-app-region: drag` 或 FloatingView `forward: true`。排序只发生在 Dropdown 窗口或 Settings 表内。
 5. Renderer → Main 的 id 列表必须 `cloneForIPC`。
 

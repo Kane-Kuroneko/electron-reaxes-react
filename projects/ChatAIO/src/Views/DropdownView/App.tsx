@@ -2,6 +2,7 @@
  * @description DropdownView 主组件
  * 渲染在独立 frameless BrowserWindow 中（alwaysOnTop, floating 级别），
  * 用于显示下拉菜单，始终在所有 WebContentsViews 之上。
+ * 几何 CSS 变量来自 shared/dropdown-geometry.ts，与主进程定位同源。
  */
 
 export const App = reaxper( () => {
@@ -65,6 +66,7 @@ export const App = reaxper( () => {
 	const windowSizeStyle = {
 		width : `${ store.windowWidth }px` ,
 		height : `${ store.windowHeight }px` ,
+		...getDropdownRootStyleVars(),
 	} as const;
 
 	return (
@@ -515,6 +517,7 @@ const triggerAction = ( action : MenuView.Action ) => {
 
 import { RightClickMouseSensor } from './right-click-mouse-sensor.utility';
 import { reaxel_DropdownView } from '#DropdownView/reaxels/dropdown-view';
+import { getDropdownRootStyleVars } from '#src/shared/dropdown-geometry';
 import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
 import { enabledAIIdsEqual } from '#src/shared/utils/merge-enabled-ai-order.utility';
 import { reportMenubarRendererError } from '#src/shared/utils/menubar-error-report.utility';
