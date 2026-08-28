@@ -19,6 +19,7 @@ export const getAIs = () => {
 	return api.getAIs();
 }
 
+/** 默认页实例（main 用供应商目录 + 内置策略映射后下发），不是目录原样 */
 export const getDefaultAIs = () => {
 	return api.getDefaultAIs();
 }

@@ -39,6 +39,7 @@
 
 - [Google AI Studio / Chrome 身份](./docs/issues/google-ai-studio-electron-browser-identity.md)
 - [AI 配置双层](./docs/architecture/ai-config.md)
+- [提案：AI 供应商目录单一事实源（分批；目录 ≠ 用户页实例）](./docs/feature-proposal--ai-catalog-source.md)
 - [敏感地区访问阻断](./docs/features/sensitive-region-access-blocking.md)
 
 ### Prompt / Settings / 外观
@@ -59,7 +60,7 @@
 
 | 文档 | 内容 |
 |------|------|
-| [ai-config.md](./docs/architecture/ai-config.md) | AI 配置双层（用户项 / 运行时 view） |
+| [ai-config.md](./docs/architecture/ai-config.md) | 供应商目录 / 用户页实例；目标模型见下方提案 |
 | [appearance-theme-environment.md](./docs/architecture/appearance-theme-environment.md) | 外观 / 主题注入 AI 页 |
 | [build-pipeline-and-dev-refresh.md](./docs/architecture/build-pipeline-and-dev-refresh.md) | 构建与 dev 热更新 |
 | [i18n.md](./docs/architecture/i18n.md) | 国际化 |
@@ -105,6 +106,7 @@
 |------|------|
 | [feature-design-and-comments.md](./docs/agent/feature-design-and-comments.md) | 新增功能：设计文档 + 关键注释 |
 | [menu-label-width.md](./docs/modules/menu-label-width.md) | 菜单标签宽度 |
+| [feature-proposal--ai-catalog-source.md](./docs/feature-proposal--ai-catalog-source.md) | AI 供应商目录单一事实源（分批；目录 ≠ 运行时实例） |
 | [feature-proposal--cross-instance-session-migration.md](./docs/feature-proposal--cross-instance-session-migration.md) | 跨实例会话迁移提案 |
 | [prompt-view-improvements.md](./docs/prompt-view-improvements.md) | Prompt 改进笔记 |
 | [prompt-view-redesign.md](./docs/prompt-view-redesign.md) | Prompt 重设计 |

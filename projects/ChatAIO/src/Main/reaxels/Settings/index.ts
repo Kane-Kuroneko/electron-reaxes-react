@@ -181,6 +181,7 @@ export const reaxel_Settings = reaxel( () => {
 		return aiConfigService.getEffectiveAIs();
 	} );
 	
+	/* 返回映射后的默认页实例 AIItem[]，不是供应商目录原样。见提案方向纠偏。 */
 	useIpcRpc( 'get-default-ais' ).handle( async() => {
 		return aiConfigService.getDefaultAIs();
 	} );

@@ -20,6 +20,7 @@
 		"analyze:perf": "yarn --cwd ../.. tsx projects/ChatAIO/scripts/analyze-perf-logs.ts",
 		"analyze:perf:ci": "yarn --cwd ../.. tsx projects/ChatAIO/scripts/analyze-perf-logs.ts --ci",
 		"test:ai-order": "yarn --cwd ../.. tsx --test projects/ChatAIO/tests/ai-list-reorder.test.ts",
+		"test:ai-catalog": "yarn --cwd ../.. tsx --test projects/ChatAIO/tests/ai-catalog-defaults.test.ts projects/ChatAIO/tests/ai-catalog-merge.test.ts",
 		"generate-icons": "yarn --cwd ../.. bash projects/ChatAIO/scripts/generate-icons.sh"
 	},
 	"type": "commonjs",

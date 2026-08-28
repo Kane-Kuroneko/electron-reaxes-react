@@ -44,6 +44,7 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 
 	// AI Configuration Management RPCs
 	'get-ais': IpcStructure.IpcRpc<[void], AI.AIItem[]>;
+	/* 映射后的默认页实例，不是供应商目录原样。见 docs/feature-proposal--ai-catalog-source.md */
 	'get-default-ais': IpcStructure.IpcRpc<[void], AI.AIItem[]>;
 	'update-ai': IpcStructure.IpcRpc<[id: string, updates: Partial<AI.AIItem>], AI.AIItem | null>;
 	'add-ai': IpcStructure.IpcRpc<[ai: Omit<AI.AIItem, 'id'> & { id?: string }], AI.AIItem>;

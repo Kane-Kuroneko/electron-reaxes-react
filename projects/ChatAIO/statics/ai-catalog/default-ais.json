@@ -1,0 +1,285 @@
+{
+  "schemaVersion": 1,
+  "revision": 3,
+  "description": "Bundled AI vendor catalog (id+family+label+url+region). Not user instances. See docs/feature-proposal--ai-catalog-source.md",
+  "ais": [
+    {
+      "id": "14bcdd3d-9513-427e-9109-37fe477fd785",
+      "family": "chatgpt",
+      "label": "ChatGPT",
+      "url": "https://chatgpt.com",
+      "region": {
+        "available": [],
+        "forbidden": [
+          "BY",
+          "CN",
+          "CU",
+          "IR",
+          "KP",
+          "RU",
+          "SY"
+        ]
+      }
+    },
+    {
+      "id": "01b7cbee-e09c-42c1-8753-5c147ec448ee",
+      "family": "grok",
+      "label": "Grok",
+      "url": "https://grok.com",
+      "region": {
+        "available": [],
+        "forbidden": [
+          "BY",
+          "CN",
+          "CU",
+          "IR",
+          "KP",
+          "RU",
+          "SY"
+        ]
+      }
+    },
+    {
+      "id": "e3eb45c8-3260-4cfc-8bf8-8c8f8d736fa3",
+      "family": "gemini",
+      "label": "Gemini",
+      "url": "https://gemini.google.com/app",
+      "region": {
+        "available": [],
+        "forbidden": [
+          "BY",
+          "CN",
+          "CU",
+          "IR",
+          "KP",
+          "RU",
+          "SY"
+        ]
+      }
+    },
+    {
+      "id": "a151ee38-19e4-4f52-8ed0-9eb3fee9dff6",
+      "family": "deepseek",
+      "label": "DeepSeek",
+      "url": "https://chat.deepseek.com",
+      "region": {
+        "available": [],
+        "forbidden": []
+      }
+    },
+    {
+      "id": "e7ca9ec0-2051-46b3-97d3-a8c42c07dd41",
+      "family": "perplexity",
+      "label": "Perplexity",
+      "url": "https://www.perplexity.ai",
+      "region": {
+        "available": [],
+        "forbidden": [
+          "BY",
+          "CN",
+          "CU",
+          "IR",
+          "KP",
+          "RU",
+          "SY"
+        ]
+      }
+    },
+    {
+      "id": "2263328b-dd4c-489f-b15a-f21d7f73cf86",
+      "family": "claude",
+      "label": "Claude",
+      "url": "https://claude.ai",
+      "region": {
+        "available": [],
+        "forbidden": [
+          "BY",
+          "CN",
+          "CU",
+          "IR",
+          "KP",
+          "RU",
+          "SY"
+        ]
+      }
+    },
+    {
+      "id": "97dcaebb-7f62-4e5a-b150-8de50018ee5e",
+      "family": "manus",
+      "label": "Manus",
+      "url": "https://manus.im/app",
+      "region": {
+        "available": [],
+        "forbidden": [
+          "BY",
+          "CN",
+          "CU",
+          "IR",
+          "KP",
+          "RU",
+          "SY"
+        ]
+      }
+    },
+    {
+      "id": "9f00c1e2-244e-44e1-81a1-64ac7a58a881",
+      "family": "aistudio",
+      "label": "Google AI Studio",
+      "url": "https://aistudio.google.com/prompts/new_chat",
+      "region": {
+        "available": [],
+        "forbidden": [
+          "BY",
+          "CN",
+          "CU",
+          "IR",
+          "KP",
+          "RU",
+          "SY"
+        ]
+      }
+    },
+    {
+      "id": "a12a24fb-936c-4854-bf1a-9a95bf106648",
+      "family": "copilot",
+      "label": "Copilot",
+      "url": "https://copilot.microsoft.com",
+      "region": {
+        "available": [],
+        "forbidden": [
+          "BY",
+          "CN",
+          "CU",
+          "IR",
+          "KP",
+          "RU",
+          "SY"
+        ]
+      }
+    },
+    {
+      "id": "c1b35eed-1d94-4f3b-8d04-76a6fb2f5ef0",
+      "family": "meta-ai",
+      "label": "Meta AI",
+      "url": "https://www.meta.ai",
+      "region": {
+        "available": [],
+        "forbidden": [
+          "BY",
+          "CN",
+          "CU",
+          "IR",
+          "KP",
+          "RU",
+          "SY"
+        ]
+      }
+    },
+    {
+      "id": "e53f1bcb-0fbd-4787-980e-a1ab3ec097c6",
+      "family": "poe",
+      "label": "Poe",
+      "url": "https://poe.com",
+      "region": {
+        "available": [],
+        "forbidden": [
+          "BY",
+          "CN",
+          "CU",
+          "IR",
+          "KP",
+          "RU",
+          "SY"
+        ]
+      }
+    },
+    {
+      "id": "b1243873-cdc0-41c7-a16e-2a2b77df09cc",
+      "family": "mistral",
+      "label": "Mistral",
+      "url": "https://chat.mistral.ai/chat",
+      "region": {
+        "available": [],
+        "forbidden": [
+          "BY",
+          "CN",
+          "CU",
+          "IR",
+          "KP",
+          "RU",
+          "SY"
+        ]
+      }
+    },
+    {
+      "id": "4b8b9bfe-89b3-44e1-ab71-a01add348418",
+      "family": "doubao",
+      "label": "豆包",
+      "url": "https://www.doubao.com/chat",
+      "region": {
+        "available": [],
+        "forbidden": []
+      }
+    },
+    {
+      "id": "44d221bb-b3c0-40db-8b60-eb3334312ace",
+      "family": "qianwen",
+      "label": "通义千问",
+      "url": "https://tongyi.aliyun.com/qianwen",
+      "region": {
+        "available": [],
+        "forbidden": []
+      }
+    },
+    {
+      "id": "e939ae54-46bc-4c85-8693-f2d1c4bb7b38",
+      "family": "kimi",
+      "label": "Kimi",
+      "url": "https://kimi.moonshot.cn",
+      "region": {
+        "available": [],
+        "forbidden": []
+      }
+    },
+    {
+      "id": "2c366d80-a091-4473-b1a7-a7d56112a7df",
+      "family": "chatglm",
+      "label": "智谱清言",
+      "url": "https://chatglm.cn/main/alltoolsdetail",
+      "region": {
+        "available": [],
+        "forbidden": []
+      }
+    },
+    {
+      "id": "7d001fa1-f9f5-4d5b-8f72-24be50f85269",
+      "family": "yuanbao",
+      "label": "腾讯元宝",
+      "url": "https://yuanbao.tencent.com/chat",
+      "region": {
+        "available": [],
+        "forbidden": []
+      }
+    },
+    {
+      "id": "312ca181-029c-48eb-8f2f-cdd992752e1b",
+      "family": "hailuo",
+      "label": "海螺",
+      "url": "https://hailuoai.com",
+      "region": {
+        "available": [],
+        "forbidden": []
+      }
+    },
+    {
+      "id": "e9d62a34-b3fa-48f9-99f0-ba6c521edb60",
+      "family": "yiyan",
+      "label": "文心一言",
+      "url": "https://yiyan.baidu.com",
+      "region": {
+        "available": [],
+        "forbidden": []
+      }
+    }
+  ]
+}

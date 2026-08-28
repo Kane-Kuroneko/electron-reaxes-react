@@ -1,50 +1,81 @@
 # AI Configuration Management
 
+> **改造中**：目录单一事实源见分批提案 [`../feature-proposal--ai-catalog-source.md`](../feature-proposal--ai-catalog-source.md)（含 2026-08-28 **方向纠偏**：目录是扁平供应商列表，不是默认 `AIItem` 种子袋）。本文描述**当前**实现。远程签名 / Settings 检查更新仍属后续批次。
+
 ## Architecture Overview
 
-The AI configuration management system separates default configurations from user modifications:
+三层，只在 main 的 `AIConfigService` 里合成；renderer 只拿 IPC 下发的 **页实例** `AIItem[]`。
 
-### Two-Layer Configuration System
+| | 供应商目录 | 用户运行时 |
+|--|--|--|
+| 文件 | bundled `default-ais.json` / cache `catalog-ais.json` | `user-ais.json` / Settings `AIs` |
+| 是什么 | 有哪些供应商 | 用户打开的页（可同 family 多实例） |
+| id | 供应商 UUID | 实例 id（官方种子页 = 供应商 UUID） |
+| 字段 | `id` + `family` + `label` + `url` + `region` | 完整 `AI.AIItem` |
 
-1. **Default Configurations** (`default-ais.json`)
-   - Located in: `src/shared/statics/default-ais.json`
-   - Embedded in the application source code
-   - **NEVER modified by users**
-   - Used for:
-     - First-time application launch
-     - Reset to defaults functionality
-     - Merging new AI presets in updates
+1. **Bundled catalog**（`statics/ai-catalog/default-ais.json`）
+   - main 启动用 `fs` 读（不是 webpack import），**用户永不改这份文件**
+   - 落盘形状在 [`src/Types/AICatalog.d.ts`](../../src/Types/AICatalog.d.ts)：`Catalog.ais` 是 `Vendor[]`，**不是** `AI.AIItem[]`
+   - **基数**：每个 family 至多一行供应商。用户多实例只活在 `user-ais.json`
+   - 官方入口 URL 写在供应商行上。`region` 是该供应商 ISO 覆盖，不拷进 `AIItem`。`custom` 没有目录行，默认 url 为 `''`
+   - Renderer / Settings / ManageAIs **不 import** 该 JSON。加站默认 URL 走已有 `get-default-ais`（返回**映射后的默认实例**）。AI view 打开地址只用 `ai.url`
 
-2. **User Configurations** (`user-ais.json`)
-   - Located in: Electron's userData directory
-   - Created when users modify any AI settings
-   - Stores only user modifications
-   - Merged with defaults at runtime
+2. **Catalog cache**（`userData/catalog-ais.json`，可选）
+   - 用户确认过的已验签瘦目录（批次 5 才写入）。**没有该文件时行为与只有 bundled 相同。**
+   - 若存在且 `revision` ≥ bundled 且通过 `validateCatalog`，则用它当 runtime 目录
 
-### Configuration Merge Strategy
+3. **User AIs**（`userData/user-ais.json`）
+   - **整表 + `deletedIds`，不是 delta。** `replaceAllAIs` 写入当前有效列表全文，并用「目录种子页有、当前表没有」的 id 填 `deletedIds`
+   - 旧文件里的 semver `version` 读到忽略，写入不再抄
+
+**映射（第一启动 / 无 user 文件）：** `vendorToAIItem` 把供应商行补成实例：proxy `follow_global_setting`、preload `false`、`url_override` `null`、`disabled` 由 App 内置 family 默认禁用表决定（Manus / AI Studio / Copilot 等原先 JSON 里 `disabled:true` 的 family）。`dev-proxy-test` 只在 `dev()` 注入，不进生产目录 JSON。
+
+Runtime 目录 = bundled 与 cache 里 `revision` 较高且通过校验者。Effective AIs = 该目录映射出的种子页与 user 表按供应商 UUID 合成。
+
+不要在 `AIConfigService` 上存派生 `Map`，不要「每 family 取第一条实例」。
+
+### Effective 列表（无新目录事件）
 
 ```
-Effective AIs = User Modifications + New Defaults
+Effective AIs = user.ais（保持用户顺序）
+  + 当前目录映射出的种子页里 user 没有、且 id 不在 deletedIds 的项（按目录顺序追加）
+无 user 文件时 = 供应商目录 × 内置策略
 ```
 
-- User configs override default configs with the same ID
-- New default AIs (from app updates) are automatically added
-- Deleted user configs fall back to defaults
+不要把 user 文件理解成「只存改过的字段」。用户改一个 URL，磁盘上仍是完整 `ais` 数组。用户自己加的第二个同 family 页是新 id，目录更新碰不到它。
+
+### 三路 merge（有新目录时，批次 5 才对用户确认后写盘）
+
+记号：`base` = 上次已采用供应商目录（无 cache 时 = bundled），`theirs` = 新目录，`ours` = 当前 user 表（无 user 文件则 ours = 目录映射）。
+
+- **新增**：theirs 有、ours 无、且 id 不在 `deletedIds` → 映射成种子实例后追加
+- **目录改字段**：同 id 且 `ours.field === base.field` → 可更新为 `theirs.field`（只 url / label）
+- **跳过**：用户改过的 url/label；任意 `url_override`；`id` 以 `custom-` 开头；用户加的新 id
+- **目录删除**：base 有、theirs 无 → **不**自动从 ours 删，diff 标 `catalogDropped`
+- **disabled / proxy / preload**：不是目录字段，merge 不改
+
+纯函数：`validateCatalog`、`vendorToAIItem`、`composeEffectiveAIs`、`previewCatalogMerge` / `applyCatalogMerge`。不把 catalog/cache 放进 renderer store，不用 `obsReaction` 监听文件。
 
 ## File Structure
 
 ```
 projects/ChatAIO/
+├── statics/
+│   └── ai-catalog/
+│       └── default-ais.json          # 瘦供应商目录（fs-loaded by main）
 ├── src/
-│   ├── shared/
-│   │   └── statics/
-│   │       └── default-ais.json          # Default AI configurations
-│   ├── Main/
-│   │   └── services/
-│   │       └── settings/
-│   │           └── ai-config-service.ts  # Configuration management service
-│   └── userData/
-│       └── user-ais.json                 # User modifications (auto-created)
+│   ├── Types/
+│   │   └── AICatalog.d.ts            # Vendor / Catalog / UserAIs / validate+merge 契约
+│   └── Main/services/settings/
+│       ├── ai-config-service.ts      # 读盘、映射默认实例、命令式调用 validate/merge
+│       ├── ai-catalog-builtin.utility.ts  # 默认禁用表、vendorToAIItem、dev 注入
+│       ├── normalize-ai-item.utility.ts  # 入参供应商列表，给用户实例补空 url
+│       ├── ai-catalog-validate.utility.ts  # UUID / family / region ISO / 重复 → 整份非法
+│       ├── ai-catalog-region.utility.ts    # catalog.region 判定；实例按 id/family 回查
+│       └── ai-catalog-merge.utility.ts    # 目录行 → 种子实例，按 UUID 对齐
+└── userData/
+    ├── user-ais.json                 # 用户整表 + deletedIds
+    └── catalog-ais.json              # 可选 cache；没有则只用 bundled
 ```
 
 ## AIConfigService API
@@ -52,7 +83,7 @@ projects/ChatAIO/
 ### Core Methods
 
 ```typescript
-// Get default configurations (read-only)
+// 默认页实例（供应商目录 + 内置策略映射），不是目录原样
 getDefaultAIs(): AI.AIItem[]
 
 // Get user modifications (null if none)
@@ -96,11 +127,11 @@ getPreloadAIFamilies(): AI.AIFamily[]
 
 ## IPC RPC Methods
 
-Available through preload API:
+Available through preload API. 跨进程仍是实例，不把瘦目录送到 renderer。
 
 ```typescript
 window.api.getAIs()
-window.api.getDefaultAIs()
+window.api.getDefaultAIs()  // 映射后的默认实例 AIItem[]
 window.api.updateAI(id, updates)
 window.api.addAI(aiConfig)
 window.api.deleteAI(id)

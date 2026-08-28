@@ -12,7 +12,7 @@ export const reaxel_AIViews = reaxel( () => {
 	} );
 
 	const initAIView = ( ai:AI.AIItem , settings:Settings ) => {
-		console.log( '[AIViews] initAIView start:' , ai.id , ai.url || getAIDomainByFamily( ai.AI_family ) );
+		console.log( '[AIViews] initAIView start:' , ai.id , ai.url );
 		const existingRuntimeView = store.AIViews.find( item => item.id === ai.id );
 		if( existingRuntimeView?.view ) {
 			void updateRuntimeAIView( existingRuntimeView , ai , settings );
@@ -230,7 +230,7 @@ export const reaxel_AIViews = reaxel( () => {
 		settings:Settings ,
 		options:CreateRuntimeAIViewOptions = {},
 	):RuntimeAIView => {
-		const domain = ai.url || getAIDomainByFamily( ai.AI_family );
+		const domain = ai.url; // 空 url 由 normalizeAIItem 按供应商目录行补齐，禁止 family 域名表回退。region 不进实例，阻断回查目录行。见提案。
 		const loadDomain = options.loadURL || domain;
 		const partition = getAIPartition( ai.id );
 		const environment = getRuntimeAIPageEnvironment( settings );
@@ -345,7 +345,7 @@ export const reaxel_AIViews = reaxel( () => {
 		ai:AI.AIItem ,
 		settings:Settings,
 	) => {
-		const nextDomain = ai.url || getAIDomainByFamily( ai.AI_family );
+		const nextDomain = ai.url;
 		const nextProxyKey = getRuntimeAIProxyKey( ai , settings );
 		const nextEnvironment = getRuntimeAIPageEnvironment( settings );
 		const nextAppearanceKey = getAIPageAppearanceKey( nextEnvironment );
@@ -394,6 +394,8 @@ const safeLoadAIURL = async(
 	url:string ,
 	context:string,
 ) => {
+	/* 供应商 ISO 覆盖在 catalog.region；是否阻断用 getAIConfigService().isAICountryBlockedByCatalog。
+	 * 出口探测 + 本地 data:text/html 阻断页见 sensitive-region-access-blocking.md。不要改远程 URL 去 google available-regions。 */
 	try {
 		await view.webContents.loadURL( url );
 	} catch ( error ) {
@@ -770,7 +772,6 @@ type PersistedAIPartitionDiscoveryResult = {
 	errors: ResetAISessionDataError[];
 };
 
-import { getAIDomainByFamily } from './data';
 import { getWhiteScreenMonitor } from './white-screen-monitor.retexel';
 import type { AI } from '#src/Types/SettingsTypes/AI';
 import type { Settings } from '#src/Types/SettingsTypes';

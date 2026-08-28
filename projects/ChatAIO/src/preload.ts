@@ -26,6 +26,7 @@ const onPromptViewAppearanceChange = (callback:(state:PromptView.AppearanceState
 
 // AI Configuration Management APIs
 const getAIs = useRpc('get-ais');
+/* 默认页实例（供应商目录 + 内置策略映射），不是目录 JSON 原样 */
 const getDefaultAIs = useRpc('get-default-ais');
 const updateAI = useRpc('update-ai');
 const addAI = useRpc('add-ai');

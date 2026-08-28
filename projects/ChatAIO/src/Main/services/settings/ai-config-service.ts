@@ -1,69 +1,95 @@
 /**
- * AI Configuration Service
- * 管理源码内置默认 AI 配置和用户覆盖配置。
+ * AI 配置服务：bundled/cache 供应商目录 + 用户实例整表。
+ * 目录不是默认 AI 列表；getDefaultAIs() 返回「供应商行 + 内置策略」映射后的默认实例。
+ * 校验 / merge / 映射都是命令式纯函数，不用 obsReaction。
+ * 见 docs/feature-proposal--ai-catalog-source.md（方向纠偏后的三层）。
  */
 
 const USER_AI_CONFIG_FILE = 'user-ais.json';
+const CATALOG_CACHE_FILE = 'catalog-ais.json';
 
-export interface AIConfigFile {
-	version: string;
-	description?: string;
-	ais: AI.AIItem[];
-	deletedIds?: string[];
-}
-
-
-const normalizeAIFamily = (ai:AI.AIItem):AI.AIFamily => {
-	const family = ai.AI_family;
-	if( family && Object.prototype.hasOwnProperty.call( AI_FAMILY_DEFAULT_URLS , family ) ) {
-		const defaultUrl = AI_FAMILY_DEFAULT_URLS[family];
-		if( family !== 'custom' && ai.id?.startsWith( 'custom-' ) && ai.url && ai.url !== defaultUrl ) {
-			return 'custom';
-		}
-		return family;
+const loadBundledCatalog = ( production:boolean ):AICatalog.Catalog => {
+	const catalogPath = resolveBundledCatalogPath();
+	if( !fs.existsSync( catalogPath ) ) {
+		const message = `[AIConfigService] bundled catalog missing: ${ catalogPath }`;
+		console.error( message );
+		throw new Error( message );
 	}
-	return 'custom';
-};
-
-const normalizeAI = (ai:AI.AIItem):AI.AIItem => {
-	const family = normalizeAIFamily( ai );
-	return {
-		...ai ,
-		label : ai.label || ( family === 'custom' ? 'Custom AI' : family ) ,
-		AI_family : family ,
-		url : ai.url || AI_FAMILY_DEFAULT_URLS[family] ,
-		disabled : ai.disabled === true ,
-		url_override : family === 'custom' ? null : ai.url_override || null ,
-		proxy_mode : ai.proxy_mode || 'follow_global_setting' ,
-		from_server_list_proxy : ai.from_server_list_proxy || null ,
-		user_fill_proxy : ai.user_fill_proxy || null ,
-		preloadOnStartup : ai.preloadOnStartup === true,
-	};
+	let parsed:unknown;
+	try {
+		parsed = JSON.parse( fs.readFileSync( catalogPath , 'utf-8' ) );
+	} catch ( error ) {
+		console.error( `[AIConfigService] failed to parse bundled catalog: ${ catalogPath }` , error );
+		throw error;
+	}
+	const result = validateCatalog( parsed , { production } );
+	if( !result.ok ) {
+		const message = `[AIConfigService] bundled catalog failed validation: ${ catalogPath }`;
+		console.error( message );
+		throw new Error( message );
+	}
+	return result.catalog;
 };
 
 class AIConfigService {
 	private userConfigPath:string;
-	private defaultConfig:AIConfigFile;
+	private catalogCachePath:string;
+	private bundledCatalog:AICatalog.Catalog;
+	/** cache 若 revision ≥ bundled 且通过校验则用它，否则 bundled。无 cache 文件 = 只用 bundled。 */
+	private runtimeCatalog:AICatalog.Catalog;
 	
 	constructor() {
-		this.defaultConfig = defaultAIsData as AIConfigFile;
+		const production = !dev();
 		this.userConfigPath = path.join( app.getPath( 'userData' ) , USER_AI_CONFIG_FILE );
+		this.catalogCachePath = path.join( app.getPath( 'userData' ) , CATALOG_CACHE_FILE );
+		this.bundledCatalog = loadBundledCatalog( production );
+		this.runtimeCatalog = appendDevProxyTestVendor(
+			selectRuntimeCatalog( this.bundledCatalog , this.readCatalogCache( production ) ) ,
+			dev(),
+		);
+	}
+
+	private readCatalogCache( production:boolean ):AICatalog.Catalog | null {
+		try {
+			if( !fs.existsSync( this.catalogCachePath ) ) {
+				return null;
+			}
+			const parsed = JSON.parse( fs.readFileSync( this.catalogCachePath , 'utf-8' ) );
+			const result = validateCatalog( parsed , { production } );
+			if( !result.ok ) {
+				console.warn( '[AIConfigService] catalog cache failed validation, using bundled' );
+				return null;
+			}
+			return result.catalog;
+		} catch ( error ) {
+			console.warn( '[AIConfigService] catalog cache unreadable, using bundled' , error );
+			return null;
+		}
+	}
+
+	private normalizeAI( ai:AI.AIItem ):AI.AIItem {
+		return normalizeAIItem( ai , this.runtimeCatalog.ais );
 	}
 	
+	/**
+	 * 默认实例（由供应商目录 + 内置策略映射），不是目录原样。
+	 * IPC `get-default-ais` 仍返回 AI.AIItem[]，Settings/Guiding 吃的是页实例。
+	 */
 	getDefaultAIs():AI.AIItem[] {
-		return cloneObservableToPlain( this.defaultConfig.ais ).map( normalizeAI );
+		return cloneObservableToPlain(
+			this.runtimeCatalog.ais.map( vendor => vendorToAIItem( vendor ) ),
+		);
 	}
 	
-	getUserConfig():AIConfigFile | null {
+	getUserConfig():AICatalog.UserAIs | null {
 		try {
 			if( !fs.existsSync( this.userConfigPath ) ) {
 				return null;
 			}
 			const content = fs.readFileSync( this.userConfigPath , 'utf-8' );
-			const userConfig = JSON.parse( content ) as AIConfigFile;
+			const userConfig = JSON.parse( content ) as AICatalog.UserAIs;
 			return {
-				version : userConfig.version || this.defaultConfig.version ,
-				ais : Array.isArray( userConfig.ais ) ? userConfig.ais.map( normalizeAI ) : [] ,
+				ais : Array.isArray( userConfig.ais ) ? userConfig.ais.map( ai => this.normalizeAI( ai ) ) : [] ,
 				deletedIds : Array.isArray( userConfig.deletedIds ) ? userConfig.deletedIds : [],
 			};
 		} catch ( error ) {
@@ -76,7 +102,7 @@ class AIConfigService {
 		return this.getUserConfig()?.ais ?? null;
 	}
 	
-	saveUserConfig( userConfig:AIConfigFile ):void {
+	saveUserConfig( userConfig:AICatalog.UserAIs ):void {
 		try {
 			const dir = path.dirname( this.userConfigPath );
 			if( !fs.existsSync( dir ) ) {
@@ -85,8 +111,7 @@ class AIConfigService {
 			fs.writeFileSync(
 				this.userConfigPath ,
 				JSON.stringify( {
-					version : this.defaultConfig.version ,
-					ais : userConfig.ais.map( normalizeAI ) ,
+					ais : userConfig.ais.map( ai => this.normalizeAI( ai ) ) ,
 					deletedIds : userConfig.deletedIds || [],
 				} , null , 2 ) ,
 				'utf-8',
@@ -100,7 +125,6 @@ class AIConfigService {
 	saveUserAIs( ais:AI.AIItem[] , deletedIds?:string[] ):void {
 		const currentConfig = this.getUserConfig();
 		this.saveUserConfig( {
-			version : this.defaultConfig.version ,
 			ais ,
 			deletedIds : deletedIds ?? currentConfig?.deletedIds ?? [],
 		} );
@@ -115,23 +139,8 @@ class AIConfigService {
 	}
 	
 	getEffectiveAIs():AI.AIItem[] {
-		const userConfig = this.getUserConfig();
-		if( !userConfig ) {
-			return this.getDefaultAIs();
-		}
-		
-		const defaultAIs = this.getDefaultAIs();
-		const userAIIds = new Set( userConfig.ais.map( ai => ai.id ) );
-		const deletedIds = new Set( userConfig.deletedIds || [] );
-		const effectiveAIs = [ ...userConfig.ais ];
-		
-		defaultAIs.forEach( defaultAI => {
-			if( !userAIIds.has( defaultAI.id ) && !deletedIds.has( defaultAI.id ) ) {
-				effectiveAIs.push( defaultAI );
-			}
-		} );
-		
-		return effectiveAIs.map( normalizeAI );
+		return composeEffectiveAIs( this.runtimeCatalog.ais , this.getUserConfig() )
+			.map( ai => this.normalizeAI( ai ) );
 	}
 	
 	resetToDefaults():void {
@@ -152,6 +161,23 @@ class AIConfigService {
 	getAIById( id:string ):AI.AIItem | undefined {
 		return this.getEffectiveAIs().find( ai => ai.id === id );
 	}
+
+	/**
+	 * 运行时按实例 id（种子页）或 family（用户加的同供应商第二页）回查目录行。
+	 * region 不拷进 AIItem，避免 IPC 形状变掉。
+	 */
+	getCatalogVendorForAI( ai:Pick<AI.AIItem , 'id' | 'AI_family'> ):AICatalog.Vendor | null {
+		return findCatalogVendorForAI( this.runtimeCatalog.ais , ai );
+	}
+
+	getVendorRegionForAI( ai:Pick<AI.AIItem , 'id' | 'AI_family'> ):AICatalog.VendorRegion {
+		return getVendorRegionForAI( this.runtimeCatalog.ais , ai );
+	}
+
+	/** 出口国家码是否应按该页对应的供应商 region 显示本地阻断页。 */
+	isAICountryBlockedByCatalog( ai:Pick<AI.AIItem , 'id' | 'AI_family'> , countryCode:string ):boolean {
+		return isCountryBlockedByVendorRegion( this.getVendorRegionForAI( ai ) , countryCode );
+	}
 	
 	updateAI( id:string , updates:Partial<AI.AIItem> ):AI.AIItem | null {
 		const effectiveAIs = this.getEffectiveAIs();
@@ -162,7 +188,7 @@ class AIConfigService {
 			return null;
 		}
 		
-		effectiveAIs[index] = normalizeAI( {
+		effectiveAIs[index] = this.normalizeAI( {
 			...effectiveAIs[index] ,
 			...updates ,
 			id,
@@ -174,7 +200,7 @@ class AIConfigService {
 	
 	addAI( ai:Omit<AI.AIItem , 'id'> & { id?: string } ):AI.AIItem {
 		const effectiveAIs = this.getEffectiveAIs();
-		const newAI = normalizeAI( {
+		const newAI = this.normalizeAI( {
 			...ai ,
 			id : ai.id || this.generateUniqueId(),
 		} as AI.AIItem );
@@ -261,14 +287,30 @@ export function getAIConfigService():AIConfigService {
 
 export default AIConfigService;
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { app } from 'electron';
-import { AI_FAMILY_DEFAULT_URLS } from '#src/shared/statics/ai-family-defaults';
-import defaultAIsData from '#src/shared/statics/default-ais.json';
+import { resolveBundledCatalogPath } from './ai-catalog-path.utility';
+import {
+	appendDevProxyTestVendor ,
+	vendorToAIItem,
+} from './ai-catalog-builtin.utility';
+import {
+	findCatalogVendorForAI ,
+	getVendorRegionForAI ,
+	isCountryBlockedByVendorRegion,
+} from './ai-catalog-region.utility';
+import {
+	composeEffectiveAIs ,
+	selectRuntimeCatalog,
+} from './ai-catalog-merge.utility';
+import { validateCatalog } from './ai-catalog-validate.utility';
+import { normalizeAIItem } from './normalize-ai-item.utility';
 import { cloneObservableToPlain } from '#src/shared/utils/clone-for-ipc.utility';
 import {
 	enabledAIIdsEqual ,
 	resolveReorderedAIs,
 } from '#src/shared/utils/merge-enabled-ai-order.utility';
-import { AI } from '#src/Types/SettingsTypes/AI';
+import type { AICatalog } from '#src/Types/AICatalog';
+import type { AI } from '#src/Types/SettingsTypes/AI';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { app } from 'electron';
+import { dev } from 'electron-is';

@@ -460,24 +460,34 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 
 		const [urlEditing , setUrlEditing] = React.useState( false );
 		const [urlDraft , setUrlDraft] = React.useState( '' );
+		const [catalogDefaults , setCatalogDefaults] = React.useState<AI.AIItem[]>( [] );
 
-		// 当modal开始打开时重置编辑状态
+		// 当modal开始打开时重置编辑状态，并拉取 catalog 默认 URL（已有 IPC，不进 store）
 		React.useEffect( () => {
 			if( store.visible ) {
 				setUrlEditing( false );
 				setUrlDraft( '' );
+				~async function() {
+					try {
+						const defaults = await getDefaultAIs();
+						setCatalogDefaults( Array.isArray( defaults ) ? defaults : [] );
+					} catch ( error ) {
+						console.error( '[ManageAIs] Failed to load catalog defaults:' , error );
+					}
+				}();
 			}
 		} , [store.visible] );
 
 		const isCustomFamily = fields.AI_family === 'custom';
+		const familyDefaultUrl = getFamilyDefaultUrl( fields.AI_family , catalogDefaults );
 		// 内置 family 的 URL 可选择覆盖; custom family 的 URL 直接属于当前 AI 实例.
-		const displayUrl = isCustomFamily ? fields.url : fields.url_override || getAIDomainByFamily( fields.AI_family );
+		const displayUrl = isCustomFamily ? fields.url : fields.url_override || familyDefaultUrl;
 		const isFirstAIForcedPreload = reaxel_SettingsView.store.UIControls.manage_AIs.startupAIPageLoadMode === 'first-ai'
 			&& store.mode === 'edit'
 			&& reaxel_SettingsView.store.Data.AIs[0]?.id === store.editing_id;
 
 		const handleSave = () => {
-			const effectiveUrl = ( isCustomFamily ? fields.url : fields.url_override || getAIDomainByFamily( fields.AI_family ) ).trim();
+			const effectiveUrl = ( isCustomFamily ? fields.url : fields.url_override || familyDefaultUrl ).trim();
 			if( !effectiveUrl ) {
 				message.error( i18n( 'URL is required for custom AI' ) );
 				return;
@@ -526,7 +536,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 					onClick={ () => {
 						// Save: 将draft保存到url_override
 						const trimmed = urlDraft.trim();
-						const defaultUrl = getAIDomainByFamily( fields.AI_family );
+						const defaultUrl = getFamilyDefaultUrl( fields.AI_family , catalogDefaults );
 						setState.fields( {
 							url_override : trimmed && trimmed !== defaultUrl ? trimmed : null,
 						} );
@@ -589,7 +599,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 						value={ fields.AI_family }
 						onChange={ value => {
 							const family = value as AI.AIFamily;
-							const defaultUrl = getAIDomainByFamily( family );
+							const defaultUrl = getFamilyDefaultUrl( family , catalogDefaults );
 							const patch:Partial<AI.EditAIItem> = {
 								AI_family : family ,
 								url : defaultUrl ,
@@ -980,13 +990,31 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		</Modal>;
 	};
 
+	/**
+	 * 加站 / 重置 URL：查 get-default-ais 映射后的默认实例里该 family 的官方 url（供应商目录行经 App 策略变成的种子页）。
+	 * 否则当前 settings 同 family 且无 override、非 custom- id 的实例 url。
+	 * 不把瘦目录放进 Settings store。见 docs/feature-proposal--ai-catalog-source.md（方向纠偏）。
+	 */
+	const getFamilyDefaultUrl = ( family:AI.AIFamily , catalogDefaults:AI.AIItem[] ):string => {
+		if( family === 'custom' ) {
+			return '';
+		}
+		const fromCatalog = catalogDefaults.find( ai => ai.AI_family === family );
+		if( fromCatalog?.url ) {
+			return fromCatalog.url;
+		}
+		const fromSettings = reaxel_SettingsView.store.Data.AIs.find( ai => {
+			return ai.AI_family === family && !ai.url_override && !String( ai.id ).startsWith( 'custom-' );
+		} );
+		return fromSettings?.url || '';
+	};
+
 	import { DragIconSvg } from "./DragIcon.svg";
 	import { createColumnTextFilter } from '#SettingsView/layout/column-text-filter';
 	import { useHostScrollY } from '#SettingsView/layout/use-host-scroll-y';
 	import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
-	import { resetAIsToDefaults } from "#SettingsView/services/Settings";
+	import { getDefaultAIs , resetAIsToDefaults } from "#SettingsView/services/Settings";
 	import { AIFamily } from "#src/shared/statics/AI-family";
-	import { getAIDomainByFamily } from "#src/shared/statics/ai-family-defaults";
 	import { createDefaultProxyConf as defaultProxyConf } from "#src/shared/statics/default-proxy";
 	import { enabledAIIdsEqual } from '#src/shared/utils/merge-enabled-ai-order.utility';
 	import { AI } from "#src/Types/SettingsTypes/AI";
