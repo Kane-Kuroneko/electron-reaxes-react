@@ -2,6 +2,9 @@
 # generate-icons.sh -- Generate macOS app icon (.icns), Linux icon (.png),
 # and macOS tray template images from the 900x900 source icon.
 #
+# 跨平台换图请用仓库根 scripts/replace-app-icons/（本脚本仅 macOS sips/iconutil）。
+# 布局见 docs/architecture/app-icons.md
+#
 # Usage:  bash scripts/generate-icons.sh [--no-clean]
 #   --no-clean   Skip cleanup of old/unused icon files
 set -euo pipefail
@@ -9,7 +12,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 STATICS_DIR="$PROJECT_DIR/statics"
-SOURCE="$STATICS_DIR/shared/main-icon-900x900.png"
+ICONS_DIR="$STATICS_DIR/icons"
+SOURCE="$ICONS_DIR/main-icon-900x900.png"
 PY_SCRIPT="$SCRIPT_DIR/png-to-template.py"
 ICONSET_DIR="$STATICS_DIR/macos/icon/iconset.iconset"
 
@@ -26,10 +30,15 @@ echo ""
 if $CLEANUP; then
 	echo "[cleanup] Removing old/unused icon files..."
 	rm -f "$STATICS_DIR/tray-icon.png"
-	rm -rf "$STATICS_DIR/macos"
+	rm -f "$STATICS_DIR"/gpt.{ico,icns,png} "$STATICS_DIR"/gpt-dev.{ico,icns,png}
+	rm -f "$STATICS_DIR"/tray-icon.macos.png "$STATICS_DIR"/tray-icon.macos@2x.png
+	rm -f "$STATICS_DIR"/tray-icon-dev.macos.png "$STATICS_DIR"/tray-icon-dev.macos@2x.png
+	rm -rf "$STATICS_DIR/macos" "$STATICS_DIR/shared"
 	echo "[cleanup] Done."
 	echo ""
 fi
+
+mkdir -p "$ICONS_DIR"
 
 # ---- Step 1: macOS App Icon (.icns) ----
 echo "[1/3] Generating macOS app icon (.icns)..."
@@ -77,16 +86,16 @@ sips -z 512  512  "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_256x256@2x.png"  > /
 sips -z 1024 1024 "$PADDED_SOURCE" --out "$ICONSET_DIR/icon_512x512@2x.png"  > /dev/null
 
 echo "  Generating .icns via iconutil..."
-iconutil -c icns "$ICONSET_DIR" -o "$STATICS_DIR/gpt.icns"
+iconutil -c icns "$ICONSET_DIR" -o "$ICONS_DIR/app-icon.icns"
 rm -rf "$ICONSET_DIR"
 rm -f "$PADDED_SOURCE"
-echo "  -> statics/gpt.icns"
+echo "  -> statics/icons/app-icon.icns"
 echo ""
 
 # ---- Step 2: Linux App Icon (.png) ----
 echo "[2/3] Generating Linux app icon (.png)..."
-sips -z 512 512 "$SOURCE" --out "$STATICS_DIR/gpt.png" > /dev/null
-echo "  -> statics/gpt.png"
+sips -z 512 512 "$SOURCE" --out "$ICONS_DIR/app-icon.png" > /dev/null
+echo "  -> statics/icons/app-icon.png"
 echo ""
 
 # ---- Step 3: Tray Template Images ----
@@ -99,17 +108,17 @@ sips -z 18 18 "$SOURCE" --out "$TEMP_DIR/tray-18.png" > /dev/null
 sips -z 36 36 "$SOURCE" --out "$TEMP_DIR/tray-36.png" > /dev/null
 
 # Convert to template images (black + alpha)
-python3 "$PY_SCRIPT" "$TEMP_DIR/tray-18.png" "$STATICS_DIR/tray-icon.macos.png"
-python3 "$PY_SCRIPT" "$TEMP_DIR/tray-36.png" "$STATICS_DIR/tray-icon.macos@2x.png"
+python3 "$PY_SCRIPT" "$TEMP_DIR/tray-18.png" "$ICONS_DIR/tray-icon.macos.png"
+python3 "$PY_SCRIPT" "$TEMP_DIR/tray-36.png" "$ICONS_DIR/tray-icon.macos@2x.png"
 
 rm -rf "$TEMP_DIR"
-echo "  -> statics/tray-icon.macos.png      (18x18 template)"
-echo "  -> statics/tray-icon.macos@2x.png   (36x36 template)"
+echo "  -> statics/icons/tray-icon.macos.png      (18x18 template)"
+echo "  -> statics/icons/tray-icon.macos@2x.png   (36x36 template)"
 echo ""
 
 echo "=== Done ==="
 echo "Generated:"
-echo "  statics/gpt.icns                   (macOS app icon)"
-echo "  statics/gpt.png                    (Linux app icon)"
-echo "  statics/tray-icon.macos.png        (macOS tray, 18x18, template)"
-echo "  statics/tray-icon.macos@2x.png     (macOS tray, 36x36, template)"
+echo "  statics/icons/app-icon.icns                   (macOS app icon)"
+echo "  statics/icons/app-icon.png                    (Linux app icon)"
+echo "  statics/icons/tray-icon.macos.png        (macOS tray, 18x18, template)"
+echo "  statics/icons/tray-icon.macos@2x.png   (macOS tray, 36x36, template)"

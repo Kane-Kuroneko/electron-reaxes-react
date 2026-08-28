@@ -49,6 +49,7 @@
 
 ### 换图标
 
+- [图标布局 `statics/icons/`](./docs/architecture/app-icons.md)
 - 仓库根 [替换 App / Tray 图标](../../scripts/replace-app-icons/AGENTS.md)（不要手改 `.ico` / `.icns`）
 
 硬约束见上表对应 `docs/issues`（尤其是回前台闪白、menubar 拖拽），不要把禁止项再抄进本文。
@@ -60,6 +61,7 @@
 | 文档 | 内容 |
 |------|------|
 | [ai-config.md](./docs/architecture/ai-config.md) | AI 配置双层（用户项 / 运行时 view） |
+| [app-icons.md](./docs/architecture/app-icons.md) | `statics/icons/` 应用/托盘/母图；打包排除母图 |
 | [appearance-theme-environment.md](./docs/architecture/appearance-theme-environment.md) | 外观 / 主题注入 AI 页 |
 | [build-pipeline-and-dev-refresh.md](./docs/architecture/build-pipeline-and-dev-refresh.md) | 构建与 dev 热更新 |
 | [i18n.md](./docs/architecture/i18n.md) | 国际化 |

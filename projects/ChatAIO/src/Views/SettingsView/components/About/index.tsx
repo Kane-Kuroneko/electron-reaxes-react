@@ -534,8 +534,8 @@ import { reaxel_SettingsView } from '#SettingsView/reaxels/settings-view';
 import { reaxel_I18n } from '#SettingsView/reaxels/i18n';
 import { I18n , i18n } from '#SettingsView/reaxels/exports';
 import type { AppUpdater } from '#src/Types/AppUpdater';
-import appIconProd from '../../../../../statics/gpt.png';
-import appIconDev from '../../../../../statics/gpt-dev.png';
+import appIconProd from '../../../../../statics/icons/app-icon.png';
+import appIconDev from '../../../../../statics/icons/app-icon-dev.png';
 import {
 	Alert ,
 	Badge ,
