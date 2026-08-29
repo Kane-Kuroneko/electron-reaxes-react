@@ -17,6 +17,6 @@ export function getBrowserNameByFamily(family: AI.AIFamily): string {
 	return `${ String( family ).replace( /-/g , '_' ) }_window`;
 }
 
-import { AIFamily } from '#src/shared/statics/AI-family';
+import { AIFamily } from '#shared/statics/AI-family';
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { WebContentsView } from "electron";

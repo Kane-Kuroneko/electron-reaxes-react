@@ -33,5 +33,5 @@ import { MenuBar } from '#MainView/components/MenuBar';
 import { MenuBarCenterCluster } from '#MainView/components/MenuBarCenterCluster';
 import { MenuBarRightItems } from '#MainView/components/MenuBarRightItems';
 import { reaxel_MainView } from '#MainView/reaxels/main-view';
-import { getMenuBarRootStyleVars } from '#src/shared/menubar-geometry';
+import { getMenuBarRootStyleVars } from '#shared/menubar-geometry';
 import { reaxper } from 'reaxes-react';

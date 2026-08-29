@@ -411,7 +411,7 @@ import {
 	isWebContentsViewDead,
 } from '#main/services/web-contents-view-alive.utility';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
-import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
+import { getMenuBarHeight as resolveMenuBarHeight } from '#shared/menubar-geometry';
 import type { PromptView } from '#src/Types/PromptView';
 import {
 	clipboard ,

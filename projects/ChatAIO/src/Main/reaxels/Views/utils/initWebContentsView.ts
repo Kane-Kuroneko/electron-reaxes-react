@@ -276,7 +276,7 @@ import {
 } from '#main/services/dev/renderer-entry';
 import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
-import { getMenuBarHeight } from '#src/shared/menubar-geometry';
+import { getMenuBarHeight } from '#shared/menubar-geometry';
 import {
 	applyAIPageAppearanceToView ,
 	getAIPageBackgroundColor ,

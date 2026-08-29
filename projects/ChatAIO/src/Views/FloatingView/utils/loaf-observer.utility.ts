@@ -6,7 +6,7 @@
  * Electron 自定义协议下脚本归因可能需 --enable-features=AlwaysLogLOAFURL。
  */
 
-import { perf , PerfPhase } from '#src/shared/utils/switch-perf-recorder.utility';
+import { perf , PerfPhase } from '#shared/utils/switch-perf-recorder.utility';
 
 type LoafEntryLike = {
 	duration: number;

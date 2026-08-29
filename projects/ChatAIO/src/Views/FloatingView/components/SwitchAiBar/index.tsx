@@ -434,7 +434,7 @@ import { getCurrentPerfCtxId } from '#FloatingView/reaxels/floating-view';
 import { startLoafObserver } from '#FloatingView/utils/loaf-observer.utility';
 import { startFirstShowMonitor } from '#FloatingView/utils/first-show-monitor.utility';
 import type { FloatingView } from '#src/Types/FloatingView';
-import { perf , PerfPhase , switchProfiler } from '#src/shared/utils/switch-perf-recorder.utility';
+import { perf , PerfPhase , switchProfiler } from '#shared/utils/switch-perf-recorder.utility';
 import { useState , useCallback , useEffect , useRef } from 'react';
 import { Swiper , SwiperSlide } from 'swiper/react';
 import type { SwiperClass } from 'swiper/react';

@@ -32,7 +32,7 @@ export const applyMenubarWindowChrome = (
 };
 
 
-import { getMenubarTitleBarOverlayOptions } from '#src/shared/menubar-geometry';
+import { getMenubarTitleBarOverlayOptions } from '#shared/menubar-geometry';
 import { applyMainShellBackgroundColor } from '#main/services/clip-main-shell-to-menubar.utility';
 import type { BrowserWindow } from 'electron';
 import process from 'node:process';

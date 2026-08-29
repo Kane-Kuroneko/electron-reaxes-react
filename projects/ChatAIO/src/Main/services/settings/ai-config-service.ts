@@ -303,11 +303,11 @@ import {
 } from './ai-catalog-merge.utility';
 import { validateCatalog } from './ai-catalog-validate.utility';
 import { normalizeAIItem } from './normalize-ai-item.utility';
-import { cloneObservableToPlain } from '#src/shared/utils/clone-for-ipc.utility';
+import { cloneObservableToPlain } from '#shared/utils/clone-for-ipc.utility';
 import {
 	enabledAIIdsEqual ,
 	resolveReorderedAIs,
-} from '#src/shared/utils/merge-enabled-ai-order.utility';
+} from '#shared/utils/merge-enabled-ai-order.utility';
 import type { AICatalog } from '#src/Types/AICatalog';
 import type { AI } from '#src/Types/SettingsTypes/AI';
 import * as fs from 'node:fs';

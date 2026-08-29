@@ -9,7 +9,7 @@
  * 仅在会话内首次 visible=true 时启动；采样约 ANIM_WINDOW_MS 后汇总一条事件并停止。
  */
 
-import { perf , PerfPhase } from '#src/shared/utils/switch-perf-recorder.utility';
+import { perf , PerfPhase } from '#shared/utils/switch-perf-recorder.utility';
 
 const ANIM_WINDOW_MS = 700;
 const DROP_FRAME_MS = 20;

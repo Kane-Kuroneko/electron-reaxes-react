@@ -6,6 +6,8 @@
 
 新增功能先读 [设计文档与关键注释](./docs/agent/feature-design-and-comments.md)。架构摘要：[ChatAIO 架构](../../.agents/rules/chat-aio-architecture.md)。
 
+路径别名：`#shared/*` → `src/shared/*`（共享数据/类型层）。跨目录不要写 `../../../shared/...`，也不要新增 `#src/shared/...`。
+
 `docs/README.md` 只指向本文，不在 `docs/` 里再维护一份总目录。
 
 ## 按任务 / 症状

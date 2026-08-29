@@ -322,7 +322,7 @@ import {
 	I18n ,
 	i18n,
 } from '#PromptView/reaxels/exports';
-import { resolveThemePreference } from '#src/shared/appearance';
+import { resolveThemePreference } from '#shared/appearance';
 import type { PromptView } from '#src/Types/PromptView';
 import {
 	CircleCheck ,

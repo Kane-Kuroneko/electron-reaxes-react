@@ -177,7 +177,7 @@ import { useIpcRendererToMain } from '#main/services/ipc';
 import {
 	normalizeLanguagePreference ,
 	resolveLanguagePreference,
-} from '#src/shared/appearance';
+} from '#shared/appearance';
 import { dev } from 'electron-is';
 import { initSwitchPerformanceLogging } from '#main/services/performance/switch-perf';
 import {

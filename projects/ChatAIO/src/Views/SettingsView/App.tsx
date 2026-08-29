@@ -177,7 +177,7 @@ import {
 	SETTINGS_MODAL_CONFIG ,
 } from '#SettingsView/layout/constants';
 import { devCleanStart } from '#SettingsView/services/Settings';
-import { resolveThemePreference } from '#src/shared/appearance';
+import { resolveThemePreference } from '#shared/appearance';
 import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 import type { SettingsApplyResult } from "#src/Types/SettingsTypes";
 import {

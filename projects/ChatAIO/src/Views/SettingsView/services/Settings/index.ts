@@ -84,7 +84,7 @@ export const devCleanStart = () => {
 
 import { Settings } from '#src/Types/SettingsTypes';
 import { AI } from '#src/Types/SettingsTypes/AI';
-import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
 import { NetworkProxy } from '#src/Types/SettingsTypes/NetworkProxy';
 import type { Startup } from '#src/Types/SettingsTypes/Startup';
 import type { PromptView } from '#src/Types/PromptView';

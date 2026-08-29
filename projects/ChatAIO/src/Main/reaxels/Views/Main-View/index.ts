@@ -951,8 +951,8 @@ import {
 	setMenubarDropdownDismissHandler ,
 } from '#main/services/menubar-dropdown-dismiss.utility';
 import type { MenubarErrorReport } from '#main/services/menubar-error-log.utility';
-import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
-import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
+import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
+import { getMenuBarHeight as resolveMenuBarHeight } from '#shared/menubar-geometry';
 import { applyMenubarWindowChrome } from '#main/services/menubar-window-chrome.utility';
 import type { MenuView , MainView } from '#src/Types/MenuView';
 import type { DropdownView } from '#src/Types/DropdownView';
@@ -961,7 +961,7 @@ import type { PromptView } from '#src/Types/PromptView';
 import {
 	normalizeThemePreference ,
 	resolveThemePreference,
-} from '#src/shared/appearance';
+} from '#shared/appearance';
 import {
 	app ,
 	dialog ,

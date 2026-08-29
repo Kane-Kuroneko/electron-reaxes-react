@@ -96,7 +96,7 @@ export const RCAIPagesPage = reaxper( () => {
 	</section>;
 } );
 
-import { groupAIsByRegion } from '#src/shared/statics/ai-region';
+import { groupAIsByRegion } from '#shared/statics/ai-region';
 import { reaxel_GuidingView } from '#GuidingView/reaxels/guiding-view';
 import { I18n , i18n } from '#GuidingView/reaxels/exports';
 import {

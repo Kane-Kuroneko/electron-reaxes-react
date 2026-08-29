@@ -355,9 +355,9 @@ export const reaxel_MainView = reaxel( () => {
 import { createReaxable , reaxel } from 'reaxes';
 import type { MenuView } from '#src/Types/MenuView';
 import type { AppUpdater } from '#src/Types/AppUpdater';
-import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
-import { getMenuBarHeight } from '#src/shared/menubar-geometry';
-import { reportMenubarRendererError } from '#src/shared/utils/menubar-error-report.utility';
+import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
+import { getMenuBarHeight } from '#shared/menubar-geometry';
+import { reportMenubarRendererError } from '#shared/utils/menubar-error-report.utility';
 import {
 	partitionStructure ,
 	type CenterNavPartition ,

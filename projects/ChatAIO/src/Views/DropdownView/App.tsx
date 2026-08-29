@@ -515,9 +515,9 @@ const triggerAction = ( action : MenuView.Action ) => {
 
 import { RightClickMouseSensor } from './right-click-mouse-sensor.utility';
 import { reaxel_DropdownView } from '#DropdownView/reaxels/dropdown-view';
-import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
-import { enabledAIIdsEqual } from '#src/shared/utils/merge-enabled-ai-order.utility';
-import { reportMenubarRendererError } from '#src/shared/utils/menubar-error-report.utility';
+import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
+import { enabledAIIdsEqual } from '#shared/utils/merge-enabled-ai-order.utility';
+import { reportMenubarRendererError } from '#shared/utils/menubar-error-report.utility';
 import type { MenuView } from '#src/Types/MenuView';
 import {
 	closestCenter ,

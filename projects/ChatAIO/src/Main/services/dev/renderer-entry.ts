@@ -107,7 +107,7 @@ type LoadDevRendererRetryOptions = {
 	delayMs?: number;
 };
 
-import type { AIWebAppRendererEntryName } from '#src/shared/renderer-entries';
+import type { AIWebAppRendererEntryName } from '#shared/renderer-entries';
 import { dev } from 'electron-is';
 import type { WebContents } from 'electron';
 import * as path from 'node:path';

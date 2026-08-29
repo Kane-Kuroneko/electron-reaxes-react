@@ -668,25 +668,25 @@ import {
 	normalizeThemePreference ,
 	resolveLanguagePreference ,
 	resolveThemePreference,
-} from '#src/shared/appearance';
-import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+} from '#shared/appearance';
+import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
 import {
 	applyEnabledAIOrder ,
 	committedAIIdsInVisualOrder ,
 	enabledAIIdsEqual ,
 	snapshotAIsForDirty,
-} from '#src/shared/utils/merge-enabled-ai-order.utility';
+} from '#shared/utils/merge-enabled-ai-order.utility';
 import {
 	createDefaultGlobalProxy as defaultGlobalProxyFields ,
 	createDefaultProxyConf as defaultProxyConf ,
 	createDefaultProxyServers as defaultProxyServers,
 	createDefaultProxyTestURLs as defaultProxyTestURLs,
-} from '#src/shared/statics/default-proxy';
+} from '#shared/statics/default-proxy';
 import type { Languages } from '#src/Types/Languages';
 import type { PromptView } from '#src/Types/PromptView';
 import type {
 	Menus,
-} from '#src/shared/structs/settings';
+} from '#shared/structs/settings';
 import type { AppUpdater } from '#src/Types/AppUpdater';
 import type {
 	Settings ,

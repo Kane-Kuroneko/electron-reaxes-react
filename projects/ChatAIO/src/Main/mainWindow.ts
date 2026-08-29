@@ -172,7 +172,7 @@ import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {
 	getMenubarTitleBarOverlayOptions ,
 	getTrafficLightPosition,
-} from '#src/shared/menubar-geometry';
+} from '#shared/menubar-geometry';
 import { bindMainShellMenuBarClip } from '#main/services/clip-main-shell-to-menubar.utility';
 import { applyMenubarWindowChrome } from '#main/services/menubar-window-chrome.utility';
 import { resolveAppearance } from '#main/services/appearance';

@@ -5,8 +5,8 @@
  * projects/ChatAIO/performance-logs/perf-<timestamp>.jsonl
  */
 
-import { perf } from '#src/shared/utils/switch-perf-recorder.utility';
-import type { PerfEvent } from '#src/shared/utils/switch-perf-recorder.utility';
+import { perf } from '#shared/utils/switch-perf-recorder.utility';
+import type { PerfEvent } from '#shared/utils/switch-perf-recorder.utility';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { app } from 'electron';

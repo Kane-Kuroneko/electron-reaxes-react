@@ -1014,9 +1014,9 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	import { useHostScrollY } from '#SettingsView/layout/use-host-scroll-y';
 	import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 	import { getDefaultAIs , resetAIsToDefaults } from "#SettingsView/services/Settings";
-	import { AIFamily } from "#src/shared/statics/AI-family";
-	import { createDefaultProxyConf as defaultProxyConf } from "#src/shared/statics/default-proxy";
-	import { enabledAIIdsEqual } from '#src/shared/utils/merge-enabled-ai-order.utility';
+	import { AIFamily } from "#shared/statics/AI-family";
+	import { createDefaultProxyConf as defaultProxyConf } from "#shared/statics/default-proxy";
+	import { enabledAIIdsEqual } from '#shared/utils/merge-enabled-ai-order.utility';
 	import { AI } from "#src/Types/SettingsTypes/AI";
 	import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 	import type { Startup } from "#src/Types/SettingsTypes/Startup";

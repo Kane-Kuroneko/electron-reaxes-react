@@ -167,7 +167,7 @@ import {
 	createDefaultProxyConf ,
 	createDefaultProxyServers,
 	createDefaultProxyTestURLs,
-} from '#src/shared/statics/default-proxy';
+} from '#shared/statics/default-proxy';
 import { AI } from "#src/Types/SettingsTypes/AI";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 import { Appearance } from "#src/Types/SettingsTypes/Appearance";

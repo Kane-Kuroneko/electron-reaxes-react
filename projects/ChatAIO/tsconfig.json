@@ -42,6 +42,9 @@
 			"#src/*" : [
 				"./src/*"
 			] ,
+			"#shared/*" : [
+				"./src/shared/*"
+			] ,
 			"#Views/shared/*" : [
 				"./src/Views/shared/*"
 			] ,

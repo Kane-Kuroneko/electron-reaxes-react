@@ -540,13 +540,13 @@ import {
 import { useIpcMainToRenderer } from '#main/services/ipc';
 import { hasUsableBrowserWindowContent } from '#main/services/usable-window-content.utility';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
-import { getMenuBarHeight } from '#src/shared/menubar-geometry';
-import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import { getMenuBarHeight } from '#shared/menubar-geometry';
+import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
 import {
 	perf ,
 	PerfPhase ,
 	switchAiBarItemsFingerprint,
-} from '#src/shared/utils/switch-perf-recorder.utility';
+} from '#shared/utils/switch-perf-recorder.utility';
 import type { FloatingView } from '#src/Types/FloatingView';
 import {
 	BrowserWindow,

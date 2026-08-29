@@ -153,7 +153,7 @@ import {
 	resolvePreferredSystemLanguage ,
 	resolveLanguagePreference ,
 	resolveThemePreference,
-} from '#src/shared/appearance';
+} from '#shared/appearance';
 import { applySessionAcceptLanguages } from '#main/services/browser-identity';
 import type { Settings } from '#src/Types/SettingsTypes';
 import type { Appearance } from '#src/Types/SettingsTypes/Appearance';

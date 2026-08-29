@@ -18,6 +18,7 @@ trigger: always_on
 - **AI sessions**: each AI page needs isolated persistent partition/session, named from `AIItem.id`
 - **Proxy**: global proxy is default only for AIs with `proxy_mode: follow_global_setting`; per-AI `direct`/`from_server_list`/`user_fill` override global
 - **After settings save**: persist → sync AI views → update sessions/proxy → rebuild menu. Return restart-required only for settings that can't hot-apply
+- **Path alias `#shared/*`**: `projects/ChatAIO/src/shared/*`. Shared data/types layer; use `#shared/...` instead of `../../../shared/...` or `#src/shared/...`. Wired in ChatAIO `tsconfig.json` / View tsconfigs, `partial.webpack-conf.ts`, and `package.json` `imports`. tsx tests/scripts pass `--tsconfig projects/ChatAIO/tsconfig.json`.
 
 ## Validation Commands
 

@@ -186,6 +186,6 @@ import {
 	resolveReorderedAIs ,
 	shouldEchoAIOrderToSettings ,
 	snapshotAIsForDirty,
-} from '../src/shared/utils/merge-enabled-ai-order.utility';
+} from '#shared/utils/merge-enabled-ai-order.utility';
 import assert from 'node:assert/strict';
 import { describe , it } from 'node:test';

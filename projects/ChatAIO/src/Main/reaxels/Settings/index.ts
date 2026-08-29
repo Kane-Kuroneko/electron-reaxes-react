@@ -389,8 +389,8 @@ import { testProxyConnectivity } from '#main/services/settings/proxy-service';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';
 import { syncTrayState , updateTrayMenu } from '#main/services/tray';
 import { requestDevCleanStart } from '#main/services/dev/clean-start';
-import { cloneObservableToPlain } from '#src/shared/utils/clone-for-ipc.utility';
-import { shouldEchoAIOrderToSettings } from '#src/shared/utils/merge-enabled-ai-order.utility';
+import { cloneObservableToPlain } from '#shared/utils/clone-for-ipc.utility';
+import { shouldEchoAIOrderToSettings } from '#shared/utils/merge-enabled-ai-order.utility';
 import {
 	reaxel ,
 	createReaxable,

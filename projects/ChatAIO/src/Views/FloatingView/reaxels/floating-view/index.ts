@@ -134,7 +134,7 @@ import {
 	perf ,
 	PerfPhase ,
 	switchAiBarItemsFingerprint,
-} from '#src/shared/utils/switch-perf-recorder.utility';
+} from '#shared/utils/switch-perf-recorder.utility';
 import {
 	createReaxable ,
 	reaxel,

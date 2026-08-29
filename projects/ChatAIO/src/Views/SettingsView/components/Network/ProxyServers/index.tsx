@@ -541,7 +541,7 @@ import { testProxyServer } from "#SettingsView/services/Settings";
 import {
 	createDefaultProxyConf as defaultProxyConf ,
 	createDefaultProxyTestURLs as defaultProxyTestURLs,
-} from "#src/shared/statics/default-proxy";
+} from "#shared/statics/default-proxy";
 import {v4 as uuid} from 'uuid';
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 import { ReloadOutlined } from '@ant-design/icons';

@@ -1515,7 +1515,7 @@ import {
 	type Rectangle ,
 	WebContentsView,
 } from "electron";
-import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
+import { getMenuBarHeight as resolveMenuBarHeight } from '#shared/menubar-geometry';
 import { clipMainShellToMenuBar } from '#main/services/clip-main-shell-to-menubar.utility';
 import {
 	hasUsableBrowserWindowContent ,
@@ -1549,7 +1549,7 @@ import type { FloatingView } from "#src/Types/FloatingView";
 import type { AI } from "#src/Types/SettingsTypes/AI";
 import type { Settings } from "#src/Types/SettingsTypes";
 import type { RuntimeAIView } from "#main/reaxels/Views/AI-Views";
-import { perf , PerfPhase } from '#src/shared/utils/switch-perf-recorder.utility';
+import { perf , PerfPhase } from '#shared/utils/switch-perf-recorder.utility';
 import {
 	createReaxable ,
 	obsReaction ,

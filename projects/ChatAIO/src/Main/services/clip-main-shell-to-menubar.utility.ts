@@ -108,7 +108,7 @@ const isSameBounds = (a:Rectangle , b:Rectangle) => {
 
 
 import { hasUsableBrowserWindowContent } from '#main/services/usable-window-content.utility';
-import { getMenuBarHeight } from '#src/shared/menubar-geometry';
+import { getMenuBarHeight } from '#shared/menubar-geometry';
 import {
 	type BrowserWindow ,
 	type Rectangle ,

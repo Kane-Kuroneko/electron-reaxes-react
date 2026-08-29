@@ -17,6 +17,7 @@ export const main = (
 				'#main' : path.join(subProjectRootPath,'src/Main'),
 				'#renderer' : path.join(subProjectRootPath,'src/Renderer'),
 				'#src' : path.join(subProjectRootPath,'src'),
+				'#shared' : path.join(subProjectRootPath,'src/shared'),
 				'#generics' : path.join(repoRootPath,'generic-services'),
 				'#Views/shared' : path.join(subProjectRootPath,'src/Views/shared'),
 			}
@@ -59,6 +60,7 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 				'#main' : path.join(subProjectRootPath,'src/Main'),
 				'#renderer' : path.join(subProjectRootPath,'src/Renderer'),
 				'#src' : path.join(subProjectRootPath,'src'),
+				'#shared' : path.join(subProjectRootPath,'src/shared'),
 				'#generics' : path.join(repoRootPath,'generic-services'),
 				'#MainView' : path.join(subProjectRootPath,'src/Views/MainView'),
 				'#SettingsView' : path.join(subProjectRootPath,'src/Views/SettingsView'),
@@ -94,6 +96,7 @@ export const preload = ( repoRootPath: string , subProjectRootPath: string ): Co
 				'#main' : path.join(subProjectRootPath,'src/Main'),
 				'#renderer' : path.join(subProjectRootPath,'src/Renderer'),
 				'#src' : path.join(subProjectRootPath,'src'),
+				'#shared' : path.join(subProjectRootPath,'src/shared'),
 				'#generics' : path.join(repoRootPath,'generic-services'),
 			},
 		},

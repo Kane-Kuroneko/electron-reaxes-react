@@ -94,4 +94,4 @@ import {
 	normalizeThemePreference ,
 	resolvePreferredSystemLanguage ,
 	resolveLanguagePreference,
-} from '#src/shared/appearance';
+} from '#shared/appearance';

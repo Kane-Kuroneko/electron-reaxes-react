@@ -386,7 +386,7 @@ import {
 	shouldSkipGoogleTranslate ,
 	toGoogleTranslateLanguage ,
 	translateMarkdownViaGoogle ,
-} from '#src/shared/utils/google-translate.utility';
+} from '#shared/utils/google-translate.utility';
 import type { AppUpdater } from '#src/Types/AppUpdater';
 import type { Languages } from '#src/Types/Languages';
 import {
