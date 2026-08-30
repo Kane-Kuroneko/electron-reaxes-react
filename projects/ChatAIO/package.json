@@ -20,7 +20,9 @@
 		"analyze:perf": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json projects/ChatAIO/scripts/analyze-perf-logs.ts",
 		"analyze:perf:ci": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json projects/ChatAIO/scripts/analyze-perf-logs.ts --ci",
 		"test:ai-order": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json --test projects/ChatAIO/tests/ai-list-reorder.test.ts",
-		"test:ai-catalog": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json --test projects/ChatAIO/tests/ai-catalog-defaults.test.ts projects/ChatAIO/tests/ai-catalog-merge.test.ts",
+		"test:ai-catalog": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json --test projects/ChatAIO/tests/ai-catalog-defaults.test.ts projects/ChatAIO/tests/ai-catalog-merge.test.ts projects/ChatAIO/tests/ai-catalog-sign.test.ts",
+		"sign:ai-catalog": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json projects/ChatAIO/scripts/sign-ai-catalog.ts",
+		"publish:ai-catalog": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json projects/ChatAIO/scripts/publish-ai-catalog.ts",
 		"generate-icons": "yarn --cwd ../.. bash projects/ChatAIO/scripts/generate-icons.sh"
 	},
 	"type": "commonjs",

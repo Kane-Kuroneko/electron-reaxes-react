@@ -14,10 +14,12 @@ export const EMPTY_VENDOR_REGION:AICatalog.VendorRegion = {
 
 const ISO_3166_1_ALPHA_2 = /^[A-Z]{2}$/;
 
+/** 国家码收成大写；非字符串给空串。 */
 export const normalizeCountryCode = ( value:unknown ):string => {
 	return typeof value === 'string' ? value.trim().toUpperCase() : '';
 };
 
+/** 是否为大写 ISO 3166-1 alpha-2（两位字母）。 */
 export const isIso3166Alpha2 = ( code:string ):boolean => {
 	return ISO_3166_1_ALPHA_2.test( code );
 };
@@ -76,6 +78,7 @@ export const evaluateVendorRegionAccess = (
 	return { blocked : false , reason : null };
 };
 
+/** evaluateVendorRegionAccess 的布尔封装，给阻断页开关用。 */
 export const isCountryBlockedByVendorRegion = (
 	region:AICatalog.VendorRegion ,
 	countryCode:string,
@@ -98,6 +101,7 @@ export const findCatalogVendorForAI = (
 	return vendors.find( vendor => vendor.family === ai.AI_family ) ?? null;
 };
 
+/** 该页对应供应商的 region；查不到则不限制（空 available / forbidden）。 */
 export const getVendorRegionForAI = (
 	vendors:AICatalog.Vendor[] ,
 	ai:Pick<AI.AIItem , 'id' | 'AI_family'>,
@@ -105,6 +109,7 @@ export const getVendorRegionForAI = (
 	return findCatalogVendorForAI( vendors , ai )?.region ?? EMPTY_VENDOR_REGION;
 };
 
+/** 解析 ISO 码数组；缺省当空列表，形状不对返回 null。重复码去重保留先出现的。 */
 const parseIsoCodeList = ( value:unknown ):string[] | null => {
 	if( value == null ) {
 		return [];

@@ -6,6 +6,12 @@ __Bin
 .pem
 .cer
 
+# ChatAIO vendor-catalog Ed25519 private key (never commit).
+# Filename-only so a misplaced copy anywhere in the repo is still ignored.
+ed25519.key
+ai-catalog-ed25519.key
+projects/ChatAIO/statics/ai-catalog/ed25519.key
+
 # Runtime / profiling logs (never commit)
 performance-logs/
 projects/ChatAIO/performance-logs/

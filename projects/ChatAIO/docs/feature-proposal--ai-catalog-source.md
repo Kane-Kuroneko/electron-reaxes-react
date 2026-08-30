@@ -48,7 +48,7 @@
 - **方向**：有没有越出「范围 / 不改」；有没有把下一批的事提前做了。
 - **Bug / 债**：回归、漏改、静默失败；本批允许留下的债必须写进「本批已知债」，不要口头带过。
 
-当前进度：**目录 + main 加载 + 校验/merge + region 已按正确模型落地；默认关名单已抽成独立数据文件。** 用户确认工作区后开批次 4。批次 5 Settings 检查更新仍未开始。
+当前进度：**批次 4 已确认。** 下一批是批次 5（Settings 手动检查更新）。用户未确认前不开批次 5。
 
 | 批次 | 层 | 交付 | 依赖 | 状态 |
 |------|----|------|------|------|
@@ -56,7 +56,7 @@
 | 1 | data + main 加载 | JSON 搬家、瘦 schema、main 用 fs 读 bundled | 0 | 与本轮一并按正确模型落地 |
 | 2 | main + renderer 读路径 | 删并行 URL 表；renderer 不再 import 目录 | 1 | 与本轮一并按正确模型落地（官方 URL 在目录行上，不是派生 Map） |
 | 3 | main 纯函数 | 供应商目录校验 + 目录行→种子实例 merge + region + 单测 | 2 | 与本轮一并落地 |
-| 4 | main 安全 + 脚本 | Ed25519 验签模块 + 发布脚本（payload = 瘦目录） | 3 | **未开始，本轮不做** |
+| 4 | main 安全 + 脚本 | Ed25519 验签模块 + 发布脚本（payload = 瘦目录） | 3 | **已确认** |
 | 5 | ipc + Settings UI | 手动检查、预览、确认写入 | 3 + 4 | **未开始，本轮不做** |
 
 批次 3 不依赖远程，App 升级带新 bundled 时也能复用 merge。批次 4 不接 UI，可先本地签一条假数据验证。批次 5 才碰用户可见行为。
@@ -415,7 +415,7 @@ flowchart LR
 
 ## 批次 4 — 签名与发布（无 UI）
 
-**状态：未开始**  
+**状态：已确认**  
 **层**：crypto + scripts  
 **目标**：能对**瘦目录 JSON** 原文签名/验签；能把文件推到 Releases tag `ai-catalog`。Settings 仍没有入口。
 
@@ -425,7 +425,7 @@ flowchart LR
 - 新增建议 `src/Main/services/settings/ai-catalog-sign.utility.ts`（只 verify；sign 放脚本）
 - 新增 `projects/ChatAIO/scripts/publish-ai-catalog.ts`（或 `scripts/sign-ai-catalog.ts` + publish）
 - 单测：好签名通过、改 JSON 一个字节失败、缺 sig 失败
-- 私钥：环境变量例如 `CHATAIO_CATALOG_ED25519_PRIVATE_KEY`，**禁止进 git**；可在 `.gitignore` 加本地 key 路径
+- 私钥：环境变量例如 `CHATAIO_CATALOG_ED25519_PRIVATE_KEY`，**禁止进 git**。默认文件路径在用户目录 `~/.chataio/ai-catalog-ed25519.key`（可用 `CHATAIO_CATALOG_ED25519_PRIVATE_KEY_FILE` 覆盖）。仓库内若误放 `statics/ai-catalog/ed25519.key` 仍被 `.gitignore` 挡住。
 
 ### 不改
 
@@ -452,6 +452,20 @@ flowchart LR
 - 有 `gh` 权限时：脚本能上传；本机可用公钥验刚传的文件。
 - 仓库里搜不到私钥。
 - 签的是瘦目录，文件里没有 proxy/disabled/preload。
+
+### 执行记录（2026-08-31）
+
+- `statics/ai-catalog/ed25519.pub`：Ed25519 公钥 PEM（可提交）
+- `default-ais.json.sig`：对当前瘦 JSON **原始字节** 的 raw 64 字节签名，标准 base64 一行
+- `ai-catalog-sign.utility.ts`：只 `verify`；远程 URL 常量；host 白名单。不 fetch，不进 renderer
+- `scripts/sign-ai-catalog.ts` / `publish-ai-catalog.ts`：sign 用 env 或用户目录 `~/.chataio/ai-catalog-ed25519.key`；publish 先验签再 `gh release upload --clobber`
+- 私钥路径：`CHATAIO_CATALOG_ED25519_PRIVATE_KEY` 或 `~/.chataio/ai-catalog-ed25519.key`（不进仓库；工程内误放的 `ed25519.key` 仍 gitignore）
+- 单测：好签名过、改一字节失败、缺 sig 失败、bundled .sig 对得上仓库 JSON、错误 owner URL 拒绝
+- 仓库根 `.gitattributes` 把 catalog JSON / `.sig` / `.pub` 锁成 `eol=lf`。签名对象是工作区原文字节；Windows `core.autocrlf` 若把 JSON 变成 CRLF，换机验签会失败。`yarn sign:ai-catalog` 遇到 CR 直接拒绝。
+- **未**把验签接到 `AIConfigService` 启动路径；**未**跑 `gh release upload`（需本机 gh 权限）
+- 仓库内 grep 无私钥 PEM
+
+用户已于 2026-08-31 确认并提交。下一批：批次 5。
 
 ---
 

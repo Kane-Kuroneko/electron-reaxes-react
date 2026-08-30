@@ -1,6 +1,6 @@
 # AI Configuration Management
 
-> **改造中**：目录单一事实源见分批提案 [`../feature-proposal--ai-catalog-source.md`](../feature-proposal--ai-catalog-source.md)（含 2026-08-28 **方向纠偏**：目录是扁平供应商列表，不是默认 `AIItem` 种子袋）。本文描述**当前**实现。远程签名 / Settings 检查更新仍属后续批次。
+> **改造中**：目录单一事实源见分批提案 [`../feature-proposal--ai-catalog-source.md`](../feature-proposal--ai-catalog-source.md)（含 2026-08-28 **方向纠偏**：目录是扁平供应商列表，不是默认 `AIItem` 种子袋）。本文描述**当前**实现。Settings 检查更新仍属批次 5。
 
 ## Architecture Overview
 
@@ -63,6 +63,8 @@ projects/ChatAIO/
 ├── statics/
 │   └── ai-catalog/
 │       └── default-ais.json          # 瘦供应商目录（fs-loaded by main）；不含默认关名单
+│       ├── ed25519.pub               # 目录验签公钥（可提交）
+│       └── default-ais.json.sig      # 原文 raw Ed25519 的 base64 一行
 ├── src/
 │   ├── shared/statics/
 │   │   └── ai-family-disabled-by-default.ts  # 纯信息：首启默认关闭的 family（无函数）
@@ -74,7 +76,8 @@ projects/ChatAIO/
 │       ├── normalize-ai-item.utility.ts  # 入参供应商列表，给用户实例补空 url
 │       ├── ai-catalog-validate.utility.ts  # UUID / family / region ISO / 重复 → 整份非法
 │       ├── ai-catalog-region.utility.ts    # catalog.region 判定；实例按 id/family 回查
-│       └── ai-catalog-merge.utility.ts    # 目录行 → 种子实例，按 UUID 对齐
+│       ├── ai-catalog-merge.utility.ts    # 目录行 → 种子实例，按 UUID 对齐
+│       └── ai-catalog-sign.utility.ts     # 只 verify；远程 URL + host 白名单；不 fetch
 └── userData/
     ├── user-ais.json                 # 用户整表 + deletedIds
     └── catalog-ais.json              # 可选 cache；没有则只用 bundled

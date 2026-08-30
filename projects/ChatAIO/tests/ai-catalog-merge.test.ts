@@ -9,6 +9,7 @@ const GROK_ID = '22222222-2222-4222-8222-222222222222';
 const CLAUDE_ID = '33333333-3333-4333-8333-333333333333';
 const EXTRA_CHATGPT_ID = '44444444-4444-4444-8444-444444444444';
 
+/** 测例供应商行。缺省字段不冒充实例。 */
 const vendor = ( partial:Pick<AICatalog.Vendor , 'id' | 'family'> & Partial<AICatalog.Vendor> ):AICatalog.Vendor => {
 	return {
 		id : partial.id ,
@@ -19,6 +20,7 @@ const vendor = ( partial:Pick<AICatalog.Vendor , 'id' | 'family'> & Partial<AICa
 	};
 };
 
+/** 测例页实例，和目录行分开。 */
 const item = ( partial:Partial<AI.AIItem> & Pick<AI.AIItem , 'id' | 'AI_family'> ):AI.AIItem => {
 	return {
 		label : partial.label ?? partial.id ,
@@ -33,6 +35,7 @@ const item = ( partial:Partial<AI.AIItem> & Pick<AI.AIItem , 'id' | 'AI_family'>
 	};
 };
 
+/** 测例目录信封。 */
 const catalog = ( ais:AICatalog.Vendor[] , revision = 1 ):AICatalog.Catalog => {
 	return {
 		schemaVersion : 1 ,
@@ -41,6 +44,7 @@ const catalog = ( ais:AICatalog.Vendor[] , revision = 1 ):AICatalog.Catalog => {
 	};
 };
 
+/** 断言用：id 序列 / 某页 url / 目录行 family。 */
 const idsOf = ( ais:Array<{ id:string }> ) => ais.map( ai => ai.id ).join( ',' );
 const urlOf = ( ais:AI.AIItem[] , id:string ) => ais.find( ai => ai.id === id )?.url;
 const familyOfVendors = ( ais:AICatalog.Vendor[] , id:string ) => ais.find( ai => ai.id === id )?.family;
@@ -49,6 +53,7 @@ const chatgpt = vendor( { id : CHATGPT_ID , family : 'chatgpt' , url : 'https://
 const grok = vendor( { id : GROK_ID , family : 'grok' , url : 'https://grok.com' , label : 'Grok' } );
 const claude = vendor( { id : CLAUDE_ID , family : 'claude' , url : 'https://claude.ai' , label : 'Claude' } );
 
+/** 官方种子页（id = 供应商 UUID）。extra 用来模拟用户改过的字段。 */
 const chatgptPage = ( extra:Partial<AI.AIItem> = {} ) => item( {
 	id : CHATGPT_ID ,
 	AI_family : 'chatgpt' ,
@@ -56,6 +61,7 @@ const chatgptPage = ( extra:Partial<AI.AIItem> = {} ) => item( {
 	label : 'ChatGPT' ,
 	...extra ,
 } );
+/** 同上，Grok 种子页。 */
 const grokPage = ( extra:Partial<AI.AIItem> = {} ) => item( {
 	id : GROK_ID ,
 	AI_family : 'grok' ,

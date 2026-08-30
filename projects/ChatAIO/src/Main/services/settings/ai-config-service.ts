@@ -8,6 +8,7 @@
 const USER_AI_CONFIG_FILE = 'user-ais.json';
 const CATALOG_CACHE_FILE = 'catalog-ais.json';
 
+/** 读 bundled 瘦目录并校验。缺文件或非法直接抛，启动不能静默空列表。 */
 const loadBundledCatalog = ( production:boolean ):AICatalog.Catalog => {
 	const catalogPath = resolveBundledCatalogPath();
 	if( !fs.existsSync( catalogPath ) ) {
@@ -38,6 +39,7 @@ class AIConfigService {
 	/** cache 若 revision ≥ bundled 且通过校验则用它，否则 bundled。无 cache 文件 = 只用 bundled。 */
 	private runtimeCatalog:AICatalog.Catalog;
 	
+	/** 启动时读 bundled，再按 revision 选 cache，dev 下追加探测页。不拉网。 */
 	constructor() {
 		const production = !dev();
 		this.userConfigPath = path.join( app.getPath( 'userData' ) , USER_AI_CONFIG_FILE );
@@ -49,6 +51,7 @@ class AIConfigService {
 		);
 	}
 
+	/** 读 userData 里用户确认过的已验签目录。坏文件当没有，回落到 bundled。 */
 	private readCatalogCache( production:boolean ):AICatalog.Catalog | null {
 		try {
 			if( !fs.existsSync( this.catalogCachePath ) ) {
@@ -67,6 +70,7 @@ class AIConfigService {
 		}
 	}
 
+	/** 用当前 runtime 目录给实例补空 url / 未知 family。 */
 	private normalizeAI( ai:AI.AIItem ):AI.AIItem {
 		return normalizeAIItem( ai , this.runtimeCatalog.ais );
 	}
@@ -81,6 +85,7 @@ class AIConfigService {
 		);
 	}
 	
+	/** 读用户整表 + deletedIds；没有文件或读失败返回 null。 */
 	getUserConfig():AICatalog.UserAIs | null {
 		try {
 			if( !fs.existsSync( this.userConfigPath ) ) {
@@ -98,10 +103,12 @@ class AIConfigService {
 		}
 	}
 	
+	/** 用户表里的页实例；没有 user 文件则 null（调用方应走默认映射）。 */
 	getUserAIs():AI.AIItem[] | null {
 		return this.getUserConfig()?.ais ?? null;
 	}
 	
+	/** 把用户整表写盘。不是 delta。 */
 	saveUserConfig( userConfig:AICatalog.UserAIs ):void {
 		try {
 			const dir = path.dirname( this.userConfigPath );
@@ -122,6 +129,7 @@ class AIConfigService {
 		}
 	}
 	
+	/** 只换 ais 数组；deletedIds 未传则沿用当前文件里的。 */
 	saveUserAIs( ais:AI.AIItem[] , deletedIds?:string[] ):void {
 		const currentConfig = this.getUserConfig();
 		this.saveUserConfig( {
@@ -130,6 +138,7 @@ class AIConfigService {
 		} );
 	}
 	
+	/** Settings 保存整表入口。目录种子页有、新表没有的 id 记进 deletedIds，避免下次又被补回来。 */
 	replaceAllAIs( ais:AI.AIItem[] ):void {
 		const nextIds = new Set( ais.map( ai => ai.id ) );
 		const deletedIds = this.getDefaultAIs()
@@ -138,11 +147,13 @@ class AIConfigService {
 		this.saveUserAIs( ais , deletedIds );
 	}
 	
+	/** 当前该给 UI 的页列表：用户表 + 尚未删除的官方种子页。 */
 	getEffectiveAIs():AI.AIItem[] {
 		return composeEffectiveAIs( this.runtimeCatalog.ais , this.getUserConfig() )
 			.map( ai => this.normalizeAI( ai ) );
 	}
 	
+	/** 删掉 user-ais.json，下次读回目录映射的默认实例。 */
 	resetToDefaults():void {
 		try {
 			if( fs.existsSync( this.userConfigPath ) ) {
@@ -154,10 +165,12 @@ class AIConfigService {
 		}
 	}
 	
+	/** 是否已有 user 整表文件（有文件 ≠ 一定改过字段）。 */
 	hasUserModifications():boolean {
 		return fs.existsSync( this.userConfigPath );
 	}
 	
+	/** 按实例 id 查有效列表里的那一页。 */
 	getAIById( id:string ):AI.AIItem | undefined {
 		return this.getEffectiveAIs().find( ai => ai.id === id );
 	}
@@ -170,6 +183,7 @@ class AIConfigService {
 		return findCatalogVendorForAI( this.runtimeCatalog.ais , ai );
 	}
 
+	/** 该页对应供应商的 region；查不到则不限制。 */
 	getVendorRegionForAI( ai:Pick<AI.AIItem , 'id' | 'AI_family'> ):AICatalog.VendorRegion {
 		return getVendorRegionForAI( this.runtimeCatalog.ais , ai );
 	}
@@ -179,6 +193,7 @@ class AIConfigService {
 		return isCountryBlockedByVendorRegion( this.getVendorRegionForAI( ai ) , countryCode );
 	}
 	
+	/** 改一页实例字段并整表写盘。找不到 id 返回 null。 */
 	updateAI( id:string , updates:Partial<AI.AIItem> ):AI.AIItem | null {
 		const effectiveAIs = this.getEffectiveAIs();
 		const index = effectiveAIs.findIndex( ai => ai.id === id );
@@ -198,6 +213,7 @@ class AIConfigService {
 		return effectiveAIs[index];
 	}
 	
+	/** 用户加一页（新实例 id）。同 family 第二页不会占用供应商 UUID。 */
 	addAI( ai:Omit<AI.AIItem , 'id'> & { id?: string } ):AI.AIItem {
 		const effectiveAIs = this.getEffectiveAIs();
 		const newAI = this.normalizeAI( {
@@ -211,6 +227,7 @@ class AIConfigService {
 		return newAI;
 	}
 	
+	/** 从有效列表去掉一页并写盘；官方种子页会进 deletedIds。 */
 	deleteAI( id:string ):boolean {
 		const effectiveAIs = this.getEffectiveAIs();
 		const filteredAIs = effectiveAIs.filter( ai => ai.id !== id );
@@ -224,6 +241,7 @@ class AIConfigService {
 		return true;
 	}
 
+	/** Switch AI / Manage AIs 拖拽排序后立即持久化。契约见 ai-list-reorder.md。 */
 	reorderEnabledAIs( orderedIds:string[] ):{ success:boolean; changed:boolean; error?:string } {
 		/* orderedIds 要么是全表置换，要么是 enabled 槽位合并，见 resolveReorderedAIs。 */
 		const current = this.getEffectiveAIs();
@@ -248,6 +266,7 @@ class AIConfigService {
 		};
 	}
 	
+	/** 用户新加页的实例 id，不是供应商 UUID。 */
 	private generateUniqueId():string {
 		return `ai-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 , 11 ) }`;
 	}
@@ -278,6 +297,7 @@ class AIConfigService {
 
 let instance:AIConfigService | null = null;
 
+/** 进程内单例。main 启动后各 IPC / View 都走这一份。 */
 export function getAIConfigService():AIConfigService {
 	if( !instance ) {
 		instance = new AIConfigService();

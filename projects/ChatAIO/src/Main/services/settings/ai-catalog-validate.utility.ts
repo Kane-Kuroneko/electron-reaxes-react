@@ -35,14 +35,21 @@ const FAMILY_ALLOWED_HOSTS: Partial<Record<AI.AIFamily , readonly string[]>> = {
 	'dev-proxy-test' : [ 'whatismyipaddress.com' ],
 };
 
+/** App 已认识的 family（含 custom）。未知 family 不能出现在目录里。 */
 const isKnownFamily = ( family:string ):family is AI.AIFamily => {
 	return family === 'custom' || Object.prototype.hasOwnProperty.call( FAMILY_ALLOWED_HOSTS , family );
 };
 
+/** 供应商 id 必须是 UUID；假实例号 `default-chatgpt-001` 过不了。 */
 const isUuid = ( id:string ):boolean => {
 	return UUID_RE.test( id );
 };
 
+/**
+ * 校验瘦供应商目录。失败整份 `{ ok:false }`，不抛文案。
+ * 重复 id / 重复 family / 未知 family / 坏 UUID / 坏 region → 非法。
+ * 不读、不写实例字段（disabled / proxy / preload）。
+ */
 export const validateCatalog = (
 	input:unknown ,
 	options:AICatalog.ValidateOptions = {},
@@ -113,6 +120,10 @@ export const validateCatalog = (
 	};
 };
 
+/**
+ * 清洗一行供应商。reject = 整份非法；null = 生产构建丢掉该行（仅 dev-proxy-test）。
+ * host 不在白名单 → 该行 family 降为 custom，不丢行。
+ */
 const sanitizeCatalogVendor = (
 	entry:unknown ,
 	production:boolean,
@@ -167,6 +178,7 @@ const sanitizeCatalogVendor = (
 	};
 };
 
+/** 只接受 http(s) 绝对 URL；解析失败返回 null。 */
 const parseHttpUrl = ( url:string ):URL | null => {
 	try {
 		const parsed = new URL( url );

@@ -18,6 +18,7 @@ const DISABLED_BY_DEFAULT_FAMILIES = new Set<AI.AIFamily>( FAMILY_DISABLED_BY_DE
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** 测例里拼一行供应商。缺省字段不冒充实例。 */
 const vendor = ( partial:Pick<AICatalog.Vendor , 'id' | 'family'> & Partial<AICatalog.Vendor> ):AICatalog.Vendor => {
 	return {
 		id : partial.id ,
@@ -28,6 +29,7 @@ const vendor = ( partial:Pick<AICatalog.Vendor , 'id' | 'family'> & Partial<AICa
 	};
 };
 
+/** 测例里拼一页实例，和目录行分开。 */
 const item = ( partial:Partial<AI.AIItem> & Pick<AI.AIItem , 'id' | 'AI_family'> ):AI.AIItem => {
 	return {
 		label : partial.label ?? partial.id ,

@@ -45,11 +45,13 @@ export namespace AICatalog {
 		deletedIds?: string[];
 	};
 
+	/** validateCatalog 选项。production 时丢掉误入的 dev-proxy-test。 */
 	export type ValidateOptions = {
 		/** 生产构建丢掉误入目录的 dev-proxy-test 行；该 family 只由 App 在 dev() 注入 */
 		production?: boolean;
 	};
 
+	/** 失败不带文案：调用方只关心能不能用这份目录。 */
 	export type ValidateResult =
 		| {
 			ok: true;
@@ -62,8 +64,10 @@ export namespace AICatalog {
 	/** 目录能改的种子字段：官方 URL / 展示名。disabled 不在目录上，不参与 merge。 */
 	export type MergeField = 'url' | 'label';
 
+	/** 为什么这一行没被目录更新改掉。 */
 	export type MergeSkipReason = 'user-changed' | 'url-override' | 'custom-id';
 
+	/** Settings 预览用：added/updated/skipped/dropped + 确认后可写盘的 nextAis。 */
 	export type MergePreview = {
 		added: AI.AIItem[];
 		updated: {

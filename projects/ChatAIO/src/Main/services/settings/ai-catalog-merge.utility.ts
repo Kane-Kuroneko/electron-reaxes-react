@@ -8,6 +8,10 @@
 
 const CATALOG_UPDATE_FIELDS = [ 'url' , 'label' ] as const;
 
+/**
+ * 无新目录事件时的有效页列表：用户整表顺序优先，再按目录顺序补上
+ * user 没有、且不在 deletedIds 里的官方种子页。无 user 文件 = 目录全量映射。
+ */
 export const composeEffectiveAIs = (
 	catalogVendors:AICatalog.Vendor[] ,
 	user:AICatalog.UserAIs | null,
@@ -27,6 +31,7 @@ export const composeEffectiveAIs = (
 	return effectiveAIs;
 };
 
+/** cache 的 revision ≥ bundled 才用 cache，否则用 bundled。cache 为 null 则只用 bundled。 */
 export const selectRuntimeCatalog = (
 	bundled:AICatalog.Catalog ,
 	cache:AICatalog.Catalog | null,
@@ -37,6 +42,10 @@ export const selectRuntimeCatalog = (
 	return bundled;
 };
 
+/**
+ * 三路 merge 预览，不写盘。只更新种子页的 url / label；
+ * 用户改过的、有 url_override 的、custom- 开头的跳过。目录删行不自动从 user 表删。
+ */
 export const previewCatalogMerge = (
 	baseVendors:AICatalog.Vendor[] ,
 	theirsVendors:AICatalog.Vendor[] ,
@@ -139,6 +148,7 @@ export const previewCatalogMerge = (
 	};
 };
 
+/** 把 preview 的 nextAis / deletedIds 收成可写盘的 UserAIs。批次 5 用户确认后才调用。 */
 export const applyCatalogMerge = (
 	baseVendors:AICatalog.Vendor[] ,
 	theirsVendors:AICatalog.Vendor[] ,

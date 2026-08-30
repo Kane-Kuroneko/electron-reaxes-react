@@ -5,10 +5,12 @@
  * 见 docs/architecture/ai-config.md、docs/feature-proposal--ai-catalog-source.md。
  */
 
+/** 映射时注入的 App 策略。名单本身不在这个文件里。 */
 export type BuiltinAIItemDefaults = {
 	disabledFamilies : ReadonlySet<AI.AIFamily>;
 };
 
+/** 读纯数据名单，给 vendorToAIItem 当默认策略。 */
 export const DEFAULT_BUILTIN_AI_ITEM : BuiltinAIItemDefaults = {
 	disabledFamilies : new Set<AI.AIFamily>( FAMILY_DISABLED_BY_DEFAULT ),
 };

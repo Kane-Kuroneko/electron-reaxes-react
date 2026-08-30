@@ -5,6 +5,7 @@
  * 见 docs/feature-proposal--ai-catalog-source.md（方向纠偏）。
  */
 
+/** 给用户页实例补空字段。url 空时按 family 回查目录行，不把目录行当成实例。 */
 export const normalizeAIItem = ( ai:AI.AIItem , catalogVendors:AICatalog.Vendor[] ):AI.AIItem => {
 	const family = normalizeAIFamily( ai , catalogVendors );
 	const defaultUrl = familyDefaultUrl( family , catalogVendors );
@@ -22,6 +23,7 @@ export const normalizeAIItem = ( ai:AI.AIItem , catalogVendors:AICatalog.Vendor[
 	};
 };
 
+/** 该 family 在目录上的官方 url；custom 或查不到为 `''`。 */
 const familyDefaultUrl = ( family:AI.AIFamily , catalogVendors:AICatalog.Vendor[] ):string => {
 	if( family === 'custom' ) {
 		return '';
@@ -30,6 +32,7 @@ const familyDefaultUrl = ( family:AI.AIFamily , catalogVendors:AICatalog.Vendor[
 	return row?.url || '';
 };
 
+/** 未知 family 或 custom- 实例改过 url → 降为 custom，避免冒充官方供应商。 */
 const normalizeAIFamily = ( ai:AI.AIItem , catalogVendors:AICatalog.Vendor[] ):AI.AIFamily => {
 	const family = ai.AI_family;
 	if( !family || family === 'custom' ) {
