@@ -29,6 +29,7 @@
 		"allowSyntheticDefaultImports" : true ,
 		"skipLibCheck" : true ,
 		"allowUmdGlobalAccess" : true ,
+		"types" : [ "node" ] ,
 		"typeRoots" : [
 			"../../../../../node_modules/@types"
 		] ,

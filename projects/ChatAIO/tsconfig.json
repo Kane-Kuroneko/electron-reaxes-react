@@ -27,8 +27,11 @@
 		"preserveConstEnums" : true ,
 		"checkJs" : true ,
 		"allowSyntheticDefaultImports" : true ,
-		"skipLibCheck" : false ,
+		"skipLibCheck" : true ,
 		"allowUmdGlobalAccess" : true ,
+		// Cursor 捆绑 TS 6 起 types 默认 []，不会自动加载 @types/node。
+		// 仅配 typeRoots 不够，node:test / node:fs 等内置模块要靠这份显式列表。
+		"types" : [ "node" ] ,
 		"typeRoots" : [
 			"../../node_modules/@types"
 		] ,
@@ -61,6 +64,8 @@
 	},
 	"include" : [
 		"src" ,
+		"tests" ,
+		"scripts" ,
 		"global.d.ts" ,
 		"../../generic-services/*",
 		"../../global.d.ts" ,
