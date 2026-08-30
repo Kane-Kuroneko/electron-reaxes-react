@@ -48,7 +48,7 @@
 - **方向**：有没有越出「范围 / 不改」；有没有把下一批的事提前做了。
 - **Bug / 债**：回归、漏改、静默失败；本批允许留下的债必须写进「本批已知债」，不要口头带过。
 
-当前进度：**目录 + main 加载 + 校验/merge + region 已按正确模型落地。** 批次 4 签名、批次 5 Settings 检查更新 **不要做**。
+当前进度：**目录 + main 加载 + 校验/merge + region 已按正确模型落地；默认关名单已抽成独立数据文件。** 用户确认工作区后开批次 4。批次 5 Settings 检查更新仍未开始。
 
 | 批次 | 层 | 交付 | 依赖 | 状态 |
 |------|----|------|------|------|
@@ -76,7 +76,7 @@
 2. **Catalog cache**：`userData/catalog-ais.json`，用户确认过的已验签**瘦目录**。
 3. **User AIs**：`userData/user-ais.json`，用户整表（继续 `replaceAllAIs`，本提案不改成纯 delta）。
 
-Runtime 目录 = bundled 与 cache 里 `revision` 较高者（仍是供应商行）。第一启动：App 把目录行 **映射** 成运行时 `AIItem`（补上内置默认：proxy `follow_global_setting`、preload `false`、`url_override` `null`、`disabled` 由 **App 内置的 family 默认启用表** 决定）。Effective AIs = 映射后的种子页与 user 表按供应商 UUID 合并。只在 main 的 `AIConfigService` 里算；renderer 只拿 IPC 下发的 `AIItem[]`（那是实例，不是目录）。
+Runtime 目录 = bundled 与 cache 里 `revision` 较高者（仍是供应商行）。第一启动：App 把目录行 **映射** 成运行时 `AIItem`（补上内置默认：proxy `follow_global_setting`、preload `false`、`url_override` `null`、`disabled` **读** [`src/shared/statics/ai-family-disabled-by-default.ts`](../src/shared/statics/ai-family-disabled-by-default.ts)——typed 常量、无函数；映射写在 service/mapping 里，不和名单定义混文件）。Effective AIs = 映射后的种子页与 user 表按供应商 UUID 合并。只在 main 的 `AIConfigService` 里算；renderer 只拿 IPC 下发的 `AIItem[]`（那是实例，不是目录）。
 
 **IPC 形状（选 A，不改 preload 名）：** `get-default-ais` 仍返回映射后的默认实例 `AIItem[]`。语义 = App 用内置策略把供应商变成默认页。Settings / Guiding / ManageAIs 加站吃的是实例。目录瘦身只在 main。
 
@@ -95,7 +95,7 @@ flowchart LR
   bundled["bundled 瘦目录"]
   cache["userData catalog-ais.json"]
   user["userData user-ais.json"]
-  map["vendorToAIItem + 内置策略"]
+  map["vendorToAIItem 读默认关名单"]
   svc["Main AIConfigService"]
   ipc["IPC AIItem[]"]
   ui["Renderer"]
@@ -136,7 +136,8 @@ flowchart LR
 - 把 user 实例当目录。
 - `validateCatalog` 去校验实例的 proxy / preload。
 - 把 `dev-proxy-test` 写进生产目录 JSON。
-- 测试锁 Map、锁 `default-*-001`、把实现函数名当契约。
+- 测试锁 Map、锁 `default-*-001`、把实现函数名当契约、把 mapping utility 路径当契约。
+- 把 `FAMILY_DISABLED_BY_DEFAULT` 写进供应商 JSON，或定义在 utility / 映射函数同一个文件里。默认关是 App 策略，单独 typed 信息文件（与 `AI-family.ts` 同类）。
 
 ---
 
@@ -342,7 +343,7 @@ flowchart LR
 
 ### 范围
 
-- `src/Main/services/settings/` 下 validate / merge / builtin 映射（不进 renderer）
+- `src/Main/services/settings/` 下 validate / merge / 映射函数（不进 renderer）；默认关名单是独立纯数据，不定义在 utility 里
 - `tests/ai-catalog-merge.test.ts`、`tests/ai-catalog-defaults.test.ts`
 - `AIConfigService.getEffectiveAIs` 改为调用 merge
 - 可选：若存在 `userData/catalog-ais.json` 且 `revision` ≥ bundled 且通过校验，则用它当 catalog；**没有该文件时行为与只有 bundled 相同**
@@ -378,13 +379,13 @@ flowchart LR
 - **目录改字段**：同 id 且 `ours.field === base.field` → 可更新为 `theirs.field`（只 `url` / `label`）
 - **跳过**：用户改过的 url、label；任意 `url_override`；`id` 以 `custom-` 开头；用户自己加的新 id（同 family 也碰不到）
 - **目录删除**：`base` 有、`theirs` 无 → 不自动从 ours 删，diff 标 `catalogDropped`
-- **disabled / proxy / preload**：不是目录字段，merge 不改。第一启动的 disabled 只来自 App 内置 family 默认禁用表
+- **disabled / proxy / preload**：不是目录字段，merge 不改。第一启动的 disabled 只来自 App 纯数据名单 `ai-family-disabled-by-default.ts`（映射函数读取，不在 mapping 文件里定义）
 
 `getEffectiveAIs` 在「无新目录事件」时仍是：user 整表 + 追加 user 没有且未删除的**种子页**（由当前目录映射）。本批不要悄悄改顺序语义。
 
 ### 步骤
 
-1. 目录行 ≠ `AIItem`。提供 `vendorToAIItem(vendor, builtinDefaults)`（命令式）。
+1. 目录行 ≠ `AIItem`。提供 `vendorToAIItem(vendor, builtinDefaults)`（命令式）；`disabled` 读独立名单，不把名单写进 mapping 文件。
 2. 把 `getEffectiveAIs` 抽成纯函数；测试锁业务不锁实现。
 3. 接入 cache 读取（文件缺失 = 无 cache）。
 4. 改 `ai-config.md`：写明 user 文件是整表 + `deletedIds`；目录是瘦供应商列表。
@@ -403,12 +404,12 @@ flowchart LR
 
 - `default-ais.json` 改为瘦供应商列表（UUID + family + label + url，`revision: 2`）；`dev-proxy-test` 移出生产目录
 - `AICatalog.Vendor` vs `UserAIs`；删除 `Catalog.ais: AI.AIItem[]`
-- `vendorToAIItem` + family 默认禁用表；`dev()` 注入 proxy 测试供应商
+- `vendorToAIItem` + family 默认禁用表（当时仍写在 mapping utility 里）；`dev()` 注入 proxy 测试供应商
 - validate 只认供应商行；merge 按供应商 UUID 对齐种子页，不改 disabled
 - IPC 仍返回映射后的 `AIItem[]`
 - 测试按新业务锁重写
 
-自审见本轮汇报。请确认后再开批次 4；不要 commit，除非用户另说。
+**数据 vs 映射（2026-08-29 / 提交 2026-08-31）：** 默认关名单从 utility 抽到 `src/shared/statics/ai-family-disabled-by-default.ts`（typed 常量、无函数）。`vendorToAIItem` 只读该名单。不要把 mapping 文件路径当契约，也不要把名单写回 `default-ais.json`。
 
 ---
 

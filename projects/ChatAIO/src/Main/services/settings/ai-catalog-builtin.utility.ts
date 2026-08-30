@@ -1,30 +1,16 @@
 /**
- * App 内置的供应商→实例策略。目录 JSON 不存这些。
- * 默认禁用表 = 纠偏前 JSON 里 disabled:true 的那些 family，迁到这里以免丢产品行为。
- * dev-proxy-test 不进生产目录，只在 isDev 时追加。
- * 见 docs/feature-proposal--ai-catalog-source.md（方向纠偏）。
+ * App 内置的供应商→实例映射与 dev 注入。只含策略函数，不含名单定义。
+ * 默认关闭哪些 family：读 src/shared/statics/ai-family-disabled-by-default.ts。
+ * 目录 JSON 不存 disabled / proxy / preload。dev-proxy-test 不进生产目录，只在 isDev 时追加。
+ * 见 docs/architecture/ai-config.md、docs/feature-proposal--ai-catalog-source.md。
  */
 
 export type BuiltinAIItemDefaults = {
 	disabledFamilies : ReadonlySet<AI.AIFamily>;
 };
 
-/** 第一启动映射种子页时：这些 family 默认关闭。用户点过启用后写在 user-ais，不再跟这张表。 */
-export const FAMILY_DISABLED_BY_DEFAULT : ReadonlySet<AI.AIFamily> = new Set( [
-	'manus' ,
-	'aistudio' ,
-	'copilot' ,
-	'meta-ai' ,
-	'poe' ,
-	'mistral' ,
-	'chatglm' ,
-	'yuanbao' ,
-	'hailuo' ,
-	'yiyan' ,
-] );
-
 export const DEFAULT_BUILTIN_AI_ITEM : BuiltinAIItemDefaults = {
-	disabledFamilies : FAMILY_DISABLED_BY_DEFAULT,
+	disabledFamilies : new Set<AI.AIFamily>( FAMILY_DISABLED_BY_DEFAULT ),
 };
 
 /** 开发用代理探测页。稳定 UUID，同一 family 永远同一 id。禁止写进 default-ais.json。 */
@@ -38,7 +24,7 @@ export const DEV_PROXY_TEST_VENDOR : AICatalog.Vendor = {
 
 /**
  * 供应商行 → 运行时页实例。官方种子页 id = 供应商 UUID。
- * 内置：proxy follow_global、preload false、url_override null、disabled 看默认禁用表。
+ * 内置：proxy follow_global、preload false、url_override null、disabled 读 FAMILY_DISABLED_BY_DEFAULT。
  */
 export const vendorToAIItem = (
 	vendor:AICatalog.Vendor ,
@@ -79,5 +65,6 @@ export const appendDevProxyTestVendor = (
 };
 
 import { EMPTY_VENDOR_REGION } from './ai-catalog-region.utility';
+import { FAMILY_DISABLED_BY_DEFAULT } from '#shared/statics/ai-family-disabled-by-default';
 import type { AICatalog } from '#src/Types/AICatalog';
 import type { AI } from '#src/Types/SettingsTypes/AI';

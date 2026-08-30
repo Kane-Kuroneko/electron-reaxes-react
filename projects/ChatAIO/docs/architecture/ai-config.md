@@ -28,7 +28,7 @@
    - **整表 + `deletedIds`，不是 delta。** `replaceAllAIs` 写入当前有效列表全文，并用「目录种子页有、当前表没有」的 id 填 `deletedIds`
    - 旧文件里的 semver `version` 读到忽略，写入不再抄
 
-**映射（第一启动 / 无 user 文件）：** `vendorToAIItem` 把供应商行补成实例：proxy `follow_global_setting`、preload `false`、`url_override` `null`、`disabled` 由 App 内置 family 默认禁用表决定（Manus / AI Studio / Copilot 等原先 JSON 里 `disabled:true` 的 family）。`dev-proxy-test` 只在 `dev()` 注入，不进生产目录 JSON。
+**映射（第一启动 / 无 user 文件）：** `vendorToAIItem` 把供应商行补成实例：proxy `follow_global_setting`、preload `false`、`url_override` `null`、`disabled` **读** App 纯数据名单 [`src/shared/statics/ai-family-disabled-by-default.ts`](../../src/shared/statics/ai-family-disabled-by-default.ts)（Manus / AI Studio / Copilot 等原先 JSON 里 `disabled:true` 的 family）。名单是 typed 常量、无函数；映射函数不和名单定义混文件。`dev-proxy-test` 只在 `dev()` 注入，不进生产目录 JSON。
 
 Runtime 目录 = bundled 与 cache 里 `revision` 较高且通过校验者。Effective AIs = 该目录映射出的种子页与 user 表按供应商 UUID 合成。
 
@@ -62,13 +62,15 @@ Effective AIs = user.ais（保持用户顺序）
 projects/ChatAIO/
 ├── statics/
 │   └── ai-catalog/
-│       └── default-ais.json          # 瘦供应商目录（fs-loaded by main）
+│       └── default-ais.json          # 瘦供应商目录（fs-loaded by main）；不含默认关名单
 ├── src/
+│   ├── shared/statics/
+│   │   └── ai-family-disabled-by-default.ts  # 纯信息：首启默认关闭的 family（无函数）
 │   ├── Types/
 │   │   └── AICatalog.d.ts            # Vendor / Catalog / UserAIs / validate+merge 契约
 │   └── Main/services/settings/
 │       ├── ai-config-service.ts      # 读盘、映射默认实例、命令式调用 validate/merge
-│       ├── ai-catalog-builtin.utility.ts  # 默认禁用表、vendorToAIItem、dev 注入
+│       ├── ai-catalog-builtin.utility.ts  # 映射/注入：vendorToAIItem、dev 注入；读上面那份名单
 │       ├── normalize-ai-item.utility.ts  # 入参供应商列表，给用户实例补空 url
 │       ├── ai-catalog-validate.utility.ts  # UUID / family / region ISO / 重复 → 整份非法
 │       ├── ai-catalog-region.utility.ts    # catalog.region 判定；实例按 id/family 回查
@@ -77,6 +79,8 @@ projects/ChatAIO/
     ├── user-ais.json                 # 用户整表 + deletedIds
     └── catalog-ais.json              # 可选 cache；没有则只用 bundled
 ```
+
+**数据 vs 映射：** 默认关名单是 App 策略（typed TS 信息文件），不是供应商事实源，也不要锁某个 utility 路径当契约。mapping 文件可以改名，只要继续 **读** 那份名单。
 
 ## AIConfigService API
 

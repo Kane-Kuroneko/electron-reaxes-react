@@ -1,7 +1,8 @@
 /**
  * 供应商目录 → 默认实例。锁用户可见结果（id/url/label/disabled），
- * 不锁内部函数名、不锁假实例号 default-*-001、不锁 Map。
- * 见 docs/feature-proposal--ai-catalog-source.md（方向纠偏）。
+ * 不锁内部函数名、不锁假实例号 default-*-001、不锁 Map、不锁 mapping 文件路径。
+ * 默认关名单是 App 纯数据（ai-family-disabled-by-default.ts），映射函数只读它。
+ * 见 docs/architecture/ai-config.md、docs/feature-proposal--ai-catalog-source.md。
  */
 
 const INSTANCE_FIELDS = [
@@ -13,18 +14,7 @@ const INSTANCE_FIELDS = [
 	'user_fill_proxy' ,
 ];
 
-const DISABLED_BY_DEFAULT_FAMILIES = new Set( [
-	'manus' ,
-	'aistudio' ,
-	'copilot' ,
-	'meta-ai' ,
-	'poe' ,
-	'mistral' ,
-	'chatglm' ,
-	'yuanbao' ,
-	'hailuo' ,
-	'yiyan' ,
-] );
+const DISABLED_BY_DEFAULT_FAMILIES = new Set<AI.AIFamily>( FAMILY_DISABLED_BY_DEFAULT );
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -80,8 +70,8 @@ describe( 'bundled 供应商目录是瘦行，不是 AIItem 种子袋' , () => {
 	} );
 } );
 
-describe( '无 user-ais 时默认列表 = 供应商目录 + App 默认禁用表' , () => {
-	it( 'id/url/label/disabled 与目录行和内置禁用表一致' , () => {
+describe( '无 user-ais 时默认列表 = 供应商目录 + App 默认禁用名单' , () => {
+	it( 'id/url/label/disabled 与目录行和纯数据名单一致（映射只读名单，不自带定义）' , () => {
 		const raw = JSON.parse( fs.readFileSync( bundledCatalogPath , 'utf-8' ) );
 		const result = validateCatalog( raw );
 		assert.equal( result.ok , true );
@@ -245,6 +235,7 @@ import { validateCatalog } from '../src/Main/services/settings/ai-catalog-valida
 import { normalizeAIItem } from '../src/Main/services/settings/normalize-ai-item.utility';
 import type { AICatalog } from '../src/Types/AICatalog';
 import type { AI } from '../src/Types/SettingsTypes/AI';
+import { FAMILY_DISABLED_BY_DEFAULT } from '#shared/statics/ai-family-disabled-by-default';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
