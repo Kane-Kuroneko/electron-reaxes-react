@@ -1,3 +1,12 @@
+const SETTINGS_MENU_PANELS = {
+	general : RCGeneralPanel ,
+	net : RCNetworkPanel ,
+	mngeai : RCManageAIsPanel ,
+	about : RCAboutPanel ,
+} as const;
+
+const SETTINGS_MENU_ORDER = [ 'general' , 'net' , 'mngeai' , 'about' ] as const;
+
 export const App = reaxper( () => {
 	const store = reaxel_SettingsView.store.RootMenu;
 	const setState = reaxel_SettingsView.setState.RootMenu;
@@ -7,16 +16,20 @@ export const App = reaxper( () => {
 	);
 	
 	const { applySettings , exitSettings , exitWithoutSave , reloadSettings , isDirty } = reaxel_SettingsView();
-	
-	const MenuContentComponent = {
-		general : RCGeneralPanel ,
-		net : RCNetworkPanel ,
-		mngeai : RCManageAIsPanel ,
-		about : RCAboutPanel ,
-	}[store.current];
-	
+
+	/*
+	 * 切过的页留在树上藏起来，不要每次卸掉重挂。
+	 * Manage AIs 的表格 + DnD 重挂载会卡一下；切 tab 也不拉目录更新。
+	 */
+	const visitedMenusRef = useRef( new Set<keyof typeof SETTINGS_MENU_PANELS>( [ store.current as keyof typeof SETTINGS_MENU_PANELS ] ) );
+	if( store.current in SETTINGS_MENU_PANELS ) {
+		visitedMenusRef.current.add( store.current as keyof typeof SETTINGS_MENU_PANELS );
+	}
+
+	const { markMenuSelect , measureDirty } = useSettingsMenuPerf( store.current );
+
 	// 触发响应式依赖收集 - 让按钮状态随 UIControls 变化而更新
-	const dirty = isDirty();
+	const dirty = measureDirty( () => isDirty() );
 	
 	return <ConfigProvider
 		theme={ {
@@ -36,6 +49,15 @@ export const App = reaxper( () => {
 							};
 						} ) }
 						onSelect={ ( { key } ) => {
+							const next = key as keyof typeof SETTINGS_MENU_PANELS;
+							if( next in SETTINGS_MENU_PANELS ) {
+								markMenuSelect( {
+									from : store.current ,
+									to : next ,
+									firstVisit : !visitedMenusRef.current.has( next ) ,
+									aiCount : reaxel_SettingsView.store.Data.AIs.length ,
+								} );
+							}
 							setState( { current : key as any } );
 							if( key !== 'about' ) {
 								reaxel_SettingsView.setState.VersionUI( { drawerOpen : false } );
@@ -45,9 +67,21 @@ export const App = reaxper( () => {
 					/>
 				</div>
 				<div className="settings-content">
-					<div className={ `settings-panel${ SETTINGS_FILL_CONTENT_MENUS.has( store.current ) ? ' settings-panel--fill' : '' }` }>
-						<MenuContentComponent />
-					</div>
+					{ SETTINGS_MENU_ORDER.filter( key => visitedMenusRef.current.has( key ) ).map( key => {
+						const Panel = SETTINGS_MENU_PANELS[key];
+						const active = store.current === key;
+						return <div
+							key={ key }
+							className={ [
+								'settings-panel' ,
+								SETTINGS_FILL_CONTENT_MENUS.has( key ) ? 'settings-panel--fill' : '' ,
+								active ? '' : 'settings-panel--inactive' ,
+							].filter( Boolean ).join( ' ' ) }
+							aria-hidden={ !active }
+						>
+							<Panel />
+						</div>;
+					} ) }
 				</div>
 			</div>
 			<div className="settings-footer">
@@ -176,6 +210,7 @@ import {
 	SETTINGS_FILL_CONTENT_MENUS ,
 	SETTINGS_MODAL_CONFIG ,
 } from '#SettingsView/layout/constants';
+import { useSettingsMenuPerf } from '#SettingsView/layout/use-settings-menu-perf';
 import { devCleanStart } from '#SettingsView/services/Settings';
 import { resolveThemePreference } from '#shared/appearance';
 import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";

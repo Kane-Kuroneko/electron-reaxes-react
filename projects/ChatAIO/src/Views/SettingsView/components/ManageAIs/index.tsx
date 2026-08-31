@@ -247,6 +247,44 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		const [resetModalVisible , setResetModalVisible] = React.useState( false );
 		const tableHostRef = React.useRef<HTMLDivElement>( null );
 		const tableScrollY = useHostScrollY( tableHostRef );
+		const markedMountRef = React.useRef( false );
+		if( !markedMountRef.current ) {
+			markedMountRef.current = true;
+			noteSettingsMenu( SettingsMenuPerfPhase.PanelMount , {
+				aiCount : reaxel_SettingsView.store.Data.AIs.length ,
+			} );
+		}
+
+		React.useLayoutEffect( () => {
+			if( !settingsMenuTraceAwaitingPanel() ) {
+				return;
+			}
+			noteSettingsMenu( SettingsMenuPerfPhase.PanelLayout , {
+				scrollY : tableScrollY ?? null ,
+			} );
+			if( tableScrollY == null ) {
+				return;
+			}
+			noteSettingsMenu( SettingsMenuPerfPhase.ScrollY , { scrollY : tableScrollY } );
+			requestAnimationFrame( () => {
+				requestAnimationFrame( () => {
+					noteSettingsMenu( SettingsMenuPerfPhase.PanelPaint , { scrollY : tableScrollY } );
+					endSettingsMenuTrace( { source : 'panel' } );
+				} );
+			} );
+		} , [ tableScrollY ] );
+
+		React.useEffect( () => {
+			if( !settingsMenuTraceAwaitingPanel() ) {
+				return;
+			}
+			const timer = window.setTimeout( () => {
+				endSettingsMenuTrace( { source : 'timeout' } );
+			} , 2000 );
+			return () => {
+				window.clearTimeout( timer );
+			};
+		} , [] );
 		const sensors = useSensors(
 			useSensor( PointerSensor , {
 				activationConstraint : {
@@ -1012,6 +1050,12 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	import { DragIconSvg } from "./DragIcon.svg";
 	import { createColumnTextFilter } from '#SettingsView/layout/column-text-filter';
 	import { useHostScrollY } from '#SettingsView/layout/use-host-scroll-y';
+	import {
+		endSettingsMenuTrace ,
+		noteSettingsMenu ,
+		settingsMenuTraceAwaitingPanel ,
+		SettingsMenuPerfPhase,
+	} from '#SettingsView/layout/settings-menu-perf.utility';
 	import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 	import { getDefaultAIs , resetAIsToDefaults } from "#SettingsView/services/Settings";
 	import { AIFamily } from "#shared/statics/AI-family";

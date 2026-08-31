@@ -26,6 +26,9 @@ export const useHostScrollY = (
 		}
 
 		const measure = () => {
+			if( host.clientHeight === 0 ) {
+				return;
+			}
 			const header = host.querySelector(
 				'.ant-table-header' ,
 			) as HTMLElement | null

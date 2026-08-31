@@ -48,6 +48,7 @@
 
 - [Prompt View](./docs/features/prompt-view.md)、[bugfix 与 UX](./docs/features/prompt-view-bugfix-and-ux.md)、[视觉](./docs/features/prompt-view-visual-refresh.md)
 - [Settings 退出丢弃 / 滚动条](./docs/features/settings-exit-discard-and-prompt-scrollbar.md)
+- [Settings 切 Manage AIs 卡顿埋点](./docs/features/settings-menu-switch-perf.md)
 - [外观 / 主题](./docs/architecture/appearance-theme-environment.md)、[i18n](./docs/architecture/i18n.md)
 
 ### 换图标
@@ -86,6 +87,7 @@
 | [prompt-view-visual-refresh.md](./docs/features/prompt-view-visual-refresh.md) | Prompt 视觉 |
 | [sensitive-region-access-blocking.md](./docs/features/sensitive-region-access-blocking.md) | 敏感地区访问阻断 |
 | [settings-exit-discard-and-prompt-scrollbar.md](./docs/features/settings-exit-discard-and-prompt-scrollbar.md) | Settings 退出丢弃 / 滚动条 |
+| [settings-menu-switch-perf.md](./docs/features/settings-menu-switch-perf.md) | Settings 侧栏切页 JSONL 埋点 |
 
 ### issues/
 

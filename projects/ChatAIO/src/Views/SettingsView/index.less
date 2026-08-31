@@ -116,6 +116,11 @@ html, body {
 	overflow: hidden;
 }
 
+/* 压过 --fill 的 display:flex，避免藏着的 Manage AIs 仍占布局 */
+.settings-panel--inactive {
+	display: none !important;
+}
+
 .settings-section {
 	background: var(--settings-panel-bg);
 	border-radius: 8px;
