@@ -225,16 +225,16 @@ describe( 'dev-proxy-test 只在 dev 注入，不进生产目录文件' , () => 
 
 import {
 	appendDevProxyTestVendor,
-} from '../src/Main/services/settings/ai-catalog-builtin.utility';
-import { composeEffectiveAIs } from '../src/Main/services/settings/ai-catalog-merge.utility';
+} from '../src/Main/services/settings/utils/ai-catalog-builtin.utility';
+import { composeEffectiveAIs } from '../src/Main/services/settings/utils/ai-catalog-merge.utility';
 import {
 	evaluateVendorRegionAccess ,
 	findCatalogVendorForAI ,
 	getVendorRegionForAI ,
 	isCountryBlockedByVendorRegion,
-} from '../src/Main/services/settings/ai-catalog-region.utility';
-import { validateCatalog } from '../src/Main/services/settings/ai-catalog-validate.utility';
-import { normalizeAIItem } from '../src/Main/services/settings/normalize-ai-item.utility';
+} from '../src/Main/services/settings/utils/ai-catalog-region.utility';
+import { validateCatalog } from '../src/Main/services/settings/utils/ai-catalog-validate.utility';
+import { normalizeAIItem } from '../src/Main/services/settings/utils/normalize-ai-item.utility';
 import type { AICatalog } from '../src/Types/AICatalog';
 import type { AI } from '../src/Types/SettingsTypes/AI';
 import { FAMILY_DISABLED_BY_DEFAULT } from '#shared/statics/ai-family-disabled-by-default';

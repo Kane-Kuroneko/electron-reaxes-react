@@ -307,22 +307,22 @@ export function getAIConfigService():AIConfigService {
 
 export default AIConfigService;
 
-import { resolveBundledCatalogPath } from './ai-catalog-path.utility';
+import { resolveBundledCatalogPath } from './utils/ai-catalog-path.utility';
 import {
 	appendDevProxyTestVendor ,
 	vendorToAIItem,
-} from './ai-catalog-builtin.utility';
+} from './utils/ai-catalog-builtin.utility';
 import {
 	findCatalogVendorForAI ,
 	getVendorRegionForAI ,
 	isCountryBlockedByVendorRegion,
-} from './ai-catalog-region.utility';
+} from './utils/ai-catalog-region.utility';
 import {
 	composeEffectiveAIs ,
 	selectRuntimeCatalog,
-} from './ai-catalog-merge.utility';
-import { validateCatalog } from './ai-catalog-validate.utility';
-import { normalizeAIItem } from './normalize-ai-item.utility';
+} from './utils/ai-catalog-merge.utility';
+import { validateCatalog } from './utils/ai-catalog-validate.utility';
+import { normalizeAIItem } from './utils/normalize-ai-item.utility';
 import { cloneObservableToPlain } from '#shared/utils/clone-for-ipc.utility';
 import {
 	enabledAIIdsEqual ,

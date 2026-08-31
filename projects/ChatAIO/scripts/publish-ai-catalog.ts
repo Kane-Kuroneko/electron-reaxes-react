@@ -73,7 +73,7 @@ import {
 	AI_CATALOG_SIG_FILENAME ,
 	decodeCatalogSignature ,
 	verifyCatalogSignature,
-} from '#main/services/settings/ai-catalog-sign.utility';
+} from '#main/services/settings/utils/ai-catalog-sign.utility';
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';

@@ -102,7 +102,7 @@ import {
 	decodeCatalogSignature ,
 	isAllowedAiCatalogDownloadUrl ,
 	verifyCatalogSignature,
-} from '#main/services/settings/ai-catalog-sign.utility';
+} from '#main/services/settings/utils/ai-catalog-sign.utility';
 import {
 	generateKeyPairSync ,
 	sign ,

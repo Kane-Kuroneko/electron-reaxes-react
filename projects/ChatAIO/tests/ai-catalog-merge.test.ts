@@ -268,8 +268,8 @@ import {
 	previewCatalogMerge ,
 	applyCatalogMerge ,
 	selectRuntimeCatalog,
-} from '../src/Main/services/settings/ai-catalog-merge.utility';
-import { validateCatalog } from '../src/Main/services/settings/ai-catalog-validate.utility';
+} from '../src/Main/services/settings/utils/ai-catalog-merge.utility';
+import { validateCatalog } from '../src/Main/services/settings/utils/ai-catalog-validate.utility';
 import type { AICatalog } from '../src/Types/AICatalog';
 import type { AI } from '../src/Types/SettingsTypes/AI';
 import assert from 'node:assert/strict';
