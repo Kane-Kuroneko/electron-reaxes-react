@@ -1,6 +1,7 @@
 /**
  * Menubar App Icon（纯展示，无点击）。
- * 图标由 webpack asset/resource 打包；Win 在栏最左，macOS 在红绿灯右侧。
+ * 图标由 webpack 打包 `statics/icons/app-icon[-dev].png`；Win 在栏最左，macOS 在红绿灯右侧。
+ * 见 docs/architecture/app-icons.md
  */
 export const AppIconButton = reaxper( () => {
 	return (
@@ -19,8 +20,8 @@ export const AppIconButton = reaxper( () => {
 } );
 
 
-import appIconProd from '../../../../../statics/gpt.png';
-import appIconDev from '../../../../../statics/gpt-dev.png';
+import appIconProd from '../../../../../statics/icons/app-icon.png';
+import appIconDev from '../../../../../statics/icons/app-icon-dev.png';
 import { reaxper } from 'reaxes-react';
 
 const appIconUrl = __DEV__ ? appIconDev : appIconProd;

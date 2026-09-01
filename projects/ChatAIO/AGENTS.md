@@ -28,6 +28,7 @@
 - [连点 Ctrl+[/] 动画不跟手](./docs/features/floating-view-rapid-switch-optimization.md)
 - [切后台后再切 AI，SwitchAiBar 不见](./docs/issues/floating-view-missing-after-background.md)
 - [拖拽排序、顺序写盘](./docs/features/ai-list-reorder.md)
+- [中区 Current AI 下拉切换](./docs/features/menubar-current-ai-dropdown.md)
 - [卡片 UX](./docs/features/floating-view-card-ux-optimization.md)、[Swiper 迁移](./docs/features/floating-view-swiper-migration.md)
 - [切换热路径](./docs/features/ai-page-switch-performance-optimization.md)
 
@@ -36,6 +37,7 @@
 - [Windows 拖 menubar 抖动](./docs/issues/menubar-drag-investigation.md)（禁止 `forward: true`）
 - [拖拽区漏到内容下方](./docs/issues/menubar-drag-region-leak-below-content.md)
 - [平台 menubar 路径](./docs/architecture/menubar-platform-paths.md)
+- [中区 Current AI 下拉切换](./docs/features/menubar-current-ai-dropdown.md)
 
 ### 登录 / 身份 / 代理
 
@@ -53,6 +55,7 @@
 
 ### 换图标
 
+- [图标布局 `statics/icons/`](./docs/architecture/app-icons.md)
 - 仓库根 [替换 App / Tray 图标](../../scripts/replace-app-icons/AGENTS.md)（不要手改 `.ico` / `.icns`）
 
 硬约束见上表对应 `docs/issues`（尤其是回前台闪白、menubar 拖拽），不要把禁止项再抄进本文。
@@ -64,6 +67,7 @@
 | 文档 | 内容 |
 |------|------|
 | [ai-config.md](./docs/architecture/ai-config.md) | 供应商目录 / 用户页实例；目标模型见下方提案 |
+| [app-icons.md](./docs/architecture/app-icons.md) | `statics/icons/` 应用/托盘/母图；打包排除母图 |
 | [appearance-theme-environment.md](./docs/architecture/appearance-theme-environment.md) | 外观 / 主题注入 AI 页 |
 | [build-pipeline-and-dev-refresh.md](./docs/architecture/build-pipeline-and-dev-refresh.md) | 构建与 dev 热更新 |
 | [i18n.md](./docs/architecture/i18n.md) | 国际化 |
@@ -76,6 +80,7 @@
 | 文档 | 内容 |
 |------|------|
 | [ai-list-reorder.md](./docs/features/ai-list-reorder.md) | Switch AI / Manage AIs 立即持久化排序 |
+| [menubar-current-ai-dropdown.md](./docs/features/menubar-current-ai-dropdown.md) | 中区 Current AI 块点击下拉切 AI |
 | [ai-page-switch-performance-optimization.md](./docs/features/ai-page-switch-performance-optimization.md) | 切换热路径 CPU / z-order |
 | [ai-view-white-screen-monitor.md](./docs/features/ai-view-white-screen-monitor.md) | `white-screen-monitor.jsonl` 调度链 |
 | [floating-view-rapid-switch-optimization.md](./docs/features/floating-view-rapid-switch-optimization.md) | SwitchAiBar 连点 Interrupt & Redirect |

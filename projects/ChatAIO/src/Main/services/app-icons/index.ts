@@ -1,7 +1,9 @@
 /**
  * App / tray 图标路径解析。
- * - 未打包（DEV）：使用 statics 下的 *-dev 文件
- * - 已打包：使用正式版文件名（electron-builder 亦指向 statics/gpt）
+ * 资产在 `statics/icons/`（`app-icon*` + macOS tray template + 母图）。
+ * - 未打包（DEV）：`*-dev` 文件名
+ * - 已打包：正式版文件名（electron-builder `icon:` 指向 `statics/icons/app-icon`）
+ * 母图只留仓库、不打进 extraResources。见 docs/architecture/app-icons.md
  */
 
 export const getStaticsDir = (): string => {
@@ -16,12 +18,17 @@ export const getStaticsDir = (): string => {
 	return fromMainBundle;
 };
 
+/** 运行时图标目录；母图也在这里，但打包时被 extraResources filter 排除 */
+export const getIconsDir = (): string => {
+	return path.join( getStaticsDir() , 'icons' );
+};
+
 /** 未打包时为 true，与 userData `ChatAIO-dev` 约定一致 */
 export const useDevAppIcons = (): boolean => !app.isPackaged;
 
 /**
  * 在 primary stem 后插入 -dev（与 replace-app-icons --variant dev 对齐）。
- * gpt.ico → gpt-dev.ico；tray-icon.macos.png → tray-icon-dev.macos.png
+ * app-icon.ico → app-icon-dev.ico；tray-icon.macos.png → tray-icon-dev.macos.png
  */
 export const withDevIconName = ( filename: string ): string => {
 	const dot = filename.indexOf( '.' );
@@ -40,15 +47,15 @@ export const getAppIconPath = (): string => {
 		: process.platform === 'darwin'
 			? 'icns'
 			: 'png';
-	return path.join( getStaticsDir() , resolveIconFilename( `gpt.${ ext }` ) );
+	return path.join( getIconsDir() , resolveIconFilename( `app-icon.${ ext }` ) );
 };
 
 export const getTrayIconPath = (): string => {
 	/* Win/Linux 托盘用 PNG，避免 ICO 多尺寸选取含糊；macOS 仍用 template */
 	const filename = process.platform === 'darwin'
 		? 'tray-icon.macos.png'
-		: 'gpt.png';
-	return path.join( getStaticsDir() , resolveIconFilename( filename ) );
+		: 'app-icon.png';
+	return path.join( getIconsDir() , resolveIconFilename( filename ) );
 };
 
 /** 加载托盘图；Windows 用 32px 以尽量保留 DEV 角标可读性 */

@@ -77,10 +77,10 @@ class ProjectIconLayout:
 	app_icon_stem: str
 	statics_dir: str = "statics"
 	# Relative to project root
-	shared_master: str = "statics/shared/main-icon-900x900.png"
+	shared_master: str = "statics/icons/main-icon-900x900.png"
 	# macOS tray Template images (black + alpha). Sizes match ChatAIO runtime.
-	tray_macos: str = "statics/tray-icon.macos.png"
-	tray_macos_2x: str = "statics/tray-icon.macos@2x.png"
+	tray_macos: str = "statics/icons/tray-icon.macos.png"
+	tray_macos_2x: str = "statics/icons/tray-icon.macos@2x.png"
 	tray_macos_px: int = 18
 	tray_macos_2x_px: int = 36
 	linux_png_px: int = 512
@@ -93,12 +93,13 @@ class ProjectIconLayout:
 PROJECT_LAYOUTS: dict[str, ProjectIconLayout] = {
 	"ChatAIO": ProjectIconLayout(
 		name="ChatAIO",
-		app_icon_stem="statics/gpt",
+		app_icon_stem="statics/icons/app-icon",
 		notes=(
-			"electron-builder.yml → icon: \"statics/gpt\" (no extension; always prod).",
-			"Dev set: --variant dev → gpt-dev / tray-icon-dev… ; runtime picks via !app.isPackaged.",
+			"electron-builder.yml → icon: \"statics/icons/app-icon\" (no extension; always prod).",
+			"Dev set: --variant dev → app-icon-dev / tray-icon-dev… ; runtime picks via !app.isPackaged.",
 			"macOS .icns auto-pads artwork to 13/16 of canvas for Dock sizing; Win/Linux stay full-bleed.",
-			"Windows tray reuses gpt[.ico|-dev.ico]; macOS tray uses tray-icon[-dev].macos(.@2x).png + setTemplateImage(true).",
+			"Windows tray uses app-icon[-dev].png (resized 32px); macOS tray uses tray-icon[-dev].macos(.@2x).png + setTemplateImage(true).",
+			"Masters (main-icon-900x900*.png) stay in repo only — extraResources excludes them from the installer.",
 			"After Windows rebuild, Explorer may show a cached old icon — refresh icon cache / rename path.",
 		),
 	),
@@ -209,7 +210,7 @@ def resolve_layout(project: str) -> ProjectIconLayout:
 
 
 def with_variant_stem(stem: str, variant: str) -> str:
-	"""statics/gpt + dev → statics/gpt-dev"""
+	"""statics/icons/app-icon + dev → statics/icons/app-icon-dev"""
 	if variant == "prod":
 		return stem
 	return f"{stem}-dev"
@@ -359,8 +360,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 		choices=("prod", "dev"),
 		default="prod",
 		help=(
-			"Icon set to write. prod → gpt / tray-icon.macos… ; "
-			"dev → gpt-dev / tray-icon-dev.macos… (runtime picks by app.isPackaged)."
+			"Icon set to write. prod → app-icon / tray-icon.macos… ; "
+			"dev → app-icon-dev / tray-icon-dev.macos… (runtime picks by app.isPackaged)."
 		),
 	)
 	parser.add_argument(

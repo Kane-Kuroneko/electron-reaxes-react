@@ -10,7 +10,7 @@ setAppProfilePath();
 applyPendingDevCleanStart();
 registerBrowserWindowKeyboardGuards();
 
-/* 所有 BrowserWindow（含 Guiding / Floating）统一按 isPackaged 选 gpt / gpt-dev */
+/* 所有 BrowserWindow（含 Guiding / Floating）统一按 isPackaged 选 app-icon / app-icon-dev */
 app.on( 'browser-window-created' , ( _event , win ) => {
 	applyRuntimeAppIcon( win );
 } );
