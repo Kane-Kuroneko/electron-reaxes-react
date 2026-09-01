@@ -109,6 +109,53 @@ export const getVendorRegionForAI = (
 	return findCatalogVendorForAI( vendors , ai )?.region ?? EMPTY_VENDOR_REGION;
 };
 
+const countryCodesDiffer = ( left:string[] , right:string[] ):boolean => {
+	if( left.length !== right.length ) {
+		return true;
+	}
+	const rightSet = new Set( right );
+	return left.some( code => !rightSet.has( code ) );
+};
+
+const countryCodesAdded = ( from:string[] , to:string[] ):string[] => {
+	const fromSet = new Set( from );
+	return to.filter( code => !fromSet.has( code ) );
+};
+
+/**
+ * 当前目录 vs 远程目录：哪些供应商的可用/禁用地区变了。
+ * 新出现的供应商不在这里（走 added）；只对齐同一 id。
+ * 给 Settings 更新预览用，见 docs/features/ai-catalog-manual-update.md。
+ */
+export const diffVendorAvailability = (
+	baseVendors:AICatalog.Vendor[] ,
+	theirsVendors:AICatalog.Vendor[],
+):AICatalog.CatalogAvailabilityChange[] => {
+	const baseById = new Map( baseVendors.map( vendor => [ vendor.id , vendor ] as const ) );
+	const changes:AICatalog.CatalogAvailabilityChange[] = [];
+	for( const their of theirsVendors ) {
+		const base = baseById.get( their.id );
+		if( !base ) {
+			continue;
+		}
+		const forbiddenAdded = countryCodesAdded( base.region.forbidden , their.region.forbidden );
+		const forbiddenRemoved = countryCodesAdded( their.region.forbidden , base.region.forbidden );
+		const availableChanged = countryCodesDiffer( base.region.available , their.region.available );
+		if( !forbiddenAdded.length && !forbiddenRemoved.length && !availableChanged ) {
+			continue;
+		}
+		changes.push( {
+			id : their.id ,
+			label : their.label ,
+			forbiddenAdded ,
+			forbiddenRemoved ,
+			availableChanged ,
+			availableAfter : their.region.available.slice(),
+		} );
+	}
+	return changes;
+};
+
 /** 解析 ISO 码数组；缺省当空列表，形状不对返回 null。重复码去重保留先出现的。 */
 const parseIsoCodeList = ( value:unknown ):string[] | null => {
 	if( value == null ) {

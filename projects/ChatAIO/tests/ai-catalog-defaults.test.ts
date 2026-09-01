@@ -205,6 +205,26 @@ describe( '供应商 region 驱动地区阻断（不是 MakerSuite 门，也不�
 		assert.equal( isCountryBlockedByVendorRegion( region , 'CN' ) , true );
 		assert.equal( findCatalogVendorForAI( vendors , extraPage )?.id , vendors[0].id );
 	} );
+
+	it( 'diffVendorAvailability：forbidden 新增进预览；行完全一样则空' , () => {
+		const before = vendor( {
+			id : '11111111-1111-4111-8111-111111111111' ,
+			family : 'chatgpt' ,
+			label : 'ChatGPT' ,
+			region : { available : [] , forbidden : [] },
+		} );
+		const after = vendor( {
+			id : before.id ,
+			family : 'chatgpt' ,
+			label : 'ChatGPT' ,
+			region : { available : [] , forbidden : [ 'CN' , 'RU' ] },
+		} );
+		const changed = diffVendorAvailability( [ before ] , [ after ] );
+		assert.equal( changed.length , 1 );
+		assert.deepEqual( changed[0].forbiddenAdded , [ 'CN' , 'RU' ] );
+		assert.equal( changed[0].availableChanged , false );
+		assert.equal( diffVendorAvailability( [ after ] , [ after ] ).length , 0 );
+	} );
 } );
 
 describe( 'dev-proxy-test 只在 dev 注入，不进生产目录文件' , () => {
@@ -229,6 +249,7 @@ import {
 import { composeEffectiveAIs } from '../src/Main/services/settings/utils/ai-catalog-merge.utility';
 import {
 	evaluateVendorRegionAccess ,
+	diffVendorAvailability ,
 	findCatalogVendorForAI ,
 	getVendorRegionForAI ,
 	isCountryBlockedByVendorRegion,

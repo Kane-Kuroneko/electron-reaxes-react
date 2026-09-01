@@ -203,6 +203,27 @@ html, body {
 	opacity: 0.45;
 }
 
+/* 检查目录按钮：文案始终占位，spinner 叠同一格。不要用 antd Button loading。见 docs/features/ai-catalog-manual-update.md */
+.catalog-update-check-label {
+	display: grid;
+	grid-template-areas: 'stack';
+	place-items: center;
+
+	&__text,
+	&__spinner {
+		grid-area: stack;
+	}
+
+	&__spinner {
+		pointer-events: none;
+		line-height: 0;
+	}
+
+	&[data-busy] &__text {
+		opacity: 0;
+	}
+}
+
 .manage-ais-table {
 	.manage-ais-table__header-nowrap {
 		white-space: nowrap;

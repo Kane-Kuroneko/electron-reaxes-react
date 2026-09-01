@@ -3,6 +3,9 @@
  * 先跑 sign-ai-catalog.ts。需要 gh 已登录且对该仓有写权限。
  * 用法：yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json projects/ChatAIO/scripts/publish-ai-catalog.ts
  * 见 docs/feature-proposal--ai-catalog-source.md 批次 4。
+ *
+ * 必须 `--latest=false`：electron-updater 读的是仓库 Latest 上的 latest.yml，
+ * 目录 Release 若抢走 Latest，About / 启动检查会 404。
  */
 
 const catalogDir = path.resolve( __dirname , '..' , 'statics' , 'ai-catalog' );
@@ -36,6 +39,7 @@ if( ensureRelease.status !== 0 ) {
 			'--repo' , repo ,
 			'--title' , 'AI vendor catalog' ,
 			'--notes' , 'Signed slim vendor catalog (id/family/label/url/region). Not an app update.' ,
+			'--latest=false' ,
 		] ,
 		{ encoding : 'utf-8' , stdio : 'inherit' },
 	);
@@ -57,6 +61,16 @@ const uploaded = spawnSync(
 );
 if( uploaded.status !== 0 ) {
 	throw new Error( `gh release upload failed for ${ repo } ${ AI_CATALOG_RELEASE_TAG }` );
+}
+
+/* 目录 tag 绝不能当 GitHub Latest，否则 electron-updater 会去拉 ai-catalog/latest.yml。 */
+const demoteLatest = spawnSync(
+	'gh' ,
+	[ 'release' , 'edit' , AI_CATALOG_RELEASE_TAG , '--repo' , repo , '--latest=false' ] ,
+	{ encoding : 'utf-8' , stdio : 'inherit' },
+);
+if( demoteLatest.status !== 0 ) {
+	throw new Error( `gh release edit --latest=false failed for ${ repo } ${ AI_CATALOG_RELEASE_TAG }` );
 }
 
 console.log( `uploaded ${ AI_CATALOG_JSON_FILENAME } + ${ AI_CATALOG_SIG_FILENAME } to ${ repo }@${ AI_CATALOG_RELEASE_TAG }` );

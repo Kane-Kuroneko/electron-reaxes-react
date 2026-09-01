@@ -21,6 +21,7 @@ export const reaxel_AppUpdater = reaxel( () => {
 	if( dev() ) {
 		autoUpdater.forceDevUpdateConfig = true;
 	}
+	/* GitHub Latest 必须是带 latest.yml 的安装包 tag。目录 tag `ai-catalog` 禁止标成 Latest。 */
 
 	const getPublicState = (): AppUpdater.State => ( {
 		status : store.status ,
@@ -306,10 +307,15 @@ export const reaxel_AppUpdater = reaxel( () => {
 	} );
 
 	autoUpdater.on( 'error' , ( err ) => {
-		console.error( '[AppUpdater] error:' , err );
+		const message = err?.message || String( err );
+		if( /ai-catalog[/\\]latest\.yml/.test( message ) ) {
+			console.error( '[AppUpdater] GitHub Latest 被目录 tag ai-catalog 抢走了，没有 latest.yml。publish:ai-catalog 必须 --latest=false。' );
+		} else {
+			console.error( '[AppUpdater] error:' , err );
+		}
 		setUpdaterState( {
 			status : 'error' ,
-			error : err?.message || String( err ) ,
+			error : message ,
 		} );
 	} );
 

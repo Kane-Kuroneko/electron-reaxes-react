@@ -2,6 +2,7 @@
  * Settings → Manage AIs：手动检查供应商目录更新。
  * 业务在 reaxel_SettingsView（checkAiCatalog / applyAiCatalog）；这里只渲染。
  * 见 docs/features/ai-catalog-manual-update.md
+ * 检查按钮不用 antd `loading`（会插入 icon 撑宽）。文案占位，spinner 叠在同一格。
  */
 
 export const CatalogUpdateControls = reaxper( () => {
@@ -96,10 +97,24 @@ export const CatalogUpdateControls = reaxper( () => {
 			onClick={ () => {
 				void onCheck();
 			} }
-			loading={ catalogUpdate.checking }
-			disabled={ catalogUpdate.applying }
+			disabled={ catalogUpdate.checking || catalogUpdate.applying }
+			aria-busy={ catalogUpdate.checking || undefined }
 			style={ { marginBottom : 16 , marginLeft : 8 } }
-		><I18n>Check AI catalog</I18n></Button>
+		>
+			<span
+				className="catalog-update-check-label"
+				data-busy={ catalogUpdate.checking || undefined }
+			>
+				<span className="catalog-update-check-label__text">
+					<I18n>Check AI catalog</I18n>
+				</span>
+				{ catalogUpdate.checking ? (
+					<span className="catalog-update-check-label__spinner" aria-hidden="true">
+						<LoadingOutlined />
+					</span>
+				) : null }
+			</span>
+		</Button>
 		<Modal
 			open={ preview != null }
 			title={ <I18n>There's an update to the AI list</I18n> }
@@ -222,6 +237,7 @@ import { reaxel_I18n } from "#SettingsView/reaxels/i18n";
 import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 import type { AICatalog } from "#src/Types/AICatalog";
 import type { AI } from "#src/Types/SettingsTypes/AI";
+import { LoadingOutlined } from '@ant-design/icons';
 import { reaxper } from 'reaxes-react';
 import {
 	Button ,

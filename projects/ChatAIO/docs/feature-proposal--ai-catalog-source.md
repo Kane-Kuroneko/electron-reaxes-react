@@ -48,7 +48,7 @@
 - **方向**：有没有越出「范围 / 不改」；有没有把下一批的事提前做了。
 - **Bug / 债**：回归、漏改、静默失败；本批允许留下的债必须写进「本批已知债」，不要口头带过。
 
-当前进度：**批次 4 已确认。** 下一批是批次 5（Settings 手动检查更新）。用户未确认前不开批次 5。
+当前进度：**批次 5 已完成，待校验。** 用户确认前不开后续收尾（把本文标成已落地并只留 `ai-config.md` 为现行规范）。
 
 | 批次 | 层 | 交付 | 依赖 | 状态 |
 |------|----|------|------|------|
@@ -57,7 +57,7 @@
 | 2 | main + renderer 读路径 | 删并行 URL 表；renderer 不再 import 目录 | 1 | 与本轮一并按正确模型落地（官方 URL 在目录行上，不是派生 Map） |
 | 3 | main 纯函数 | 供应商目录校验 + 目录行→种子实例 merge + region + 单测 | 2 | 与本轮一并落地 |
 | 4 | main 安全 + 脚本 | Ed25519 验签模块 + 发布脚本（payload = 瘦目录） | 3 | **已确认** |
-| 5 | ipc + Settings UI | 手动检查、预览、确认写入 | 3 + 4 | **未开始，本轮不做** |
+| 5 | ipc + Settings UI | 手动检查、预览、确认写入 | 3 + 4 | **已完成，待校验** |
 
 批次 3 不依赖远程，App 升级带新 bundled 时也能复用 merge。批次 4 不接 UI，可先本地签一条假数据验证。批次 5 才碰用户可见行为。
 
@@ -114,6 +114,7 @@ flowchart LR
 
 - 文件放 [`statics/ai-catalog/`](../statics/)（已有 extraResources 打包 `statics/`），不放 `src/shared`。
 - 远程用现成 ChatAIO-Releases，滚动 tag `ai-catalog`，不新开仓，不挂源码仓 GitHub Pages。
+- **已发布版本 = GitHub Release 资产，不是 Releases 仓工作区里的一份拷贝。** 本仓 `statics/ai-catalog/` 是下一版草稿 / 安装包兜底；`yarn publish:ai-catalog` 把签过名的 JSON+sig 推到 tag `ai-catalog` 才是已装 App 去拉的那份。不要只把文件 commit 进 ChatAIO-Releases 目录当下载源（raw.githubusercontent 会限流、换行不稳，host 白名单也对不上）。不必再往 Releases 仓树里同步一份；发 Release 就是同步。Git 归档若以后要，另加，不进本批。
 - **签名不加密**。目录是公开 URL；密钥打进安装包的加密是安全剧场。Ed25519 签 **文件原始 UTF-8 字节**，sidecar `default-ais.json.sig`，公钥进 App，私钥只在本机或 Releases 仓库 secret。签名对象是瘦供应商 JSON，不是 `AIItem[]`。
 - Family 行为（UA、partition、WebAuthn、默认是否启用、默认代理、是否预加载）留在 TS。远程不能发明新 family；未知 family → 整份 catalog 非法；host 不在白名单 → 该行 family 降为 `custom`（不丢行）。
 - `dev-proxy-test` 只在 `dev()` 注入，生产和远程目录都不带。
@@ -440,7 +441,7 @@ flowchart LR
 3. `gh release upload` 到 `Kane-Kuroneko/ChatAIO-Releases` tag `ai-catalog`（没有则建），文件：
    - `default-ais.json`（瘦供应商目录）
    - `default-ais.json.sig`
-   使用 clobber 覆盖旧资源。
+   使用 clobber 覆盖旧资源。**创建/更新时必须 `--latest=false`**，不能让目录 Release 成为 GitHub Latest（electron-updater 只认 Latest 上的 `latest.yml`）。
 4. App 内 URL 常量（本批可先写在 sign 工具旁，批次 5 才 fetch）：
    - `https://github.com/Kane-Kuroneko/ChatAIO-Releases/releases/download/ai-catalog/default-ais.json`
    - 同上 `.sig`
@@ -471,9 +472,9 @@ flowchart LR
 
 ## 批次 5 — Settings 手动更新
 
-**状态：未开始**  
+**状态：已完成，待校验**  
 **层**：ipc + Settings UI + main 编排  
-**目标**：用户能检查**供应商目录**更新，看 diff，确认后写 cache + 合并 user-ais，并刷新 views。
+**目标**：用户能检查**供应商目录**更新，看 diff，确认后写 cache + 合并 user-ais，并刷新 views。远程只拉 ChatAIO-Releases tag `ai-catalog` 的 Release 资产。
 
 ### 范围
 
@@ -495,16 +496,16 @@ flowchart LR
 
 ### IPC（仅本批新增）
 
-- `check-ai-catalog-update` → `{ status, bundledRevision, cacheRevision, remoteRevision?, diff?, error? }`  
-  只读：拉瘦目录 JSON+sig、验签、算 preview；**不写盘**。同一时刻只保留一份 pending payload（内存），apply 必须对得上这次 check（revision 一致），防止 TOCTOU。
-- `apply-ai-catalog-update` → `{ success, error?, settings? }`  
-  把 pending 写入 `catalog-ais.json`，user 表按 preview 应用（种子页按供应商 UUID 合，用户加页不动），然后 sync views。
+- `check-ai-catalog-update` → `{ status, bundledRevision, cacheRevision, remoteRevision?, diff?, errorCode? }`  
+  只读：拉瘦目录 JSON+sig、验签、算 preview；**不写盘**。同一时刻只保留一份 pending payload（内存），apply 必须对得上这次 check（传入的 `revision` 一致），防止 TOCTOU。
+- `apply-ai-catalog-update(revision)` → `{ success, errorCode?, settings? }`  
+  把 pending 写入 `catalog-ais.json`，user 表按**当前**磁盘整表重算 merge（种子页按供应商 UUID 合，用户加页不动），然后 sync views。
 
 Fetch 失败 / 验签失败 / schema 过高：`status: 'error'`，UI 展示，不写 cache。
 
 ### UI
 
-Settings → Manage AIs 工具条：「检查 AI 目录更新」。Modal 分块：将新增供应商 / 将改官方 URL 或 label / 已跳过（用户改过种子页）/ 目录已移除（需手动删）。确认后 apply；取消丢弃 pending。
+Settings → Manage AIs 工具条：「检查 AI 目录更新」。Modal 分块：将新增供应商 / 将改官方 URL 或 label / 已跳过（用户改过种子页）/ 目录已移除（需手动删）。确认后 apply；取消只关 Modal（pending 留到下次 check 再清）。
 
 ### 步骤
 
@@ -518,6 +519,24 @@ Settings → Manage AIs 工具条：「检查 AI 目录更新」。Modal 分块�
 - 篡改 JSON 或 sig：拒绝。
 - 确认合并后重启，cache revision 保持，user 定制仍在。
 - `yarn test:ai-order` 绿。
+
+### 执行记录（2026-08-31）
+
+- 远程发布目标写进已拍板：本仓 JSON = 草稿；ChatAIO-Releases **Release 资产** = 已发布版本。不往 Releases 仓目录再拷一份。
+- `createCatalogUpdateCycle`：pending 在实例上，不是模块全局。失败的 check 不清上一份成功 pending；`up-to-date` 才清。apply 先 `previewApply`（不消耗），写盘成功再 `commit`。
+- ours 用 `getEffectiveAIs()`，不是 `user.ais ?? getDefaultAIs()`。IPC `diff` 是 `CatalogUpdateDiff`，不下发 `nextAis`。
+- `adoptRemoteCatalog` 先写 user 再写 cache。本地预览 env 直接读盘，不伪装 GitHub URL。
+- check/apply 在 runtime 串行；fetch 前占 `checkId`，慢的旧请求不能盖掉新 pending。
+- Settings 业务在 `reaxel_SettingsView`（`checkAiCatalog` / `applyAiCatalog`）；`CatalogUpdate.tsx` 只渲染。
+- IPC：`check-ai-catalog-update`（只读）、`apply-ai-catalog-update(revision)`。apply 成功后 `syncRuntimeViews`，settings 由 IPC 层附带。
+- 单测锁：更高 revision 才 available；effective 里已有种子不当新增；public diff 无 nextAis；失败二次 check 保留 pending；错 revision 不消耗 pending；用户改过的 URL / 自加页 / deleted 不被盖；体积超限是 `invalid-catalog`。
+- 文档：`docs/features/ai-catalog-manual-update.md`；`ai-config.md` 补远程层与 ours=effective。
+
+自审：
+
+- **行为**：上列契约由单测锁住。未在本机 Electron 点 Manage AIs 走一遍真 GitHub。
+- **方向**：没自动 fetch；没改 `get-ais` / `get-default-ais` / 排序；没碰 menubar / FloatingView。apply 比原提案多了 `revision` 参数，为的是 TOCTOU。
+- **Bug / 债**：GitHub 下载走 Electron defaultSession（系统代理），不套用 App 内全局代理。尚未 `yarn publish:ai-catalog`。取消 Modal 只清 UI preview，main pending 留到下次成功 check 或 up-to-date。
 
 ---
 

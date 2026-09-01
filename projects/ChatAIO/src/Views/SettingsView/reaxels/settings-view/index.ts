@@ -53,7 +53,13 @@ export const reaxel_SettingsView = reaxel( () => {
 			manage_AIs : {
 				startupAIPageLoadMode : checkAs<Startup.AIPageLoadMode>( 'last-used-ai' ) ,
 				/** 待删除 AI ID 列表 — 标记后仅在 Apply/Save 时过滤持久化，UI 中仍可见（可撤销） */
-				pendingDeleteAIIds : checkAs<string[]>( [] ),
+				pendingDeleteAIIds : checkAs<string[]>( [] ) ,
+				/** 目录更新预览。不把瘦目录放进 Data.AIs。见 docs/features/ai-catalog-manual-update.md */
+				catalog_update : {
+					checking : false ,
+					applying : false ,
+					preview : checkAs<AICatalog.CatalogUpdateCheckResult | null>( null ),
+				} ,
 				edit_AI_modal : {
 					visible : false ,
 					mode : checkAs<"edit" | "add">( 'edit' ) ,
@@ -457,6 +463,84 @@ export const reaxel_SettingsView = reaxel( () => {
 		return _proxyTestURLSubmitQueue;
 	};
 
+	/**
+	 * Settings → Manage AIs 检查供应商目录。未 Apply 的编辑会挡住。
+	 * 预览放 catalog_update.preview，不写 Data.AIs。
+	 */
+	const checkAiCatalog = async():Promise<
+		| { blocked: 'dirty' }
+		| AICatalog.CatalogUpdateCheckResult
+	> => {
+		if( isDirty() ) {
+			return { blocked : 'dirty' };
+		}
+		setState.UIControls.manage_AIs.catalog_update( { checking : true } );
+		try {
+			const result = await checkAiCatalogUpdateService();
+			if( result.status === 'available' ) {
+				setState.UIControls.manage_AIs.catalog_update( {
+					checking : false ,
+					preview : result,
+				} );
+			} else if( result.status === 'up-to-date' ) {
+				setState.UIControls.manage_AIs.catalog_update( {
+					checking : false ,
+					preview : null,
+				} );
+			} else {
+				setState.UIControls.manage_AIs.catalog_update( { checking : false } );
+			}
+			return result;
+		} catch ( error ) {
+			setState.UIControls.manage_AIs.catalog_update( { checking : false } );
+			throw error;
+		}
+	};
+
+	/**
+	 * 确认合并这次 check 的 revision。成功后 reload Settings。
+	 */
+	const applyAiCatalog = async():Promise<
+		| { blocked: 'dirty' }
+		| AICatalog.CatalogUpdateApplyResult
+	> => {
+		if( isDirty() ) {
+			return { blocked : 'dirty' };
+		}
+		const revision = store.UIControls.manage_AIs.catalog_update.preview?.remoteRevision;
+		if( revision == null ) {
+			return {
+				success : false ,
+				errorCode : 'no-pending',
+			};
+		}
+		setState.UIControls.manage_AIs.catalog_update( { applying : true } );
+		try {
+			const result = await applyAiCatalogUpdateService( revision );
+			if( result.success ) {
+				setState.UIControls.manage_AIs.catalog_update( {
+					applying : false ,
+					preview : null,
+				} );
+				try {
+					await reloadSettings();
+				} catch ( error ) {
+					console.error( '[SettingsView] catalog applied but reload Settings failed:' , error );
+				}
+			} else {
+				setState.UIControls.manage_AIs.catalog_update( { applying : false } );
+			}
+			return result;
+		} catch ( error ) {
+			setState.UIControls.manage_AIs.catalog_update( { applying : false } );
+			throw error;
+		}
+	};
+
+	const dismissCatalogUpdate = () => {
+		setState.UIControls.manage_AIs.catalog_update( { preview : null } );
+	};
+
 	const rtn = {
 		fetchSettings ,
 		reloadSettings ,
@@ -475,6 +559,9 @@ export const reaxel_SettingsView = reaxel( () => {
 		applyExternalEnabledAIOrder ,
 		persistCommittedAIOrder ,
 		setProxyTestURL ,
+		checkAiCatalog ,
+		applyAiCatalog ,
+		dismissCatalogUpdate ,
 		submitSettings ,
 		exitSettings ,
 		exitWithoutSave ,
@@ -655,6 +742,8 @@ import { rehancer_Dev } from './rehancer_Dev';
 import { reaxel_I18n } from "#SettingsView/reaxels/i18n";
 import {
 	applySettings as applySettingsService ,
+	applyAiCatalogUpdate as applyAiCatalogUpdateService ,
+	checkAiCatalogUpdate as checkAiCatalogUpdateService ,
 	exitSettings ,
 	fetchSettings as fetchSettingsService ,
 	getAppearanceEnvironment ,
@@ -693,6 +782,7 @@ import type {
 	SettingsFetchResult,
 } from '#src/Types/SettingsTypes';
 import { AI } from "#src/Types/SettingsTypes/AI";
+import type { AICatalog } from "#src/Types/AICatalog";
 import { Appearance } from "#src/Types/SettingsTypes/Appearance";
 import type { Startup } from "#src/Types/SettingsTypes/Startup";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";

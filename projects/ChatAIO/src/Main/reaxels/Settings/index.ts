@@ -258,6 +258,48 @@ export const reaxel_Settings = reaxel( () => {
 			};
 		}
 	} );
+
+	/**
+	 * 检查供应商目录更新。只读：拉 Release 资产、验签、算 preview，不写盘。
+	 * 见 docs/features/ai-catalog-manual-update.md
+	 */
+	useIpcRpc( 'check-ai-catalog-update' ).handle( async() => {
+		try {
+			return cloneObservableToPlain( await checkAiCatalogUpdate() );
+		} catch ( error ) {
+			console.error( '[Settings] Failed to check AI catalog update:' , error );
+			return {
+				status : 'error' as const ,
+				bundledRevision : aiConfigService.getBundledCatalog().revision ,
+				cacheRevision : aiConfigService.getCachedCatalog()?.revision ?? null ,
+				errorCode : 'network' as const ,
+				error : error?.message || String( error ),
+			};
+		}
+	} );
+
+	/**
+	 * 确认合并：pending revision 必须对得上这次 check。写 cache + user-ais 后 sync views。
+	 */
+	useIpcRpc( 'apply-ai-catalog-update' ).handle( async( _ , revision ) => {
+		try {
+			const result = await applyAiCatalogUpdate( Number( revision ) );
+			if( !result.success ) {
+				return result;
+			}
+			await syncRuntimeViews();
+			return {
+				success : true ,
+				settings : getCurrentSettings(),
+			};
+		} catch ( error ) {
+			console.error( '[Settings] Failed to apply AI catalog update:' , error );
+			return {
+				success : false ,
+				error : error?.message || String( error ),
+			};
+		}
+	} );
 	
 	useIpcRpc( 'get-preload-ai-families' ).handle( async() => {
 		return aiConfigService.getPreloadAIIds();
@@ -387,6 +429,10 @@ import {
 } from '#main/services/settings/settings-config-service';
 import { testProxyConnectivity } from '#main/services/settings/proxy-service';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';
+import {
+	applyAiCatalogUpdate ,
+	checkAiCatalogUpdate,
+} from '#main/services/settings/utils/ai-catalog-update-runtime.utility';
 import { syncTrayState , updateTrayMenu } from '#main/services/tray';
 import { requestDevCleanStart } from '#main/services/dev/clean-start';
 import { cloneObservableToPlain } from '#shared/utils/clone-for-ipc.utility';

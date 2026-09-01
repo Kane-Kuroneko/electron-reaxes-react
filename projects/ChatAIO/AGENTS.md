@@ -44,6 +44,7 @@
 - [Google AI Studio / Chrome 身份](./docs/issues/google-ai-studio-electron-browser-identity.md)
 - [AI 配置双层](./docs/architecture/ai-config.md)
 - [提案：AI 供应商目录单一事实源（分批；目录 ≠ 用户页实例）](./docs/feature-proposal--ai-catalog-source.md)
+- [Settings 手动检查 AI 目录](./docs/features/ai-catalog-manual-update.md)
 - [敏感地区访问阻断](./docs/features/sensitive-region-access-blocking.md)
 
 ### Prompt / Settings / 外观
@@ -81,6 +82,7 @@
 |------|------|
 | [ai-list-reorder.md](./docs/features/ai-list-reorder.md) | Switch AI / Manage AIs 立即持久化排序 |
 | [menubar-current-ai-dropdown.md](./docs/features/menubar-current-ai-dropdown.md) | 中区 Current AI 块点击下拉切 AI |
+| [ai-catalog-manual-update.md](./docs/features/ai-catalog-manual-update.md) | Settings 手动检查供应商目录（GitHub Release 资产） |
 | [ai-page-switch-performance-optimization.md](./docs/features/ai-page-switch-performance-optimization.md) | 切换热路径 CPU / z-order |
 | [ai-view-white-screen-monitor.md](./docs/features/ai-view-white-screen-monitor.md) | `white-screen-monitor.jsonl` 调度链 |
 | [floating-view-rapid-switch-optimization.md](./docs/features/floating-view-rapid-switch-optimization.md) | SwitchAiBar 连点 Interrupt & Redirect |

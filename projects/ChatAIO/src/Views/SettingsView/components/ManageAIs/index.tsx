@@ -379,6 +379,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 					} }
 					style={ { marginBottom : 16 } }
 				><I18n>Add AI Page</I18n></Button>
+				<CatalogUpdateControls />
 			</div>
 			<DndContext
 				sensors={ sensors }
@@ -1061,6 +1062,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	};
 
 	import { DragIconSvg } from "./DragIcon.svg";
+	import { CatalogUpdateControls } from "./CatalogUpdate";
 	import { createColumnTextFilter } from '#SettingsView/layout/column-text-filter';
 	import { useHostScrollY } from '#SettingsView/layout/use-host-scroll-y';
 	import {

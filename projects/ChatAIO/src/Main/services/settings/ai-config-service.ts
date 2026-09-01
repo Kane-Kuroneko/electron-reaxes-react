@@ -36,8 +36,12 @@ class AIConfigService {
 	private userConfigPath:string;
 	private catalogCachePath:string;
 	private bundledCatalog:AICatalog.Catalog;
+	/** 用户确认过的 cache；没有或非法为 null。 */
+	private catalogCache:AICatalog.Catalog | null;
 	/** cache 若 revision ≥ bundled 且通过校验则用它，否则 bundled。无 cache 文件 = 只用 bundled。 */
 	private runtimeCatalog:AICatalog.Catalog;
+	/** Settings 检查更新的 pending。失败的 check 不清；写盘成功才 commit。 */
+	private catalogUpdateCycle = createCatalogUpdateCycle();
 	
 	/** 启动时读 bundled，再按 revision 选 cache，dev 下追加探测页。不拉网。 */
 	constructor() {
@@ -45,10 +49,103 @@ class AIConfigService {
 		this.userConfigPath = path.join( app.getPath( 'userData' ) , USER_AI_CONFIG_FILE );
 		this.catalogCachePath = path.join( app.getPath( 'userData' ) , CATALOG_CACHE_FILE );
 		this.bundledCatalog = loadBundledCatalog( production );
+		this.catalogCache = this.readCatalogCache( production );
 		this.runtimeCatalog = appendDevProxyTestVendor(
-			selectRuntimeCatalog( this.bundledCatalog , this.readCatalogCache( production ) ) ,
+			selectRuntimeCatalog( this.bundledCatalog , this.catalogCache ) ,
 			dev(),
 		);
+	}
+
+	/** 安装包内那份瘦目录。检查更新时当 bundledRevision。 */
+	getBundledCatalog():AICatalog.Catalog {
+		return this.bundledCatalog;
+	}
+
+	/** 用户确认过的 cache；没有文件则为 null。 */
+	getCachedCatalog():AICatalog.Catalog | null {
+		return this.catalogCache;
+	}
+
+	/**
+	 * 把用户确认过的远程目录写入 cache，并按 revision 重选 runtime。
+	 * 先写 user 表再写 cache：user 成功、cache 失败时页已经在整表里，不会丢确认结果。
+	 * 只在 Settings 确认合并之后调用。见 docs/features/ai-catalog-manual-update.md。
+	 */
+	adoptRemoteCatalog( catalog:AICatalog.Catalog , user:AICatalog.UserAIs ):void {
+		this.saveUserConfig( user );
+		this.writeCatalogCache( catalog );
+		this.runtimeCatalog = appendDevProxyTestVendor(
+			selectRuntimeCatalog( this.bundledCatalog , this.catalogCache ) ,
+			dev(),
+		);
+	}
+
+	/**
+	 * 验签远程字节并算出 diff。ours 用 effective 列表（含已 compose 的种子页）。
+	 * 失败不清上一份 pending。checkId 在 fetch 前 begin，避免慢的旧请求盖掉新结果。
+	 */
+	beginCatalogCheck():number {
+		return this.catalogUpdateCycle.beginCheck();
+	}
+
+	checkSignedCatalog(
+		json:Buffer ,
+		sigText:string ,
+		publicKeyPem:string ,
+		checkId?:number ,
+	):AICatalog.CatalogUpdateCheckResult {
+		const user = this.getUserConfig();
+		return this.catalogUpdateCycle.checkFromBytes( {
+			bundled : this.bundledCatalog ,
+			cache : this.catalogCache ,
+			ours : this.getEffectiveAIs() ,
+			deletedIds : user?.deletedIds ?? [] ,
+			publicKeyPem ,
+			json ,
+			sigText,
+		} , checkId );
+	}
+
+	/**
+	 * 按这次 check 的 revision 合并。写盘成功才清 pending。
+	 */
+	applySignedCatalog( revision:number ):AICatalog.CatalogUpdateApplyResult {
+		const user = this.getUserConfig();
+		const previewed = this.catalogUpdateCycle.previewApply( {
+			bundled : this.bundledCatalog ,
+			cache : this.catalogCache ,
+			ours : this.getEffectiveAIs() ,
+			deletedIds : user?.deletedIds ?? [] ,
+			expectedRevision : revision,
+		} );
+		if( !previewed.ok ) {
+			return {
+				success : false ,
+				errorCode : previewed.errorCode,
+			};
+		}
+		this.adoptRemoteCatalog( previewed.catalog , previewed.user );
+		this.catalogUpdateCycle.commit( revision );
+		return { success : true };
+	}
+
+	/** 把已验签目录写成 userData/catalog-ais.json。启动不再验签这份，只 validate。 */
+	private writeCatalogCache( catalog:AICatalog.Catalog ):void {
+		const dir = path.dirname( this.catalogCachePath );
+		if( !fs.existsSync( dir ) ) {
+			fs.mkdirSync( dir , { recursive : true } );
+		}
+		fs.writeFileSync(
+			this.catalogCachePath ,
+			JSON.stringify( {
+				schemaVersion : catalog.schemaVersion ,
+				revision : catalog.revision ,
+				description : catalog.description ,
+				ais : catalog.ais,
+			} , null , 2 ) + '\n' ,
+			'utf-8',
+		);
+		this.catalogCache = catalog;
 	}
 
 	/** 读 userData 里用户确认过的已验签目录。坏文件当没有，回落到 bundled。 */
@@ -321,6 +418,7 @@ import {
 	composeEffectiveAIs ,
 	selectRuntimeCatalog,
 } from './utils/ai-catalog-merge.utility';
+import { createCatalogUpdateCycle } from './utils/ai-catalog-update.utility';
 import { validateCatalog } from './utils/ai-catalog-validate.utility';
 import { normalizeAIItem } from './utils/normalize-ai-item.utility';
 import { cloneObservableToPlain } from '#shared/utils/clone-for-ipc.utility';

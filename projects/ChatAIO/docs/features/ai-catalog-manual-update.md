@@ -56,6 +56,8 @@ check 的 `diff` 是 `CatalogUpdateDiff`（added / updated / skipped / catalogDr
 
 Modal 面向用户写「列表发生了什么」：新增页、名称/网址、能用的地区（国家名，不是 ISO 码）、将沿用自定义配置的、ChatAIO 已停止维护但仍保留本地数据的。页字段和地区都没变时，明确说经比对没有新增和修改的AI页面；应用更新后仅会添加新AI供应商，不会改变已存在的配置。不要用「保持列表为最新」这种空话。
 
+检查按钮 loading **不用** antd `Button loading`（会往 flex 里插入 spinner 节点，宽度必跳）。文案始终在 DOM 里占位，spinner 用 CSS Grid 叠在同一格（Wes Bos grid-stack / MUI LoadingButton overlay 同思路）。按钮 `disabled` + `aria-busy`；spinner `aria-hidden`。
+
 切入 Manage AIs **不**发检查请求。Settings 切过的页留在树上藏起来，避免表格 + DnD 每次重挂载。
 
 ## 关键文件
@@ -67,7 +69,7 @@ Modal 面向用户写「列表发生了什么」：新增页、名称/网址、�
 | [`src/Main/services/settings/utils/ai-catalog-update-runtime.utility.ts`](../../src/Main/services/settings/utils/ai-catalog-update-runtime.utility.ts) | `net.fetch` 或本地读盘；check/apply 串行 |
 | [`src/Main/reaxels/Settings/index.ts`](../../src/Main/reaxels/Settings/index.ts) | IPC；apply 成功后 `syncRuntimeViews` |
 | [`src/Views/SettingsView/reaxels/settings-view/index.ts`](../../src/Views/SettingsView/reaxels/settings-view/index.ts) | `checkAiCatalog` / `applyAiCatalog`；preview 在 `catalog_update` |
-| [`src/Views/SettingsView/components/ManageAIs/CatalogUpdate.tsx`](../../src/Views/SettingsView/components/ManageAIs/CatalogUpdate.tsx) | 只渲染；不编排 IPC |
+| [`src/Views/SettingsView/components/ManageAIs/CatalogUpdate.tsx`](../../src/Views/SettingsView/components/ManageAIs/CatalogUpdate.tsx) | 只渲染；检查按钮 loading 用文案叠层 spinner，不用 antd `loading` |
 | [`tests/ai-catalog-update.test.ts`](../../tests/ai-catalog-update.test.ts) | 业务契约（不打 GitHub） |
 
 ## 禁止项

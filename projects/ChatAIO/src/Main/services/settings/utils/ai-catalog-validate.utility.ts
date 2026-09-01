@@ -8,6 +8,23 @@
 
 export const KNOWN_CATALOG_SCHEMA_VERSION = 1;
 export const CATALOG_AIS_MAX_COUNT = 200;
+/** 远程 / 入站 JSON 原文上限。超过则当非法，不 parse。 */
+export const CATALOG_MAX_BYTES = 256 * 1024;
+
+/**
+ * 只读 schemaVersion，给「请升级 App」留口。
+ * 比 App 认识的版本更高 → 批次 5 报 schema-too-new，不要当成普通校验失败。
+ */
+export const peekCatalogSchemaVersion = ( input:unknown ):number | null => {
+	if( !input || typeof input !== 'object' ) {
+		return null;
+	}
+	const value = ( input as { schemaVersion?: unknown } ).schemaVersion;
+	if( typeof value !== 'number' || !Number.isInteger( value ) ) {
+		return null;
+	}
+	return value;
+};
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

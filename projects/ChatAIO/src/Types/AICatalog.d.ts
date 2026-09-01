@@ -67,7 +67,7 @@ export namespace AICatalog {
 	/** 为什么这一行没被目录更新改掉。 */
 	export type MergeSkipReason = 'user-changed' | 'url-override' | 'custom-id';
 
-	/** Settings 预览用：added/updated/skipped/dropped + 确认后可写盘的 nextAis。 */
+	/** 三路 merge 的完整结果。nextAis 只给 main 写盘，不要下发 renderer。 */
 	export type MergePreview = {
 		added: AI.AIItem[];
 		updated: {
@@ -84,6 +84,58 @@ export namespace AICatalog {
 		}[];
 		nextAis: AI.AIItem[];
 		deletedIds: string[];
+	};
+
+	/**
+	 * 某家 AI 在哪些地区能用发生了变化。国家码是 ISO alpha-2，UI 再翻成地名。
+	 * 不把完整 region 对象下发。
+	 */
+	export type CatalogAvailabilityChange = {
+		id: string;
+		label: string;
+		forbiddenAdded: string[];
+		forbiddenRemoved: string[];
+		/** available 白名单相对当前目录有没有变 */
+		availableChanged: boolean;
+		/** 变了之后的白名单；空 = 不再按白名单限制（forbidden 仍生效） */
+		availableAfter: string[];
+	};
+
+	/** Settings Modal 用的 diff：没有 nextAis / deletedIds，也没有目录正文。 */
+	export type CatalogUpdateDiff = Pick<MergePreview , 'added' | 'updated' | 'skipped' | 'catalogDropped'> & {
+		availability: CatalogAvailabilityChange[];
+	};
+
+	/**
+	 * Settings 手动检查更新（批次 5）。
+	 * 远程是 ChatAIO-Releases tag `ai-catalog` 的 Release 资产，不是仓目录拷贝。
+	 */
+	export type CatalogUpdateStatus = 'up-to-date' | 'available' | 'error';
+
+	export type CatalogUpdateErrorCode =
+		| 'network'
+		| 'forbidden-url'
+		| 'verify-failed'
+		| 'invalid-catalog'
+		| 'schema-too-new'
+		| 'no-pending';
+
+	/** check-ai-catalog-update：只读。pending 在 main；失败不清上一份成功的 pending。 */
+	export type CatalogUpdateCheckResult = {
+		status: CatalogUpdateStatus;
+		bundledRevision: number;
+		cacheRevision: number | null;
+		remoteRevision?: number;
+		diff?: CatalogUpdateDiff;
+		errorCode?: CatalogUpdateErrorCode;
+		error?: string;
+	};
+
+	/** apply-ai-catalog-update：必须对得上这次 check 留下的 pending。settings 由 IPC 层附带。 */
+	export type CatalogUpdateApplyResult = {
+		success: boolean;
+		errorCode?: CatalogUpdateErrorCode;
+		error?: string;
 	};
 }
 

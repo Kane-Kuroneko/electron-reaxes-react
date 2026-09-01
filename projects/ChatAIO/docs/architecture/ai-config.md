@@ -1,6 +1,6 @@
 # AI Configuration Management
 
-> **改造中**：目录单一事实源见分批提案 [`../feature-proposal--ai-catalog-source.md`](../feature-proposal--ai-catalog-source.md)（含 2026-08-28 **方向纠偏**：目录是扁平供应商列表，不是默认 `AIItem` 种子袋）。本文描述**当前**实现。Settings 检查更新仍属批次 5。
+> **改造中**：目录单一事实源见分批提案 [`../feature-proposal--ai-catalog-source.md`](../feature-proposal--ai-catalog-source.md)（含 2026-08-28 **方向纠偏**：目录是扁平供应商列表，不是默认 `AIItem` 种子袋）。本文描述**当前**实现。Settings 手动检查更新见 [`../features/ai-catalog-manual-update.md`](../features/ai-catalog-manual-update.md)（批次 5）。
 
 ## Architecture Overview
 
@@ -21,8 +21,9 @@
    - Renderer / Settings / ManageAIs **不 import** 该 JSON。加站默认 URL 走已有 `get-default-ais`（返回**映射后的默认实例**）。AI view 打开地址只用 `ai.url`
 
 2. **Catalog cache**（`userData/catalog-ais.json`，可选）
-   - 用户确认过的已验签瘦目录（批次 5 才写入）。**没有该文件时行为与只有 bundled 相同。**
+   - 用户在 Settings 确认过的已验签瘦目录。**没有该文件时行为与只有 bundled 相同。**
    - 若存在且 `revision` ≥ bundled 且通过 `validateCatalog`，则用它当 runtime 目录
+   - 远程输入：ChatAIO-Releases tag `ai-catalog` 的 Release 资产（JSON+sig）。不是第四事实源，也不是 Releases 仓目录里的拷贝。启动不拉网。
 
 3. **User AIs**（`userData/user-ais.json`）
    - **整表 + `deletedIds`，不是 delta。** `replaceAllAIs` 写入当前有效列表全文，并用「目录种子页有、当前表没有」的 id 填 `deletedIds`
@@ -44,9 +45,9 @@ Effective AIs = user.ais（保持用户顺序）
 
 不要把 user 文件理解成「只存改过的字段」。用户改一个 URL，磁盘上仍是完整 `ais` 数组。用户自己加的第二个同 family 页是新 id，目录更新碰不到它。
 
-### 三路 merge（有新目录时，批次 5 才对用户确认后写盘）
+### 三路 merge（有新目录时，用户确认后写盘）
 
-记号：`base` = 上次已采用供应商目录（无 cache 时 = bundled），`theirs` = 新目录，`ours` = 当前 user 表（无 user 文件则 ours = 目录映射）。
+记号：`base` = 上次已采用供应商目录（无 cache 时 = bundled），`theirs` = 新目录，`ours` = **当前 effective 列表**（`getEffectiveAIs()`：user 表 + 已 compose、但还不在 `user-ais.json` 的官方种子页）。不要只用 `user.ais`，否则 Settings Modal 会把已经在用的供应商标成「将新增」。无 user 文件时 ours = 目录映射。
 
 - **新增**：theirs 有、ours 无、且 id 不在 `deletedIds` → 映射成种子实例后追加
 - **目录改字段**：同 id 且 `ours.field === base.field` → 可更新为 `theirs.field`（只 url / label）
@@ -72,12 +73,15 @@ projects/ChatAIO/
 │   │   └── AICatalog.d.ts            # Vendor / Catalog / UserAIs / validate+merge 契约
 │   └── Main/services/settings/
 │       ├── ai-config-service.ts      # 读盘、映射默认实例、命令式调用 validate/merge
-│       ├── ai-catalog-builtin.utility.ts  # 映射/注入：vendorToAIItem、dev 注入；读上面那份名单
-│       ├── normalize-ai-item.utility.ts  # 入参供应商列表，给用户实例补空 url
-│       ├── ai-catalog-validate.utility.ts  # UUID / family / region ISO / 重复 → 整份非法
-│       ├── ai-catalog-region.utility.ts    # catalog.region 判定；实例按 id/family 回查
-│       ├── ai-catalog-merge.utility.ts    # 目录行 → 种子实例，按 UUID 对齐
-│       └── ai-catalog-sign.utility.ts     # 只 verify；远程 URL + host 白名单；不 fetch
+│       └── utils/                    # 纯函数，不要和 *service.ts 平铺
+│           ├── ai-catalog-builtin.utility.ts  # 映射/注入：vendorToAIItem、dev 注入；读上面那份名单
+│           ├── normalize-ai-item.utility.ts  # 入参供应商列表，给用户实例补空 url
+│           ├── ai-catalog-validate.utility.ts  # UUID / family / region ISO / 重复 → 整份非法
+│           ├── ai-catalog-region.utility.ts    # catalog.region 判定；实例按 id/family 回查
+│           ├── ai-catalog-merge.utility.ts    # 目录行 → 种子实例，按 UUID 对齐
+│           ├── ai-catalog-sign.utility.ts     # 只 verify；远程 URL + host 白名单
+│           ├── ai-catalog-update.utility.ts   # 手动更新：验签/preview/pending（不 fetch）
+│           └── ai-catalog-update-runtime.utility.ts  # net.fetch GitHub Release；确认后 adopt cache
 └── userData/
     ├── user-ais.json                 # 用户整表 + deletedIds
     └── catalog-ais.json              # 可选 cache；没有则只用 bundled
@@ -144,6 +148,8 @@ window.api.addAI(aiConfig)
 window.api.deleteAI(id)
 window.api.reorderAIs(orderedIds)
 window.api.resetAIsToDefaults()
+window.api.checkAiCatalogUpdate()
+window.api.applyAiCatalogUpdate(revision)
 window.api.getPreloadAIFamilies()
 ```
 

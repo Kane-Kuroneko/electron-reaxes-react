@@ -44,6 +44,14 @@ export const resetAIsToDefaults = () => {
 	return api.resetAIsToDefaults();
 }
 
+export const checkAiCatalogUpdate = () => {
+	return api.checkAiCatalogUpdate();
+}
+
+export const applyAiCatalogUpdate = ( revision:number ) => {
+	return api.applyAiCatalogUpdate( revision );
+}
+
 export const getPreloadAIIds = () => {
 	return api.getPreloadAIIds();
 }
