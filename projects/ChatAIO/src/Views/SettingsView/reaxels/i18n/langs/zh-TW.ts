@@ -107,6 +107,7 @@ export default {
 	"Refresh" : "重新整理" ,
 	"Failed to fetch changelog" : "取得更新說明失敗" ,
 	"Translated by Google" : "由 Google 翻譯" ,
+	"Close filter" : "關閉篩選" ,
 	"Search" : "搜尋" ,
 	"Search AI name" : "搜尋 AI 名稱" ,
 	"Search AI family" : "搜尋 AI 系列" ,

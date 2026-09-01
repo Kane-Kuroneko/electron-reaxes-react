@@ -17,7 +17,7 @@ Switch AI 菜单与 Settings → Manage AIs 共用一套**立即持久化**的�
 ```mermaid
 flowchart TD
   switchAi["Switch AI 右键拖 enabled 项"]
-  settings["Manage AIs 左键拖整表"]
+  settings["Manage AIs 只拖启用行"]
   rpc["reorder-ais string[]"]
   resolve["resolveReorderedAIs"]
   disk["replaceAllAIs / user-ais.json"]
@@ -37,11 +37,13 @@ flowchart TD
 | 入口 | 手势 | payload | 写盘结果 |
 |------|------|---------|----------|
 | Switch AI | 右键按住，移动 ≥ 8px | 当前 enabled id 序列 | disabled 下标不动，enabled 按菜单新序填回 |
-| Manage AIs | 表行拖拽 | **已提交**全表 id（含 disabled / 待删除，不含未 Apply 的新建项） | 整表按该序 |
+| Manage AIs | 只拖启用行（未启用禁拖） | 本地先按启用槽位合并，再送**已提交**全表 id（disabled 仍在原下标；含待删除，不含未 Apply 新建项） | 与 Switch AI 相同：disabled 钉住原下标 |
 
 全部 enabled 时两种 payload 集合相同，结果一致。
 
-例：磁盘 `[A, B(disabled), C, D]`，菜单重排 enabled 为 `[D, C, A]` → `[D, B(disabled), C, A]`。
+表内**看见的顺序**（启用置顶、列筛选）不是持久化序，见 [`manage-ais-table-ux.md`](./manage-ais-table-ux.md)。
+
+例：磁盘 `[A, B(disabled), C, D]`，菜单或表内重排 enabled 为 `[D, C, A]` → `[D, B(disabled), C, A]`。
 
 ## IPC
 
@@ -58,7 +60,7 @@ flowchart TD
 `yarn test:ai-order` 按**用户可见结果**锁下面几条，不锁内部「槽位合并 / 全表置换」函数切分，也不锁 dirty 是否按 id 排序：
 
 1. Switch AI 只给 enabled id → disabled 下标不动，字段跟着 id 走。
-2. Settings 给已提交全表 id（含 disabled、含待删除、不含未 Apply 新建项）→ 整表按该序。
+2. Settings persist 仍给已提交全表 id（含钉在原位的 disabled、含待删除、不含未 Apply 新建项）→ 整表按该序落盘。表内拖拽本身不再移动 disabled 下标，见 [`manage-ais-table-ux.md`](./manage-ais-table-ux.md)。
 3. payload 集合对不上（含「enabled 里夹了 disabled 但不是全表」）→ 不写盘。
 4. 未 Apply 新行误进 payload → 拒写；过滤后再套回本地，新行仍在原槽。
 5. 顺序变化不 dirty；改名 / disabled / 待删除 dirty。
@@ -75,8 +77,11 @@ flowchart TD
 | [`src/Main/reaxels/Settings/index.ts`](../../src/Main/reaxels/Settings/index.ts) | IPC、rebuildMenu、按需 echo |
 | [`src/Views/DropdownView/App.tsx`](../../src/Views/DropdownView/App.tsx) | 右键 sensor、AI / footer 分区 |
 | [`src/Views/DropdownView/right-click-mouse-sensor.utility.ts`](../../src/Views/DropdownView/right-click-mouse-sensor.utility.ts) | 只激活 `button === 2` |
+| [`src/shared/utils/manage-ais-table.utility.ts`](../../src/shared/utils/manage-ais-table.utility.ts) | Manage AIs 展示序 / 列筛选 / 拖启用项→槽位映射 |
 | [`src/Views/SettingsView/reaxels/settings-view/index.ts`](../../src/Views/SettingsView/reaxels/settings-view/index.ts) | `persistCommittedAIOrder` / `applyExternalEnabledAIOrder` |
+| [`src/Views/SettingsView/components/ManageAIs/index.tsx`](../../src/Views/SettingsView/components/ManageAIs/index.tsx) | 表内拖启用项；展示序与筛选不写盘 |
 | [`tests/ai-list-reorder.test.ts`](../../tests/ai-list-reorder.test.ts) | 产品契约回归（不是内部 helper 快照） |
+| [`tests/manage-ais-table-ux.test.ts`](../../tests/manage-ais-table-ux.test.ts) | 表内展示序 / 钉位拖拽 |
 
 ## 禁止项
 
@@ -84,5 +89,6 @@ flowchart TD
 - 不要让 Settings 拖拽只改 store 等 Apply：会和 menubar 立即写盘打架。
 - 不要把未 Apply 的新建 AI id 送进 `reorder-ais`。
 - 不要把待删除行从 Settings 排序 payload 里滤掉：它们仍在磁盘上，滤掉会退化成菜单槽位合并。
+- 不要在 Manage AIs drop 时对整表 `arrayMove`：会挤走未启用项。表内映射见 [`manage-ais-table-ux.md`](./manage-ais-table-ux.md)。
 - 不要为排序给 Dropdown 加 `app-region: drag`。
 - 不要把测试写成内部 helper（`mergeEnabledAIOrder` / `isIdPermutation`）的黄金输出快照。

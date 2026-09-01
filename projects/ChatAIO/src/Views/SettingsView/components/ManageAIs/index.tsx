@@ -127,7 +127,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	custom : 'default',
 };
 
-	const columns:TableColumnType<AI.AIItem>[] = [
+	const createManageAIsColumns = () : TableColumnType<AI.AIItem>[] => [
 		{
 			title : compactTableHeader( <I18n>Drag</I18n> ) ,
 			width : 48 ,
@@ -160,10 +160,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			dataIndex : 'label' ,
 			ellipsis : true,
 			minWidth : 100,
-			...createColumnTextFilter<AI.AIItem>(
-				record => record.label || '' ,
-				{ placeholderKey : 'Search AI name' } ,
-			) ,
+			...createColumnTextFilter<AI.AIItem>( 'label' ) ,
 			render( _value , record ) {
 				const { isNewAI , isModifiedAI , isAIPendingDeletion } = reaxel_SettingsView();
 				const isNew = isNewAI( record.id );
@@ -184,10 +181,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			dataIndex : 'AI_family',
 			ellipsis : true,
 			minWidth : 72,
-			...createColumnTextFilter<AI.AIItem>(
-				record => record.AI_family || '' ,
-				{ placeholderKey : 'Search AI family' } ,
-			) ,
+			...createColumnTextFilter<AI.AIItem>( 'AI_family' ) ,
 			render( value: AI.AIFamily ) {
 				const color = AI_FAMILY_TAG_COLORS[value] || 'default';
 				return <Tag color={ color }>{ value }</Tag>;
@@ -198,10 +192,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			dataIndex : 'url' ,
 			ellipsis : true,
 			minWidth : 140,
-			...createColumnTextFilter<AI.AIItem>(
-				record => record.url || '' ,
-				{ placeholderKey : 'Search AI URL' } ,
-			) ,
+			...createColumnTextFilter<AI.AIItem>( 'url' ) ,
 		} ,
 		{
 			title : <I18n>Operations</I18n> ,
@@ -236,6 +227,10 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		},
 	];
 
+	/**
+	 * Manage AIs 表：展示启用在上、未启用置底；筛选与展示序都不改真实 `AIs`。
+	 * 拖启用项松手后按启用槽位写回，未启用钉在原下标。见 docs/features/manage-ais-table-ux.md
+	 */
 	export const RCManageAIsPanel = reaxper( () => {
 		const {
 			changeEditAIModalVisible ,
@@ -247,6 +242,14 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		const [resetModalVisible , setResetModalVisible] = React.useState( false );
 		const tableHostRef = React.useRef<HTMLDivElement>( null );
 		const tableScrollY = useHostScrollY( tableHostRef );
+		const sourceAIs = reaxel_SettingsView.store.Data.AIs;
+		const columnFilterValue = reaxel_SettingsView.store.UIControls.manage_AIs.column_filter.value;
+		const displayedAIs = displayedManageAIs( sourceAIs , columnFilterValue );
+		const disabledDisplayedIdSet = React.useMemo( () => {
+			return new Set( displayedAIs.filter( ai => ai.disabled ).map( ai => ai.id ) );
+		} , [ displayedAIs ] );
+		/* columns 不吃筛选 value/open：漏斗图标与面板各自是 reaxper，从 store 读。 */
+		const columns = React.useMemo( () => createManageAIsColumns() , [] );
 		const sensors = useSensors(
 			useSensor( PointerSensor , {
 				activationConstraint : {
@@ -255,26 +258,36 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			} ),
 		);
 
-		/* 顺序即时写盘，不走 Apply；失败由 persistCommittedAIOrder 回滚。 */
+		const collisionDetection : CollisionDetection = args => {
+			return closestCenter( {
+				...args ,
+				droppableContainers : args.droppableContainers.filter( container => {
+					return !disabledDisplayedIdSet.has( String( container.id ) );
+				} ) ,
+			} );
+		};
+
+		/* 只重排启用槽，未启用钉在真实下标。失败由 persistCommittedAIOrder 回滚。 */
 		const onDragEnd = ( { active , over }:DragEndEvent ) => {
 			if( !over || active.id === over.id ) {
 				return;
 			}
 			const previousAIs = reaxel_SettingsView.store.Data.AIs.slice();
-			reaxel_SettingsView.mutate.Data( state => {
-				const activeIndex = state.AIs.findIndex( ai => ai.id === active.id );
-				const overIndex = state.AIs.findIndex( ai => ai.id === over.id );
-				if( activeIndex === -1 || overIndex === -1 ) {
-					return;
-				}
-				state.AIs = arrayMove( state.AIs.slice() , activeIndex , overIndex );
-			} );
-			if( enabledAIIdsEqual(
+			const nextAIs = reorderEnabledAIsByVisualDrag(
+				previousAIs ,
+				displayedAIs ,
+				String( active.id ) ,
+				String( over.id ) ,
+			);
+			if( !nextAIs || enabledAIIdsEqual(
 				previousAIs.map( ai => ai.id ) ,
-				reaxel_SettingsView.store.Data.AIs.map( ai => ai.id ),
+				nextAIs.map( ai => ai.id ) ,
 			) ) {
 				return;
 			}
+			reaxel_SettingsView.mutate.Data( state => {
+				state.AIs = nextAIs;
+			} );
 			void persistCommittedAIOrder( previousAIs ).catch( error => {
 				console.error( '[ManageAIs] Reorder failed:' , error );
 				message.error( i18n( 'Failed to reorder AI pages' ) );
@@ -332,18 +345,21 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			</div>
 			<DndContext
 				sensors={ sensors }
+				collisionDetection={ collisionDetection }
 				modifiers={ [ restrictToVerticalAxis ] }
 				onDragEnd={ onDragEnd }
 			>
 				<SortableContext
-					items={ reaxel_SettingsView.store.Data.AIs.map( ai => ai.id ) }
+					items={ displayedAIs.map( ai => ai.id ) }
 					strategy={ verticalListSortingStrategy }
 				>
 					<div
 						className="settings-table-host"
 						ref={ tableHostRef }
 					>
-						<Table
+						{ /* 空 dataSource 仍挂 Table；筛选 Input 在 overlays portal，不进 filterDropdown。 */ }
+						<>
+							<Table
 							key={ `ais-table-${ pendingDeleteAIIds.join(',') || 'none' }` }
 							className="manage-ais-table"
 							style={ { width: '100%' } }
@@ -354,7 +370,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 							} }
 							rowKey="id"
 							columns={ columns }
-							dataSource={ reaxel_SettingsView.store.Data.AIs }
+							dataSource={ displayedAIs }
 							pagination={ false }
 							size="small"
 							scroll={ {
@@ -369,6 +385,9 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 								return '';
 							} }
 						/>
+						/>
+							<ManageAIsColumnFilterOverlays />
+						</>
 					</div>
 				</SortableContext>
 			</DndContext>
@@ -411,6 +430,20 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	};
 
 	const SortableRow:React.FC<Readonly<RowProps>> = reaxper( props => {
+		const rowId = props['data-row-key'];
+		/* 空表 placeholder 没有 data-row-key，不能走 dnd-kit（也不该拆表头）。 */
+		if( !rowId ) {
+			return <tr { ...props } />;
+		}
+		return <SortableDataRow { ...props } />;
+	} );
+
+	const SortableDataRow:React.FC<Readonly<RowProps>> = reaxper( props => {
+		const rowId = props['data-row-key'];
+		const record = reaxel_SettingsView.store.Data.AIs.find( ai => ai.id === rowId );
+		const { isAIPendingDeletion } = reaxel_SettingsView();
+		const isPendingDelete = isAIPendingDeletion( rowId );
+		const isDisabledAI = Boolean( record?.disabled );
 		const {
 			attributes ,
 			listeners ,
@@ -419,7 +452,9 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			transition ,
 			isDragging,
 		} = useSortable( {
-			id : props['data-row-key'],
+			id : rowId ,
+			/* 未启用行禁拖也禁投放，避免拖进未启用区把它们挤走。见 docs/features/manage-ais-table-ux.md */
+			disabled : isDisabledAI ,
 		} );
 
 		const style:React.CSSProperties = {
@@ -429,11 +464,9 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			...( isDragging ? { position : 'relative' , zIndex : 9999 } : {} ),
 		};
 
-		const { isAIPendingDeletion } = reaxel_SettingsView();
-	// 待删除行禁用拖拽 — 不传递 listeners/attributes
-	const dragContext = isAIPendingDeletion( props['data-row-key'] )
+		const dragContext = ( isPendingDelete || isDisabledAI )
 			? { disabled : true }
-		: { listeners , attributes };
+			: { listeners , attributes };
 
 	return <DragHandleContext.Provider value={ dragContext }>
 			<tr
@@ -981,13 +1014,17 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	};
 
 	import { DragIconSvg } from "./DragIcon.svg";
-	import { createColumnTextFilter } from '#SettingsView/layout/column-text-filter';
+	import { createColumnTextFilter , ManageAIsColumnFilterOverlays } from '#SettingsView/layout/column-text-filter';
 	import { useHostScrollY } from '#SettingsView/layout/use-host-scroll-y';
 	import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 	import { resetAIsToDefaults } from "#SettingsView/services/Settings";
 	import { AIFamily } from "#src/shared/statics/AI-family";
 	import { getAIDomainByFamily } from "#src/shared/statics/ai-family-defaults";
 	import { createDefaultProxyConf as defaultProxyConf } from "#src/shared/statics/default-proxy";
+	import {
+		displayedManageAIs ,
+		reorderEnabledAIsByVisualDrag ,
+	} from '#src/shared/utils/manage-ais-table.utility';
 	import { enabledAIIdsEqual } from '#src/shared/utils/merge-enabled-ai-order.utility';
 	import { AI } from "#src/Types/SettingsTypes/AI";
 	import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
@@ -1014,13 +1051,18 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		Tag,
 		Tooltip,
 	} from 'antd';
-	import { DndContext , PointerSensor , useSensor , useSensors } from '@dnd-kit/core';
+	import {
+		closestCenter ,
+		DndContext ,
+		PointerSensor ,
+		useSensor ,
+		useSensors ,
+	} from '@dnd-kit/core';
+	import type { CollisionDetection , DragEndEvent } from '@dnd-kit/core';
 	import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 	import {
-		arrayMove ,
 		SortableContext ,
 		useSortable ,
 		verticalListSortingStrategy,
 	} from '@dnd-kit/sortable';
 	import { CSS } from '@dnd-kit/utilities';
-	import type { DragEndEvent } from '@dnd-kit/core';

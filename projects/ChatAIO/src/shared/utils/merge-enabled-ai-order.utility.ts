@@ -5,8 +5,8 @@
  * 测试按用户可见结果锁契约，不要把内部槽位合并 / 全表置换拆成两套对偶用例。
  */
 
-/** Switch AI：enabled 新序填回原 enabled 槽；disabled 保持下标。集合对不上返回 null。 */
-const mergeEnabledAIOrder = <T extends { id : string; disabled? : boolean }>(
+/** Switch AI / Manage AIs 拖启用项：enabled 新序填回原 enabled 槽；disabled 钉住下标。集合对不上返回 null。 */
+export const mergeEnabledAIOrder = <T extends { id : string; disabled? : boolean }>(
 	ais : T[] ,
 	enabledIds : string[] ,
 ) : T[] | null => {
@@ -65,7 +65,8 @@ const isIdPermutation = ( ids : string[] , universe : string[] ) => {
 
 /**
  * `reorder-ais` 写盘决策：payload 能解释成磁盘新序则返回新数组，否则 null（不写盘）。
- * Switch AI 给 enabled id；Settings 给已提交全表 id（含 disabled / 待删除，不含未 Apply 新建项）。
+ * Switch AI 给 enabled id。Manage AIs 松手后本地已按启用槽位合并，persist 仍送已提交全表 id
+ * （含位置未动的 disabled / 待删除，不含未 Apply 新建项）。表内拖拽映射见 docs/features/manage-ais-table-ux.md。
  */
 export const resolveReorderedAIs = <T extends { id : string; disabled? : boolean }>(
 	current : T[] ,
