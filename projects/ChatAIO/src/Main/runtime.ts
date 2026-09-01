@@ -9,12 +9,14 @@ export const isMainRuntimeStarted = () => mainRuntimeStarted;
  * Phase 0  MenubarHost   — 注册 menubar IPC / 快捷键（必须在 MainView loadURL 之前）
  * Phase 1  AppConfig     — settings / i18n / appearance（菜单数据全部来自主进程本地）
  * Phase 2  MainWindow    — 创建窗口并 load MainView，立刻 attach menubar 宿主
- * Phase 3  OverlayWarm   — FloatingView 预热（独立窗口，不阻塞 menubar）
+ * Phase 3  OverlayWarm   — 挪到 menubar visual-ready 之后（initRuntimeViews 内 initFloatingView）
  * Phase 4  ShellChrome   — tray / 生命周期 / rebuildMenu（structure 在 menu-view:ready 时再推）
- * Phase 5  ContentViews  — 等 menubar renderer ready（或超时）后再 init AI / Prompt
+ * Phase 5  ContentViews  — 等 menubar visual-ready（菜单项已 layout，或超时）后再 init AI / Prompt
  *
  * 禁止把 ensureMenubarHostReady / attachMainWindow 排到 initRuntimeViews 之后。
- * 禁止在 menu-view:ready 之前批量 preload AI（会与 localhost MainView 抢资源）。
+ * 禁止在 menubar 首绘之前批量 preload AI 或 load FloatingView（会与 localhost MainView 抢 GPU/网络）。
+ * menu-view:ready 只推 structure，不能当 Phase 5 门闩。
+ * 冷启动白屏观测：docs/features/menubar-cold-start-monitor.md
  */
 export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) => {
 	console.log( '[Runtime] startMainRuntime:' , options );
@@ -23,9 +25,12 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 		mainRuntimeStarted = true;
 
 		/* Phase 0 — MenubarHost：IPC 必须先于任何 MainView navigation */
+		getMenubarColdStartMonitor().beginBoot();
+		getMenubarColdStartMonitor().note( 'phase-0-menubar-host' );
 		reaxel_MainView().ensureMenubarHostReady();
 
 		/* Phase 1 — AppConfig */
+		getMenubarColdStartMonitor().note( 'phase-1-app-config' );
 		const settingsRuntime = reaxel_Settings();
 		const settings = settingsRuntime.reloadFromDisk();
 		const resolvedAppearance = applyElectronAppearance( settings.appearance );
@@ -51,9 +56,12 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 			if( currentSettings.appearance.theme !== 'system' ) {
 				return;
 			}
-			void reaxel_AIViews().syncAIViewsWithConfig( currentSettings );
 			reaxel_PromptViews().syncAppearanceFromSettings();
 			reaxel_MainView().syncAppearanceFromSettings();
+			/* 冷启动 visual-ready 之前禁止创建 AI WCV；initRuntimeViews 会按当时主题再 sync */
+			if( Reaxel_View().areRuntimeViewsInitialized() ) {
+				void reaxel_AIViews().syncAIViewsWithConfig( currentSettings );
+			}
 		} );
 
 		app.on( 'window-all-closed' , () => {
@@ -97,23 +105,25 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 			} );
 		}
 
-		/* Phase 3 — OverlayWarm（独立窗；dev 下对 localhost 做重试，不阻塞 menubar） */
-		reaxel_FloatingView().initFloatingView();
-
-		/* Phase 4 — ShellChrome */
+		/* Phase 4 — ShellChrome（原生 tray/菜单，不抢 MainView webpack） */
+		getMenubarColdStartMonitor().note( 'phase-4-shell-chrome' );
 		if( settings.system.show_tray ) {
 			initTray();
 		}
 		reaxel_Menu().rebuildMenu();
 		reaxel_AppUpdater();
 
-		/* Phase 5 — ContentViews（AI）：等 menubar renderer ready，避免 AI preload
-		   与 MainView localhost 导航抢 Chromium 资源，造成「menubar 被 AI 挡住」假象。
-		   超时后仍继续，防止 menubar 永久失败时卡死启动。 */
+		/* Phase 5 — 等菜单项 layout 后再拉 FloatingView / 当前 WCV。
+		   menu-view:ready 太早（React 未 commit）。超时后仍继续。
+		   设计：docs/features/menubar-cold-start-monitor.md */
+		getMenubarColdStartMonitor().note( 'phase-5-wait-renderer' );
 		const menubarReady = await reaxel_MainView().waitUntilRendererReady( {
 			timeoutMs : 15000,
 		} );
 		console.log( '[Runtime] menubar renderer ready:' , menubarReady );
+		getMenubarColdStartMonitor().note( 'phase-5-content-views-start' , {
+			menubarReady ,
+		} );
 		await Reaxel_View().initRuntimeViews();
 		console.log( '[Runtime] runtime views initialized.' );
 	} else {
@@ -122,8 +132,11 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 		const theme = resolveAppearance( currentSettings.appearance ).theme;
 		const win = await createMainWindow( { theme } );
 		reaxel_MainView().attachMainWindow();
-		reaxel_FloatingView().initFloatingView();
 		useBeautifulDevtool( win );
+		await reaxel_MainView().waitUntilRendererReady( {
+			timeoutMs : 15000,
+		} );
+		reaxel_FloatingView().initFloatingView();
 	}
 
 	if( options.openSettings ) {
@@ -150,6 +163,7 @@ export type StartMainRuntimeOptions = {
 };
 
 import { createMainWindow , mainWindow , showMainWindow } from './mainWindow';
+import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
 import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import { reaxel_Settings } from "#main/reaxels/Settings";
 import { reaxel_Menu } from './reaxels/Menu';

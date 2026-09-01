@@ -69,6 +69,10 @@ export const reaxel_AIViews = reaxel( () => {
 	};
 
 	const syncAIViewsWithConfig = async( settings:Settings ) => {
+		if( Reaxel_View().areRuntimeViewsInitialized() === false ) {
+			console.log( '[AIViews] skip syncAIViewsWithConfig until initRuntimeViews (menubar visual-ready gate)' );
+			return;
+		}
 		console.log( '[AIViews] syncAIViewsWithConfig start. AI count:' , settings.AIs.length );
 		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
 		const activeIds = new Set( activeAIs.map( ai => ai.id ) );
@@ -413,6 +417,7 @@ const safeLoadAIURL = async(
 	/* 供应商 ISO 覆盖在 catalog.region；是否阻断用 getAIConfigService().isAICountryBlockedByCatalog。
 	 * 出口探测 + 本地 data:text/html 阻断页见 sensitive-region-access-blocking.md。不要改远程 URL 去 google available-regions。 */
 	try {
+		getMenubarColdStartMonitor().noteWcvLoadAttempt( view , url , context );
 		await view.webContents.loadURL( url );
 	} catch ( error ) {
 		console.warn( '[AIViews] loadURL failed:' , context , url , error );
@@ -789,6 +794,7 @@ type PersistedAIPartitionDiscoveryResult = {
 };
 
 import { getWhiteScreenMonitor } from './white-screen-monitor.retexel';
+import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
 import type { AI } from '#src/Types/SettingsTypes/AI';
 import type { Settings } from '#src/Types/SettingsTypes';
 import { initWebContentsView } from '#main/reaxels/Views/utils/initWebContentsView';

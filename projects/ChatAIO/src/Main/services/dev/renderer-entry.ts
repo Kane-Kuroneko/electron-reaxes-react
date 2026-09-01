@@ -70,6 +70,12 @@ export const loadDevRendererEntryWithRetry = async(
 				console.warn( `[DevRenderer] ${ context } loadURL failed:` , url , error );
 				return false;
 			}
+			getMenubarColdStartMonitor().note( 'phase-2-dev-retry' , {
+				context ,
+				attempt ,
+				maxAttempts ,
+				url ,
+			} );
 			if( attempt === 1 || attempt % 5 === 0 ) {
 				console.warn(
 					`[DevRenderer] ${ context } waiting for webpack (:${ __DEV_PORT__ })`
@@ -108,6 +114,7 @@ type LoadDevRendererRetryOptions = {
 };
 
 import type { AIWebAppRendererEntryName } from '#shared/renderer-entries';
+import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
 import { dev } from 'electron-is';
 import type { WebContents } from 'electron';
 import * as path from 'node:path';

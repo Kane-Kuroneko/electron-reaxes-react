@@ -340,6 +340,9 @@ export const reaxel_MainView = reaxel( () => {
 				closeAllMenus();
 			}
 			updateStructure( command.payload.structure );
+			noteMenubarBootMilestone( 'renderer-structure-applied' , {
+				itemCount : command.payload.structure?.length ?? 0 ,
+			} );
 		} else if( command.type === 'menu-view:theme-update' ) {
 			applyMenubarTheme( command.payload.theme );
 		} else if( command.type === 'menu-view:close' ) {
@@ -403,3 +406,4 @@ import {
 	bindKeyboardNav as bindKeyboardNavHandler ,
 	unbindKeyboardNav as unbindKeyboardNavHandler ,
 } from './keyboard-nav';
+import { noteMenubarBootMilestone } from '../../utils/menubar-cold-start-probe.utility';

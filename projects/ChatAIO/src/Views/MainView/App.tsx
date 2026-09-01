@@ -9,16 +9,25 @@
 
 export const App = reaxper( () => {
 	const { store } = reaxel_MainView;
+
+	useLayoutEffect( () => {
+		noteMenubarBootMilestone( 'renderer-app-layout' , {
+			platform : store.platform ,
+			structureLength : store.structure.length ,
+		} );
+	} , [] );
 	
 	const platformMenuBar: Partial<Record<NodeJS.Platform, React.ReactNode>> = {
 		'darwin' : <MacMenuBar /> ,
 		'win32' : <WindowsMenuBar /> ,
 	};
-	
-	return platformMenuBar[store.platform];
+
+	/* 非 darwin 一律走 Windows 路径（含 linux），否则 visual-ready 永不触发、Phase 5 空等 15s */
+	return platformMenuBar[store.platform] ?? <WindowsMenuBar />;
 } );
 
 
+import { noteMenubarBootMilestone } from './utils/menubar-cold-start-probe.utility';
 import { MacMenuBar } from '#MainView/components/MacMenuBar';
 import { WindowsMenuBar } from '#MainView/components/WindowsMenuBar';
 import { reaxel_MainView } from '#MainView/reaxels/main-view';

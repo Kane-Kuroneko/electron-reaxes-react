@@ -23,30 +23,49 @@ export const reaxel_MainView = reaxel( () => {
 		dropdownLoaded : false ,
 		loaded : false ,
 		mainViewRendererReady : false ,
+		/** 菜单项已 layout；Phase 5 等这个，不是 menu-view:ready。见 menubar-cold-start-monitor.md */
+		mainViewVisualReady : false ,
 		pendingDropdownPayload : checkAs<DropdownOpenPayload | null>( null ) ,
 	} );
 
 	let ipcRegistered = false;
 	/* 当前已绑定 menubar 宿主事件的 BrowserWindow；窗口销毁后需重新 attach。 */
 	let boundMainWindow : BrowserWindow | null = null;
-	const rendererReadyWaiters:Array<(ready:boolean) => void> = [];
+	const visualReadyWaiters:Array<(ready:boolean) => void> = [];
 
-	const flushRendererReadyWaiters = (ready:boolean) => {
-		if( rendererReadyWaiters.length === 0 ) {
+	const flushVisualReadyWaiters = (ready:boolean) => {
+		if( visualReadyWaiters.length === 0 ) {
 			return;
 		}
-		const waiters = rendererReadyWaiters.splice( 0 , rendererReadyWaiters.length );
+		const waiters = visualReadyWaiters.splice( 0 , visualReadyWaiters.length );
 		waiters.forEach( resolve => {
 			resolve( ready );
 		} );
 	};
 
+	const markVisualReady = () => {
+		if( store.mainViewVisualReady ) {
+			return;
+		}
+		setState( { mainViewVisualReady : true } );
+		flushVisualReadyWaiters( true );
+		/* 首绘后再预热 Dropdown，避免与 menubar localhost/GPU 抢加载 */
+		preloadDropdownView();
+	};
+
 	/**
-	 * 等 MainView renderer 发出 menu-view:ready（menubar React 已挂载）。
+	 * 等 MainView 菜单项 layout（`menu-view:visual-ready`）。
+	 * `menu-view:ready` 只表示 IPC 已绑，会在 React 首绘前触发；不能当 Phase 5 门闩。
 	 * 超时后返回 false，调用方仍可继续 AI preload，避免永久卡死。
+	 * 设计：docs/features/menubar-cold-start-monitor.md
 	 */
 	const waitUntilRendererReady = ( options:{ timeoutMs?:number } = {} ) => {
-		if( store.mainViewRendererReady ) {
+		if( store.mainViewVisualReady ) {
+			getMenubarColdStartMonitor().note( 'phase-5-wait-resolved' , {
+				ready : true ,
+				alreadyReady : true ,
+				gate : 'visual-ready' ,
+			} );
 			return Promise.resolve( true );
 		}
 		const timeoutMs = options.timeoutMs ?? 15000;
@@ -58,10 +77,17 @@ export const reaxel_MainView = reaxel( () => {
 				}
 				settled = true;
 				clearTimeout( timer );
-				const index = rendererReadyWaiters.indexOf( onReady );
+				const index = visualReadyWaiters.indexOf( onReady );
 				if( index >= 0 ) {
-					rendererReadyWaiters.splice( index , 1 );
+					visualReadyWaiters.splice( index , 1 );
 				}
+				getMenubarColdStartMonitor().note( 'phase-5-wait-resolved' , {
+					ready ,
+					timedOut : !ready ,
+					timeoutMs ,
+					gate : 'visual-ready' ,
+					ipcReady : store.mainViewRendererReady ,
+				} );
 				resolve( ready );
 			};
 			const onReady = ( ready:boolean ) => {
@@ -70,12 +96,13 @@ export const reaxel_MainView = reaxel( () => {
 			const timer = setTimeout( () => {
 				console.warn(
 					`[Menubar] waitUntilRendererReady timed out after ${ timeoutMs }ms;`
-					+ ' continuing ContentViews without menubar ready',
+					+ ' continuing ContentViews without menubar visual-ready',
 				);
+				preloadDropdownView();
 				finish( false );
 			} , timeoutMs );
-			rendererReadyWaiters.push( onReady );
-			if( store.mainViewRendererReady ) {
+			visualReadyWaiters.push( onReady );
+			if( store.mainViewVisualReady ) {
 				finish( true );
 			}
 		} );
@@ -108,11 +135,12 @@ export const reaxel_MainView = reaxel( () => {
 
 		useIpcRendererToMain( 'menu-view:ready' ).on( () => {
 			runMenubarHandler( 'menu-view:ready' , () => {
+				/* IPC ready ≠ 已绘。只推 structure/theme；Phase 5 等 menu-view:visual-ready。
+				 * 设计：docs/features/menubar-cold-start-monitor.md */
+				getMenubarColdStartMonitor().note( 'menu-view-ready' );
 				setState( { mainViewRendererReady : true } );
-				preloadDropdownView();
 				sendMenuStructure();
 				sendMenuTheme();
-				flushRendererReadyWaiters( true );
 			} );
 		} );
 
@@ -150,6 +178,26 @@ export const reaxel_MainView = reaxel( () => {
 			logMenubarError( report );
 		} );
 
+		useIpcRendererToMain( 'menu-view:visual-ready' ).on( ( _ , payload ) => {
+			runMenubarHandler( 'menu-view:visual-ready' , () => {
+				getMenubarColdStartMonitor().noteRendererProbe( {
+					milestone : 'renderer-visual-ready' ,
+					ts : payload?.ts || Date.now() ,
+					hrt : payload?.hrt ,
+					detail : payload?.detail ,
+				} );
+				markVisualReady();
+			} );
+		} );
+
+		useIpcRendererToMain( 'menubar:boot-probe' ).on( ( _ , payload ) => {
+			/* 只写 JSONL。visual-ready 门闩走 menu-view:visual-ready，避免观测通道卡住启动。 */
+			if( payload?.milestone === 'renderer-visual-ready' ) {
+				return;
+			}
+			getMenubarColdStartMonitor().noteRendererProbe( payload );
+		} );
+
 		useIpcSync( 'dropdown-view:is-visible' ).handle( () => {
 			const dropdown = store.dropdownWindow;
 			return !!dropdown && !dropdown.isDestroyed() && dropdown.isVisible();
@@ -179,7 +227,9 @@ export const reaxel_MainView = reaxel( () => {
 
 		const win = mainWindow;
 		if( boundMainWindow === win ) {
-			preloadDropdownView();
+			if( store.mainViewVisualReady ) {
+				preloadDropdownView();
+			}
 			if( store.mainViewRendererReady ) {
 				sendMenuStructure();
 				sendMenuTheme();
@@ -193,6 +243,7 @@ export const reaxel_MainView = reaxel( () => {
 			/* 换窗后旧 renderer 已失效，等待新 MainView 再发 menu-view:ready */
 			setState( {
 				mainViewRendererReady : false ,
+				mainViewVisualReady : false ,
 				loaded : false ,
 			} );
 		}
@@ -201,15 +252,18 @@ export const reaxel_MainView = reaxel( () => {
 				boundMainWindow = null;
 				setState( {
 					mainViewRendererReady : false ,
+					mainViewVisualReady : false ,
 					loaded : false ,
 				} );
-				flushRendererReadyWaiters( false );
+				flushVisualReadyWaiters( false );
 			}
 		} );
 
 		bindMainWindowEvents();
 		bindMenubarWebContentsLogging( win.webContents , 'main-view-renderer' );
-		preloadDropdownView();
+		if( store.mainViewVisualReady ) {
+			preloadDropdownView();
+		}
 		setState( { loaded : true } );
 		/* 尽早对齐 caption overlay / 主壳底色，避免 renderer ready 前关闭区色差 */
 		applyMenubarWindowChrome( win , getCurrentTheme() );
@@ -229,6 +283,7 @@ export const reaxel_MainView = reaxel( () => {
 
 	const preloadDropdownView = () => {
 		if( !mainWindow || mainWindow.isDestroyed() ) return;
+		getMenubarColdStartMonitor().note( 'dropdown-preload' );
 		getOrCreateDropdownWindow();
 	};
 
@@ -247,6 +302,9 @@ export const reaxel_MainView = reaxel( () => {
 					chrome : menu.createMenuChrome(),
 				},
 			} );
+		if( store.mainViewVisualReady === false ) {
+			getMenubarColdStartMonitor().note( 'structure-sent' );
+		}
 	};
 
 	const sendMenuTheme = ( previewAppearance? : Pick<PromptView.Appearance , 'theme'> ) => {
@@ -932,6 +990,7 @@ const isBenignMenubarConsoleMessage = ( message : string ) => {
 };
 
 
+import { getMenubarColdStartMonitor } from './menubar-cold-start-monitor.retexel';
 import { reaxel_Menu } from '#main/reaxels/Menu';
 import { Reaxel_View } from '#main/reaxels/Views';
 import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';

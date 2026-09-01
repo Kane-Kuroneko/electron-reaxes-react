@@ -21,6 +21,30 @@
 		>
 		
 		<title>ChatAIO</title>
+		<!-- MainView 冷启动：webpack 主包下载前先铺 menubar 底色，避免 36px 条停在浏览器默认白。
+		     仅 pathname 含 MainView 时生效（本模板被所有 renderer 共用）。色值对齐 shared/menubar-geometry.ts。
+		     设计：docs/features/menubar-cold-start-monitor.md -->
+		<script>
+			(function () {
+				try {
+					if( !/\/MainView\/?/.test( location.pathname ) ) {
+						return;
+					}
+					var theme = new URLSearchParams( location.search ).get( 'theme' );
+					var color = theme === 'dark' ? '#2d2d30' : '#f5f6f8';
+					var css = 'html,body,#react-app-root{margin:0;padding:0;overflow:hidden;background:'
+						+ color + ' !important;}#react-app-root{height:36px;}';
+					var style = document.createElement( 'style' );
+					style.setAttribute( 'data-menubar-boot' , '1' );
+					style.textContent = css;
+					document.head.appendChild( style );
+					document.documentElement.style.background = color;
+					if( theme === 'dark' || theme === 'light' ) {
+						document.documentElement.dataset.theme = theme;
+					}
+				} catch ( e ) { /* 首包 CSS 失败时仍走 React 样式 */ }
+			})();
+		</script>
 	</head>
 	<body>
 		<div id="react-app-root"></div>

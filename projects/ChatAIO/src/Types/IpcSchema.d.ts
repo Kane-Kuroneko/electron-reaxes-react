@@ -11,11 +11,13 @@ export interface RendererToMainEvents extends Record<string , IpcStructure.Rende
 	'focus-state-change' : IpcStructure.RendererToMainEvent<[import('#src/Types/FocusMonitor').FocusMonitor.FocusState] , {channel:void,args:void[]}>;
 	'menu-view:action' : IpcStructure.RendererToMainEvent<[MenuView.Action] , {channel:void,args:void[]}>;
 	'menu-view:ready' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
+	'menu-view:visual-ready' : IpcStructure.RendererToMainEvent<[MenubarVisualReadyPayload] , {channel:void,args:void[]}>;
 	'menu-view:resize' : IpcStructure.RendererToMainEvent<[height: number] , {channel:void,args:void[]}>;
 	'dropdown-view:open' : IpcStructure.RendererToMainEvent<[MainView.DropdownRequest] , {channel:void,args:void[]}>;
 	'dropdown-view:close' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
 	'dropdown-view:focus-item' : IpcStructure.RendererToMainEvent<[index: number] , {channel:void,args:void[]}>;
 	'menubar:error-report' : IpcStructure.RendererToMainEvent<[MenubarErrorReport] , {channel:void,args:void[]}>;
+	'menubar:boot-probe' : IpcStructure.RendererToMainEvent<[MenubarBootProbePayload] , {channel:void,args:void[]}>;
 	'open-settings-version' : IpcStructure.RendererToMainEvent<[versionTab?: AppUpdater.VersionTab] , {channel:void,args:void[]}>;
 }
 
@@ -109,6 +111,7 @@ import type { Guiding } from '#src/Types/Guiding';
 import type { AIPageEnvironment } from '#src/Types/AIPageEnvironment';
 import type { PromptView } from '#src/Types/PromptView';
 import type { MenubarErrorReport } from '#main/services/menubar-error-log.utility';
+import type { MenubarBootProbePayload , MenubarVisualReadyPayload } from '#shared/menubar-cold-start-monitor';
 import type { MenuView , MainView } from '#src/Types/MenuView';
 import type { DropdownView } from '#src/Types/DropdownView';
 import type { AppUpdater } from '#src/Types/AppUpdater';

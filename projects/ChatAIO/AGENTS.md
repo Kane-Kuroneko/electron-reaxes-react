@@ -35,6 +35,7 @@
 
 ### menubar / 透明窗
 
+- [冷启动 menubar 白屏检测器](./docs/features/menubar-cold-start-monitor.md)（Phase 5 等 visual-ready，不是 menu-view:ready）
 - [Windows 拖 menubar 抖动](./docs/issues/menubar-drag-investigation.md)（禁止 `forward: true`）
 - [拖拽区漏到内容下方](./docs/issues/menubar-drag-region-leak-below-content.md)
 - [平台 menubar 路径](./docs/architecture/menubar-platform-paths.md)
@@ -82,6 +83,7 @@
 
 | 文档 | 内容 |
 |------|------|
+| [menubar-cold-start-monitor.md](./docs/features/menubar-cold-start-monitor.md) | 冷启动 menubar 白屏 vs 当前 WCV 加载时序 |
 | [ai-list-reorder.md](./docs/features/ai-list-reorder.md) | Switch AI / Manage AIs 立即持久化排序 |
 | [manage-ais-table-ux.md](./docs/features/manage-ais-table-ux.md) | Manage AIs 未启用置底、启用槽位拖拽、列筛选进 reaxel、空表不拆筛选浮层 |
 | [menubar-current-ai-dropdown.md](./docs/features/menubar-current-ai-dropdown.md) | 中区 Current AI 块点击下拉切 AI |

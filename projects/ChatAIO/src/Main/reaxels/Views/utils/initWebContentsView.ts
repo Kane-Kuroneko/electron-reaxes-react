@@ -15,6 +15,11 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	mainWindow.contentView.addChildView(view);
 	/* 内容 WCV 默认不可见，避免未布局前以全窗/错位 bounds 叠在 menubar 上抢命中（#41002） */
 	view.setVisible( false );
+	getMenubarColdStartMonitor().instrumentContentView( view , {
+		viewId : options.aiConfig?.id
+			|| ( options.type === 'Prompt-View' ? `prompt-${ options.promptSide || 'unknown' }` : options.type ) ,
+		kind : options.type ,
+	} );
 	const refreshBounds = () => {
 		if( options.refreshBounds ) {
 			options.refreshBounds( view );
@@ -166,6 +171,7 @@ const safeLoadURL = async(
 	context:string,
 ) => {
 	try {
+		getMenubarColdStartMonitor().noteWcvLoadAttempt( view , url , context );
 		await view.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
 		return true;
 	} catch ( error ) {
@@ -264,6 +270,7 @@ type ExtraBrowserWindowOptions = {
 }
 
 import { mainWindow } from "#main/mainWindow";
+import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
 import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 import { applyAIProxyToView } from "#main/services/settings/proxy-service";
 import { handleAISwitchShortcutInput } from '#main/services/shortcuts/ai-switch';

@@ -534,6 +534,10 @@ export const Reaxel_View = reaxel( () => {
 		}
 		/* 先置顶；拆页下一拍，避免 removeChildView 跟 promote 抢同一帧。 */
 		scheduleDetachOtherCenterViews( activeView );
+		getMenubarColdStartMonitor().notePresent(
+			viewId ,
+			isWebContentsViewDead( activeView ) ? null : activeView.getBounds() ,
+		);
 		if( intent === 'switch' || !occludedResumePending ) {
 			restoreActiveCenterViewFocus( intent );
 		}
@@ -1287,10 +1291,12 @@ export const Reaxel_View = reaxel( () => {
 			},
 		} );
 		registerAISwitchGlobalShortcuts();
-		reaxel_FloatingView().initFloatingView();
 		reaxel_PromptViews().registerIpc();
+		/* 先挂当前 AI 页，再预热 overlay：避免 FloatingView webpack 插在 menubar 已绘、内容未出之间 */
 		await onReadyLoadAIView();
 		presentActiveCenterView( 'switch' );
+		getMenubarColdStartMonitor().note( 'phase-3-overlay-warm' );
+		reaxel_FloatingView().initFloatingView();
 		/* AI 列表就绪后预热 SwitchAiBar：与 menubar Prev/Next 同源（instantiated），避免首次显示重建。 */
 		prepareInstantiatedSwitchAiBar();
 		try {
@@ -1423,6 +1429,7 @@ export const Reaxel_View = reaxel( () => {
 
 	const rtn = {
 		initRuntimeViews ,
+		areRuntimeViewsInitialized : () => runtimeViewsInitialized ,
 		fitWindow,
 		fitContentView ,
 		fitCurrentCenterView ,
@@ -1533,6 +1540,7 @@ import {
 	getWhiteScreenMonitor ,
 	snapshotCenterViewHierarchy ,
 } from "#main/reaxels/Views/AI-Views/white-screen-monitor.retexel";
+import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
 import {
 	reaxel_FloatingView ,
 } from "#main/reaxels/Views/FloatingView";
