@@ -244,7 +244,8 @@ window.core_store = store;
 
 ## TypeScript 规范
 
-- **宽松模式**：项目使用 `strict: false`，允许一定类型灵活性
+- **宽松模式**：项目使用 `strict: false`（含 `strictNullChecks: false`），允许一定类型灵活性
+- **判别联合必须用 `=== false` / `=== true` 收窄**：`{ ok:true; ... } | { ok:false; errorCode }` 上写 `if (!x.ok)` **不会**收到失败分支，接着读 `errorCode` 会 TS2339。必须 `if (x.ok === false)`；成功分支用 `=== true`。不要 `@ts-expect-error` 绕过。
 - **必要时使用** `@ts-ignore` 或 `@ts-expect-error`
 - **工具函数广泛使用泛型**：
   ```typescript
@@ -322,4 +323,5 @@ throw `cannot find key '${key}' in storage`;
 - [ ] 工具文件是否使用 `.utility.ts` 后缀？
 - [ ] 是否优先使用路径别名（`#` 开头）？
 - [ ] 分号/引号风格是否一致？
+- [ ] 判别联合失败分支是否用 `x.ok === false` 收窄（不要 `!x.ok`）？
 - [ ] ChatAIO FloatingView 是否保持 `forward: false`，并检查了 Windows 拖拽回归文档？

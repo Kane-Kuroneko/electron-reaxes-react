@@ -118,7 +118,7 @@ class AIConfigService {
 			deletedIds : user?.deletedIds ?? [] ,
 			expectedRevision : revision,
 		} );
-		if( !previewed.ok ) {
+		if( previewed.ok === false ) { /* 必须 === false，见 CODING_STANDARD.md 判别联合 */
 			return {
 				success : false ,
 				errorCode : previewed.errorCode,

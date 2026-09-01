@@ -261,7 +261,24 @@ window.core_store = store;
 ## 5️⃣ TypeScript 规范 🔷
 
 ### 5.1 类型声明
-- **宽松模式**：项目使用 `strict: false`，允许一定的类型灵活性
+- **宽松模式**：项目使用 `strict: false`（含 `strictNullChecks: false`），允许一定的类型灵活性
+- **判别联合必须用字面量比较收窄**（`ok: true | false` 这类 `{ ok:true; ... } | { ok:false; errorCode }`）：
+  本仓关掉了 `strictNullChecks` 后，`if (!x.ok)` **不会**把联合收到失败分支，接着读只存在于失败侧的字段（如 `errorCode`）会报 **TS2339**。必须写 `=== false` / `=== true`。不要用 `@ts-expect-error` 绕过。
+  ```typescript
+  // ❌ 本仓不会收窄，previewed.errorCode → TS2339
+  if( !previewed.ok ) {
+  	return { success : false , errorCode : previewed.errorCode };
+  }
+
+  // ✅ 失败分支
+  if( previewed.ok === false ) {
+  	return { success : false , errorCode : previewed.errorCode };
+  }
+  // ✅ 成功分支（`if (previewed.ok)` 同样不可靠）
+  if( previewed.ok === true ) {
+  	return previewed.catalog;
+  }
+  ```
 - **必要时使用 `@ts-ignore` 或 `@ts-expect-error`**：
   ```typescript
   /*@ts-ignore*/
@@ -487,6 +504,7 @@ utils/
 - [ ] **是否使用 Tab 缩进？**
 - [ ] **是否使用分号结尾？**
 - [ ] **是否优先使用路径别名（`#` 开头）？**
+- [ ] **判别联合失败分支是否用 `x.ok === false` 收窄（不要 `!x.ok`）？**
 - [ ] **组件是否使用 `reaxper` 包裹？**
 - [ ] **错误处理是否包含 `debugger`（可选）？**
 - [ ] **ChatAIO FloatingView 是否保持 `forward: false`，并检查了 Windows 拖拽回归文档？**

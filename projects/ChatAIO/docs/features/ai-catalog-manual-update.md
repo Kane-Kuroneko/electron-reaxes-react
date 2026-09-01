@@ -92,6 +92,7 @@ Modal 面向用户写「列表发生了什么」：新增页、名称/网址、�
 - 不要把 `beginCatalogCheck` / `checkSignedCatalog` / `applySignedCatalog` 再暴露给 IPC 或其它 reaxel。
 - 目录预览未关闭时不要允许切 Settings tab / 用页脚退出；必须先应用或取消。
 - 取消预览必须丢掉 main pending，不要只清 UI。
+- 读 `{ ok:true } | { ok:false; errorCode }` 时必须 `x.ok === false` 收窄，不要 `!x.ok`（本仓 `strictNullChecks: false`，见根 [`CODING_STANDARD.md`](../../../../CODING_STANDARD.md) TypeScript）。
 
 ## 与现有文档
 

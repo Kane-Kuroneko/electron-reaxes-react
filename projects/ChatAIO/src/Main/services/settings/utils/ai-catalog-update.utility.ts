@@ -6,6 +6,7 @@
 
 export const CATALOG_UPDATE_FETCH_TIMEOUT_MS = 20_000;
 
+/** 失败才有 errorCode。调用方必须 `ok === false` 收窄（本仓 strictNullChecks:false，`!ok` 无效）。 */
 type IngestOk = {
 	ok: true;
 	catalog: AICatalog.Catalog;
@@ -237,7 +238,7 @@ export const ingestAndEvaluateCatalogUpdate = ( input:{
 		input.publicKeyPem ,
 		input.validateOptions ?? { production : true },
 	);
-	if( !ingested.ok ) {
+	if( ingested.ok === false ) { /* 必须 === false，见 CODING_STANDARD.md 判别联合 */
 		return {
 			status : 'error' ,
 			bundledRevision ,

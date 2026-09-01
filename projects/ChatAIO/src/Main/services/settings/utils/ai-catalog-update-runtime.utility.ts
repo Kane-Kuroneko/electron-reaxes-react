@@ -184,7 +184,7 @@ export const checkAiCatalogUpdate = ():Promise<AICatalog.CatalogUpdateCheckResul
 		const aiConfig = getAIConfigService();
 		const checkId = aiConfig.forRuntimeBeginCatalogCheck();
 		const pair = await loadRemoteCatalogBytes();
-		if( !pair.ok ) {
+		if( pair.ok === false ) { /* 必须 === false，见 CODING_STANDARD.md 判别联合 */
 			return emptyCheckError( pair.errorCode , aiConfig );
 		}
 		return aiConfig.forRuntimeCheckSignedCatalog( pair.json , pair.sigText , readBundledPublicKeyPem() , checkId );
