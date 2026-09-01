@@ -247,6 +247,10 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		const [resetModalVisible , setResetModalVisible] = React.useState( false );
 		const tableHostRef = React.useRef<HTMLDivElement>( null );
 		const tableScrollY = useHostScrollY( tableHostRef );
+		/* 量高在 useLayoutEffect 里 setState，会在 paint 前同步再渲一次。
+		 * 若这里直接按 scrollY 挂 Table，重表会挤进同一次 flush，切页仍卡。
+		 * 用 effect 把挂表推到首帧工具栏画完之后。见 docs/features/settings-menu-switch-perf.md */
+		const [ tableReady , setTableReady ] = React.useState( false );
 		const markedMountRef = React.useRef( false );
 		if( !markedMountRef.current ) {
 			markedMountRef.current = true;
@@ -261,8 +265,9 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			}
 			noteSettingsMenu( SettingsMenuPerfPhase.PanelLayout , {
 				scrollY : tableScrollY ?? null ,
+				tableReady ,
 			} );
-			if( tableScrollY == null ) {
+			if( tableScrollY == null || !tableReady ) {
 				return;
 			}
 			noteSettingsMenu( SettingsMenuPerfPhase.ScrollY , { scrollY : tableScrollY } );
@@ -272,7 +277,14 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 					endSettingsMenuTrace( { source : 'panel' } );
 				} );
 			} );
-		} , [ tableScrollY ] );
+		} , [ tableScrollY , tableReady ] );
+
+		React.useEffect( () => {
+			if( tableScrollY == null || tableReady ) {
+				return;
+			}
+			setTableReady( true );
+		} , [ tableScrollY , tableReady ] );
 
 		React.useEffect( () => {
 			if( !settingsMenuTraceAwaitingPanel() ) {
@@ -381,7 +393,8 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 						className="settings-table-host"
 						ref={ tableHostRef }
 					>
-						<Table
+						{ /* 先画出工具栏，下一帧再挂 Table，避免 120ms+ 长任务挡住切页。 */ }
+						{ tableReady && tableScrollY != null ? <Table
 							key={ `ais-table-${ pendingDeleteAIIds.join(',') || 'none' }` }
 							className="manage-ais-table"
 							style={ { width: '100%' } }
@@ -406,7 +419,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 								if( isModifiedAI( record.id ) ) return 'ai-row--modified';
 								return '';
 							} }
-						/>
+						/> : null }
 					</div>
 				</SortableContext>
 			</DndContext>
