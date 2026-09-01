@@ -140,6 +140,7 @@ export default {
 	"Refresh" : "새로고침" ,
 	"Failed to fetch changelog" : "변경 로그를 가져오지 못했습니다" ,
 	"Translated by Google" : "Google 번역" ,
+	"Close filter" : "필터 닫기" ,
 	"Search" : "검색" ,
 	"Search AI name" : "AI 이름 검색" ,
 	"Search AI family" : "AI 계열 검색" ,

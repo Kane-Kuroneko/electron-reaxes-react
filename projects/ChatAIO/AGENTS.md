@@ -28,6 +28,7 @@
 - [连点 Ctrl+[/] 动画不跟手](./docs/features/floating-view-rapid-switch-optimization.md)
 - [切后台后再切 AI，SwitchAiBar 不见](./docs/issues/floating-view-missing-after-background.md)
 - [拖拽排序、顺序写盘](./docs/features/ai-list-reorder.md)
+- [Manage AIs 表格展示序 / 筛选](./docs/features/manage-ais-table-ux.md)
 - [中区 Current AI 下拉切换](./docs/features/menubar-current-ai-dropdown.md)
 - [卡片 UX](./docs/features/floating-view-card-ux-optimization.md)、[Swiper 迁移](./docs/features/floating-view-swiper-migration.md)
 - [切换热路径](./docs/features/ai-page-switch-performance-optimization.md)
@@ -52,6 +53,7 @@
 - [Prompt View](./docs/features/prompt-view.md)、[bugfix 与 UX](./docs/features/prompt-view-bugfix-and-ux.md)、[视觉](./docs/features/prompt-view-visual-refresh.md)
 - [Settings 退出丢弃 / 滚动条](./docs/features/settings-exit-discard-and-prompt-scrollbar.md)
 - [Settings 切 Manage AIs 卡顿埋点](./docs/features/settings-menu-switch-perf.md)
+- [Manage AIs 表格展示序 / 筛选](./docs/features/manage-ais-table-ux.md)
 - [外观 / 主题](./docs/architecture/appearance-theme-environment.md)、[i18n](./docs/architecture/i18n.md)
 
 ### 换图标
@@ -81,6 +83,7 @@
 | 文档 | 内容 |
 |------|------|
 | [ai-list-reorder.md](./docs/features/ai-list-reorder.md) | Switch AI / Manage AIs 立即持久化排序 |
+| [manage-ais-table-ux.md](./docs/features/manage-ais-table-ux.md) | Manage AIs 未启用置底、启用槽位拖拽、列筛选进 reaxel、空表不拆筛选浮层 |
 | [menubar-current-ai-dropdown.md](./docs/features/menubar-current-ai-dropdown.md) | 中区 Current AI 块点击下拉切 AI |
 | [ai-catalog-manual-update.md](./docs/features/ai-catalog-manual-update.md) | Settings 手动检查供应商目录（GitHub Release 资产） |
 | [ai-page-switch-performance-optimization.md](./docs/features/ai-page-switch-performance-optimization.md) | 切换热路径 CPU / z-order |

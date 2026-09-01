@@ -54,6 +54,15 @@ export const reaxel_SettingsView = reaxel( () => {
 				startupAIPageLoadMode : checkAs<Startup.AIPageLoadMode>( 'last-used-ai' ) ,
 				/** 待删除 AI ID 列表 — 标记后仅在 Apply/Save 时过滤持久化，UI 中仍可见（可撤销） */
 				pendingDeleteAIIds : checkAs<string[]>( [] ) ,
+				/**
+				 * Manage AIs 表头列筛选。只改展示 dataSource，不 persist、不计 dirty。
+				 * 面板是 reaxper，从本 store 读 value/open；不要用 React Context / 父级 useState 灌值。
+				 * 见 docs/features/manage-ais-table-ux.md
+				 */
+				column_filter : {
+					open : createEmptyManageAIsColumnFilterOpen() ,
+					value : createEmptyManageAIsColumnFilters() ,
+				} ,
 				/** 目录更新预览。checking/applying 是 in-flight 唯一真相。不把瘦目录放进 Data.AIs。见 docs/features/ai-catalog-manual-update.md */
 				catalog_update : {
 					checking : false ,
@@ -393,6 +402,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		} );
 	};
 	
+	/** 只翻转 disabled，不改 `AIs` 下标。表格展示会把未启用行立刻沉底。见 docs/features/manage-ais-table-ux.md */
 	const setAIEnabled = (id:string , enabled:boolean) => {
 		mutate.Data( state => {
 			state.AIs = state.AIs.map( ai => ai.id === id
@@ -432,7 +442,9 @@ export const reaxel_SettingsView = reaxel( () => {
 				if( generation !== _aiOrderPersistGeneration ) {
 					return { success : true };
 				}
-				/* 未 Apply 新建项不能进 reorder-ais；待删除仍已提交，必须带着走。见 docs/features/ai-list-reorder.md */
+				/* 未 Apply 新建项不能进 reorder-ais；待删除仍已提交，必须带着走。
+				 * 此处按 store.Data.AIs（真实序，不是表内启用置顶的展示序）取已提交 id。
+				 * 表内拖拽已在 mutate 时按启用槽位写回。见 docs/features/ai-list-reorder.md 、docs/features/manage-ais-table-ux.md */
 				const orderedIds = committedAIIdsInVisualOrder( store.Data.AIs , _committedAIIds );
 				if( orderedIds.length === 0 ) {
 					return { success : true };
@@ -620,6 +632,31 @@ export const reaxel_SettingsView = reaxel( () => {
 			return store.UIControls.manage_AIs.pendingDeleteAIIds.includes( id );
 		},
 		/**
+		 * 打开某一列筛选面板。点空白不关；多列可同时开。不 persist。
+		 */
+		openManageAIsColumnFilter( key : ManageAIsColumnFilterKey ): void {
+			if( store.UIControls.manage_AIs.column_filter.open[key] ) {
+				return;
+			}
+			setState.UIControls.manage_AIs.column_filter.open( { [key] : true } );
+		},
+		/**
+		 * 输入即筛。只改 UIControls，不写 Data.AIs。
+		 */
+		setManageAIsColumnFilterValue( key : ManageAIsColumnFilterKey , value : string ): void {
+			if( store.UIControls.manage_AIs.column_filter.value[key] === value ) {
+				return;
+			}
+			setState.UIControls.manage_AIs.column_filter.value( { [key] : value } );
+		},
+		/**
+		 * 面板右上 x：关这一列并清空该列条件。
+		 */
+		closeAndClearManageAIsColumnFilter( key : ManageAIsColumnFilterKey ): void {
+			setState.UIControls.manage_AIs.column_filter.open( { [key] : false } );
+			setState.UIControls.manage_AIs.column_filter.value( { [key] : '' } );
+		},
+		/**
 		 * 判断某个 AI 是否已修改但未保存
 		 */
 		isModifiedAI( id: string ): boolean {
@@ -790,6 +827,11 @@ import {
 	shouldLockSettingsChromeForCatalogUpdate,
 } from '#shared/utils/catalog-update-inflight.utility';
 import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
+import {
+	createEmptyManageAIsColumnFilterOpen ,
+	createEmptyManageAIsColumnFilters ,
+	type ManageAIsColumnFilterKey,
+} from '#shared/utils/manage-ais-table.utility';
 import {
 	applyEnabledAIOrder ,
 	committedAIIdsInVisualOrder ,
