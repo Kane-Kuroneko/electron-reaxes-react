@@ -12,9 +12,11 @@ export const isMainRuntimeStarted = () => mainRuntimeStarted;
  * Phase 3  OverlayWarm   — 挪到 menubar visual-ready 之后（initRuntimeViews 内 initFloatingView）
  * Phase 4  ShellChrome   — tray / 生命周期 / rebuildMenu（structure 在 menu-view:ready 时再推）
  * Phase 5  ContentViews  — 等 menubar visual-ready（菜单项已 layout，或超时）后再 init AI / Prompt
+ * Phase 6  SettingsPreload — 启动 AI 页 ready（或超时）后再创建 Settings WCV，不跟 AI loadURL 抢
  *
  * 禁止把 ensureMenubarHostReady / attachMainWindow 排到 initRuntimeViews 之后。
  * 禁止在 menubar 首绘之前批量 preload AI 或 load FloatingView（会与 localhost MainView 抢 GPU/网络）。
+ * 禁止在启动 AI 页 settle 之前 preload SettingsView（docs/features/settings-view-preload.md）。
  * menu-view:ready 只推 structure，不能当 Phase 5 门闩。
  * 冷启动白屏观测：docs/features/menubar-cold-start-monitor.md
  */

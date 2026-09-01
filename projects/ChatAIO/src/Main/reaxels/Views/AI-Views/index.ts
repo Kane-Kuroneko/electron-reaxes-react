@@ -230,6 +230,76 @@ export const reaxel_AIViews = reaxel( () => {
 		} );
 	};
 
+	/**
+	 * 等当前已创建的启动 AI WCV 都 `ready`（did-stop-loading / did-fail-load）。
+	 * 不能把「尚未 loadURL、isLoading=false」当成结束，否则 Settings preload 会跟 AI 抢加载。
+	 * 超时仍 resolve(false)，调用方继续 preload Settings。
+	 * 设计：docs/features/settings-view-preload.md
+	 */
+	const waitUntilStartupAIViewsSettled = ( options:{ timeoutMs?:number } = {} ) => {
+		const timeoutMs = options.timeoutMs ?? 15000;
+		const views = store.AIViews.slice();
+		if( views.length === 0 ) {
+			return Promise.resolve( true );
+		}
+
+		const isViewSettled = ( runtimeView:RuntimeAIView ) => {
+			if( runtimeView.ready ) {
+				return true;
+			}
+			return isWebContentsViewDead( runtimeView.view );
+		};
+
+		if( views.every( isViewSettled ) ) {
+			return Promise.resolve( true );
+		}
+
+		return new Promise<boolean>( resolve => {
+			let settled = false;
+			let timer : ReturnType<typeof setTimeout>;
+			const finish = ( ok:boolean ) => {
+				if( settled ) {
+					return;
+				}
+				settled = true;
+				clearTimeout( timer );
+				views.forEach( runtimeView => {
+					const webContents = getAliveWebContents( runtimeView.view );
+					if( !webContents ) {
+						return;
+					}
+					webContents.removeListener( 'did-stop-loading' , onMaybeDone );
+					webContents.removeListener( 'did-fail-load' , onMaybeDone );
+				} );
+				resolve( ok );
+			};
+			const onMaybeDone = () => {
+				if( views.every( isViewSettled ) ) {
+					finish( true );
+				}
+			};
+			timer = setTimeout( () => {
+				console.warn(
+					`[AIViews] waitUntilStartupAIViewsSettled timed out after ${ timeoutMs }ms;`
+					+ ' continuing SettingsView preload',
+				);
+				finish( false );
+			} , timeoutMs );
+			views.forEach( runtimeView => {
+				if( isViewSettled( runtimeView ) ) {
+					return;
+				}
+				const webContents = getAliveWebContents( runtimeView.view );
+				if( !webContents ) {
+					return;
+				}
+				webContents.on( 'did-stop-loading' , onMaybeDone );
+				webContents.on( 'did-fail-load' , onMaybeDone );
+			} );
+			onMaybeDone();
+		} );
+	};
+
 	const rtn = {
 		get currentAIView() {
 			return store.AIViews.find( item => item.id === Reaxel_View.store.currentAIViewKey ) || null;
@@ -242,7 +312,8 @@ export const reaxel_AIViews = reaxel( () => {
 		getRuntimeAIViewsInSettingsOrder ,
 		canCloseCurrentAIView ,
 		closeCurrentAIViewAndShowNext ,
-		applyVisibility,
+		applyVisibility ,
+		waitUntilStartupAIViewsSettled,
 	};
 
 	const createRuntimeAIView = (

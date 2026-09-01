@@ -45,6 +45,7 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	new ViewCrashReporter(view, viewName);
 	
 	if(viewOptions.type==='Settings-View'){
+		/* loadURL 在创建时就开始。冷启动调用方须等 AI settle 后再 init，见 settings-view-preload.md */
 		useSettingsView(view, options);
 	}else if(viewOptions.type==='AI-View'){
 		useAIView(view, viewOptions);
