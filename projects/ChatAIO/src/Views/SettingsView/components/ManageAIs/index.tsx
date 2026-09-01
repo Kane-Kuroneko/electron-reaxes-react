@@ -363,6 +363,8 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 							key={ `ais-table-${ pendingDeleteAIIds.join(',') || 'none' }` }
 							className="manage-ais-table"
 							style={ { width: '100%' } }
+							/* 空表仍 fixed，配合 less 常显滚动条槽，避免 colgroup 被 noData 丢掉后整表变宽。 */
+							tableLayout="fixed"
 							components={ {
 								body : {
 									row : SortableRow,

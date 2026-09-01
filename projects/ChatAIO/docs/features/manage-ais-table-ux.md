@@ -52,6 +52,15 @@ antd Table `dataSource=[]` 时：
 
 空表 placeholder 没有 `data-row-key`，不能走 `@dnd-kit/sortable`（`SortableRow` 对此走普通 `<tr>`）。
 
+### 空表表头宽度为什么会跳
+
+`scroll.y` 下 rc-table（本仓 `7.54.0`，antd 5.29.3 仍如此）两处一起抖：
+
+1. `Body` 有数据时 `overflow-y: scroll`（常占 ~15px 槽），空数据改成 `auto`，槽消失，整表变宽。
+2. `FixedHolder` `noData` 时 `isColGroupEmpty`，表头丢掉算宽 `<colgroup>`，scrollbar 占位 `th` 被浏览器当普通列均分，列宽再跳一次。[antd#56713](https://github.com/ant-design/ant-design/issues/56713)、[antd#57365](https://github.com/ant-design/ant-design/issues/57365)。
+
+社区常见修法：`tableLayout: fixed`、body 常显纵向滚动条 / `scrollbar-gutter: stable`、空表把 scrollbar `th` 钉在 15px（不要 `width: 0`，那会往反方向跳）。只作用在 `.manage-ais-table`，不改其它 Settings 表。
+
 ## 关键文件
 
 | 路径 | 职责 |

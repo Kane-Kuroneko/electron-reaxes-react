@@ -266,6 +266,28 @@ html, body {
 		white-space: nowrap;
 		padding-inline: 8px;
 	}
+
+	/*
+	 * 空表表头宽度：rc-table 有数据时 body overflow-y:scroll，空表改 auto，
+	 * 再叠加 FixedHolder noData 丢掉算宽 colgroup，滚动条槽 ~15px 和弹性列一起跳。
+	 * 只压这一张表。见 docs/features/manage-ais-table-ux.md
+	 * https://github.com/ant-design/ant-design/issues/56713
+	 */
+	.ant-table-body {
+		overflow-y: scroll !important;
+		scrollbar-gutter: stable;
+	}
+
+	.ant-table-empty {
+		th.ant-table-cell-scrollbar {
+			box-sizing: border-box;
+			width: 15px !important;
+			min-width: 15px !important;
+			max-width: 15px !important;
+			padding: 0 !important;
+			overflow: hidden;
+		}
+	}
 }
 
 // ManageAIs Table 未保存状态行高亮
