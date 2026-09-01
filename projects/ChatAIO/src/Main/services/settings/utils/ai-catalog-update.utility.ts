@@ -35,6 +35,22 @@ type EvaluatedUpdate = Pick<AICatalog.CatalogUpdateCheckResult , 'status' | 'bun
 };
 
 /**
+ * 读 bundled 公钥。缺文件（ENOENT）或空 PEM 返回空串，交给 ingest → verify-failed。
+ * 不要把缺钥抛给 IPC catch 变成 network。其它 fs 错误仍抛。
+ */
+export const readPublicKeyPemSafe = ( readPem:() => string ):string => {
+	try {
+		const pem = readPem();
+		return pem && pem.trim() ? pem : '';
+	} catch ( error ) {
+		if( error && typeof error === 'object' && ( error as NodeJS.ErrnoException ).code === 'ENOENT' ) {
+			return '';
+		}
+		throw error;
+	}
+};
+
+/**
  * 把远程 JSON 原文 + sidecar 签收成可 merge 的目录。
  * 先验签再 parse；schema 比 App 高则 schema-too-new。
  */
@@ -96,20 +112,52 @@ export const fetchSignedCatalogPair = async(
 			json ,
 			sigText : sig.toString( 'utf-8' ),
 		};
-	} catch {
+	} catch ( error ) {
+		if( isCatalogBytesTooLarge( error ) ) {
+			return { ok : false , errorCode : 'invalid-catalog' };
+		}
 		return { ok : false , errorCode : 'network' };
 	}
 };
 
-/** Modal / IPC 要页 diff + 地区变化，不把 nextAis 写盘计划送给 renderer。 */
+export const CATALOG_BYTES_TOO_LARGE = 'CATALOG_BYTES_TOO_LARGE';
+
+export const isCatalogBytesTooLarge = ( error:unknown ):boolean => {
+	return Boolean(
+		error
+		&& typeof error === 'object'
+		&& ( error as { code?:string } ).code === CATALOG_BYTES_TOO_LARGE,
+	);
+};
+
+export const catalogBytesTooLargeError = ():Error & { code:string } => {
+	const error = new Error( CATALOG_BYTES_TOO_LARGE ) as Error & { code:string };
+	error.code = CATALOG_BYTES_TOO_LARGE;
+	return error;
+};
+
+const toPagePreview = ( ai:Pick<AI.AIItem , 'id' | 'label' | 'url'> ):AICatalog.CatalogPagePreview => {
+	return {
+		id : ai.id ,
+		label : ai.label ,
+		url : ai.url,
+	};
+};
+
+/** Modal / IPC 要页 diff + 地区变化，不把 nextAis 写盘计划送给 renderer。added/updated 只带 id/label/url。 */
 export const toPublicCatalogDiff = (
 	preview:AICatalog.MergePreview ,
 	baseVendors:AICatalog.Vendor[] ,
 	theirsVendors:AICatalog.Vendor[],
 ):AICatalog.CatalogUpdateDiff => {
 	return {
-		added : preview.added ,
-		updated : preview.updated ,
+		added : preview.added.map( toPagePreview ) ,
+		updated : preview.updated.map( row => ( {
+			id : row.before.id ,
+			before : toPagePreview( row.before ) ,
+			after : toPagePreview( row.after ) ,
+			fields : row.fields,
+		} ) ) ,
 		skipped : preview.skipped ,
 		catalogDropped : preview.catalogDropped ,
 		availability : diffVendorAvailability( baseVendors , theirsVendors ),
@@ -229,6 +277,7 @@ type CatalogUpdateApplyInput = {
  * 一次检查/确认会话。pending 在实例上，不是模块全局。
  * 失败的 check 不清上一份成功 pending；apply 先 peek，调用方写盘成功后再 commit。
  * 重叠的 check 用序号：只有最新一次能改 pending。
+ * 主进程队列串行；UI 连点锁在 catalog_update store，busy 时不要调 IPC。
  */
 export const createCatalogUpdateCycle = () => {
 	let seq = 0;
@@ -302,6 +351,10 @@ export const createCatalogUpdateCycle = () => {
 			if( pending && pending.catalog.revision === revision ) {
 				pending = null;
 			}
+		} ,
+		/** 用户取消预览：丢掉这次 check 的 pending，必须再 check 才能 apply。 */
+		discard():void {
+			pending = null;
 		} ,
 		/** 测试用：当前 pending 的 revision。 */
 		pendingRevision():number | null {

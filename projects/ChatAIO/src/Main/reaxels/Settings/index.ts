@@ -36,10 +36,44 @@ export const reaxel_Settings = reaxel( () => {
 
 	const syncRuntimeViews = async() => {
 		const settings = getCurrentSettings();
-		await reaxel_AIViews().syncAIViewsWithConfig( settings );
-		reaxel_Menu().rebuildMenu();
-		syncTrayState( settings.system.show_tray );
-		updateTrayMenu();
+		const errors:unknown[] = [];
+		try {
+			await reaxel_AIViews().syncAIViewsWithConfig( settings );
+		} catch ( error ) {
+			console.error( '[Settings] syncAIViewsWithConfig failed:' , error );
+			errors.push( error );
+		}
+		try {
+			reaxel_Menu().rebuildMenu();
+		} catch ( error ) {
+			console.error( '[Settings] rebuildMenu failed:' , error );
+			errors.push( error );
+		}
+		try {
+			syncTrayState( settings.system.show_tray );
+			updateTrayMenu();
+		} catch ( error ) {
+			console.error( '[Settings] tray sync failed:' , error );
+			errors.push( error );
+		}
+		if( errors.length > 0 ) {
+			throw errors[0];
+		}
+	};
+
+	const syncRuntimeViewsSafe = async():Promise<boolean> => {
+		try {
+			await syncRuntimeViews();
+			return true;
+		} catch ( error ) {
+			console.error( '[Settings] syncRuntimeViews failed after catalog apply:' , error );
+			return false;
+		}
+	};
+
+	const relaunchApp = () => {
+		app.relaunch();
+		app.exit( 0 );
 	};
 	
 	const applySettings = async( settings:Settings ):Promise<SettingsApplyResult> => {
@@ -261,6 +295,7 @@ export const reaxel_Settings = reaxel( () => {
 
 	/**
 	 * 检查供应商目录更新。只读：拉 Release 资产、验签、算 preview，不写盘。
+	 * IPC 只走 `checkAiCatalogUpdate`（队列），不要直调 service 的 cycle 方法。
 	 * 见 docs/features/ai-catalog-manual-update.md
 	 */
 	useIpcRpc( 'check-ai-catalog-update' ).handle( async() => {
@@ -280,6 +315,8 @@ export const reaxel_Settings = reaxel( () => {
 
 	/**
 	 * 确认合并：pending revision 必须对得上这次 check。写 cache + user-ais 后 sync views。
+	 * IPC 只走 `applyAiCatalogUpdate`（队列），不要直调 service 的 cycle 方法。
+	 * 写盘已成功而 sync 仍失败：返回 restartRequired，UI 提示后强制重启。
 	 */
 	useIpcRpc( 'apply-ai-catalog-update' ).handle( async( _ , revision ) => {
 		try {
@@ -287,9 +324,10 @@ export const reaxel_Settings = reaxel( () => {
 			if( !result.success ) {
 				return result;
 			}
-			await syncRuntimeViews();
+			const viewsSynced = await syncRuntimeViewsSafe();
 			return {
 				success : true ,
+				restartRequired : !viewsSynced ,
 				settings : getCurrentSettings(),
 			};
 		} catch ( error ) {
@@ -299,6 +337,23 @@ export const reaxel_Settings = reaxel( () => {
 				error : error?.message || String( error ),
 			};
 		}
+	} );
+
+	useIpcRpc( 'discard-ai-catalog-update' ).handle( async() => {
+		try {
+			await discardAiCatalogUpdate();
+			return { success : true };
+		} catch ( error ) {
+			console.error( '[Settings] Failed to discard AI catalog update:' , error );
+			return { success : false };
+		}
+	} );
+
+	useIpcRpc( 'relaunch-app' ).handle( async() => {
+		setTimeout( () => {
+			relaunchApp();
+		} , 0 );
+		return { success : true };
 	} );
 	
 	useIpcRpc( 'get-preload-ai-families' ).handle( async() => {
@@ -431,7 +486,8 @@ import { testProxyConnectivity } from '#main/services/settings/proxy-service';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';
 import {
 	applyAiCatalogUpdate ,
-	checkAiCatalogUpdate,
+	checkAiCatalogUpdate ,
+	discardAiCatalogUpdate,
 } from '#main/services/settings/utils/ai-catalog-update-runtime.utility';
 import { syncTrayState , updateTrayMenu } from '#main/services/tray';
 import { requestDevCleanStart } from '#main/services/dev/clean-start';
@@ -441,7 +497,7 @@ import {
 	reaxel ,
 	createReaxable,
 } from 'reaxes';
-import { shell } from 'electron';
+import { app , shell } from 'electron';
 import type {
 	Settings ,
 	SettingsApplyResult ,

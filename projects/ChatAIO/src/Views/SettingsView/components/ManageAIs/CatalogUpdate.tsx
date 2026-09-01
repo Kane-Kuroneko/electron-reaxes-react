@@ -13,6 +13,7 @@ export const CatalogUpdateControls = reaxper( () => {
 	} = reaxel_SettingsView();
 	const catalogUpdate = reaxel_SettingsView.store.UIControls.manage_AIs.catalog_update;
 	const preview = catalogUpdate.preview;
+	// 仅给 Modal 关动画留最后一帧内容，不是 in-flight 锁。竞态看 catalog_update store。
 	const previewRef = useRef( preview );
 	if( preview != null ) {
 		previewRef.current = preview;
@@ -43,6 +44,9 @@ export const CatalogUpdateControls = reaxper( () => {
 		try {
 			const result = await checkAiCatalog();
 			if( 'blocked' in result ) {
+				if( result.blocked === 'in-flight' ) {
+					return;
+				}
 				message.warning( i18n( 'Save or discard Settings changes before checking the AI catalog' ) );
 				return;
 			}
@@ -63,7 +67,10 @@ export const CatalogUpdateControls = reaxper( () => {
 		try {
 			const result = await applyAiCatalog();
 			if( 'blocked' in result ) {
-				message.warning( i18n( 'Save or discard Settings changes before checking the AI catalog' ) );
+				if( result.blocked === 'in-flight' ) {
+					return;
+				}
+				message.warning( i18n( 'Save or discard Settings changes before applying the AI catalog update' ) );
 				return;
 			}
 			if( !result.success ) {
@@ -72,6 +79,19 @@ export const CatalogUpdateControls = reaxper( () => {
 						? catalogErrorMessage( result.errorCode )
 						: i18n( 'Failed to apply AI catalog' ),
 				);
+				return;
+			}
+			if( result.restartRequired ) {
+				Modal.warning( {
+					title : <I18n>Catalog saved. Restart required</I18n> ,
+					content : <I18n>The catalog was saved. The app must restart to apply it to AI pages.</I18n> ,
+					okText : i18n( 'Restart now' ) ,
+					keyboard : false ,
+					maskClosable : false ,
+					onOk : () => {
+						void relaunchApp();
+					},
+				} );
 				return;
 			}
 			message.success( i18n( 'Update applied' ) );
@@ -118,13 +138,14 @@ export const CatalogUpdateControls = reaxper( () => {
 		<Modal
 			open={ preview != null }
 			title={ <I18n>There's an update to the AI list</I18n> }
+			getContainer={ () => document.querySelector( '.settings-root' ) as HTMLElement || document.body }
+			wrapClassName="catalog-update-decision-modal"
+			zIndex={ 1200 }
 			onCancel={ catalogUpdate.applying ? undefined : dismissCatalogUpdate }
 			afterClose={ () => {
 				previewRef.current = null;
 			} }
-			onOk={ () => {
-				void onApply();
-			} }
+			onOk={ () => onApply() }
 			okText={ i18n( 'Apply update' ) }
 			confirmLoading={ catalogUpdate.applying }
 			maskClosable={ !catalogUpdate.applying }
@@ -143,7 +164,7 @@ export const CatalogUpdateControls = reaxper( () => {
 				</DiffSection> : null }
 				{ diff != null && diff.updated.length > 0 ? <DiffSection title={ i18n( 'Name or website will change' ) }>
 					{ diff.updated.map( row => (
-						<li key={ row.before.id }>
+						<li key={ row.id }>
 							{ row.after.label }
 							{ row.fields.includes( 'url' ) ? ` · ${ row.before.url } → ${ row.after.url }` : '' }
 							{ row.fields.includes( 'label' ) && row.before.label !== row.after.label
@@ -235,6 +256,7 @@ const formatCountryList = ( codes:string[] , locale:string ):string => {
 
 import { reaxel_I18n } from "#SettingsView/reaxels/i18n";
 import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
+import { relaunchApp } from '#SettingsView/services/Settings';
 import type { AICatalog } from "#src/Types/AICatalog";
 import type { AI } from "#src/Types/SettingsTypes/AI";
 import { LoadingOutlined } from '@ant-design/icons';

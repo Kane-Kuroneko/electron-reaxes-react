@@ -54,6 +54,8 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	/* 供应商目录手动更新：只读 check 不写盘；apply 的 revision 必须对得上这次 check。见 docs/features/ai-catalog-manual-update.md */
 	'check-ai-catalog-update': IpcStructure.IpcRpc<[void], AICatalog.CatalogUpdateCheckResult>;
 	'apply-ai-catalog-update': IpcStructure.IpcRpc<[revision: number], AICatalog.CatalogUpdateApplyResult & { settings?: Settings }>;
+	'discard-ai-catalog-update': IpcStructure.IpcRpc<[void], { success: boolean }>;
+	'relaunch-app': IpcStructure.IpcRpc<[void], { success: boolean }>;
 	'get-preload-ai-families': IpcStructure.IpcRpc<[void], string[]>; /* 返回预加载 AI 的 ID 列表而非 family 列表 */
 	'get-appearance-environment': IpcStructure.IpcRpc<[void], AppearanceEnvironment>;
 	'set-startup-ai-page-load-mode': IpcStructure.IpcRpc<[mode: Startup.AIPageLoadMode], SettingsApplyResult>;

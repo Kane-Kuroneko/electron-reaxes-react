@@ -144,6 +144,12 @@ describe( '三路 merge：目录改官方 url；用户改过的不覆盖；用�
 		assert.ok( preview.catalogDropped.some( row => row.id === GROK_ID ) );
 	} );
 
+	it( '目录删了某供应商，用户早就从列表删过，catalogDropped 不列这一行' , () => {
+		const preview = previewCatalogMerge( [ chatgpt , grok ] , [ chatgpt ] , [ chatgptPage() ] , [ GROK_ID ] );
+		assert.equal( idsOf( preview.nextAis ) , CHATGPT_ID );
+		assert.equal( preview.catalogDropped.some( row => row.id === GROK_ID ) , false );
+	} );
+
 	it( 'ours 没改过的官方 url 可以跟 theirs' , () => {
 		const theirs = [ vendor( { ...chatgpt , url : 'https://chatgpt.com/v2' } ) ];
 		const next = applyCatalogMerge( [ chatgpt ] , theirs , [ chatgptPage() ] , [] );

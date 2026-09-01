@@ -16,6 +16,8 @@ export const App = reaxper( () => {
 	);
 	
 	const { applySettings , exitSettings , exitWithoutSave , reloadSettings , isDirty } = reaxel_SettingsView();
+	const catalogUpdate = reaxel_SettingsView.store.UIControls.manage_AIs.catalog_update;
+	const catalogChromeLocked = shouldLockSettingsChromeForCatalogUpdate( catalogUpdate );
 
 	/*
 	 * 切过的页留在树上藏起来，不要每次卸掉重挂。
@@ -39,7 +41,7 @@ export const App = reaxper( () => {
 	>
 		<div className="settings-root">
 			<div className="settings-body">
-				<div className="settings-sider">
+				<div className={ catalogChromeLocked ? 'settings-sider settings-sider--locked' : 'settings-sider' }>
 					<Menu
 						items={ store.menus.map( it => {
 							return {
@@ -49,6 +51,9 @@ export const App = reaxper( () => {
 							};
 						} ) }
 						onSelect={ ( { key } ) => {
+							if( catalogChromeLocked ) {
+								return;
+							}
 							const next = key as keyof typeof SETTINGS_MENU_PANELS;
 							if( next in SETTINGS_MENU_PANELS ) {
 								markMenuSelect( {
@@ -96,7 +101,7 @@ export const App = reaxper( () => {
 				><I18n>Clean Start</I18n></LongPressButton> }
 				<Button
 					type="dashed"
-					disabled={ !dirty }
+					disabled={ !dirty || catalogChromeLocked }
 					onClick={ async() => {
 						await reloadSettings();
 					} }
@@ -104,13 +109,14 @@ export const App = reaxper( () => {
 
 				<Button
 					danger
+					disabled={ catalogChromeLocked }
 					onClick={ async() => {
 						await exitWithoutSave();
 					} }
 				><I18n>Exit Without Save</I18n></Button>
 
 				<Button
-					disabled={ !dirty }
+					disabled={ !dirty || catalogChromeLocked }
 					onClick={ async() => {
 						const result = await applySettings();
 						showApplyResult( result );
@@ -119,7 +125,7 @@ export const App = reaxper( () => {
 
 				<Button
 					type="primary"
-					disabled={ !dirty }
+					disabled={ !dirty || catalogChromeLocked }
 					onClick={ async() => {
 						const result = await applySettings();
 						showApplyResult( result );
@@ -211,6 +217,7 @@ import {
 	SETTINGS_MODAL_CONFIG ,
 } from '#SettingsView/layout/constants';
 import { useSettingsMenuPerf } from '#SettingsView/layout/use-settings-menu-perf';
+import { shouldLockSettingsChromeForCatalogUpdate } from '#shared/utils/catalog-update-inflight.utility';
 import { devCleanStart } from '#SettingsView/services/Settings';
 import { resolveThemePreference } from '#shared/appearance';
 import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";

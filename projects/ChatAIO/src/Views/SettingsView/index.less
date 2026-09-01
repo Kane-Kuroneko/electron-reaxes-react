@@ -48,6 +48,7 @@ html, body {
 }
 
 .settings-root {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
@@ -71,6 +72,11 @@ html, body {
 	.ant-menu {
 		border-inline-end: none !important;
 		user-select: none;
+	}
+
+	&.settings-sider--locked {
+		pointer-events: none;
+		opacity: 0.55;
 	}
 }
 
@@ -222,6 +228,11 @@ html, body {
 	&[data-busy] &__text {
 		opacity: 0;
 	}
+}
+
+/* 目录预览盖住整个 Settings（侧栏+页脚），未决前不能切 tab */
+.catalog-update-decision-modal.ant-modal-wrap {
+	position: absolute;
 }
 
 .manage-ais-table {

@@ -166,6 +166,20 @@ describe( '拉 JSON+sig' , () => {
 		}
 	} );
 
+	it( '流式读超限抛 CATALOG_BYTES_TOO_LARGE → invalid-catalog，不是 network' , async() => {
+		const result = await fetchSignedCatalogPair(
+			JSON_URL ,
+			SIG_URL ,
+			async() => {
+				throw catalogBytesTooLargeError();
+			},
+		);
+		assert.equal( result.ok , false );
+		if( !result.ok ) {
+			assert.equal( result.errorCode , 'invalid-catalog' );
+		}
+	} );
+
 	it( '白名单 URL 能拿到原文，供后续验签' , async() => {
 		const remote = catalog( [ chatgpt , grok ] , 3 );
 		const files = signedFiles( remote );
@@ -189,6 +203,9 @@ describe( '手动检查目录更新' , () => {
 		assert.equal( result.remoteRevision , 3 );
 		assert.equal( result.diff?.added.length , 1 );
 		assert.equal( result.diff?.added[0].id , GROK_ID );
+		assert.equal( result.diff?.added[0].label , 'Grok' );
+		assert.ok( result.diff );
+		assert.equal( 'proxy_mode' in result.diff.added[0] , false );
 		assert.equal( cycle.pendingRevision() , 3 );
 	} );
 
@@ -361,6 +378,57 @@ describe( '手动检查目录更新' , () => {
 		assert.equal( result.diff?.updated.length , 0 );
 		assert.equal( result.diff?.availability.length , 0 );
 	} );
+
+	it( '空公钥 → verify-failed，不是 network' , () => {
+		const cycle = createCatalogUpdateCycle();
+		const { json , sigText } = signCatalog( catalog( [ chatgpt , grok ] , 3 ) );
+		const result = cycle.checkFromBytes( {
+			bundled ,
+			cache : null ,
+			ours : [ chatgptPage() ] ,
+			deletedIds : [] ,
+			publicKeyPem : '' ,
+			json ,
+			sigText,
+		} );
+		assert.equal( result.status , 'error' );
+		assert.equal( result.errorCode , 'verify-failed' );
+	} );
+
+	it( 'ENOENT 读公钥 → 空串，ingest 后是 verify-failed' , () => {
+		const pem = readPublicKeyPemSafe( () => {
+			const error = new Error( 'ENOENT: no such file' ) as NodeJS.ErrnoException;
+			error.code = 'ENOENT';
+			throw error;
+		} );
+		assert.equal( pem , '' );
+		const cycle = createCatalogUpdateCycle();
+		const { json , sigText } = signCatalog( catalog( [ chatgpt , grok ] , 3 ) );
+		const result = cycle.checkFromBytes( {
+			bundled ,
+			cache : null ,
+			ours : [ chatgptPage() ] ,
+			deletedIds : [] ,
+			publicKeyPem : pem ,
+			json ,
+			sigText,
+		} );
+		assert.equal( result.status , 'error' );
+		assert.equal( result.errorCode , 'verify-failed' );
+	} );
+
+	it( '空白 PEM 读成空串' , () => {
+		assert.equal( readPublicKeyPemSafe( () => '  \n' ) , '' );
+	} );
+
+	it( '非 ENOENT 的读钥错误仍抛，不当成缺钥' , () => {
+		const denied = Object.assign( new Error( 'EACCES' ) , { code : 'EACCES' } ) as NodeJS.ErrnoException;
+		assert.throws( () => {
+			readPublicKeyPemSafe( () => {
+				throw denied;
+			} );
+		} , { code : 'EACCES' } );
+	} );
 } );
 
 describe( '确认合并' , () => {
@@ -405,6 +473,52 @@ describe( '确认合并' , () => {
 		assert.equal( cycle.pendingRevision() , null );
 	} );
 
+	it( 'discard 清 pending，之后 apply 同一 revision → no-pending' , () => {
+		const cycle = createCatalogUpdateCycle();
+		const ours = [ chatgptPage() ];
+		checkFromSigned( cycle , catalog( [ chatgpt , grok ] , 3 ) , ours );
+		assert.equal( cycle.pendingRevision() , 3 );
+		cycle.discard();
+		assert.equal( cycle.pendingRevision() , null );
+		const afterDiscard = cycle.previewApply( {
+			bundled ,
+			cache : null ,
+			ours ,
+			deletedIds : [] ,
+			expectedRevision : 3,
+		} );
+		assert.equal( afterDiscard.ok , false );
+		if( !afterDiscard.ok ) {
+			assert.equal( afterDiscard.errorCode , 'no-pending' );
+		}
+	} );
+
+	it( 'commit 后再 apply 同一 revision → no-pending（主进程队列会走到这一步；UI 应在 store busy 时根本不发第二次 IPC）' , () => {
+		const cycle = createCatalogUpdateCycle();
+		const ours = [ chatgptPage() ];
+		checkFromSigned( cycle , catalog( [ chatgpt , grok ] , 3 ) , ours );
+		const first = cycle.previewApply( {
+			bundled ,
+			cache : null ,
+			ours ,
+			deletedIds : [] ,
+			expectedRevision : 3,
+		} );
+		assert.equal( first.ok , true );
+		cycle.commit( 3 );
+		const second = cycle.previewApply( {
+			bundled ,
+			cache : null ,
+			ours ,
+			deletedIds : [] ,
+			expectedRevision : 3,
+		} );
+		assert.equal( second.ok , false );
+		if( !second.ok ) {
+			assert.equal( second.errorCode , 'no-pending' );
+		}
+	} );
+
 	it( '用户改过的官方 URL 不被覆盖；自加的同 family 页不动；deleted 不复活' , () => {
 		const cycle = createCatalogUpdateCycle();
 		const ours = [
@@ -445,14 +559,47 @@ describe( '确认合并' , () => {
 	} );
 } );
 
+describe( 'catalog_update in-flight（UI 层应在 store busy 时不调用 IPC）' , () => {
+	it( 'checking 或 applying 任一为 true 则 busy；都 false 才放行' , () => {
+		assert.equal( isCatalogUpdateInFlight( { checking : true , applying : false } ) , true );
+		assert.equal( isCatalogUpdateInFlight( { checking : false , applying : true } ) , true );
+		assert.equal( isCatalogUpdateInFlight( { checking : true , applying : true } ) , true );
+		assert.equal( isCatalogUpdateInFlight( { checking : false , applying : false } ) , false );
+	} );
+
+	it( '检查中或预览未关闭时锁住 Settings 侧栏和页脚' , () => {
+		assert.equal( shouldLockSettingsChromeForCatalogUpdate( {
+			checking : true ,
+			applying : false ,
+			preview : null,
+		} ) , true );
+		assert.equal( shouldLockSettingsChromeForCatalogUpdate( {
+			checking : false ,
+			applying : false ,
+			preview : { status : 'available' },
+		} ) , true );
+		assert.equal( shouldLockSettingsChromeForCatalogUpdate( {
+			checking : false ,
+			applying : false ,
+			preview : null,
+		} ) , false );
+	} );
+} );
+
 import assert from 'node:assert/strict';
 import { generateKeyPairSync , sign } from 'node:crypto';
 import { describe , it } from 'node:test';
 import { composeEffectiveAIs } from '#main/services/settings/utils/ai-catalog-merge.utility';
 import {
+	catalogBytesTooLargeError ,
 	createCatalogUpdateCycle ,
-	fetchSignedCatalogPair,
+	fetchSignedCatalogPair ,
+	readPublicKeyPemSafe,
 } from '#main/services/settings/utils/ai-catalog-update.utility';
+import {
+	isCatalogUpdateInFlight ,
+	shouldLockSettingsChromeForCatalogUpdate,
+} from '#shared/utils/catalog-update-inflight.utility';
 import { CATALOG_MAX_BYTES } from '#main/services/settings/utils/ai-catalog-validate.utility';
 import type { AICatalog } from '#src/Types/AICatalog';
 import type { AI } from '#src/Types/SettingsTypes/AI';

@@ -131,8 +131,13 @@ export const previewCatalogMerge = (
 		nextAis.push( mapped );
 	}
 
+	/* 只提示用户本地还在的页。deletedIds 里早已没有的官方行不要出现在「停止维护」。 */
 	for( const baseVendor of baseVendors ) {
-		if( !theirsById.has( baseVendor.id ) && !droppedIds.has( baseVendor.id ) ) {
+		if(
+			!theirsById.has( baseVendor.id )
+			&& !droppedIds.has( baseVendor.id )
+			&& oursById.has( baseVendor.id )
+		) {
 			catalogDropped.push( { id : baseVendor.id } );
 			droppedIds.add( baseVendor.id );
 		}

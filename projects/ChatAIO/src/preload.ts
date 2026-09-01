@@ -35,6 +35,8 @@ const reorderAIs = useRpc('reorder-ais');
 const resetAIsToDefaults = useRpc('reset-ais-to-defaults');
 const checkAiCatalogUpdate = useRpc('check-ai-catalog-update');
 const applyAiCatalogUpdate = useRpc('apply-ai-catalog-update');
+const discardAiCatalogUpdate = useRpc('discard-ai-catalog-update');
+const relaunchApp = useRpc('relaunch-app');
 const getPreloadAIIds = useRpc('get-preload-ai-families'); /* 返回预加载 AI 的 ID 列表 */
 const getAppearanceEnvironment = useRpc('get-appearance-environment');
 const setStartupAIPageLoadMode = useRpc('set-startup-ai-page-load-mode');
@@ -115,6 +117,8 @@ const api = {
 	resetAIsToDefaults,
 	checkAiCatalogUpdate,
 	applyAiCatalogUpdate,
+	discardAiCatalogUpdate,
+	relaunchApp,
 	getPreloadAIIds,
 	getAppearanceEnvironment,
 	setStartupAIPageLoadMode,

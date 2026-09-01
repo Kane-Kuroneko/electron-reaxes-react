@@ -52,6 +52,14 @@ export const applyAiCatalogUpdate = ( revision:number ) => {
 	return api.applyAiCatalogUpdate( revision );
 }
 
+export const discardAiCatalogUpdate = () => {
+	return api.discardAiCatalogUpdate();
+}
+
+export const relaunchApp = () => {
+	return api.relaunchApp();
+}
+
 export const getPreloadAIIds = () => {
 	return api.getPreloadAIIds();
 }

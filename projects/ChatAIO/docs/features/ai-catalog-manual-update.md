@@ -8,11 +8,15 @@ Settings → Manage AIs 可以检查**供应商目录**更新。远程是 [ChatA
 
 1. **启动不拉网。** 只有用户点「检查 AI 目录更新」才 fetch。
 2. **确认前不写盘。** check 只验签 + preview；cache `catalog-ais.json` 和 user 表只在 apply 之后改。
-3. **pending 同一时刻一份，活在 `AIConfigService` 的 cycle 实例上，不是模块全局。** apply 必须带上这次 check 的 `remoteRevision`；对不上或没有 pending → 拒绝。**失败的 check（网络 / 验签 / schema）不清上一份成功 pending**；`up-to-date` 才清；新的 `available` 覆盖。写盘成功才 `commit`。重叠的 check 串行，只有最新一次能改 pending。
-4. **跨进程仍是实例。** check 下发的 diff 是种子页 `AIItem` 的 preview，不是瘦目录原样。`get-ais` / `get-default-ais` 返回类型不变。
-5. **用户改过的种子页、`url_override`、`custom-` id、用户自加的同 family 第二页，目录更新碰不到。** 目录删行不自动从 user 表删，diff 标「ChatAIO已停止维护，但已存在的本地数据仍会被保留」。
+3. **pending 同一时刻一份，活在 `AIConfigService` 的 cycle 实例上，不是模块全局。** apply 必须带上这次 check 的 `remoteRevision`；对不上或没有 pending → 拒绝。**失败的 check（网络 / 验签 / schema）不清上一份成功 pending**；`up-to-date` 才清；新的 `available` 覆盖。写盘成功才 `commit`。**用户取消预览会 `discard` pending**，必须再检查才能 apply。重叠的 check 串行，只有最新一次能改 pending。`beginCatalogCheck` / `checkSignedCatalog` / `applySignedCatalog` 不是 public API；IPC 只走 `checkAiCatalogUpdate` / `applyAiCatalogUpdate` / `discardAiCatalogUpdate`。
+4. **跨进程仍是实例。** check 下发的 diff 是种子页的瘦预览（id / label / url），不是整份 `AIItem`，也不是瘦目录原样。`get-ais` / `get-default-ais` 返回类型不变。
+5. **用户改过的种子页、`url_override`、`custom-` id、用户自加的同 family 第二页，目录更新碰不到。** 目录删行不自动从 user 表删，diff 标「ChatAIO已停止维护，但已存在的本地数据仍会被保留」。**用户 `deletedIds` 里已经没有的页不出现在 catalogDropped。**
 6. **region 只活在目录上。** 只改 region、页字段没变时仍要 apply（把 cache 写成新 revision），否则覆盖判定不更新。
 7. **Settings 有未 Apply 的改动时先保存或放弃。** 目录合并写的是磁盘上的 user 表，不能盖掉编辑器里没保存的页。
+8. **in-flight 真相在 `reaxel_SettingsView` 的 `catalog_update`（`checking` / `applying`）。** 任一为 true，`checkAiCatalog` / `applyAiCatalog` 同步 return，不发第二次 IPC。check 与 apply 互斥。组件不用 `useRef` / `useState` 做锁。主进程队列仍串行；busy 时若仍发 IPC，第一次写盘成功后第二次会 `no-pending`。**预览未关闭或 in-flight 时锁住 Settings 侧栏和页脚**，必须在 Modal 里应用或取消。
+9. **缺公钥（ENOENT）或空 PEM 是 `verify-failed`，不是 `network`。** 交给 ingest 验签失败，不要把 `readFileSync` 抛错丢给 IPC catch。
+10. **GitHub 下载走 App 全局代理**（与 Settings 里同一套 `resolveGlobalProxy`），边下边限体积；超限是 `invalid-catalog`。维护者 env 本地读盘不走代理。
+11. **写盘成功后 sync AI 页失败：IPC 仍 `success`，带 `restartRequired`。** UI 提示后强制重启。单页 init/update 失败尽量吞掉并打日志，不让一次坏页挡掉整次 sync。
 
 ## 入口与数据流
 
@@ -35,7 +39,7 @@ flowchart TD
   verify -->|更高 revision| preview --> pending --> modal
   modal -->|确认| apply
   apply --> user --> cache --> sync
-  modal -->|取消| keep["丢掉 UI；pending 留到下次成功 check / up-to-date"]
+  modal -->|取消| drop["丢掉 UI 与 main pending"]
 ```
 
 远程 URL（host 钉死，见 `ai-catalog-sign.utility.ts`）：
@@ -48,28 +52,31 @@ dev / 维护者可用 `CHATAIO_CATALOG_REMOTE_JSON` + `CHATAIO_CATALOG_REMOTE_SI
 ## IPC
 
 - `check-ai-catalog-update()` → `{ status, bundledRevision, cacheRevision, remoteRevision?, diff?, errorCode? }`
-- `apply-ai-catalog-update(revision)` → `{ success, errorCode?, settings? }`
+- `apply-ai-catalog-update(revision)` → `{ success, errorCode?, restartRequired?, settings? }`
+- `discard-ai-catalog-update()` → `{ success }`（取消预览）
+- `relaunch-app()` → 写盘后 sync 失败时强制重启
 
-`status`: `up-to-date` | `available` | `error`。`errorCode`: `network` | `forbidden-url` | `verify-failed` | `invalid-catalog` | `schema-too-new` | `no-pending`。
+`status`: `up-to-date` | `available` | `error`。`errorCode`: `network` | `forbidden-url` | `verify-failed` | `invalid-catalog` | `schema-too-new` | `no-pending`。缺公钥 / 空 PEM → `verify-failed`。流式超体积 → `invalid-catalog`。
 
-check 的 `diff` 是 `CatalogUpdateDiff`（added / updated / skipped / catalogDropped / **availability**），**不下发 `nextAis` / 目录正文**。ours 用 `getEffectiveAIs()`（含已 compose 进列表、但还不在 `user-ais.json` 的官方种子页），不要只用 `user.ais`。apply **先写 user 再写 cache**。
+check 的 `diff` 是 `CatalogUpdateDiff`（added / updated / skipped / catalogDropped / **availability**），**不下发 `nextAis` / 目录正文**；added/updated 只有 id / label / url。ours 用 `getEffectiveAIs()`（含已 compose 进列表、但还不在 `user-ais.json` 的官方种子页），不要只用 `user.ais`。apply **先写 user 再写 cache**。写盘成功后 `syncRuntimeViews`；若仍失败则 `restartRequired`，不把已成功的写盘报成 apply 失败。
 
 Modal 面向用户写「列表发生了什么」：新增页、名称/网址、能用的地区（国家名，不是 ISO 码）、将沿用自定义配置的、ChatAIO 已停止维护但仍保留本地数据的。页字段和地区都没变时，明确说经比对没有新增和修改的AI页面；应用更新后仅会添加新AI供应商，不会改变已存在的配置。不要用「保持列表为最新」这种空话。
 
 检查按钮 loading **不用** antd `Button loading`（会往 flex 里插入 spinner 节点，宽度必跳）。文案始终在 DOM 里占位，spinner 用 CSS Grid 叠在同一格（Wes Bos grid-stack / MUI LoadingButton overlay 同思路）。按钮 `disabled` + `aria-busy`；spinner `aria-hidden`。
 
-切入 Manage AIs **不**发检查请求。Settings 切过的页留在树上藏起来，避免表格 + DnD 每次重挂载。
+切入 Manage AIs **不**发检查请求。Settings 切过的页留在树上藏起来，避免表格 + DnD 每次重挂载。目录预览打开或 in-flight 时侧栏和页脚锁住，Modal 盖住整个 Settings。
 
 ## 关键文件
 
 | 路径 | 职责 |
 |------|------|
 | [`src/Main/services/settings/utils/ai-catalog-update.utility.ts`](../../src/Main/services/settings/utils/ai-catalog-update.utility.ts) | 验签、preview、`createCatalogUpdateCycle`（pending 在实例上） |
-| [`src/Main/services/settings/ai-config-service.ts`](../../src/Main/services/settings/ai-config-service.ts) | ours=`getEffectiveAIs`；peek → 写盘 → commit |
-| [`src/Main/services/settings/utils/ai-catalog-update-runtime.utility.ts`](../../src/Main/services/settings/utils/ai-catalog-update-runtime.utility.ts) | `net.fetch` 或本地读盘；check/apply 串行 |
+| [`src/Main/services/settings/ai-config-service.ts`](../../src/Main/services/settings/ai-config-service.ts) | ours=`getEffectiveAIs`；peek → 写盘 → commit。cycle 方法 private；runtime 经 `forRuntime*` |
+| [`src/Main/services/settings/utils/ai-catalog-update-runtime.utility.ts`](../../src/Main/services/settings/utils/ai-catalog-update-runtime.utility.ts) | 全局代理 + 流式限体积；check/apply/discard 串行。IPC 唯一生产入口 |
 | [`src/Main/reaxels/Settings/index.ts`](../../src/Main/reaxels/Settings/index.ts) | IPC；apply 成功后 `syncRuntimeViews` |
-| [`src/Views/SettingsView/reaxels/settings-view/index.ts`](../../src/Views/SettingsView/reaxels/settings-view/index.ts) | `checkAiCatalog` / `applyAiCatalog`；preview 在 `catalog_update` |
+| [`src/Views/SettingsView/reaxels/settings-view/index.ts`](../../src/Views/SettingsView/reaxels/settings-view/index.ts) | `checkAiCatalog` / `applyAiCatalog`；in-flight 在 `catalog_update` |
 | [`src/Views/SettingsView/components/ManageAIs/CatalogUpdate.tsx`](../../src/Views/SettingsView/components/ManageAIs/CatalogUpdate.tsx) | 只渲染；检查按钮 loading 用文案叠层 spinner，不用 antd `loading` |
+| [`src/shared/utils/catalog-update-inflight.utility.ts`](../../src/shared/utils/catalog-update-inflight.utility.ts) | `checking` / `applying` 互斥判定 |
 | [`tests/ai-catalog-update.test.ts`](../../tests/ai-catalog-update.test.ts) | 业务契约（不打 GitHub） |
 
 ## 禁止项
@@ -81,6 +88,10 @@ Modal 面向用户写「列表发生了什么」：新增页、名称/网址、�
 - **不要把 `ai-catalog` Release 标成 GitHub Latest**（会抢走安装包的 `latest.yml`）。
 - 不要为了目录更新改 menubar / FloatingView / AI 页生命周期。
 - 不要改 `get-ais` / `get-default-ais` / `reorder-ais` 的返回形状。
+- 不要用组件 `useRef` / `useState` 做 check/apply in-flight 锁；锁在 `catalog_update` store。
+- 不要把 `beginCatalogCheck` / `checkSignedCatalog` / `applySignedCatalog` 再暴露给 IPC 或其它 reaxel。
+- 目录预览未关闭时不要允许切 Settings tab / 用页脚退出；必须先应用或取消。
+- 取消预览必须丢掉 main pending，不要只清 UI。
 
 ## 与现有文档
 

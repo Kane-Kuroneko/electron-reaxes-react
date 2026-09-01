@@ -54,7 +54,7 @@ export const reaxel_SettingsView = reaxel( () => {
 				startupAIPageLoadMode : checkAs<Startup.AIPageLoadMode>( 'last-used-ai' ) ,
 				/** 待删除 AI ID 列表 — 标记后仅在 Apply/Save 时过滤持久化，UI 中仍可见（可撤销） */
 				pendingDeleteAIIds : checkAs<string[]>( [] ) ,
-				/** 目录更新预览。不把瘦目录放进 Data.AIs。见 docs/features/ai-catalog-manual-update.md */
+				/** 目录更新预览。checking/applying 是 in-flight 唯一真相。不把瘦目录放进 Data.AIs。见 docs/features/ai-catalog-manual-update.md */
 				catalog_update : {
 					checking : false ,
 					applying : false ,
@@ -311,8 +311,20 @@ export const reaxel_SettingsView = reaxel( () => {
 	
 	/**
 	 * 放弃未保存编辑并关闭设置页。先 reload 磁盘配置以复位 reaxel 状态与 PromptView 预览，再 exit。
+	 * 若目录预览还开着，先丢掉 main pending（与 Modal 取消同一条路径）。
 	 */
+	function dismissCatalogUpdate() {
+		if( store.UIControls.manage_AIs.catalog_update.applying ) {
+			return;
+		}
+		setState.UIControls.manage_AIs.catalog_update( { preview : null } );
+		void discardAiCatalogUpdateService().catch( error => {
+			console.error( '[SettingsView] discard catalog pending failed:' , error );
+		} );
+	}
+
 	async function exitWithoutSave() {
+		dismissCatalogUpdate();
 		try {
 			await reloadSettings();
 		} catch ( error ) {
@@ -465,15 +477,21 @@ export const reaxel_SettingsView = reaxel( () => {
 
 	/**
 	 * Settings → Manage AIs 检查供应商目录。未 Apply 的编辑会挡住。
+	 * in-flight 以 catalog_update.checking / applying 为唯一真相：busy 时同步 return，不发第二次 IPC。
 	 * 预览放 catalog_update.preview，不写 Data.AIs。
 	 */
 	const checkAiCatalog = async():Promise<
 		| { blocked: 'dirty' }
+		| { blocked: 'in-flight' }
 		| AICatalog.CatalogUpdateCheckResult
 	> => {
+		if( isCatalogUpdateInFlight( store.UIControls.manage_AIs.catalog_update ) ) {
+			return { blocked : 'in-flight' };
+		}
 		if( isDirty() ) {
 			return { blocked : 'dirty' };
 		}
+		// 同步写入，同帧后续点击能读到 busy（check 与 apply 互斥）
 		setState.UIControls.manage_AIs.catalog_update( { checking : true } );
 		try {
 			const result = await checkAiCatalogUpdateService();
@@ -499,11 +517,16 @@ export const reaxel_SettingsView = reaxel( () => {
 
 	/**
 	 * 确认合并这次 check 的 revision。成功后 reload Settings。
+	 * busy 时同步 return，避免连点第二次走到 main 的 no-pending 盖住第一次的成功 toast。
 	 */
 	const applyAiCatalog = async():Promise<
 		| { blocked: 'dirty' }
+		| { blocked: 'in-flight' }
 		| AICatalog.CatalogUpdateApplyResult
 	> => {
+		if( isCatalogUpdateInFlight( store.UIControls.manage_AIs.catalog_update ) ) {
+			return { blocked : 'in-flight' };
+		}
 		if( isDirty() ) {
 			return { blocked : 'dirty' };
 		}
@@ -514,6 +537,7 @@ export const reaxel_SettingsView = reaxel( () => {
 				errorCode : 'no-pending',
 			};
 		}
+		// 同步写入，同帧后续点击能读到 busy（check 与 apply 互斥）
 		setState.UIControls.manage_AIs.catalog_update( { applying : true } );
 		try {
 			const result = await applyAiCatalogUpdateService( revision );
@@ -522,6 +546,9 @@ export const reaxel_SettingsView = reaxel( () => {
 					applying : false ,
 					preview : null,
 				} );
+				if( result.restartRequired ) {
+					return result;
+				}
 				try {
 					await reloadSettings();
 				} catch ( error ) {
@@ -535,10 +562,6 @@ export const reaxel_SettingsView = reaxel( () => {
 			setState.UIControls.manage_AIs.catalog_update( { applying : false } );
 			throw error;
 		}
-	};
-
-	const dismissCatalogUpdate = () => {
-		setState.UIControls.manage_AIs.catalog_update( { preview : null } );
 	};
 
 	const rtn = {
@@ -606,6 +629,9 @@ export const reaxel_SettingsView = reaxel( () => {
 			return JSON.stringify( current ) !== _committedAISnapshot.get( id );
 		},
 		navigateFromMain( payload : AppUpdater.NavigatePayload ) {
+			if( shouldLockSettingsChromeForCatalogUpdate( store.UIControls.manage_AIs.catalog_update ) ) {
+				return;
+			}
 			/* `version` 为旧导航别名，统一落到 About */
 			if( payload.menu !== 'about' && payload.menu !== 'version' ) return;
 			setState.RootMenu( { current : checkAs<Menus>( 'about' ) } );
@@ -744,6 +770,7 @@ import {
 	applySettings as applySettingsService ,
 	applyAiCatalogUpdate as applyAiCatalogUpdateService ,
 	checkAiCatalogUpdate as checkAiCatalogUpdateService ,
+	discardAiCatalogUpdate as discardAiCatalogUpdateService ,
 	exitSettings ,
 	fetchSettings as fetchSettingsService ,
 	getAppearanceEnvironment ,
@@ -758,6 +785,10 @@ import {
 	resolveLanguagePreference ,
 	resolveThemePreference,
 } from '#shared/appearance';
+import {
+	isCatalogUpdateInFlight ,
+	shouldLockSettingsChromeForCatalogUpdate,
+} from '#shared/utils/catalog-update-inflight.utility';
 import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
 import {
 	applyEnabledAIOrder ,

@@ -75,7 +75,11 @@ export const reaxel_AIViews = reaxel( () => {
 
 		store.AIViews.slice().forEach( runtimeView => {
 			if( !activeIds.has( runtimeView.id ) ) {
-				destroyAIView( runtimeView.id );
+				try {
+					destroyAIView( runtimeView.id );
+				} catch ( error ) {
+					console.error( `[AIViews] Failed to destroy AI view: ${ runtimeView.id }` , error );
+				}
 			}
 		} );
 
@@ -87,7 +91,11 @@ export const reaxel_AIViews = reaxel( () => {
 		for( const ai of activeAIs ) {
 			const runtimeView = store.AIViews.find( item => item.id === ai.id );
 			if( runtimeView ) {
-				await updateRuntimeAIView( runtimeView , ai , settings );
+				try {
+					await updateRuntimeAIView( runtimeView , ai , settings );
+				} catch ( error ) {
+					console.error( `[AIViews] Failed to update AI view: ${ ai.id } (${ ai.label })` , error );
+				}
 				continue;
 			}
 			if( ai.preloadOnStartup || ai.id === Reaxel_View.store.currentAIViewKey ) {
@@ -104,8 +112,16 @@ export const reaxel_AIViews = reaxel( () => {
 			}
 		}
 
-		applyVisibility();
-		Reaxel_View().presentActiveCenterView( 'recover' );
+		try {
+			applyVisibility();
+		} catch ( error ) {
+			console.error( '[AIViews] applyVisibility failed:' , error );
+		}
+		try {
+			Reaxel_View().presentActiveCenterView( 'recover' );
+		} catch ( error ) {
+			console.error( '[AIViews] presentActiveCenterView recover failed:' , error );
+		}
 	};
 
 	const showAIView = ( aiId:string , settings:Settings ) => {

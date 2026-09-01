@@ -81,7 +81,7 @@ projects/ChatAIO/
 │           ├── ai-catalog-merge.utility.ts    # 目录行 → 种子实例，按 UUID 对齐
 │           ├── ai-catalog-sign.utility.ts     # 只 verify；远程 URL + host 白名单
 │           ├── ai-catalog-update.utility.ts   # 手动更新：验签/preview/pending（不 fetch）
-│           └── ai-catalog-update-runtime.utility.ts  # net.fetch GitHub Release；确认后 adopt cache
+│           └── ai-catalog-update-runtime.utility.ts  # 全局代理 + 限体积拉 GitHub Release；确认后 adopt cache
 └── userData/
     ├── user-ais.json                 # 用户整表 + deletedIds
     └── catalog-ais.json              # 可选 cache；没有则只用 bundled

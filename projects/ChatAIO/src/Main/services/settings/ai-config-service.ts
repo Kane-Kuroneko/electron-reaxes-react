@@ -84,11 +84,11 @@ class AIConfigService {
 	 * 验签远程字节并算出 diff。ours 用 effective 列表（含已 compose 的种子页）。
 	 * 失败不清上一份 pending。checkId 在 fetch 前 begin，避免慢的旧请求盖掉新结果。
 	 */
-	beginCatalogCheck():number {
+	private beginCatalogCheck():number {
 		return this.catalogUpdateCycle.beginCheck();
 	}
 
-	checkSignedCatalog(
+	private checkSignedCatalog(
 		json:Buffer ,
 		sigText:string ,
 		publicKeyPem:string ,
@@ -109,7 +109,7 @@ class AIConfigService {
 	/**
 	 * 按这次 check 的 revision 合并。写盘成功才清 pending。
 	 */
-	applySignedCatalog( revision:number ):AICatalog.CatalogUpdateApplyResult {
+	private applySignedCatalog( revision:number ):AICatalog.CatalogUpdateApplyResult {
 		const user = this.getUserConfig();
 		const previewed = this.catalogUpdateCycle.previewApply( {
 			bundled : this.bundledCatalog ,
@@ -127,6 +127,35 @@ class AIConfigService {
 		this.adoptRemoteCatalog( previewed.catalog , previewed.user );
 		this.catalogUpdateCycle.commit( revision );
 		return { success : true };
+	}
+
+	/**
+	 * 仅供 `ai-catalog-update-runtime` 调用。禁止 IPC / 其它 reaxel 直调。
+	 * 生产入口只有 `checkAiCatalogUpdate` / `applyAiCatalogUpdate`（经队列）。
+	 * 见 docs/features/ai-catalog-manual-update.md
+	 */
+	forRuntimeBeginCatalogCheck():number {
+		return this.beginCatalogCheck();
+	}
+
+	/** 仅供 catalog update runtime。禁止 IPC / 其它 reaxel 直调。 */
+	forRuntimeCheckSignedCatalog(
+		json:Buffer ,
+		sigText:string ,
+		publicKeyPem:string ,
+		checkId?:number ,
+	):AICatalog.CatalogUpdateCheckResult {
+		return this.checkSignedCatalog( json , sigText , publicKeyPem , checkId );
+	}
+
+	/** 仅供 catalog update runtime。禁止 IPC / 其它 reaxel 直调。 */
+	forRuntimeApplySignedCatalog( revision:number ):AICatalog.CatalogUpdateApplyResult {
+		return this.applySignedCatalog( revision );
+	}
+
+	/** 仅供 catalog update runtime。用户取消预览时丢掉 pending。 */
+	forRuntimeDiscardCatalogUpdate():void {
+		this.catalogUpdateCycle.discard();
 	}
 
 	/** 把已验签目录写成 userData/catalog-ais.json。启动不再验签这份，只 validate。 */

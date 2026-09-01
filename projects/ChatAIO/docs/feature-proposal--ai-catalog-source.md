@@ -536,7 +536,7 @@ Settings → Manage AIs 工具条：「检查 AI 目录更新」。Modal 分块�
 
 - **行为**：上列契约由单测锁住。未在本机 Electron 点 Manage AIs 走一遍真 GitHub。
 - **方向**：没自动 fetch；没改 `get-ais` / `get-default-ais` / 排序；没碰 menubar / FloatingView。apply 比原提案多了 `revision` 参数，为的是 TOCTOU。
-- **Bug / 债**：GitHub 下载走 Electron defaultSession（系统代理），不套用 App 内全局代理。尚未 `yarn publish:ai-catalog`。取消 Modal 只清 UI preview，main pending 留到下次成功 check 或 up-to-date。
+- **Bug / 债**：尚未 `yarn publish:ai-catalog`。electron-updater 仍只认 GitHub Latest 上的 `latest.yml`，不能按 tag 前缀区分目录 JSON 与安装包；目录继续走滚动 tag `ai-catalog` + `--latest=false`，不要标成 Latest。
 
 ---
 

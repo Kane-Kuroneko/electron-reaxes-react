@@ -101,8 +101,27 @@ export namespace AICatalog {
 		availableAfter: string[];
 	};
 
-	/** Settings Modal 用的 diff：没有 nextAis / deletedIds，也没有目录正文。 */
-	export type CatalogUpdateDiff = Pick<MergePreview , 'added' | 'updated' | 'skipped' | 'catalogDropped'> & {
+	/** IPC / Modal 预览一行：只有 id、名称、网址，不要整份 AIItem（proxy 等）。 */
+	export type CatalogPagePreview = {
+		id: string;
+		label: string;
+		url: string;
+	};
+
+	/**
+	 * Settings Modal 用的 diff：没有 nextAis / deletedIds，也没有目录正文。
+	 * added / updated 是瘦预览，不是运行时页实例。
+	 */
+	export type CatalogUpdateDiff = {
+		added: CatalogPagePreview[];
+		updated: {
+			id: string;
+			before: CatalogPagePreview;
+			after: CatalogPagePreview;
+			fields: MergeField[];
+		}[];
+		skipped: MergePreview['skipped'];
+		catalogDropped: MergePreview['catalogDropped'];
 		availability: CatalogAvailabilityChange[];
 	};
 
@@ -136,6 +155,8 @@ export namespace AICatalog {
 		success: boolean;
 		errorCode?: CatalogUpdateErrorCode;
 		error?: string;
+		/** 写盘已成功，但 AI 页/菜单同步失败，必须重启才能对齐界面。 */
+		restartRequired?: boolean;
 	};
 }
 
