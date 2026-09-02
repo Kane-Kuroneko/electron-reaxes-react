@@ -45,7 +45,7 @@ export const App = reaxper( () => {
 				: antdTheme.defaultAlgorithm ,
 		} }
 	>
-		<main className="prompt-view-root">
+		<main className="prompt-view-root" data-testid="prompt-view-root" data-prompt-side={ store.side }>
 			{/* ═══ Header：左侧模块名 + 侧标识，右侧仅关闭按钮 ═══ */}
 			<header className="prompt-view-header">
 				<div className="prompt-view-heading">
@@ -322,7 +322,7 @@ import {
 	I18n ,
 	i18n,
 } from '#PromptView/reaxels/exports';
-import { resolveThemePreference } from '#src/shared/appearance';
+import { resolveThemePreference } from '#shared/appearance';
 import type { PromptView } from '#src/Types/PromptView';
 import {
 	CircleCheck ,

@@ -2,6 +2,7 @@
  * @description DropdownView 主组件
  * 渲染在独立 frameless BrowserWindow 中（alwaysOnTop, floating 级别），
  * 用于显示下拉菜单，始终在所有 WebContentsViews 之上。
+ * 几何 CSS 变量来自 shared/dropdown-geometry.ts，与主进程定位同源。
  */
 
 export const App = reaxper( () => {
@@ -65,11 +66,13 @@ export const App = reaxper( () => {
 	const windowSizeStyle = {
 		width : `${ store.windowWidth }px` ,
 		height : `${ store.windowHeight }px` ,
+		...getDropdownRootStyleVars(),
 	} as const;
 
 	return (
 		<div
 			className="dropdown-view-root"
+			data-testid="dropdown-view"
 			data-theme={ store.theme }
 			style={ windowSizeStyle }
 			onContextMenuCapture={ ( e ) => {
@@ -376,6 +379,10 @@ const MenuItemComponent = ( {
 			ref={ setItemNode }
 			className={ `menu-item ${ item.type === 'checkbox' || item.type === 'radio' ? 'menu-item--checkable' : '' } ${ !item.enabled ? 'menu-item--disabled' : '' } ${ focused ? 'menu-item--focused' : '' } ${ loadStateClass }${ sortingClass }` }
 			style={ sortable?.style }
+			data-testid="menu-item"
+			data-item-id={ item.id }
+			data-item-action={ item.action || '' }
+			data-item-payload={ typeof item.actionPayload === 'string' ? item.actionPayload : '' }
 			data-item-index={ itemIndex }
 			{ ...( sortable?.listeners ?? {} ) }
 			{ ...( sortable?.attributes ?? {} ) }
@@ -515,9 +522,10 @@ const triggerAction = ( action : MenuView.Action ) => {
 
 import { RightClickMouseSensor } from './right-click-mouse-sensor.utility';
 import { reaxel_DropdownView } from '#DropdownView/reaxels/dropdown-view';
-import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
-import { enabledAIIdsEqual } from '#src/shared/utils/merge-enabled-ai-order.utility';
-import { reportMenubarRendererError } from '#src/shared/utils/menubar-error-report.utility';
+import { getDropdownRootStyleVars } from '#shared/dropdown-geometry';
+import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
+import { enabledAIIdsEqual } from '#shared/utils/merge-enabled-ai-order.utility';
+import { reportMenubarRendererError } from '#shared/utils/menubar-error-report.utility';
 import type { MenuView } from '#src/Types/MenuView';
 import {
 	closestCenter ,

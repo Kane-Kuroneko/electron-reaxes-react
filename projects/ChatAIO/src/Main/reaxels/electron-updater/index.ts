@@ -21,6 +21,7 @@ export const reaxel_AppUpdater = reaxel( () => {
 	if( dev() ) {
 		autoUpdater.forceDevUpdateConfig = true;
 	}
+	/* GitHub Latest 必须是带 latest.yml 的安装包 tag。目录 tag `ai-catalog` 禁止标成 Latest。 */
 
 	const getPublicState = (): AppUpdater.State => ( {
 		status : store.status ,
@@ -306,10 +307,15 @@ export const reaxel_AppUpdater = reaxel( () => {
 	} );
 
 	autoUpdater.on( 'error' , ( err ) => {
-		console.error( '[AppUpdater] error:' , err );
+		const message = err?.message || String( err );
+		if( /ai-catalog[/\\]latest\.yml/.test( message ) ) {
+			console.error( '[AppUpdater] GitHub Latest 被目录 tag ai-catalog 抢走了，没有 latest.yml。publish:ai-catalog 必须 --latest=false。' );
+		} else {
+			console.error( '[AppUpdater] error:' , err );
+		}
 		setUpdaterState( {
 			status : 'error' ,
-			error : err?.message || String( err ) ,
+			error : message ,
 		} );
 	} );
 
@@ -351,10 +357,12 @@ export const reaxel_AppUpdater = reaxel( () => {
 		openSettingsVersion( versionTab || 'latest' );
 	} );
 
-	/* 启动后静默检查（延后，避免阻塞启动） */
-	setTimeout( () => {
-		void checkForUpdates();
-	} , 4000 );
+	/* 启动后静默检查（延后，避免阻塞启动）。E2E 禁止打 GitHub，避免弹窗/超时。 */
+	if( isChatAioE2E() === false ) {
+		setTimeout( () => {
+			void checkForUpdates();
+		} , 4000 );
+	}
 
 	const rtn = {
 		checkForUpdates ,
@@ -376,6 +384,7 @@ import { Reaxel_View } from '#main/reaxels/Views';
 import { reaxel_Menu } from '#main/reaxels/Menu';
 import { reaxel_I18n } from '#main/reaxels/I18n';
 import { mainWindow } from '#main/mainWindow';
+import { isChatAioE2E } from '#main/foundation/e2e-mode';
 import { destroyTray } from '#main/services/tray';
 import {
 	useIpcMainToRenderer ,
@@ -386,7 +395,7 @@ import {
 	shouldSkipGoogleTranslate ,
 	toGoogleTranslateLanguage ,
 	translateMarkdownViaGoogle ,
-} from '#src/shared/utils/google-translate.utility';
+} from '#shared/utils/google-translate.utility';
 import type { AppUpdater } from '#src/Types/AppUpdater';
 import type { Languages } from '#src/Types/Languages';
 import {

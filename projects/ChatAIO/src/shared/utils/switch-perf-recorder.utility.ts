@@ -2,7 +2,7 @@
  * SwitchPerformanceRecorder — AI 页面快速切换性能分析记录器
  *
  * 使用方式：
- *   主进程：import { perf , PerfPhase } from '#src/shared/utils/switch-perf-recorder.utility';
+ *   主进程：import { perf , PerfPhase } from '#shared/utils/switch-perf-recorder.utility';
  *           perf.mark(PerfPhase.SwitchStart, 'main', ctxId, { action: 'switch-configured' });
  *   渲染进程：同上，通过 IPC 批量发送到主进程落盘。
  *

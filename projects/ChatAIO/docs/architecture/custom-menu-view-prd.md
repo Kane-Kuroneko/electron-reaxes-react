@@ -149,7 +149,7 @@ Z-order (top → bottom):
 - **子菜单位置**：相对于父菜单项，带有 `4-8px` 间距和微阴影
 - **动画**：展开时 100-150ms 淡入 + 微上移（fadeIn + slideDown），收起时即时隐藏
 - **图标**：菜单项可显示图标（现有的 emoji / 自定义 SVG）
-- **窗口拖拽**：使用 Electron CSS draggable region；菜单栏空白 / drag-tail / badge / macOS spacer 为 `-webkit-app-region: drag`，菜单按钮与下拉为 `no-drag`。内容区幽灵拖拽见 `docs/issues/menubar-drag-region-leak-below-content.md`（主壳 View 裁剪，禁止靠砍 menubar drag 假修）
+- **窗口拖拽**：使用 Electron CSS draggable region；菜单栏空白 / drag-tail / macOS spacer 为 `-webkit-app-region: drag`，菜单按钮、Current AI badge 与下拉为 `no-drag`。内容区幽灵拖拽见 `docs/issues/menubar-drag-region-leak-below-content.md`（主壳 View 裁剪，禁止靠砍 menubar drag 假修）。badge 点击见 `docs/features/menubar-current-ai-dropdown.md`。
 
 ---
 

@@ -133,7 +133,7 @@ import { getSettingsConfigService } from '#main/services/settings/settings-confi
 import {
 	normalizeLanguagePreference ,
 	normalizeThemePreference,
-} from '#src/shared/appearance';
+} from '#shared/appearance';
 import type { PromptView } from '#src/Types/PromptView';
 import ElectronStore from 'electron-store';
 import { randomUUID } from 'node:crypto';

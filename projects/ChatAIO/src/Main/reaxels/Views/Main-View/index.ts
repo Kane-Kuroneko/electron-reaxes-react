@@ -2,27 +2,14 @@
  * @description MainView 主进程 reaxel
  * 管理 DropdownView BrowserWindow、菜单 IPC 通信、菜单操作执行。
  * 不再管理 WebContentsView 生命周期——MainView 直接渲染在 mainWindow HTML 中。
+ * 下拉窗口几何与 Switch AI 文字 inset 见 shared/dropdown-geometry.ts。
  */
 
 const MENU_BAR_HEIGHT = resolveMenuBarHeight();
 const DROPDOWN_MIN_WIDTH = 200;
 const DROPDOWN_MAX_WIDTH = 480;
 const DROPDOWN_CHAR_WIDTH = 8.2;
-/* checkmark + gaps + padding + side-gutter；有快捷键列时再加 accelerator 占位 */
-const DROPDOWN_ITEM_EXTRA = 56;
 const DROPDOWN_ACCEL_COLUMN_EXTRA = 88;
-const DROPDOWN_CHROME = {
-	top : 0 ,
-	right : 6 ,
-	bottom : 8 ,
-	left : 6 ,
-} as const;
-
-/* 须与 DropdownView/index.less 中 .menu-item__button 行高一致（height 27px + line-height 1） */
-const DROPDOWN_ROW_HEIGHT = 27;
-const DROPDOWN_SEPARATOR_HEIGHT = 9;
-/* 4+4 panel padding + 1+1 panel border（.menu-dropdown box-sizing: border-box） */
-const DROPDOWN_PANEL_VPAD = 10;
 
 type DropdownOpenPayload = MainView.DropdownRequest;
 
@@ -36,30 +23,49 @@ export const reaxel_MainView = reaxel( () => {
 		dropdownLoaded : false ,
 		loaded : false ,
 		mainViewRendererReady : false ,
+		/** 菜单项已 layout；Phase 5 等这个，不是 menu-view:ready。见 menubar-cold-start-monitor.md */
+		mainViewVisualReady : false ,
 		pendingDropdownPayload : checkAs<DropdownOpenPayload | null>( null ) ,
 	} );
 
 	let ipcRegistered = false;
 	/* 当前已绑定 menubar 宿主事件的 BrowserWindow；窗口销毁后需重新 attach。 */
 	let boundMainWindow : BrowserWindow | null = null;
-	const rendererReadyWaiters:Array<(ready:boolean) => void> = [];
+	const visualReadyWaiters:Array<(ready:boolean) => void> = [];
 
-	const flushRendererReadyWaiters = (ready:boolean) => {
-		if( rendererReadyWaiters.length === 0 ) {
+	const flushVisualReadyWaiters = (ready:boolean) => {
+		if( visualReadyWaiters.length === 0 ) {
 			return;
 		}
-		const waiters = rendererReadyWaiters.splice( 0 , rendererReadyWaiters.length );
+		const waiters = visualReadyWaiters.splice( 0 , visualReadyWaiters.length );
 		waiters.forEach( resolve => {
 			resolve( ready );
 		} );
 	};
 
+	const markVisualReady = () => {
+		if( store.mainViewVisualReady ) {
+			return;
+		}
+		setState( { mainViewVisualReady : true } );
+		flushVisualReadyWaiters( true );
+		/* 首绘后再预热 Dropdown，避免与 menubar localhost/GPU 抢加载 */
+		preloadDropdownView();
+	};
+
 	/**
-	 * 等 MainView renderer 发出 menu-view:ready（menubar React 已挂载）。
+	 * 等 MainView 菜单项 layout（`menu-view:visual-ready`）。
+	 * `menu-view:ready` 只表示 IPC 已绑，会在 React 首绘前触发；不能当 Phase 5 门闩。
 	 * 超时后返回 false，调用方仍可继续 AI preload，避免永久卡死。
+	 * 设计：docs/features/menubar-cold-start-monitor.md
 	 */
 	const waitUntilRendererReady = ( options:{ timeoutMs?:number } = {} ) => {
-		if( store.mainViewRendererReady ) {
+		if( store.mainViewVisualReady ) {
+			getMenubarColdStartMonitor().note( 'phase-5-wait-resolved' , {
+				ready : true ,
+				alreadyReady : true ,
+				gate : 'visual-ready' ,
+			} );
 			return Promise.resolve( true );
 		}
 		const timeoutMs = options.timeoutMs ?? 15000;
@@ -71,10 +77,17 @@ export const reaxel_MainView = reaxel( () => {
 				}
 				settled = true;
 				clearTimeout( timer );
-				const index = rendererReadyWaiters.indexOf( onReady );
+				const index = visualReadyWaiters.indexOf( onReady );
 				if( index >= 0 ) {
-					rendererReadyWaiters.splice( index , 1 );
+					visualReadyWaiters.splice( index , 1 );
 				}
+				getMenubarColdStartMonitor().note( 'phase-5-wait-resolved' , {
+					ready ,
+					timedOut : !ready ,
+					timeoutMs ,
+					gate : 'visual-ready' ,
+					ipcReady : store.mainViewRendererReady ,
+				} );
 				resolve( ready );
 			};
 			const onReady = ( ready:boolean ) => {
@@ -83,12 +96,13 @@ export const reaxel_MainView = reaxel( () => {
 			const timer = setTimeout( () => {
 				console.warn(
 					`[Menubar] waitUntilRendererReady timed out after ${ timeoutMs }ms;`
-					+ ' continuing ContentViews without menubar ready',
+					+ ' continuing ContentViews without menubar visual-ready',
 				);
+				preloadDropdownView();
 				finish( false );
 			} , timeoutMs );
-			rendererReadyWaiters.push( onReady );
-			if( store.mainViewRendererReady ) {
+			visualReadyWaiters.push( onReady );
+			if( store.mainViewVisualReady ) {
 				finish( true );
 			}
 		} );
@@ -121,11 +135,12 @@ export const reaxel_MainView = reaxel( () => {
 
 		useIpcRendererToMain( 'menu-view:ready' ).on( () => {
 			runMenubarHandler( 'menu-view:ready' , () => {
+				/* IPC ready ≠ 已绘。只推 structure/theme；Phase 5 等 menu-view:visual-ready。
+				 * 设计：docs/features/menubar-cold-start-monitor.md */
+				getMenubarColdStartMonitor().note( 'menu-view-ready' );
 				setState( { mainViewRendererReady : true } );
-				preloadDropdownView();
 				sendMenuStructure();
 				sendMenuTheme();
-				flushRendererReadyWaiters( true );
 			} );
 		} );
 
@@ -163,6 +178,26 @@ export const reaxel_MainView = reaxel( () => {
 			logMenubarError( report );
 		} );
 
+		useIpcRendererToMain( 'menu-view:visual-ready' ).on( ( _ , payload ) => {
+			runMenubarHandler( 'menu-view:visual-ready' , () => {
+				getMenubarColdStartMonitor().noteRendererProbe( {
+					milestone : 'renderer-visual-ready' ,
+					ts : payload?.ts || Date.now() ,
+					hrt : payload?.hrt ,
+					detail : payload?.detail ,
+				} );
+				markVisualReady();
+			} );
+		} );
+
+		useIpcRendererToMain( 'menubar:boot-probe' ).on( ( _ , payload ) => {
+			/* 只写 JSONL。visual-ready 门闩走 menu-view:visual-ready，避免观测通道卡住启动。 */
+			if( payload?.milestone === 'renderer-visual-ready' ) {
+				return;
+			}
+			getMenubarColdStartMonitor().noteRendererProbe( payload );
+		} );
+
 		useIpcSync( 'dropdown-view:is-visible' ).handle( () => {
 			const dropdown = store.dropdownWindow;
 			return !!dropdown && !dropdown.isDestroyed() && dropdown.isVisible();
@@ -192,7 +227,9 @@ export const reaxel_MainView = reaxel( () => {
 
 		const win = mainWindow;
 		if( boundMainWindow === win ) {
-			preloadDropdownView();
+			if( store.mainViewVisualReady ) {
+				preloadDropdownView();
+			}
 			if( store.mainViewRendererReady ) {
 				sendMenuStructure();
 				sendMenuTheme();
@@ -206,6 +243,7 @@ export const reaxel_MainView = reaxel( () => {
 			/* 换窗后旧 renderer 已失效，等待新 MainView 再发 menu-view:ready */
 			setState( {
 				mainViewRendererReady : false ,
+				mainViewVisualReady : false ,
 				loaded : false ,
 			} );
 		}
@@ -214,15 +252,18 @@ export const reaxel_MainView = reaxel( () => {
 				boundMainWindow = null;
 				setState( {
 					mainViewRendererReady : false ,
+					mainViewVisualReady : false ,
 					loaded : false ,
 				} );
-				flushRendererReadyWaiters( false );
+				flushVisualReadyWaiters( false );
 			}
 		} );
 
 		bindMainWindowEvents();
 		bindMenubarWebContentsLogging( win.webContents , 'main-view-renderer' );
-		preloadDropdownView();
+		if( store.mainViewVisualReady ) {
+			preloadDropdownView();
+		}
 		setState( { loaded : true } );
 		/* 尽早对齐 caption overlay / 主壳底色，避免 renderer ready 前关闭区色差 */
 		applyMenubarWindowChrome( win , getCurrentTheme() );
@@ -242,6 +283,7 @@ export const reaxel_MainView = reaxel( () => {
 
 	const preloadDropdownView = () => {
 		if( !mainWindow || mainWindow.isDestroyed() ) return;
+		getMenubarColdStartMonitor().note( 'dropdown-preload' );
 		getOrCreateDropdownWindow();
 	};
 
@@ -260,6 +302,9 @@ export const reaxel_MainView = reaxel( () => {
 					chrome : menu.createMenuChrome(),
 				},
 			} );
+		if( store.mainViewVisualReady === false ) {
+			getMenubarColdStartMonitor().note( 'structure-sent' );
+		}
 	};
 
 	const sendMenuTheme = ( previewAppearance? : Pick<PromptView.Appearance , 'theme'> ) => {
@@ -377,9 +422,12 @@ export const reaxel_MainView = reaxel( () => {
 		const contentBounds = mainWindow.getContentBounds();
 		const anchor = payload.anchorRect;
 		const panelWidth = estimateDropdownWidth( payload.items );
-		const dropdownContentX = Math.max(
-			0 ,
-			Math.min( anchor.x , contentBounds.width - panelWidth ) ,
+		/* current-ai：anchor.x 是 badge 文字左缘，面板左移让 AI name 与之对齐 */
+		const dropdownContentX = resolveDropdownContentX(
+			anchor ,
+			panelWidth ,
+			contentBounds.width ,
+			payload.anchorAlign ,
 		);
 		const dropdownContentY = anchor.y + anchor.height;
 
@@ -542,19 +590,13 @@ export const reaxel_MainView = reaxel( () => {
 			} );
 		} );
 
-		if( dev() ) {
-			void loadDevRendererEntryWithRetry(
-				dropdownWindow.webContents ,
-				'DropdownView' ,
-				{} ,
-				'DropdownView',
-			);
-		} else {
-			dropdownWindow.webContents.loadFile( getRendererEntryFilePath(
-				reaxel_ElectronENV().absAppRunningPath ,
-				'DropdownView'
-			) );
-		}
+		void loadRendererEntry(
+			dropdownWindow.webContents ,
+			'DropdownView' ,
+			reaxel_ElectronENV().absAppRunningPath ,
+			{} ,
+			'DropdownView',
+		);
 
 		return dropdownWindow;
 	};
@@ -796,6 +838,25 @@ const estimateDropdownHeight = ( items : MenuView.Item[] ): number => {
 	return height;
 };
 
+/**
+ * 下拉面板在主窗 content 坐标系的 left。
+ * start：贴锚点左缘（左区菜单）。
+ * label：anchor.x 为 badge 文字左缘，面板左移 getSwitchAiLabelInset()（与 CSS 变量同源）。
+ * 超出窗口左右边界则夹紧。设计：docs/features/menubar-current-ai-dropdown.md
+ */
+const resolveDropdownContentX = (
+	anchor : { x : number; width : number } ,
+	panelWidth : number ,
+	contentWidth : number ,
+	align : 'start' | 'label' = 'start' ,
+) => {
+	const desired = align === 'label'
+		? anchor.x - getSwitchAiLabelInset()
+		: anchor.x;
+	const clamped = Math.max( 0 , Math.min( desired , contentWidth - panelWidth ) );
+	return Math.round( clamped );
+};
+
 const estimateDropdownWidth = ( items : MenuView.Item[] ): number => {
 	let maxContentWidth = 0;
 	const walk = ( list : MenuView.Item[] ) => {
@@ -808,7 +869,7 @@ const estimateDropdownWidth = ( items : MenuView.Item[] ): number => {
 					Math.ceil( item.accelerator.length * 7 ) + 24 ,
 				)
 				: 0;
-			const loadDotWidth = item.loadState ? 11 : 0;
+			const loadDotWidth = item.loadState ? DROPDOWN_LOAD_DOT_SLOT : 0;
 			maxContentWidth = Math.max(
 				maxContentWidth ,
 				labelWidth + accelWidth + loadDotWidth + DROPDOWN_ITEM_EXTRA ,
@@ -923,6 +984,7 @@ const isBenignMenubarConsoleMessage = ( message : string ) => {
 };
 
 
+import { getMenubarColdStartMonitor } from './menubar-cold-start-monitor.retexel';
 import { reaxel_Menu } from '#main/reaxels/Menu';
 import { Reaxel_View } from '#main/reaxels/Views';
 import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
@@ -932,10 +994,7 @@ import { reaxel_AppUpdater } from '#main/reaxels/electron-updater';
 import { mainWindow } from '#main/mainWindow';
 import { isWebContentsViewAlive } from '#main/services/web-contents-view-alive.utility';
 import { useIpcMainToRenderer , useIpcRendererToMain , useIpcSync } from '#main/services/ipc';
-import {
-	loadDevRendererEntryWithRetry ,
-	getRendererEntryFilePath,
-} from '#main/services/dev/renderer-entry';
+import { loadRendererEntry } from '#main/services/dev/renderer-entry';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
@@ -951,8 +1010,17 @@ import {
 	setMenubarDropdownDismissHandler ,
 } from '#main/services/menubar-dropdown-dismiss.utility';
 import type { MenubarErrorReport } from '#main/services/menubar-error-log.utility';
-import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
-import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
+import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
+import { getMenuBarHeight as resolveMenuBarHeight } from '#shared/menubar-geometry';
+import {
+	DROPDOWN_CHROME ,
+	DROPDOWN_ITEM_EXTRA ,
+	DROPDOWN_LOAD_DOT_SLOT ,
+	DROPDOWN_PANEL_VPAD ,
+	DROPDOWN_ROW_HEIGHT ,
+	DROPDOWN_SEPARATOR_HEIGHT ,
+	getSwitchAiLabelInset ,
+} from '#shared/dropdown-geometry';
 import { applyMenubarWindowChrome } from '#main/services/menubar-window-chrome.utility';
 import type { MenuView , MainView } from '#src/Types/MenuView';
 import type { DropdownView } from '#src/Types/DropdownView';
@@ -961,7 +1029,7 @@ import type { PromptView } from '#src/Types/PromptView';
 import {
 	normalizeThemePreference ,
 	resolveThemePreference,
-} from '#src/shared/appearance';
+} from '#shared/appearance';
 import {
 	app ,
 	dialog ,

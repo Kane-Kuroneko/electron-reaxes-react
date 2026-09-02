@@ -4,6 +4,38 @@
 
 ---
 
+## 0️⃣ 设计哲学
+
+本仓对 TypeScript 的态度是**现实主义，不是反类型**。一句话：
+
+**动态边界用运行时验证；核心协议和状态机用必要的静态约束。** 两者分工，不互相替代。
+
+个人主导、迭代频繁、又夹着大量 Electron 动态行为时，类型系统有真实成本：判别联合、第三方回调、WebContents 生命周期、Reaxes / MobX 的 Proxy，编译器经常跟不上。为消红线去拆函数、加只给编译器看的分支、堆类型体操，会把结构拧歪——那是**类型噪声**。但不能把噪声和**类型约束**混为一谈。约束保护的是内部协议和重构：函数签名、IPC 形状、配置 schema、显式状态机。存在「TS 难以准确表达的动态边界」，推不出「全局关闭严格检查就是更优方案」。
+
+因此不要走两个极端：
+
+- **不要**把整个项目一次性切成 `strict: true` 再机械修红线。那会制造大量无意义噪声和结构变形。
+- **也不要**写成「作者比类型系统更明白，所以整体关掉严格模式」。运行时校验适合不可信输入（文件、网络、用户、跨进程）；类型系统适合项目内部调用和重构。文档里的不变量不能代替可执行的检查。
+
+当前根 / 子工程 tsconfig 默认仍是 `strict: false`，这是历史与动态层的权衡，**不是终点**。新代码按下面的分层目标写，不要把默认宽松理解成类型可以随便写。
+
+### 分层严格度
+
+| 层 | 策略 |
+|----|------|
+| `src/Main/services`、`src/preload.ts`、IPC 契约、配置 schema、纯函数 utility | **逐步收紧**。能 `satisfies`、类型守卫、窄化函数就用；内部调用错误应在编译期被抓住。 |
+| 第三方网页 preload patch、Electron 生命周期适配层、Reaxes 代理封装 | **局部宽松**。用小适配器把动态 API 收口，不要为了让 tsc 满意去改生命周期本身。 |
+| View / WebContents 生命周期 | 用显式状态表达（如 `created` / `loading` / `presented` / `detached` / `destroyed`），不要到处依赖可空对象再靠运行时判断「现在有没有这份引用」。 |
+| 跨进程、磁盘、网络、用户输入 | **静态类型 + 运行时 schema** 双重边界：静态类型防内部用错；运行时校验防外部污染。 |
+
+动态 API 用 `satisfies`、类型守卫、窄化函数和少量适配器解决，**不要**用大范围 `as any` 或靠全局关闭检查来掩盖边界。
+
+「运行时补偿」必须变成质量门禁，而不能停在设计文档里：测试要覆盖异常输入、销毁后调用、重复更新、竞态、代理失败和 IPC 错误。
+
+机械细则见第五节 TypeScript 规范。
+
+---
+
 ## 1️⃣ 文件结构规范 📁
 
 ### 1.1 ESM Import/Export 位置
@@ -261,8 +293,25 @@ window.core_store = store;
 ## 5️⃣ TypeScript 规范 🔷
 
 ### 5.1 类型声明
-- **宽松模式**：项目使用 `strict: false`，允许一定的类型灵活性
-- **必要时使用 `@ts-ignore` 或 `@ts-expect-error`**：
+- **分层严格度，见开篇设计哲学**。默认 tsconfig 仍是 `strict: false`，但 services / preload / IPC / schema / 纯函数应按可收紧的标准写；动态适配层才局部宽松。不要全局 `as any`，也不要一次性把整个工程改成 `strict: true` 机械消红线。
+- **跨边界**：内部协议靠静态类型；文件 / 网络 / 用户 / IPC 入站靠运行时 schema。两者都要，不能只写注释。
+- **判别联合收窄**：当前未开 `strictNullChecks` 时，`if (!x.ok)` **不会**把 `{ ok:true; ... } | { ok:false; errorCode }` 收到失败分支，接着读 `errorCode` 会 **TS2339**。若改成 `=== false` / `=== true` 与原来是同一句运行时判断，就用字面量比较；不要为此拆函数或加只给编译器看的分支。
+  ```typescript
+  // ❌ 当前 tsconfig 下不会收窄，previewed.errorCode → TS2339
+  if( !previewed.ok ) {
+  	return { success : false , errorCode : previewed.errorCode };
+  }
+
+  // ✅ 语义不变的字面量比较，失败分支
+  if( previewed.ok === false ) {
+  	return { success : false , errorCode : previewed.errorCode };
+  }
+  // ✅ 成功分支（`if (previewed.ok)` 同样不可靠）
+  if( previewed.ok === true ) {
+  	return previewed.catalog;
+  }
+  ```
+- **动态 API**：优先 `satisfies`、类型守卫、窄化函数、小适配器。`@ts-ignore` / `@ts-expect-error` / 局部断言只收口边界，不拿来掩盖未校验的入站数据：
   ```typescript
   /*@ts-ignore*/
   if(!keys.includes(k)) {
@@ -487,6 +536,9 @@ utils/
 - [ ] **是否使用 Tab 缩进？**
 - [ ] **是否使用分号结尾？**
 - [ ] **是否优先使用路径别名（`#` 开头）？**
+- [ ] **判别联合失败分支是否用 `x.ok === false` 收窄（不要 `!x.ok`）？**
+- [ ] **跨进程 / 文件 / 网络入站是否有运行时校验（不只写了类型）？**
+- [ ] **是否避免用大范围 `as any` 掩盖动态边界？**
 - [ ] **组件是否使用 `reaxper` 包裹？**
 - [ ] **错误处理是否包含 `debugger`（可选）？**
 - [ ] **ChatAIO FloatingView 是否保持 `forward: false`，并检查了 Windows 拖拽回归文档？**

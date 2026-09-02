@@ -450,16 +450,13 @@ export const reaxel_FloatingView = reaxel( () => {
 			}
 		} );
 
-		if( dev() ) {
-			void loadDevRendererEntryWithRetry(
-				floatingWindow.webContents ,
-				'FloatingView' ,
-				{} ,
-				'FloatingView',
-			);
-		} else {
-			floatingWindow.webContents.loadFile( getRendererEntryFilePath( absAppRunningPath , 'FloatingView' ) );
-		}
+		void loadRendererEntry(
+			floatingWindow.webContents ,
+			'FloatingView' ,
+			absAppRunningPath ,
+			{} ,
+			'FloatingView',
+		);
 
 		return floatingWindow;
 	}
@@ -533,25 +530,21 @@ export const reaxel_FloatingView = reaxel( () => {
 } );
 
 import { mainWindow } from '#main/mainWindow';
-import {
-	loadDevRendererEntryWithRetry ,
-	getRendererEntryFilePath,
-} from '#main/services/dev/renderer-entry';
+import { loadRendererEntry } from '#main/services/dev/renderer-entry';
 import { useIpcMainToRenderer } from '#main/services/ipc';
 import { hasUsableBrowserWindowContent } from '#main/services/usable-window-content.utility';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
-import { getMenuBarHeight } from '#src/shared/menubar-geometry';
-import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import { getMenuBarHeight } from '#shared/menubar-geometry';
+import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
 import {
 	perf ,
 	PerfPhase ,
 	switchAiBarItemsFingerprint,
-} from '#src/shared/utils/switch-perf-recorder.utility';
+} from '#shared/utils/switch-perf-recorder.utility';
 import type { FloatingView } from '#src/Types/FloatingView';
 import {
 	BrowserWindow,
 } from 'electron';
-import { dev } from 'electron-is';
 import {
 	createReaxable ,
 	reaxel,

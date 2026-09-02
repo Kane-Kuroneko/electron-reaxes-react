@@ -6,7 +6,7 @@ Electron 应用。Git / Yarn / `tsc` 一律在**仓库根**执行。包管理只
 
 ## 写代码
 
-- [编码规范](./CODING_STANDARD.md) — import 置底、Tab（或 3 空格）、单引号 + 分号
+- [编码规范](./CODING_STANDARD.md) — 开篇是设计哲学（分层严格度：动态边界运行时校验，核心协议静态约束）；import 置底、Tab（或 3 空格）、单引号 + 分号
 - 本应用使用 Reaxes 系列库和架构；改代码必须读 [Reaxes 开发文档](./.agents/skills/reaxes-development/SKILL.md)
 - 主进程、preload 与 IPC：[IPC 编码](./.agents/rules/ipc-coding.md)
 - 本地 Reaxes 源码：`Z:\reaxes`

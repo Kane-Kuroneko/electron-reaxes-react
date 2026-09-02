@@ -55,8 +55,9 @@ macOS 与 Windows 的菜单栏在**内容**与**视图**两个层面都不同，
   相对窗口顶边会整体下沉）。
 - 左区菜单项、`drag-tail`（空白拖窗）、中区 Prev/Brand/Next 簇、`CurrentContextBadge`。
 - `data-theme` light/dark 主题；键盘导航。
-- **窗口拖拽**：栏 / drag-tail / badge /（macOS）traffic-light spacer 为 `drag`；按钮 `no-drag`。
+- **窗口拖拽**：栏 / drag-tail /（macOS）traffic-light spacer 为 `drag`；菜单按钮、`CurrentContextBadge`、右侧更新钮为 `no-drag`。
   内容区幽灵拖拽靠主壳 View 裁剪（`clipMainShellToMenuBar`），**不要**砍掉 menubar drag。
+  badge 点击契约见 [`menubar-current-ai-dropdown.md`](../features/menubar-current-ai-dropdown.md)。
 
 ### macOS 专属（`.mac-menu-bar`）
 
@@ -93,6 +94,8 @@ flowchart TD
   `<MacMenuBar/>` 或 `<WindowsMenuBar/>`，不再做 OS 条件渲染或 `[data-platform]` 条件 CSS。
 - **共享纯叶子**：`MenuBar`、`MenuBarCenterCluster`、`MenuBarItem`、`AdjacentNavButton`、
   `CurrentContextBadge` 为跨平台纯视图，被两条路径复用；交互只把事件抛回 reaxel。
+  badge 左键打开虚拟菜单 `current-ai`（精简 Switch AI 列表），不参与左区 hover 切换。
+  Settings 打开时 badge 零交互。
 - **平台差异只在**：布局结构（Mac：traffic-light spacer + AppIcon；Win：AppIcon 居左）+ 作用域 CSS
   （`.mac-menu-bar` / `.win-menu-bar`）。
 - **几何/样式变量**：`getMenuBarRootStyleVars()`（`menubar-geometry.ts`）为两条路径提供统一的
@@ -114,6 +117,8 @@ flowchart TD
 - [ ] macOS：左区为红绿灯留位 + App Icon（纯展示）+「切换 AI」；原生菜单栏 Application/Edit/View/Window 正常。
 - [ ] Windows：MainView 含 App Icon（纯展示）+ Application / View / 切换 AI；无原生菜单栏。
 - [ ] 两平台：顶级菜单开合、hover 切换、Prev/Next 动作、拖拽区、light/dark 主题、键盘导航一致可用。
+- [ ] 两平台：左键中区 Current AI 块弹出仅含 AI 列表的下拉；右键不出现原生窗口菜单；badge 本身不可拖窗。
+- [ ] Settings 打开时中区 badge 不可点、无 hover，右键仍不出现原生窗口菜单。
 - [ ] macOS：traffic-light spacer 为红绿灯留位；Prev/Next 扁平样式。
 - [ ] Windows：无 spacer；Prev/Next 凸起样式且有 2px 垂直偏移。
 - [ ] macOS：打开 MainView Dropdown 后点原生 Application/Edit/View → Dropdown 与 menubar 高亮应收起（`NSMenuDidBeginTrackingNotification`）。

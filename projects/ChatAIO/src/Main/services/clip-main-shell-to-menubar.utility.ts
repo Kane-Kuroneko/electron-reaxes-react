@@ -44,6 +44,7 @@ export const bindMainShellMenuBarClip = (win:BrowserWindow) => {
 		clipMainShellToMenuBar( win );
 	};
 	apply();
+	getMenubarColdStartMonitor().noteClip( win );
 	win.on( 'resize' , apply );
 	win.on( 'maximize' , apply );
 	win.on( 'unmaximize' , apply );
@@ -108,7 +109,8 @@ const isSameBounds = (a:Rectangle , b:Rectangle) => {
 
 
 import { hasUsableBrowserWindowContent } from '#main/services/usable-window-content.utility';
-import { getMenuBarHeight } from '#src/shared/menubar-geometry';
+import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
+import { getMenuBarHeight } from '#shared/menubar-geometry';
 import {
 	type BrowserWindow ,
 	type Rectangle ,

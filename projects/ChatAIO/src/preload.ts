@@ -26,12 +26,17 @@ const onPromptViewAppearanceChange = (callback:(state:PromptView.AppearanceState
 
 // AI Configuration Management APIs
 const getAIs = useRpc('get-ais');
+/* 默认页实例（供应商目录 + 内置策略映射），不是目录 JSON 原样 */
 const getDefaultAIs = useRpc('get-default-ais');
 const updateAI = useRpc('update-ai');
 const addAI = useRpc('add-ai');
 const deleteAI = useRpc('delete-ai');
 const reorderAIs = useRpc('reorder-ais');
 const resetAIsToDefaults = useRpc('reset-ais-to-defaults');
+const checkAiCatalogUpdate = useRpc('check-ai-catalog-update');
+const applyAiCatalogUpdate = useRpc('apply-ai-catalog-update');
+const discardAiCatalogUpdate = useRpc('discard-ai-catalog-update');
+const relaunchApp = useRpc('relaunch-app');
 const getPreloadAIIds = useRpc('get-preload-ai-families'); /* 返回预加载 AI 的 ID 列表 */
 const getAppearanceEnvironment = useRpc('get-appearance-environment');
 const setStartupAIPageLoadMode = useRpc('set-startup-ai-page-load-mode');
@@ -47,6 +52,7 @@ const copyPromptViewText = useRpc('copy-prompt-view-text');
 const sendPerfEvent = useRtm('perf-event');
 const menuViewAction = useRtm('menu-view:action');
 const menuViewReady = useRtm('menu-view:ready');
+const menuViewVisualReady = useRtm('menu-view:visual-ready');
 const menuViewResize = useRtm('menu-view:resize');
 const onMenuViewCommand = (callback:(command:MenuView.MenuCommand) => void) => {
 	return useMtr( 'menu-view:command' )( ( _ , command ) => {
@@ -57,6 +63,7 @@ const openDropdownView = useRtm('dropdown-view:open');
 const closeDropdownView = useRtm('dropdown-view:close');
 const focusDropdownViewItem = useRtm('dropdown-view:focus-item');
 const reportMenubarError = useRtm('menubar:error-report');
+const reportMenubarBootProbe = useRtm('menubar:boot-probe');
 const openSettingsVersion = useRtm('open-settings-version');
 const onDropdownViewCommand = (callback:(command:DropdownView.Command) => void) => {
 	return useMtr( 'dropdown-view:command' )( ( _ , command ) => {
@@ -110,6 +117,10 @@ const api = {
 	deleteAI,
 	reorderAIs,
 	resetAIsToDefaults,
+	checkAiCatalogUpdate,
+	applyAiCatalogUpdate,
+	discardAiCatalogUpdate,
+	relaunchApp,
 	getPreloadAIIds,
 	getAppearanceEnvironment,
 	setStartupAIPageLoadMode,
@@ -128,12 +139,14 @@ const api = {
 	closeDropdownView,
 	focusDropdownViewItem,
 	reportMenubarError,
+	reportMenubarBootProbe,
 	openSettingsVersion,
 	onDropdownViewCommand,
 	onUpdateStateChanged,
 	onSettingsViewNavigate,
 	onAIsOrderChanged,
 	menuViewReady,
+	menuViewVisualReady,
 	menuViewResize,
 	onMenuViewCommand,
 	isDropdownVisible,

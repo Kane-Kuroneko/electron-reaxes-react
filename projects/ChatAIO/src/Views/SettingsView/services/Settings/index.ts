@@ -19,6 +19,7 @@ export const getAIs = () => {
 	return api.getAIs();
 }
 
+/** 默认页实例（main 用供应商目录 + 内置策略映射后下发），不是目录原样 */
 export const getDefaultAIs = () => {
 	return api.getDefaultAIs();
 }
@@ -41,6 +42,22 @@ export const reorderAIs = (enabledIds: string[]) => {
 
 export const resetAIsToDefaults = () => {
 	return api.resetAIsToDefaults();
+}
+
+export const checkAiCatalogUpdate = () => {
+	return api.checkAiCatalogUpdate();
+}
+
+export const applyAiCatalogUpdate = ( revision:number ) => {
+	return api.applyAiCatalogUpdate( revision );
+}
+
+export const discardAiCatalogUpdate = () => {
+	return api.discardAiCatalogUpdate();
+}
+
+export const relaunchApp = () => {
+	return api.relaunchApp();
 }
 
 export const getPreloadAIIds = () => {
@@ -80,10 +97,15 @@ export const devCleanStart = () => {
 	return api.devCleanStart();
 }
 
+export const sendPerfEvent = ( events:PerfEvent[] ) => {
+	return api.sendPerfEvent( events );
+}
+
 
 import { Settings } from '#src/Types/SettingsTypes';
 import { AI } from '#src/Types/SettingsTypes/AI';
-import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
+import type { PerfEvent } from '#shared/utils/switch-perf-recorder.utility';
 import { NetworkProxy } from '#src/Types/SettingsTypes/NetworkProxy';
 import type { Startup } from '#src/Types/SettingsTypes/Startup';
 import type { PromptView } from '#src/Types/PromptView';

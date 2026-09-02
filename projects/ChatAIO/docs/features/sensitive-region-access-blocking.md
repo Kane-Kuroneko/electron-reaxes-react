@@ -4,12 +4,21 @@
 
 该功能有必要实现，但它的本质不是普通 UI 开关，而是 AI 页面加载前的出口网络风险控制。正确的判断对象不是用户本机所在地区，也不是系统语言或时区，而是当前 AI page 在应用内实际使用的 Electron session/proxy 链路对应的公网出口 IP 地区。
 
+**国家名单不再写死在 TS。** 供应商覆盖在 bundled `default-ais.json` 的 `region`（`available` / `forbidden`，ISO 3166-1 alpha-2）。运行时用实例 id 或 family 回查目录行，经 `evaluateVendorRegionAccess` 决定是否显示本地阻断页。不要在 `ai-region.ts` 或敏感地区服务里再维护一份平行国家表。
+
+两套「region」职责不同：
+
+| | 是什么 | 不是什么 |
+|--|--|--|
+| `catalog.region` | 该供应商服务可用/禁用国家 | 不是 Google MakerSuite / AI Studio 资格门（不要把 available-regions 重定向混进来） |
+| `ai-region.ts` | GuidingView 国内/国际**产品**分组 | 不是 ISO 覆盖；不能从 catalog.region 派生 |
+
 MVP 方案：
 
-- 在每个 `AI.AIItem` 上增加一个布尔开关 `blockSensitiveRegionAccess`。
-- 开关启用后，AI page 加载远程 AI URL 前，先用同一个 `session` 访问公网 IP 地区探测服务。
-- 探测结果命中敏感国家/地区码，或探测失败无法确认地区时，不加载远程 AI 页面，改为加载本地阻断提示页。
-- 首版敏感地区名单先内置在 main 进程服务中，默认包含常见受欧美 AI 服务限制的国家码，后续再演进为可配置列表或按 provider 独立列表。
+- 探测仍走该 AI page 的 Electron `session`（同一 proxy）。
+- 探测到的国家码交给 catalog.region：`forbidden` 优先；`available` 非空则只放行白名单；两数组都空不限制。
+- 命中禁用、或不在白名单、或探测失败无法确认地区时，不加载远程 AI 页面，改为加载本地 `data:text/html` 阻断页。URL 保持原目标，不要改成 google available-regions。
+- per-AI 开关 `blockSensitiveRegionAccess` 仍是「要不要探测」；**名单来自目录**，不是服务内硬编码 `CN/CU/IR/...`。
 
 ## 背景依据
 
@@ -128,11 +137,11 @@ projects/ChatAIO/src/Main/services/sensitive-region-access/index.ts
 
 职责：
 
-- 定义默认敏感国家码。
+- **不再**定义默认敏感国家码；国家码来自供应商目录 `region`（`getAIConfigService().getVendorRegionForAI` + `evaluateVendorRegionAccess`）。
 - 通过当前 AI view 的 Electron `Session` 探测公网 IP 国家码。
 - 解析多个公网 IP/geolocation provider 返回值。
 - 生成本地阻断页 `data:text/html` URL。
-- 返回可用于 runtime view 比较的 `policyKey`。
+- 返回可用于 runtime view 比较的 `policyKey`（应包含该供应商 region，避免目录更新后仍用旧名单）。
 
 首版 provider 顺序：
 
@@ -181,7 +190,7 @@ projects/ChatAIO/src/Main/services/sensitive-region-access/index.ts
 ## 后续演进
 
 - 增加全局“敏感地区列表”高级设置。
-- 按 AI family 提供 provider-specific 默认列表。
+- ~~按 AI family 提供 provider-specific 默认列表。~~ **已由 catalog.region 承担**（见 [`../architecture/ai-config.md`](../architecture/ai-config.md)）。
 - 增加地区探测 provider 设置和企业自建 endpoint。
 - 增加探测缓存可视化和手动重新检测。
 - 增加“只警告不阻断”模式。

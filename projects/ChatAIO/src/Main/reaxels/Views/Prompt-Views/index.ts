@@ -77,12 +77,16 @@ export const reaxel_PromptViews = reaxel( () => {
 		};
 	};
 	
-	const syncBounds = (bounds = mainWindow.getContentBounds()) => {
-		if( !hasUsableBrowserWindowContent( mainWindow ) ) {
+	/* 禁止 `bounds = mainWindow.getContentBounds()`：默认参数在函数体之前求值，
+	   关窗后 closed 把 mainWindow 置 null，动画 tick / did-finish-load 会直接炸。
+	   docs/features/e2e-playwright.md */
+	const syncBounds = (bounds?:Rectangle) => {
+		const next = bounds ?? readUsableMainContentBounds();
+		if( !next ) {
 			return;
 		}
-		syncSideBounds( 'left' , bounds );
-		syncSideBounds( 'right' , bounds );
+		syncSideBounds( 'left' , next );
+		syncSideBounds( 'right' , next );
 	};
 
 	const syncAppearanceFromSettings = () => {
@@ -151,6 +155,10 @@ export const reaxel_PromptViews = reaxel( () => {
 		}
 		
 		const tick = () => {
+			if( !readUsableMainContentBounds() ) {
+				clearAnimationTimer( side );
+				return;
+			}
 			const elapsed = performance.now() - startedAt;
 			const progress = Math.min( 1 , elapsed / PROMPT_VIEW_ANIMATION_MS );
 			const eased = promptViewBezier( progress );
@@ -181,6 +189,14 @@ export const reaxel_PromptViews = reaxel( () => {
 		finalVisible:boolean,
 	) => {
 		clearAnimationTimer( side );
+		if( !readUsableMainContentBounds() ) {
+			mutateSide( side , state => {
+				state.width = targetWidth;
+				state.targetWidth = targetWidth;
+				state.visible = finalVisible;
+			} );
+			return;
+		}
 		mutateSide( side , state => {
 			state.width = targetWidth;
 			state.targetWidth = targetWidth;
@@ -210,7 +226,10 @@ export const reaxel_PromptViews = reaxel( () => {
 		nextWidth:number ,
 		expanding:boolean,
 	) => {
-		const bounds = mainWindow.getContentBounds();
+		const bounds = readUsableMainContentBounds();
+		if( !bounds ) {
+			return;
+		}
 		const menuBarHeight = getMenuBarHeight();
 		const leftWidth = side === 'left'
 			? Math.max( 0 , nextWidth )
@@ -285,8 +304,16 @@ function createPromptSideState(side:PromptView.Side):PromptSideState {
 	};
 }
 
+const readUsableMainContentBounds = ():Rectangle | null => {
+	if( hasUsableBrowserWindowContent( mainWindow ) === false ) {
+		return null;
+	}
+	return mainWindow.getContentBounds();
+};
+
 const getPromptViewTargetWidth = () => {
-	const { width } = mainWindow.getContentBounds();
+	const bounds = readUsableMainContentBounds();
+	const width = bounds?.width || 1280;
 	return Math.max( 260 , Math.min( 380 , Math.floor( width * 0.24 ) ) );
 };
 
@@ -411,7 +438,7 @@ import {
 	isWebContentsViewDead,
 } from '#main/services/web-contents-view-alive.utility';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
-import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
+import { getMenuBarHeight as resolveMenuBarHeight } from '#shared/menubar-geometry';
 import type { PromptView } from '#src/Types/PromptView';
 import {
 	clipboard ,

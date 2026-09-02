@@ -10,11 +10,11 @@ export const App = reaxper( () => {
 	} , [] );
 	
 	if( store.Status.error ) {
-		return <div className="guiding-root guiding-loading">Failed to load setup.</div>;
+		return <div className="guiding-root guiding-loading" data-testid="guiding-root">Failed to load setup.</div>;
 	}
 	
 	if( store.Status.loading || !store.Data.defaults ) {
-		return <div className="guiding-root guiding-loading">Loading setup...</div>;
+		return <div className="guiding-root guiding-loading" data-testid="guiding-root">Loading setup...</div>;
 	}
 	
 	const PageComponent = {
@@ -30,7 +30,7 @@ export const App = reaxper( () => {
 				: antdTheme.defaultAlgorithm,
 		} }
 	>
-		<div className="guiding-root">
+		<div className="guiding-root" data-testid="guiding-root">
 			<div className="guiding-shell">
 				<header className="guiding-header">
 					<div>

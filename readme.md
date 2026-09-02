@@ -208,7 +208,7 @@ yarn tsx scripts/electron.start/index.ts Autohotkey-GUI/War3
 
 | 文档 | 说明 |
 |------|------|
-| [CODING_STANDARD.md](./CODING_STANDARD.md) | 编码规范（import 置底、缩进、命名等） |
+| [CODING_STANDARD.md](./CODING_STANDARD.md) | 编码规范（开篇设计哲学：分层严格度；import 置底、缩进、命名等） |
 | [AGENTS.md](./AGENTS.md) | 全仓约定索引；改代码须读 [Reaxes 开发文档](./.agents/skills/reaxes-development/SKILL.md) |
 | [.agents/rules/ipc-coding.md](./.agents/rules/ipc-coding.md) | Electron IPC 约定 |
 | [projects/ChatAIO/AGENTS.md](./projects/ChatAIO/AGENTS.md) | ChatAIO 入口（`DOCS.md` / `CLAUDE.md` 为其别名） |

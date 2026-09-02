@@ -12,7 +12,7 @@ export const reaxel_AIViews = reaxel( () => {
 	} );
 
 	const initAIView = ( ai:AI.AIItem , settings:Settings ) => {
-		console.log( '[AIViews] initAIView start:' , ai.id , ai.url || getAIDomainByFamily( ai.AI_family ) );
+		console.log( '[AIViews] initAIView start:' , ai.id , ai.url );
 		const existingRuntimeView = store.AIViews.find( item => item.id === ai.id );
 		if( existingRuntimeView?.view ) {
 			void updateRuntimeAIView( existingRuntimeView , ai , settings );
@@ -69,13 +69,21 @@ export const reaxel_AIViews = reaxel( () => {
 	};
 
 	const syncAIViewsWithConfig = async( settings:Settings ) => {
+		if( Reaxel_View().areRuntimeViewsInitialized() === false ) {
+			console.log( '[AIViews] skip syncAIViewsWithConfig until initRuntimeViews (menubar visual-ready gate)' );
+			return;
+		}
 		console.log( '[AIViews] syncAIViewsWithConfig start. AI count:' , settings.AIs.length );
 		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
 		const activeIds = new Set( activeAIs.map( ai => ai.id ) );
 
 		store.AIViews.slice().forEach( runtimeView => {
 			if( !activeIds.has( runtimeView.id ) ) {
-				destroyAIView( runtimeView.id );
+				try {
+					destroyAIView( runtimeView.id );
+				} catch ( error ) {
+					console.error( `[AIViews] Failed to destroy AI view: ${ runtimeView.id }` , error );
+				}
 			}
 		} );
 
@@ -87,7 +95,11 @@ export const reaxel_AIViews = reaxel( () => {
 		for( const ai of activeAIs ) {
 			const runtimeView = store.AIViews.find( item => item.id === ai.id );
 			if( runtimeView ) {
-				await updateRuntimeAIView( runtimeView , ai , settings );
+				try {
+					await updateRuntimeAIView( runtimeView , ai , settings );
+				} catch ( error ) {
+					console.error( `[AIViews] Failed to update AI view: ${ ai.id } (${ ai.label })` , error );
+				}
 				continue;
 			}
 			if( ai.preloadOnStartup || ai.id === Reaxel_View.store.currentAIViewKey ) {
@@ -104,8 +116,16 @@ export const reaxel_AIViews = reaxel( () => {
 			}
 		}
 
-		applyVisibility();
-		Reaxel_View().presentActiveCenterView( 'recover' );
+		try {
+			applyVisibility();
+		} catch ( error ) {
+			console.error( '[AIViews] applyVisibility failed:' , error );
+		}
+		try {
+			Reaxel_View().presentActiveCenterView( 'recover' );
+		} catch ( error ) {
+			console.error( '[AIViews] presentActiveCenterView recover failed:' , error );
+		}
 	};
 
 	const showAIView = ( aiId:string , settings:Settings ) => {
@@ -210,6 +230,76 @@ export const reaxel_AIViews = reaxel( () => {
 		} );
 	};
 
+	/**
+	 * 等当前已创建的启动 AI WCV 都 `ready`（did-stop-loading / did-fail-load）。
+	 * 不能把「尚未 loadURL、isLoading=false」当成结束，否则 Settings preload 会跟 AI 抢加载。
+	 * 超时仍 resolve(false)，调用方继续 preload Settings。
+	 * 设计：docs/features/settings-view-preload.md
+	 */
+	const waitUntilStartupAIViewsSettled = ( options:{ timeoutMs?:number } = {} ) => {
+		const timeoutMs = options.timeoutMs ?? 15000;
+		const views = store.AIViews.slice();
+		if( views.length === 0 ) {
+			return Promise.resolve( true );
+		}
+
+		const isViewSettled = ( runtimeView:RuntimeAIView ) => {
+			if( runtimeView.ready ) {
+				return true;
+			}
+			return isWebContentsViewDead( runtimeView.view );
+		};
+
+		if( views.every( isViewSettled ) ) {
+			return Promise.resolve( true );
+		}
+
+		return new Promise<boolean>( resolve => {
+			let settled = false;
+			let timer : ReturnType<typeof setTimeout>;
+			const finish = ( ok:boolean ) => {
+				if( settled ) {
+					return;
+				}
+				settled = true;
+				clearTimeout( timer );
+				views.forEach( runtimeView => {
+					const webContents = getAliveWebContents( runtimeView.view );
+					if( !webContents ) {
+						return;
+					}
+					webContents.removeListener( 'did-stop-loading' , onMaybeDone );
+					webContents.removeListener( 'did-fail-load' , onMaybeDone );
+				} );
+				resolve( ok );
+			};
+			const onMaybeDone = () => {
+				if( views.every( isViewSettled ) ) {
+					finish( true );
+				}
+			};
+			timer = setTimeout( () => {
+				console.warn(
+					`[AIViews] waitUntilStartupAIViewsSettled timed out after ${ timeoutMs }ms;`
+					+ ' continuing SettingsView preload',
+				);
+				finish( false );
+			} , timeoutMs );
+			views.forEach( runtimeView => {
+				if( isViewSettled( runtimeView ) ) {
+					return;
+				}
+				const webContents = getAliveWebContents( runtimeView.view );
+				if( !webContents ) {
+					return;
+				}
+				webContents.on( 'did-stop-loading' , onMaybeDone );
+				webContents.on( 'did-fail-load' , onMaybeDone );
+			} );
+			onMaybeDone();
+		} );
+	};
+
 	const rtn = {
 		get currentAIView() {
 			return store.AIViews.find( item => item.id === Reaxel_View.store.currentAIViewKey ) || null;
@@ -222,7 +312,8 @@ export const reaxel_AIViews = reaxel( () => {
 		getRuntimeAIViewsInSettingsOrder ,
 		canCloseCurrentAIView ,
 		closeCurrentAIViewAndShowNext ,
-		applyVisibility,
+		applyVisibility ,
+		waitUntilStartupAIViewsSettled,
 	};
 
 	const createRuntimeAIView = (
@@ -230,7 +321,7 @@ export const reaxel_AIViews = reaxel( () => {
 		settings:Settings ,
 		options:CreateRuntimeAIViewOptions = {},
 	):RuntimeAIView => {
-		const domain = ai.url || getAIDomainByFamily( ai.AI_family );
+		const domain = ai.url; // 空 url 由 normalizeAIItem 按供应商目录行补齐，禁止 family 域名表回退。region 不进实例，阻断回查目录行。见提案。
 		const loadDomain = options.loadURL || domain;
 		const partition = getAIPartition( ai.id );
 		const environment = getRuntimeAIPageEnvironment( settings );
@@ -345,7 +436,7 @@ export const reaxel_AIViews = reaxel( () => {
 		ai:AI.AIItem ,
 		settings:Settings,
 	) => {
-		const nextDomain = ai.url || getAIDomainByFamily( ai.AI_family );
+		const nextDomain = ai.url;
 		const nextProxyKey = getRuntimeAIProxyKey( ai , settings );
 		const nextEnvironment = getRuntimeAIPageEnvironment( settings );
 		const nextAppearanceKey = getAIPageAppearanceKey( nextEnvironment );
@@ -394,7 +485,10 @@ const safeLoadAIURL = async(
 	url:string ,
 	context:string,
 ) => {
+	/* 供应商 ISO 覆盖在 catalog.region；是否阻断用 getAIConfigService().isAICountryBlockedByCatalog。
+	 * 出口探测 + 本地 data:text/html 阻断页见 sensitive-region-access-blocking.md。不要改远程 URL 去 google available-regions。 */
 	try {
+		getMenubarColdStartMonitor().noteWcvLoadAttempt( view , url , context );
 		await view.webContents.loadURL( url );
 	} catch ( error ) {
 		console.warn( '[AIViews] loadURL failed:' , context , url , error );
@@ -770,8 +864,8 @@ type PersistedAIPartitionDiscoveryResult = {
 	errors: ResetAISessionDataError[];
 };
 
-import { getAIDomainByFamily } from './data';
 import { getWhiteScreenMonitor } from './white-screen-monitor.retexel';
+import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
 import type { AI } from '#src/Types/SettingsTypes/AI';
 import type { Settings } from '#src/Types/SettingsTypes';
 import { initWebContentsView } from '#main/reaxels/Views/utils/initWebContentsView';

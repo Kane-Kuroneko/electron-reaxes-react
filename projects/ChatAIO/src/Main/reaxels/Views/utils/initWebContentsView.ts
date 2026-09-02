@@ -15,9 +15,17 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	mainWindow.contentView.addChildView(view);
 	/* 内容 WCV 默认不可见，避免未布局前以全窗/错位 bounds 叠在 menubar 上抢命中（#41002） */
 	view.setVisible( false );
+	getMenubarColdStartMonitor().instrumentContentView( view , {
+		viewId : options.aiConfig?.id
+			|| ( options.type === 'Prompt-View' ? `prompt-${ options.promptSide || 'unknown' }` : options.type ) ,
+		kind : options.type ,
+	} );
 	const refreshBounds = () => {
 		if( options.refreshBounds ) {
 			options.refreshBounds( view );
+			return;
+		}
+		if( hasUsableBrowserWindowContent( mainWindow ) === false ) {
 			return;
 		}
 		/* 禁止回退到 y=0 全窗：会与主壳 menubar drag 在屏幕坐标重叠 */
@@ -40,6 +48,7 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 	new ViewCrashReporter(view, viewName);
 	
 	if(viewOptions.type==='Settings-View'){
+		/* loadURL 在创建时就开始。冷启动调用方须等 AI settle 后再 init，见 settings-view-preload.md */
 		useSettingsView(view, options);
 	}else if(viewOptions.type==='AI-View'){
 		useAIView(view, viewOptions);
@@ -98,7 +107,7 @@ const useSettingsView = (view:WebContentsView,options:WebContentsViewConstructor
 			event.preventDefault();
 		}
 	} );
-	if(dev()){
+	if( shouldUseDevRendererServer() ){
 		~async function loadDevSettingsView() {
 			const loaded = await safeLoadURL( view , createDevRendererEntryURL( 'SettingsView' ) , 'Settings-View' );
 			if( !loaded ) {
@@ -112,7 +121,7 @@ const useSettingsView = (view:WebContentsView,options:WebContentsViewConstructor
 }
 const usePromptView = (view:WebContentsView,options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
 	const side = options.promptSide || 'left';
-	if(dev()){
+	if( shouldUseDevRendererServer() ){
 		~async function loadDevPromptView() {
 			const loaded = await safeLoadURL(
 				view ,
@@ -166,6 +175,7 @@ const safeLoadURL = async(
 	context:string,
 ) => {
 	try {
+		getMenubarColdStartMonitor().noteWcvLoadAttempt( view , url , context );
 		await view.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
 		return true;
 	} catch ( error ) {
@@ -264,6 +274,8 @@ type ExtraBrowserWindowOptions = {
 }
 
 import { mainWindow } from "#main/mainWindow";
+import { hasUsableBrowserWindowContent } from '#main/services/usable-window-content.utility';
+import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
 import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 import { applyAIProxyToView } from "#main/services/settings/proxy-service";
 import { handleAISwitchShortcutInput } from '#main/services/shortcuts/ai-switch';
@@ -274,9 +286,10 @@ import {
 	getFreshRendererLoadURLOptions ,
 	getRendererEntryFilePath,
 } from '#main/services/dev/renderer-entry';
+import { shouldUseDevRendererServer } from '#main/foundation/e2e-mode';
 import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
-import { getMenuBarHeight } from '#src/shared/menubar-geometry';
+import { getMenuBarHeight } from '#shared/menubar-geometry';
 import {
 	applyAIPageAppearanceToView ,
 	getAIPageBackgroundColor ,

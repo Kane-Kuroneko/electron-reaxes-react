@@ -275,19 +275,21 @@ Electron 的安全模型要求 renderer 通过 preload 暴露的 API 与 main �
 
 ## P2-01 默认 AI 配置存在多处数据源
 
-消化方案（分批，尚未落地代码）：[`docs/feature-proposal--ai-catalog-source.md`](./docs/feature-proposal--ai-catalog-source.md) 批次 1–2。未做完批次 2 前本条仍有效。
+**状态：已被批次 2 消化（本地并行 URL 表已删除）；2026-08-28 方向纠偏后目录是扁平供应商列表，不是默认实例袋。** 远程目录 / 签名已落地，见 [`docs/architecture/ai-config.md`](./docs/architecture/ai-config.md) 与 [`docs/features/ai-catalog-manual-update.md`](./docs/features/ai-catalog-manual-update.md)。本条不再作为独立待办。
 
-### 问题现状
+本地现状（方向纠偏后）：`statics/ai-catalog/default-ais.json` 只存供应商 `id`(UUID)+`family`+`label`+`url`+`region`。默认页实例由 App 映射（内置禁用表 + proxy follow_global + preload false）。renderer 走 `get-default-ais`（仍是 `AIItem[]`）/ `store.Data.AIs`。`AI-family.ts` 仍是能力联合类型（UA / partition），不是 URL 表，也不是启用表。ISO 覆盖只活在目录 JSON，阻断回查目录行。
 
-默认 AI family 和 URL 分散在多个文件：
+### 问题现状（历史）
 
-- `projects/ChatAIO/src/shared/statics/default-ais.json`
+默认 AI family 和 URL 曾分散在多个文件：
+
+- `projects/ChatAIO/statics/ai-catalog/default-ais.json`
 - `projects/ChatAIO/src/shared/statics/AI-family.ts`
 - `projects/ChatAIO/src/Main/services/settings/ai-config-service.ts`
 - `projects/ChatAIO/src/Main/reaxels/Views/AI-Views/data.ts`
 - `projects/ChatAIO/src/Views/SettingsView/components/ManageAIs/index.tsx`
 
-其中 `AI-Views/data.ts` 仍保留旧的 AIData 结构；SettingsView 内部也有 `defaultURLByFamily`。
+其中 `AI-Views/data.ts` 曾保留 `AIData` 结构；SettingsView 曾 import `ai-family-defaults`。
 
 ### 为什么有问题以及后果
 
@@ -303,7 +305,7 @@ ChatAIO 的核心业务是管理多个 AI 服务页面。默认 AI 是菜单、�
 
 修改范围：
 
-- `projects/ChatAIO/src/shared/statics/default-ais.json`
+- `projects/ChatAIO/statics/ai-catalog/default-ais.json`
 - `projects/ChatAIO/src/shared/statics/AI-family.ts`
 - `projects/ChatAIO/src/Main/services/settings/ai-config-service.ts`
 - `projects/ChatAIO/src/Main/reaxels/Views/AI-Views/data.ts`
@@ -311,8 +313,8 @@ ChatAIO 的核心业务是管理多个 AI 服务页面。默认 AI 是菜单、�
 
 修复步骤：
 
-1. 以 `default-ais.json` 作为默认 AI 实例的唯一来源。
-2. 从 `default-ais.json` 派生 family 列表和 family 默认 URL，或新增一个 shared utility 统一读取。
+1. 以 `default-ais.json` 作为**供应商目录**唯一来源（不是默认 AIItem 列表）。
+2. 官方 URL 写在目录行上；默认启用/代理/预加载内置在 App TS，按 family 特化。
 3. 删除或废弃 `AI-Views/data.ts` 中的旧默认 URL 数据；如果只需要 domain lookup，改为从 effective AIs 或 default utility 获取。
 4. `ManageAIs/index.tsx` 删除本地 `defaultURLByFamily`，改为调用 shared utility。
 5. `ai-config-service.ts` 的 normalize 也使用同一 utility，不再保留重复 URL map。
@@ -326,13 +328,17 @@ ChatAIO 的核心业务是管理多个 AI 服务页面。默认 AI 是菜单、�
 
 ## P2-02 AI 配置持久化策略与文档描述不一致
 
-文档与整表落盘对齐放在提案批次 3（只改文档承认现状，本阶段不改成 delta）：[`docs/feature-proposal--ai-catalog-source.md`](./docs/feature-proposal--ai-catalog-source.md)。
+**状态：文档已按批次 3 与代码对齐（整表 + deletedIds，不是 delta）。** 实现不改成 delta，现行见 [`docs/architecture/ai-config.md`](./docs/architecture/ai-config.md)。
 
-### 问题现状
+### 问题现状（历史）
 
-`projects/ChatAIO/docs/architecture/ai-config.md` 描述用户配置只存修改和删除项，默认配置从 `default-ais.json` 合并。
+`ai-config.md` 曾写用户配置只存修改和删除项。实际 `replaceAllAIs` 写入完整 effective 列表，并计算 `deletedIds`。
 
-实际 `projects/ChatAIO/src/Main/services/settings/ai-config-service.ts` 中 `replaceAllAIs` 会把完整 effective AIs 写入用户配置，并计算 deletedIds。
+### 现行模型
+
+- `user-ais.json`：**整表** `ais` + `deletedIds`
+- 无新目录事件：user 顺序保留，目录映射出的种子页里没有且未删除的项追加
+- 三路 merge 只在确认新目录时按供应商 UUID 改种子页的 url/label；用户改过的跳过；用户加的新 id 不误伤；目录删除不自动从 user 表删
 
 ### 为什么有问题以及后果
 

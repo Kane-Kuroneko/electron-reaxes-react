@@ -217,11 +217,11 @@ const applyThemePreferenceToDocument = (
 
 import { reaxel_I18n } from '#PromptView/reaxels/i18n';
 import { i18n } from '#PromptView/reaxels/exports';
-import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
 import {
 	resolveLanguagePreference ,
 	resolveThemePreference,
-} from '#src/shared/appearance';
+} from '#shared/appearance';
 import type { PromptView } from '#src/Types/PromptView';
 import type { Appearance } from '#src/Types/SettingsTypes/Appearance';
 import type { Languages } from '#src/Types/Languages';

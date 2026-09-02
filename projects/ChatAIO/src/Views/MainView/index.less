@@ -3,8 +3,9 @@
  * 菜单栏渲染在 mainWindow HTML 中，通过 -webkit-app-region 实现原生窗口拖拽。
  *
  * 拖拽约定（见 docs/issues/menubar-drag-region-leak-below-content.md）：
- *   - 栏空白 / drag-tail / badge / macOS traffic-light spacer → drag（整栏可拖窗）
- *   - 菜单按钮 / right 更新钮 → no-drag 挖洞
+ *   - 栏空白 / drag-tail / macOS traffic-light spacer → drag（整栏可拖窗）
+ *   - 菜单按钮 / CurrentContextBadge / right 更新钮 → no-drag 挖洞
+ *   - badge 必须 no-drag 才能左键开下拉；禁止为排序去改 drag（排序只在 DropdownView）
  *   - 禁止 inset:0 全栏 drag overlay
  *   - 内容区幽灵拖拽须靠主壳 native View 裁到 menubar 高度（clipMainShellToMenuBar），
  *     不要靠砍掉 menubar drag「修」——那只会让整栏拖不动
@@ -155,7 +156,8 @@ html:has(.mac-menu-bar) #react-app-root {
 }
 
 /* 中区：相对整行 menubar（含 macOS 交通灯）水平居中；垂直与左区共用 margin 契约。
- * 容器 no-drag：避免 Prev/Badge/Next 包围盒 + transform 放大命中面；badge 自身 drag。 */
+ * 容器 no-drag：避免 Prev/Badge/Next 包围盒 + transform 放大命中面；
+ * badge / Prev / Next 均为 no-drag 交互控件。 */
 .main-view-bar__center {
 	position: absolute;
 	left: 50%;
@@ -219,6 +221,7 @@ html:has(.mac-menu-bar) #react-app-root {
 	height: var(--menu-item-height, 28px);
 	margin: var(--menu-item-margin-y, 4px) 4px;
 	padding: 0 10px;
+	border: none;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -232,7 +235,32 @@ html:has(.mac-menu-bar) #react-app-root {
 	font-size: 12px;
 	font-weight: 600;
 	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	-webkit-app-region: drag;
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	-webkit-app-region: no-drag;
+}
+
+.main-view-context-badge:not(.main-view-context-badge--static):hover {
+	background: linear-gradient(
+		90deg,
+		var(--menu-brand-bg-dark, rgba(15, 23, 42, 0.09)) 0%,
+		var(--menu-view-hover-bg, rgba(15, 23, 42, 0.06)) 50%,
+		var(--menu-brand-bg-dark, rgba(15, 23, 42, 0.09)) 100%
+	);
+}
+
+.main-view-context-badge--static {
+	cursor: default;
+}
+
+.main-view-context-badge--open {
+	background: linear-gradient(
+		90deg,
+		var(--menu-view-active-bg, rgba(15, 23, 42, 0.1)) 0%,
+		var(--menu-brand-bg-dark, rgba(15, 23, 42, 0.09)) 50%,
+		var(--menu-view-active-bg, rgba(15, 23, 42, 0.1)) 100%
+	);
 }
 
 .main-view-context-badge__label {

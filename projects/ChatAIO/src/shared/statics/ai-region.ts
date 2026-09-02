@@ -1,7 +1,8 @@
 /**
- * AI 区域分类工具
- * 根据 AI_family 判断服务商归属区域，供 GuidingView / SettingsView 等消费方进行分组展示。
- * 区域分类逻辑集中维护于此，不在各视图层散落判断。
+ * AI 区域分类工具（GuidingView 国内/国际产品分组）。
+ * 按 AI_family 判断服务商归属，不是供应商 JSON 的 ISO 覆盖（catalog.region）。
+ * 国内/国际产品身份不能从「哪些国家可用」派生，两套表职责不同，不要合并。
+ * ISO 可用/禁用见 `src/Main/services/settings/utils/ai-catalog-region.utility.ts` 与 default-ais.json 的 region 字段。
  */
 
 export type AIRegion = 'domestic' | 'international';

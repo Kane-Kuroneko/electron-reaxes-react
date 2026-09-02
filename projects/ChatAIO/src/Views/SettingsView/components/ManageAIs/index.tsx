@@ -1,38 +1,38 @@
-	const AIEnabledCheckbox = reaxper( ( { id }:{ id:string } ) => {
+	const AIEnabledSwitch = reaxper( ( { id }:{ id:string } ) => {
 		const target = reaxel_SettingsView.store.Data.AIs.find( ai => ai.id === id );
 		const { setAIEnabled , isAIPendingDeletion } = reaxel_SettingsView();
 		const isPendingDelete = isAIPendingDeletion( id );
 
-		return <Checkbox
+		return <Switch
+			size="small"
 			checked={ target ? !target.disabled : false }
 			disabled={ !target || isPendingDelete }
-			onChange={ e => {
-				setAIEnabled( id , e.target.checked );
+			onChange={ value => {
+				setAIEnabled( id , value );
 			} }
 		/>;
 	} );
 
 	/**
-	 * "Load this AI when app starts" 表格列开关。
+	 * "Load this AI when app starts" 表格列勾选。
 	 * 直接从表格行 toggle preloadOnStartup，无需进入 Edit Modal。
 	 * 当 startupAIPageLoadMode 为 'first-ai' 且该 AI 为列表第一项时强制启用。
 	 */
-	const PreloadOnStartupSwitch = reaxper( ( { id }:{ id:string } ) => {
+	const PreloadOnStartupCheckbox = reaxper( ( { id }:{ id:string } ) => {
 		const target = reaxel_SettingsView.store.Data.AIs.find( ai => ai.id === id );
 		const isFirstAI = reaxel_SettingsView.store.Data.AIs[0]?.id === id;
 		const isFirstAIForcedPreload = reaxel_SettingsView.store.UIControls.manage_AIs.startupAIPageLoadMode === 'first-ai' && isFirstAI;
-			const { isAIPendingDeletion } = reaxel_SettingsView();
+		const { isAIPendingDeletion } = reaxel_SettingsView();
 		const isPendingDelete = isAIPendingDeletion( id );
 		const checked = isFirstAIForcedPreload || ( target?.preloadOnStartup ?? false );
 
-		return <Switch
-			size="small"
+		return <Checkbox
 			checked={ checked }
 			disabled={ isFirstAIForcedPreload || !target || isPendingDelete }
-			onChange={ value => {
+			onChange={ e => {
 				reaxel_SettingsView.mutate.Data( state => {
 					state.AIs = state.AIs.map( ai => ai.id === id
-						? { ...ai , preloadOnStartup : value }
+						? { ...ai , preloadOnStartup : e.target.checked }
 						: ai );
 				} );
 			} }
@@ -127,7 +127,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	custom : 'default',
 };
 
-	const columns:TableColumnType<AI.AIItem>[] = [
+	const createManageAIsColumns = () : TableColumnType<AI.AIItem>[] => [
 		{
 			title : compactTableHeader( <I18n>Drag</I18n> ) ,
 			width : 48 ,
@@ -143,7 +143,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			align : 'center' ,
 			onHeaderCell : compactTableHeaderCell ,
 			render( _value , record ) {
-				return <AIEnabledCheckbox id={ record.id }/>;
+				return <AIEnabledSwitch id={ record.id }/>;
 			},
 		} ,
 		{
@@ -152,7 +152,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			align : 'center' ,
 			onHeaderCell : compactTableHeaderCell ,
 			render( _value , record ) {
-				return <PreloadOnStartupSwitch id={ record.id }/>;
+				return <PreloadOnStartupCheckbox id={ record.id }/>;
 			},
 		} ,
 		{
@@ -160,10 +160,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			dataIndex : 'label' ,
 			ellipsis : true,
 			minWidth : 100,
-			...createColumnTextFilter<AI.AIItem>(
-				record => record.label || '' ,
-				{ placeholderKey : 'Search AI name' } ,
-			) ,
+			...createColumnTextFilter<AI.AIItem>( 'label' ) ,
 			render( _value , record ) {
 				const { isNewAI , isModifiedAI , isAIPendingDeletion } = reaxel_SettingsView();
 				const isNew = isNewAI( record.id );
@@ -184,10 +181,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			dataIndex : 'AI_family',
 			ellipsis : true,
 			minWidth : 72,
-			...createColumnTextFilter<AI.AIItem>(
-				record => record.AI_family || '' ,
-				{ placeholderKey : 'Search AI family' } ,
-			) ,
+			...createColumnTextFilter<AI.AIItem>( 'AI_family' ) ,
 			render( value: AI.AIFamily ) {
 				const color = AI_FAMILY_TAG_COLORS[value] || 'default';
 				return <Tag color={ color }>{ value }</Tag>;
@@ -198,10 +192,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			dataIndex : 'url' ,
 			ellipsis : true,
 			minWidth : 140,
-			...createColumnTextFilter<AI.AIItem>(
-				record => record.url || '' ,
-				{ placeholderKey : 'Search AI URL' } ,
-			) ,
+			...createColumnTextFilter<AI.AIItem>( 'url' ) ,
 		} ,
 		{
 			title : <I18n>Operations</I18n> ,
@@ -236,17 +227,81 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		},
 	];
 
+	/**
+	 * Manage AIs 表：展示按上次 Save 的启用态分区（启用在上、未启用置底）；筛选与展示序都不改真实 `AIs`。
+	 * 拖启用项松手后按启用槽位写回，未启用钉在原下标。见 docs/features/manage-ais-table-ux.md
+	 */
 	export const RCManageAIsPanel = reaxper( () => {
 		const {
 			changeEditAIModalVisible ,
 			persistCommittedAIOrder ,
 			reloadSettings ,
 			setStartupAIPageLoadMode,
+			isCommittedDisabled,
 		} = reaxel_SettingsView();
 		const pendingDeleteAIIds = reaxel_SettingsView.store.UIControls.manage_AIs.pendingDeleteAIIds;
 		const [resetModalVisible , setResetModalVisible] = React.useState( false );
 		const tableHostRef = React.useRef<HTMLDivElement>( null );
 		const tableScrollY = useHostScrollY( tableHostRef );
+		const sourceAIs = reaxel_SettingsView.store.Data.AIs;
+		const columnFilterValue = reaxel_SettingsView.store.UIControls.manage_AIs.column_filter.value;
+		const isVisuallyDisabled = ( ai:{ id:string } ) => isCommittedDisabled( ai.id );
+		const displayedAIs = displayedManageAIs( sourceAIs , columnFilterValue , isVisuallyDisabled );
+		const disabledDisplayedIdSet = React.useMemo( () => {
+			return new Set( displayedAIs.filter( ai => isCommittedDisabled( ai.id ) ).map( ai => ai.id ) );
+		} , [ displayedAIs , isCommittedDisabled ] );
+		/* columns 不吃筛选 value/open：漏斗图标与面板各自是 reaxper，从 store 读。 */
+		const columns = React.useMemo( () => createManageAIsColumns() , [] );
+		/* 量高在 useLayoutEffect 里 setState，会在 paint 前同步再渲一次。
+		 * 若这里直接按 scrollY 挂 Table，重表会挤进同一次 flush，切页仍卡。
+		 * 用 effect 把挂表推到首帧工具栏画完之后。见 docs/features/settings-menu-switch-perf.md */
+		const [ tableReady , setTableReady ] = React.useState( false );
+		const markedMountRef = React.useRef( false );
+		if( !markedMountRef.current ) {
+			markedMountRef.current = true;
+			noteSettingsMenu( SettingsMenuPerfPhase.PanelMount , {
+				aiCount : reaxel_SettingsView.store.Data.AIs.length ,
+			} );
+		}
+
+		React.useLayoutEffect( () => {
+			if( !settingsMenuTraceAwaitingPanel() ) {
+				return;
+			}
+			noteSettingsMenu( SettingsMenuPerfPhase.PanelLayout , {
+				scrollY : tableScrollY ?? null ,
+				tableReady ,
+			} );
+			if( tableScrollY == null || !tableReady ) {
+				return;
+			}
+			noteSettingsMenu( SettingsMenuPerfPhase.ScrollY , { scrollY : tableScrollY } );
+			requestAnimationFrame( () => {
+				requestAnimationFrame( () => {
+					noteSettingsMenu( SettingsMenuPerfPhase.PanelPaint , { scrollY : tableScrollY } );
+					endSettingsMenuTrace( { source : 'panel' } );
+				} );
+			} );
+		} , [ tableScrollY , tableReady ] );
+
+		React.useEffect( () => {
+			if( tableScrollY == null || tableReady ) {
+				return;
+			}
+			setTableReady( true );
+		} , [ tableScrollY , tableReady ] );
+
+		React.useEffect( () => {
+			if( !settingsMenuTraceAwaitingPanel() ) {
+				return;
+			}
+			const timer = window.setTimeout( () => {
+				endSettingsMenuTrace( { source : 'timeout' } );
+			} , 2000 );
+			return () => {
+				window.clearTimeout( timer );
+			};
+		} , [] );
 		const sensors = useSensors(
 			useSensor( PointerSensor , {
 				activationConstraint : {
@@ -255,26 +310,37 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			} ),
 		);
 
-		/* 顺序即时写盘，不走 Apply；失败由 persistCommittedAIOrder 回滚。 */
+		const collisionDetection : CollisionDetection = args => {
+			return closestCenter( {
+				...args ,
+				droppableContainers : args.droppableContainers.filter( container => {
+					return !disabledDisplayedIdSet.has( String( container.id ) );
+				} ) ,
+			} );
+		};
+
+		/* 只重排启用槽，未启用钉在真实下标。失败由 persistCommittedAIOrder 回滚。槽位按已保存的 disabled 算。 */
 		const onDragEnd = ( { active , over }:DragEndEvent ) => {
 			if( !over || active.id === over.id ) {
 				return;
 			}
 			const previousAIs = reaxel_SettingsView.store.Data.AIs.slice();
-			reaxel_SettingsView.mutate.Data( state => {
-				const activeIndex = state.AIs.findIndex( ai => ai.id === active.id );
-				const overIndex = state.AIs.findIndex( ai => ai.id === over.id );
-				if( activeIndex === -1 || overIndex === -1 ) {
-					return;
-				}
-				state.AIs = arrayMove( state.AIs.slice() , activeIndex , overIndex );
-			} );
-			if( enabledAIIdsEqual(
+			const nextAIs = reorderEnabledAIsByVisualDrag(
+				previousAIs ,
+				displayedAIs ,
+				String( active.id ) ,
+				String( over.id ) ,
+				isVisuallyDisabled ,
+			);
+			if( !nextAIs || enabledAIIdsEqual(
 				previousAIs.map( ai => ai.id ) ,
-				reaxel_SettingsView.store.Data.AIs.map( ai => ai.id ),
+				nextAIs.map( ai => ai.id ) ,
 			) ) {
 				return;
 			}
+			reaxel_SettingsView.mutate.Data( state => {
+				state.AIs = nextAIs;
+			} );
 			void persistCommittedAIOrder( previousAIs ).catch( error => {
 				console.error( '[ManageAIs] Reorder failed:' , error );
 				message.error( i18n( 'Failed to reorder AI pages' ) );
@@ -329,24 +395,31 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 					} }
 					style={ { marginBottom : 16 } }
 				><I18n>Add AI Page</I18n></Button>
+				<CatalogUpdateControls />
 			</div>
 			<DndContext
 				sensors={ sensors }
+				collisionDetection={ collisionDetection }
 				modifiers={ [ restrictToVerticalAxis ] }
 				onDragEnd={ onDragEnd }
 			>
 				<SortableContext
-					items={ reaxel_SettingsView.store.Data.AIs.map( ai => ai.id ) }
+					items={ displayedAIs.map( ai => ai.id ) }
 					strategy={ verticalListSortingStrategy }
 				>
 					<div
 						className="settings-table-host"
 						ref={ tableHostRef }
 					>
-						<Table
+						{ /* 先画出工具栏，下一帧再挂 Table，避免 120ms+ 长任务挡住切页。 */ }
+						{ /* 空 dataSource 仍挂 Table；筛选 Input 在 overlays portal，不进 filterDropdown。 */ }
+						{ tableReady && tableScrollY != null ? <>
+							<Table
 							key={ `ais-table-${ pendingDeleteAIIds.join(',') || 'none' }` }
-							className="manage-ais-table"
+							className={ displayedAIs.length === 0 ? 'manage-ais-table manage-ais-table--empty' : 'manage-ais-table' }
 							style={ { width: '100%' } }
+							/* 空表仍 fixed，配合 less 的 scrollbar-gutter，避免 colgroup 被 noData 丢掉后整表变宽。 */
+							tableLayout="fixed"
 							components={ {
 								body : {
 									row : SortableRow,
@@ -354,7 +427,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 							} }
 							rowKey="id"
 							columns={ columns }
-							dataSource={ reaxel_SettingsView.store.Data.AIs }
+							dataSource={ displayedAIs }
 							pagination={ false }
 							size="small"
 							scroll={ {
@@ -369,6 +442,8 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 								return '';
 							} }
 						/>
+							<ManageAIsColumnFilterOverlays />
+						</> : null }
 					</div>
 				</SortableContext>
 			</DndContext>
@@ -411,6 +486,19 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	};
 
 	const SortableRow:React.FC<Readonly<RowProps>> = reaxper( props => {
+		const rowId = props['data-row-key'];
+		/* 空表 placeholder 没有 data-row-key，不能走 dnd-kit（也不该拆表头）。 */
+		if( !rowId ) {
+			return <tr { ...props } />;
+		}
+		return <SortableDataRow { ...props } />;
+	} );
+
+	const SortableDataRow:React.FC<Readonly<RowProps>> = reaxper( props => {
+		const rowId = props['data-row-key'];
+		const { isAIPendingDeletion , isCommittedDisabled } = reaxel_SettingsView();
+		const isPendingDelete = isAIPendingDeletion( rowId );
+		const isDisabledAI = isCommittedDisabled( rowId );
 		const {
 			attributes ,
 			listeners ,
@@ -419,7 +507,9 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			transition ,
 			isDragging,
 		} = useSortable( {
-			id : props['data-row-key'],
+			id : rowId ,
+			/* 未启用行禁拖也禁投放，避免拖进未启用区把它们挤走。置底分区看上次 Save 的 disabled。见 docs/features/manage-ais-table-ux.md */
+			disabled : isDisabledAI ,
 		} );
 
 		const style:React.CSSProperties = {
@@ -429,11 +519,9 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			...( isDragging ? { position : 'relative' , zIndex : 9999 } : {} ),
 		};
 
-		const { isAIPendingDeletion } = reaxel_SettingsView();
-	// 待删除行禁用拖拽 — 不传递 listeners/attributes
-	const dragContext = isAIPendingDeletion( props['data-row-key'] )
+		const dragContext = ( isPendingDelete || isDisabledAI )
 			? { disabled : true }
-		: { listeners , attributes };
+			: { listeners , attributes };
 
 	return <DragHandleContext.Provider value={ dragContext }>
 			<tr
@@ -460,24 +548,34 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 
 		const [urlEditing , setUrlEditing] = React.useState( false );
 		const [urlDraft , setUrlDraft] = React.useState( '' );
+		const [catalogDefaults , setCatalogDefaults] = React.useState<AI.AIItem[]>( [] );
 
-		// 当modal开始打开时重置编辑状态
+		// 当modal开始打开时重置编辑状态，并拉取 catalog 默认 URL（已有 IPC，不进 store）
 		React.useEffect( () => {
 			if( store.visible ) {
 				setUrlEditing( false );
 				setUrlDraft( '' );
+				~async function() {
+					try {
+						const defaults = await getDefaultAIs();
+						setCatalogDefaults( Array.isArray( defaults ) ? defaults : [] );
+					} catch ( error ) {
+						console.error( '[ManageAIs] Failed to load catalog defaults:' , error );
+					}
+				}();
 			}
 		} , [store.visible] );
 
 		const isCustomFamily = fields.AI_family === 'custom';
+		const familyDefaultUrl = getFamilyDefaultUrl( fields.AI_family , catalogDefaults );
 		// 内置 family 的 URL 可选择覆盖; custom family 的 URL 直接属于当前 AI 实例.
-		const displayUrl = isCustomFamily ? fields.url : fields.url_override || getAIDomainByFamily( fields.AI_family );
+		const displayUrl = isCustomFamily ? fields.url : fields.url_override || familyDefaultUrl;
 		const isFirstAIForcedPreload = reaxel_SettingsView.store.UIControls.manage_AIs.startupAIPageLoadMode === 'first-ai'
 			&& store.mode === 'edit'
 			&& reaxel_SettingsView.store.Data.AIs[0]?.id === store.editing_id;
 
 		const handleSave = () => {
-			const effectiveUrl = ( isCustomFamily ? fields.url : fields.url_override || getAIDomainByFamily( fields.AI_family ) ).trim();
+			const effectiveUrl = ( isCustomFamily ? fields.url : fields.url_override || familyDefaultUrl ).trim();
 			if( !effectiveUrl ) {
 				message.error( i18n( 'URL is required for custom AI' ) );
 				return;
@@ -526,7 +624,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 					onClick={ () => {
 						// Save: 将draft保存到url_override
 						const trimmed = urlDraft.trim();
-						const defaultUrl = getAIDomainByFamily( fields.AI_family );
+						const defaultUrl = getFamilyDefaultUrl( fields.AI_family , catalogDefaults );
 						setState.fields( {
 							url_override : trimmed && trimmed !== defaultUrl ? trimmed : null,
 						} );
@@ -589,7 +687,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 						value={ fields.AI_family }
 						onChange={ value => {
 							const family = value as AI.AIFamily;
-							const defaultUrl = getAIDomainByFamily( family );
+							const defaultUrl = getFamilyDefaultUrl( family , catalogDefaults );
 							const patch:Partial<AI.EditAIItem> = {
 								AI_family : family ,
 								url : defaultUrl ,
@@ -980,15 +1078,44 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		</Modal>;
 	};
 
+	/**
+	 * 加站 / 重置 URL：查 get-default-ais 映射后的默认实例里该 family 的官方 url（供应商目录行经 App 策略变成的种子页）。
+	 * 否则当前 settings 同 family 且无 override、非 custom- id 的实例 url。
+	 * 不把瘦目录放进 Settings store。见 docs/feature-proposal--ai-catalog-source.md（方向纠偏）。
+	 */
+	const getFamilyDefaultUrl = ( family:AI.AIFamily , catalogDefaults:AI.AIItem[] ):string => {
+		if( family === 'custom' ) {
+			return '';
+		}
+		const fromCatalog = catalogDefaults.find( ai => ai.AI_family === family );
+		if( fromCatalog?.url ) {
+			return fromCatalog.url;
+		}
+		const fromSettings = reaxel_SettingsView.store.Data.AIs.find( ai => {
+			return ai.AI_family === family && !ai.url_override && !String( ai.id ).startsWith( 'custom-' );
+		} );
+		return fromSettings?.url || '';
+	};
+
 	import { DragIconSvg } from "./DragIcon.svg";
-	import { createColumnTextFilter } from '#SettingsView/layout/column-text-filter';
+	import { CatalogUpdateControls } from "./CatalogUpdate";
+	import { createColumnTextFilter , ManageAIsColumnFilterOverlays } from '#SettingsView/layout/column-text-filter';
 	import { useHostScrollY } from '#SettingsView/layout/use-host-scroll-y';
+	import {
+		endSettingsMenuTrace ,
+		noteSettingsMenu ,
+		settingsMenuTraceAwaitingPanel ,
+		SettingsMenuPerfPhase,
+	} from '#SettingsView/layout/settings-menu-perf.utility';
 	import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
-	import { resetAIsToDefaults } from "#SettingsView/services/Settings";
-	import { AIFamily } from "#src/shared/statics/AI-family";
-	import { getAIDomainByFamily } from "#src/shared/statics/ai-family-defaults";
-	import { createDefaultProxyConf as defaultProxyConf } from "#src/shared/statics/default-proxy";
-	import { enabledAIIdsEqual } from '#src/shared/utils/merge-enabled-ai-order.utility';
+	import { getDefaultAIs , resetAIsToDefaults } from "#SettingsView/services/Settings";
+	import { AIFamily } from "#shared/statics/AI-family";
+	import { createDefaultProxyConf as defaultProxyConf } from "#shared/statics/default-proxy";
+	import {
+		displayedManageAIs ,
+		reorderEnabledAIsByVisualDrag ,
+	} from '#shared/utils/manage-ais-table.utility';
+	import { enabledAIIdsEqual } from '#shared/utils/merge-enabled-ai-order.utility';
 	import { AI } from "#src/Types/SettingsTypes/AI";
 	import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 	import type { Startup } from "#src/Types/SettingsTypes/Startup";
@@ -1014,13 +1141,18 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		Tag,
 		Tooltip,
 	} from 'antd';
-	import { DndContext , PointerSensor , useSensor , useSensors } from '@dnd-kit/core';
+	import {
+		closestCenter ,
+		DndContext ,
+		PointerSensor ,
+		useSensor ,
+		useSensors ,
+	} from '@dnd-kit/core';
+	import type { CollisionDetection , DragEndEvent } from '@dnd-kit/core';
 	import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 	import {
-		arrayMove ,
 		SortableContext ,
 		useSortable ,
 		verticalListSortingStrategy,
 	} from '@dnd-kit/sortable';
 	import { CSS } from '@dnd-kit/utilities';
-	import type { DragEndEvent } from '@dnd-kit/core';

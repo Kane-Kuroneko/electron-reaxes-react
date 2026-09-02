@@ -194,13 +194,13 @@ import { app } from 'electron';
 import {
 	normalizeLanguagePreference ,
 	normalizeThemePreference,
-} from '#src/shared/appearance';
-import { cloneObservableToPlain } from '#src/shared/utils/clone-for-ipc.utility';
+} from '#shared/appearance';
+import { cloneObservableToPlain } from '#shared/utils/clone-for-ipc.utility';
 import {
 	createDefaultGlobalProxy as sharedCreateDefaultGlobalProxy ,
 	createDefaultProxyConf as sharedCreateDefaultProxyConf ,
 	createDefaultProxyServers as sharedCreateDefaultProxyServers,
 	createDefaultProxyTestURLs as sharedCreateDefaultProxyTestURLs,
-} from '#src/shared/statics/default-proxy';
+} from '#shared/statics/default-proxy';
 import type { Settings } from '#src/Types/SettingsTypes';
 import { NetworkProxy } from '#src/Types/SettingsTypes/NetworkProxy';

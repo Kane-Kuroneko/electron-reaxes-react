@@ -10,6 +10,23 @@ trigger: always_on
 
 ---
 
+## 设计哲学
+
+本仓**不是反 TypeScript**。原则：**动态边界用运行时验证，核心协议和状态机用必要的静态约束**——两者分工，不互相替代。
+
+不要把「类型噪声」（只为编译器做的糟糕重写）和「类型约束」（内部协议、IPC、schema、状态机）混为一谈。也不要用「作者更明白」当理由整体关闭严格模式。
+
+落地是**分层严格度**，不是一刀切：
+- **逐步收紧**：`src/Main/services`、`src/preload.ts`、IPC 契约、配置 schema、纯函数 utility。
+- **局部宽松**：第三方网页 preload patch、Electron 生命周期适配、Reaxes 代理封装；用小适配器收口，不要改生命周期本身去讨好 tsc。
+- View 生命周期用显式状态（`created` / `loading` / `presented` / `detached` / `destroyed`），不要到处可空再运行时猜。
+- 跨进程 / 文件 / 网络：**静态类型 + 运行时 schema**。动态 API 用 `satisfies`、类型守卫、窄化函数、少量适配器，禁止大范围 `as any`。
+- 「运行时补偿」必须是测试门禁（异常输入、销毁后调用、重复更新、竞态、代理失败、IPC 错误），不能只写在文档里。
+
+默认 tsconfig 仍是 `strict: false`，这是权衡不是终点。不要一次性 `strict: true` 机械修红线。全文见根 `CODING_STANDARD.md` 开篇「设计哲学」。
+
+---
+
 ## Import 规范
 
 **强制规则：所有 import/export 语句必须置于文件底部，而非顶部！**
@@ -244,7 +261,9 @@ window.core_store = store;
 
 ## TypeScript 规范
 
-- **宽松模式**：项目使用 `strict: false`，允许一定类型灵活性
+- **分层严格度**：见上方「设计哲学」。默认 `strict: false` 不是「类型随便写」。services / preload / IPC / schema / 纯函数按可收紧标准写；动态适配层局部宽松。不要全局 `as any`，也不要整仓切 `strict: true` 机械消红线。
+- **跨边界**：内部协议靠静态类型；文件 / 网络 / 用户 / IPC 入站靠运行时 schema。
+- **判别联合收窄**：当前未开 `strictNullChecks` 时，`if (!x.ok)` **不会**收到失败分支，读 `errorCode` 会 TS2339。与原判断语义相同则用 `=== false` / `=== true`；不要为此拆函数。
 - **必要时使用** `@ts-ignore` 或 `@ts-expect-error`
 - **工具函数广泛使用泛型**：
   ```typescript
@@ -322,4 +341,7 @@ throw `cannot find key '${key}' in storage`;
 - [ ] 工具文件是否使用 `.utility.ts` 后缀？
 - [ ] 是否优先使用路径别名（`#` 开头）？
 - [ ] 分号/引号风格是否一致？
+- [ ] 判别联合失败分支是否用 `x.ok === false` 收窄（不要 `!x.ok`）？
+- [ ] 跨进程 / 文件 / 网络入站是否有运行时校验（不只写了类型）？
+- [ ] 是否避免用大范围 `as any` 或「全局关闭严格」掩盖边界？
 - [ ] ChatAIO FloatingView 是否保持 `forward: false`，并检查了 Windows 拖拽回归文档？

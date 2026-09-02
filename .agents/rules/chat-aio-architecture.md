@@ -14,10 +14,12 @@ trigger: always_on
 - **Electron main**: `projects/ChatAIO/src/Main`
 - **Settings persistence**: `src/Main/services/settings` — don't persist UI-only fields unless runtime needs them
 - **AI identity**: use `AI.AIItem.id`, not `AI_family`. Family = service type; id = user-visible page instance
+- **AI catalog**: bundled/cache JSON is a slim vendor list (`id` + `family` + `label` + `url` + `region`), not default `AIItem[]`. Page instances live in `user-ais.json` / Settings `AIs`. Spec: `docs/architecture/ai-config.md`
 - **Menu order**: follows persisted `AIs` array order; disabled AIs don't appear in `Application > Switch AI`
 - **AI sessions**: each AI page needs isolated persistent partition/session, named from `AIItem.id`
 - **Proxy**: global proxy is default only for AIs with `proxy_mode: follow_global_setting`; per-AI `direct`/`from_server_list`/`user_fill` override global
 - **After settings save**: persist → sync AI views → update sessions/proxy → rebuild menu. Return restart-required only for settings that can't hot-apply
+- **Path alias `#shared/*`**: `projects/ChatAIO/src/shared/*`. Shared data/types layer; use `#shared/...` instead of `../../../shared/...` or `#src/shared/...`. Wired in ChatAIO `tsconfig.json` / View tsconfigs, `partial.webpack-conf.ts`, and `package.json` `imports`. tsx tests/scripts pass `--tsconfig projects/ChatAIO/tsconfig.json`.
 
 ## Validation Commands
 

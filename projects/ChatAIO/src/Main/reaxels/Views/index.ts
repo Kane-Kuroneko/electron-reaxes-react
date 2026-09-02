@@ -18,7 +18,12 @@ export const Reaxel_View = reaxel( () => {
 		}
 		clipMainShellToMenuBar( mainWindow );
 		const { width , height } = mainWindow.getContentBounds();
-		const centerBounds = getCenterBounds( { x : 0 , y : 0 , width , height } );
+		const centerBounds = getCenterBounds( {
+			x : 0 ,
+			y : 0 ,
+			width ,
+			height,
+		} );
 		/* 当前中心页 + 未首展预加载（盖下全尺寸）。已首展闲置仍 detach，不要拉回中心区。 */
 		if( target ) {
 			if( !store.settingsViewOpened && target === store.currentAIViewKey ) {
@@ -166,8 +171,24 @@ export const Reaxel_View = reaxel( () => {
 	 * 已首展闲置页仍硬 detach。拆页放到 setImmediate，不跟 promote 抢同一帧 GPU。
 	 * 禁止 cover-handoff / 热路径 capturePage / backgroundThrottling:false。
 	 * applyVisibility / park 不得 addChildView。
+	 * Settings 未首展也走这条：保持 attach，但**禁止**盖下可见（本地 React，不必 hydrate SPA）。
+	 * 设计：docs/issues/ai-view-preload-first-switch-flash.md 、docs/features/settings-view-preload.md
 	 */
+	function isUnpresentedSettingsPreloadView(view:WebContentsView | null | undefined) {
+		const settingsView = reaxel_SettingsView.store.settingsView.view;
+		if( !view || view !== settingsView || isWebContentsViewDead( view ) ) {
+			return false;
+		}
+		if( store.settingsViewOpened ) {
+			return false;
+		}
+		return reaxel_SettingsView.store.settingsView.hasPresented !== true;
+	}
+
 	function isUnpresentedPreloadView(view:WebContentsView | null | undefined) {
+		if( isUnpresentedSettingsPreloadView( view ) ) {
+			return true;
+		}
 		const runtimeView = findRuntimeAIViewByWebContentsView( view );
 		return Boolean( runtimeView && !runtimeView.hasPresented );
 	}
@@ -189,6 +210,17 @@ export const Reaxel_View = reaxel( () => {
 	/** 未首展：不 detach、不 addChildView。仍在 load 才盖下露出，load 完藏起来减合成层。 */
 	function parkUnpresentedPreloadView(view:WebContentsView | null | undefined) {
 		if( isWebContentsViewDead( view ) ) {
+			return;
+		}
+		/* Settings 本地页：attach + 全尺寸 + 始终 hidden。盖下 visible 会多一层合成，且可能闪出 Settings UI。 */
+		if( isUnpresentedSettingsPreloadView( view ) ) {
+			if( !isCenterViewAttached( view ) ) {
+				return;
+			}
+			setViewBoundsIfChanged( view , getCenterBounds() );
+			if( view.getVisible() ) {
+				view.setVisible( false );
+			}
 			return;
 		}
 		const runtimeView = findRuntimeAIViewByWebContentsView( view );
@@ -233,6 +265,10 @@ export const Reaxel_View = reaxel( () => {
 			}
 			setViewBoundsIfChanged( runtimeView.view , bounds );
 		} );
+		const settingsView = reaxel_SettingsView.store.settingsView.view;
+		if( isUnpresentedSettingsPreloadView( settingsView ) && isCenterViewAttached( settingsView ) ) {
+			setViewBoundsIfChanged( settingsView , bounds );
+		}
 	}
 
 	function detachInactiveCenterView(view:WebContentsView | null | undefined) {
@@ -295,6 +331,13 @@ export const Reaxel_View = reaxel( () => {
 		const runtimeView = findRuntimeAIViewByWebContentsView( view );
 		if( runtimeView ) {
 			runtimeView.hasPresented = true;
+			return;
+		}
+		const settingsView = reaxel_SettingsView.store.settingsView.view;
+		if( view && view === settingsView ) {
+			reaxel_SettingsView.mutate.settingsView( s => {
+				s.hasPresented = true;
+			} );
 		}
 	}
 
@@ -534,6 +577,10 @@ export const Reaxel_View = reaxel( () => {
 		}
 		/* 先置顶；拆页下一拍，避免 removeChildView 跟 promote 抢同一帧。 */
 		scheduleDetachOtherCenterViews( activeView );
+		getMenubarColdStartMonitor().notePresent(
+			viewId ,
+			isWebContentsViewDead( activeView ) ? null : activeView.getBounds() ,
+		);
 		if( intent === 'switch' || !occludedResumePending ) {
 			restoreActiveCenterViewFocus( intent );
 		}
@@ -782,14 +829,29 @@ export const Reaxel_View = reaxel( () => {
 		}
 	}
 
-	function getCenterBounds(bounds = mainWindow.getContentBounds()):Rectangle {
+	function getCenterBounds(bounds?:Rectangle):Rectangle {
+		/* 禁止 `bounds = mainWindow.getContentBounds()`：关窗后 mainWindow 为 null */
+		const source = bounds ?? (
+			hasUsableBrowserWindowContent( mainWindow )
+				? mainWindow.getContentBounds()
+				: null
+		);
+		if( !source ) {
+			const menuBarHeight = getMenuBarHeight();
+			return {
+				x : 0 ,
+				y : menuBarHeight ,
+				width : 1 ,
+				height : 1,
+			};
+		}
 		const promptInsets = reaxel_PromptViews().getLayoutInsets();
 		const menuBarHeight = getMenuBarHeight();
 		return {
 			x : promptInsets.left ,
 			y : menuBarHeight ,
-			width : Math.max( 1 , bounds.width - promptInsets.left - promptInsets.right ) ,
-			height : Math.max( 1 , bounds.height - menuBarHeight ),
+			width : Math.max( 1 , source.width - promptInsets.left - promptInsets.right ) ,
+			height : Math.max( 1 , source.height - menuBarHeight ),
 		};
 	}
 
@@ -1257,6 +1319,46 @@ export const Reaxel_View = reaxel( () => {
 		return duplicate;
 	};
 
+	const SETTINGS_VIEW_PRELOAD_AFTER_AI_TIMEOUT_MS = 15000;
+	const SETTINGS_VIEW_PRELOAD_IDLE_MS = 400;
+
+	/**
+	 * Phase 6：启动 AI 页 ready（或超时）后再创建 Settings WCV。
+	 * initWebContentsView 会 addChildView 到顶层，必须 recover 把当前 AI 抬回来。
+	 * 用户已经打开 Settings 则不再预加载。禁止 present('switch')（会 remount 当前 AI）。
+	 * 设计：docs/features/settings-view-preload.md
+	 */
+	const scheduleSettingsViewPreloadAfterAIPages = async() => {
+		try {
+			const settled = await reaxel_AIViews().waitUntilStartupAIViewsSettled( {
+				timeoutMs : SETTINGS_VIEW_PRELOAD_AFTER_AI_TIMEOUT_MS,
+			} );
+			console.log( '[Views] SettingsView preload gate:' , { settled } );
+			await new Promise<void>( resolve => {
+				setTimeout( resolve , SETTINGS_VIEW_PRELOAD_IDLE_MS );
+			} );
+			if( store.settingsViewOpened ) {
+				return;
+			}
+			const existing = reaxel_SettingsView.store.settingsView.view;
+			if( existing && !isWebContentsViewDead( existing ) ) {
+				if( reaxel_SettingsView.store.settingsView.hasPresented !== true ) {
+					parkUnpresentedPreloadView( existing );
+					presentActiveCenterView( 'recover' );
+				}
+				return;
+			}
+			reaxel_SettingsView().initSettingsView();
+			if( store.settingsViewOpened ) {
+				return;
+			}
+			parkUnpresentedPreloadView( reaxel_SettingsView.store.settingsView.view );
+			presentActiveCenterView( 'recover' );
+		} catch ( error ) {
+			console.warn( '[Views] SettingsView preload failed:' , error );
+		}
+	};
+
 	let runtimeViewsInitialized = false;
 
 	const initRuntimeViews = async() => {
@@ -1287,12 +1389,16 @@ export const Reaxel_View = reaxel( () => {
 			},
 		} );
 		registerAISwitchGlobalShortcuts();
-		reaxel_FloatingView().initFloatingView();
 		reaxel_PromptViews().registerIpc();
+		/* 先挂当前 AI 页，再预热 overlay：避免 FloatingView webpack 插在 menubar 已绘、内容未出之间 */
 		await onReadyLoadAIView();
 		presentActiveCenterView( 'switch' );
+		getMenubarColdStartMonitor().note( 'phase-3-overlay-warm' );
+		reaxel_FloatingView().initFloatingView();
 		/* AI 列表就绪后预热 SwitchAiBar：与 menubar Prev/Next 同源（instantiated），避免首次显示重建。 */
 		prepareInstantiatedSwitchAiBar();
+		/* 不 await：Settings 必须晚于启动 AI 页，但不能挡住 FloatingView / 窗口事件绑定。 */
+		void scheduleSettingsViewPreloadAfterAIPages();
 		try {
 			const settings = getRuntimeSettings();
 			centerScheduleMonitor.noteSessionEnv( {
@@ -1423,6 +1529,7 @@ export const Reaxel_View = reaxel( () => {
 
 	const rtn = {
 		initRuntimeViews ,
+		areRuntimeViewsInitialized : () => runtimeViewsInitialized ,
 		fitWindow,
 		fitContentView ,
 		fitCurrentCenterView ,
@@ -1515,7 +1622,7 @@ import {
 	type Rectangle ,
 	WebContentsView,
 } from "electron";
-import { getMenuBarHeight as resolveMenuBarHeight } from '#src/shared/menubar-geometry';
+import { getMenuBarHeight as resolveMenuBarHeight } from '#shared/menubar-geometry';
 import { clipMainShellToMenuBar } from '#main/services/clip-main-shell-to-menubar.utility';
 import {
 	hasUsableBrowserWindowContent ,
@@ -1533,6 +1640,7 @@ import {
 	getWhiteScreenMonitor ,
 	snapshotCenterViewHierarchy ,
 } from "#main/reaxels/Views/AI-Views/white-screen-monitor.retexel";
+import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
 import {
 	reaxel_FloatingView ,
 } from "#main/reaxels/Views/FloatingView";
@@ -1549,7 +1657,7 @@ import type { FloatingView } from "#src/Types/FloatingView";
 import type { AI } from "#src/Types/SettingsTypes/AI";
 import type { Settings } from "#src/Types/SettingsTypes";
 import type { RuntimeAIView } from "#main/reaxels/Views/AI-Views";
-import { perf , PerfPhase } from '#src/shared/utils/switch-perf-recorder.utility';
+import { perf , PerfPhase } from '#shared/utils/switch-perf-recorder.utility';
 import {
 	createReaxable ,
 	obsReaction ,

@@ -90,6 +90,6 @@ import jaJP from '#Views/shared/i18n/langs/ja-JP';
 import koKR from '#Views/shared/i18n/langs/ko-KR';
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
 import { getAppearanceEnvironment } from '#main/services/appearance';
-import { resolveLanguagePreference } from '#src/shared/appearance';
+import { resolveLanguagePreference } from '#shared/appearance';
 import { createReaxable, reaxel } from 'reaxes';
 import type { Languages } from '#src/Types/Languages';

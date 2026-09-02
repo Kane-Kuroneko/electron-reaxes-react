@@ -26,6 +26,11 @@ export const useHostScrollY = (
 		}
 
 		const measure = () => {
+			if( host.clientHeight === 0 ) {
+				return;
+			}
+			// 表格未挂时没有表头，用 fallback，避免先按「无 scroll.y」把整表 layout 一遍。
+			// 见 docs/features/settings-menu-switch-perf.md
 			const header = host.querySelector(
 				'.ant-table-header' ,
 			) as HTMLElement | null

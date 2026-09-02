@@ -28,6 +28,7 @@
 		"checkJs" : true ,
 		"skipLibCheck" : true ,
 		"allowUmdGlobalAccess" : true ,
+		"types" : [ "node" ] ,
 		"typeRoots" : [
 			"../../../../../node_modules/@types"
 		] ,
@@ -43,6 +44,9 @@
 			] ,
 			"#src/*" : [
 				"../../*"
+			] ,
+			"#shared/*" : [
+				"../../shared/*"
 			] ,
 			"#generics/*" : [
 				"../../../../../generic-services/*"

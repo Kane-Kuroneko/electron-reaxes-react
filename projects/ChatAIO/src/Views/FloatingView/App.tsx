@@ -36,5 +36,5 @@ export const App = reaxper( () => {
 import { SwitchAiBar } from '#FloatingView/components/SwitchAiBar';
 import { reaxel_FloatingView } from '#FloatingView/reaxels/floating-view';
 import { reaxper } from 'reaxes-react';
-import { perf } from '#src/shared/utils/switch-perf-recorder.utility';
+import { perf } from '#shared/utils/switch-perf-recorder.utility';
 import './index.less';

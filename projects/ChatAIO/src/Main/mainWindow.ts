@@ -89,7 +89,9 @@ export const createMainWindow = async( options:CreateMainWindowOptions = {} ) =>
 	 * reaxel_MainView().ensureMenubarHostReady()（见 runtime.ts Phase 0）。
 	 * Electron 约定：ipcMain handler 注册先于 renderer 导航。
 	 * 携带 theme query，让 renderer 首帧 CSS 与 overlay 同色（不必等 IPC）。
+	 * 检测器必须在 load 前挂上 wc 事件，否则会丢掉 did-start-loading。
 	 */
+	getMenubarColdStartMonitor().instrumentMainWindow( mainWindow );
 	loadMainViewHTML( theme );
 
 	/* 主壳 View 裁到 menubar：避免全窗 drag provider 叠进内容区（electron#41002） */
@@ -130,22 +132,22 @@ const loadMainViewHTML = ( theme:'light' | 'dark' ) => {
 	const paintEarly = () => {
 		primeMainViewMenubarPaint( mainWindow.webContents , theme );
 	};
+	getMenubarColdStartMonitor().note( 'phase-2-load-start' , {
+		dev : dev() ,
+		theme ,
+	} );
+	/* did-start-loading 时文档可能还没有，insertCSS 失败则等 dom-ready。
+	   真正早于 webpack 主包的底色靠 index.template.html 的 MainView 内联脚本。 */
+	mainWindow.webContents.on( 'did-start-loading' , paintEarly );
 	mainWindow.webContents.once( 'dom-ready' , paintEarly );
 	mainWindow.webContents.once( 'did-finish-load' , paintEarly );
 
-	if( dev() ) {
-		void loadDevRendererEntryWithRetry(
-			mainWindow.webContents ,
-			'MainView' ,
-			{ theme } ,
-			'MainView/menubar',
-		);
-		return;
-	}
-
-	mainWindow.webContents.loadFile(
-		getRendererEntryFilePath( reaxel_ElectronENV().absAppRunningPath , 'MainView' ) ,
-		{ query : { theme } },
+	void loadRendererEntry(
+		mainWindow.webContents ,
+		'MainView' ,
+		reaxel_ElectronENV().absAppRunningPath ,
+		{ theme } ,
+		'MainView/menubar',
 	);
 };
 
@@ -168,11 +170,12 @@ const primeMainViewMenubarPaint = (
 	).catch( () => {} );
 };
 
+import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import {
 	getMenubarTitleBarOverlayOptions ,
 	getTrafficLightPosition,
-} from '#src/shared/menubar-geometry';
+} from '#shared/menubar-geometry';
 import { bindMainShellMenuBarClip } from '#main/services/clip-main-shell-to-menubar.utility';
 import { applyMenubarWindowChrome } from '#main/services/menubar-window-chrome.utility';
 import { resolveAppearance } from '#main/services/appearance';
@@ -182,10 +185,7 @@ import {
 	getAppIconPath,
 } from '#main/services/app-icons';
 import { dev } from 'electron-is';
-import {
-	loadDevRendererEntryWithRetry ,
-	getRendererEntryFilePath,
-} from '#main/services/dev/renderer-entry';
+import { loadRendererEntry } from '#main/services/dev/renderer-entry';
 import {
 	app ,
 	BrowserWindow ,

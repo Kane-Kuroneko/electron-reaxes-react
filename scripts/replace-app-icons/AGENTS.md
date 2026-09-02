@@ -49,7 +49,7 @@ yarn replace-app-icons -- "<PNG绝对路径>" --project ChatAIO
 |------|------|------|
 | `source`（位置参数） | ✅ | **绝对路径** PNG（也接受 jpg/webp，推荐 PNG）。相对路径会直接报错退出。 |
 | `--project` | 否 | 默认 `ChatAIO`。必须是脚本内 `PROJECT_LAYOUTS` 已登记的工程名。 |
-| `--variant` | 否 | `prod`（默认）或 `dev`。`dev` 写入 `*-dev` 文件名（如 `gpt-dev.ico`、`tray-icon-dev.macos.png`）；运行时由 `!app.isPackaged` 选择。 |
+| `--variant` | 否 | `prod`（默认）或 `dev`。`dev` 写入 `*-dev` 文件名（如 `app-icon-dev.ico`、`tray-icon-dev.macos.png`）；运行时由 `!app.isPackaged` 选择。 |
 | `--dry-run` | 否 | 只打印将要写入的路径，不写盘。不确定布局时先跑这个。 |
 | `--list-projects` | 否 | 列出已登记工程与输出路径映射后退出。 |
 
@@ -67,10 +67,10 @@ python scripts/replace-app-icons/replace-app-icons.py "<dev.png>" --project Chat
 
 | variant | 输出示例 |
 |---------|----------|
-| `prod` | `statics/gpt.{ico,icns,png}`、`tray-icon.macos(.@2x).png`、`shared/main-icon-900x900.png` |
-| `dev` | `statics/gpt-dev.{ico,icns,png}`、`tray-icon-dev.macos(.@2x).png`、`shared/main-icon-900x900-dev.png` |
+| `prod` | `statics/icons/app-icon.{ico,icns,png}`、`tray-icon.macos(.@2x).png`、`main-icon-900x900.png` |
+| `dev` | `statics/icons/app-icon-dev.{ico,icns,png}`、`tray-icon-dev.macos(.@2x).png`、`main-icon-900x900-dev.png` |
 
-运行时选择：`projects/ChatAIO/src/Main/services/app-icons/`（`!app.isPackaged` → `*-dev`）。`electron-builder.yml` 的 `icon:` 始终指向正式版 `statics/gpt`。
+运行时选择：`projects/ChatAIO/src/Main/services/app-icons/`（`!app.isPackaged` → `*-dev`）。`electron-builder.yml` 的 `icon:` 始终指向正式版 `statics/icons/app-icon`。布局见 [`docs/architecture/app-icons.md`](../../projects/ChatAIO/docs/architecture/app-icons.md)。
 
 ### 硬性约束（Agent 必须遵守）
 
@@ -88,20 +88,20 @@ python scripts/replace-app-icons/replace-app-icons.py "<dev.png>" --project Chat
 
 | 输出文件 | 用途 | 规格 |
 |----------|------|------|
-| `statics/gpt.ico` | Windows **app icon**（写入 exe）+ **tray**（运行时复用） | 多尺寸 ICO：16/20/24/32/40/48/64/128/**256**（缺 256 时 electron-builder 会失败） |
-| `statics/gpt.icns` | macOS **app icon**（Dock / .app） | ICNS：16…1024 + @2x；生成时自动将主体缩至 **13/16** 并居中加透明边距 |
-| `statics/gpt.png` | Linux **app icon** / 回退 | 512×512 PNG（满画布，不加 macOS 边距） |
-| `statics/tray-icon.macos.png` | macOS **tray** Template | 18×18，黑 RGB + 原 alpha |
-| `statics/tray-icon.macos@2x.png` | macOS tray Retina | 36×36 Template |
-| `statics/shared/main-icon-900x900.png` | 工程内「母版」参考图 | 1024×1024 PNG（文件名历史遗留，尺寸以脚本为准） |
+| `statics/icons/app-icon.ico` | Windows **app icon**（写入 exe） | 多尺寸 ICO：16/20/24/32/40/48/64/128/**256**（缺 256 时 electron-builder 会失败） |
+| `statics/icons/app-icon.icns` | macOS **app icon**（Dock / .app） | ICNS：16…1024 + @2x；生成时自动将主体缩至 **13/16** 并居中加透明边距 |
+| `statics/icons/app-icon.png` | Linux **app icon** / Win·Linux **tray** | 512×512 PNG（满画布，不加 macOS 边距）；托盘运行时缩到 32px |
+| `statics/icons/tray-icon.macos.png` | macOS **tray** Template | 18×18，黑 RGB + 原 alpha |
+| `statics/icons/tray-icon.macos@2x.png` | macOS tray Retina | 36×36 Template |
+| `statics/icons/main-icon-900x900.png` | 工程内「母版」参考图（**不打进安装包**） | 1024×1024 PNG（文件名历史遗留，尺寸以脚本为准） |
 
 与构建/运行时的对应关系：
 
-- `electron-builder.yml` → `icon: "statics/gpt"`（无后缀，按平台选 `.ico` / `.icns` / `.png`）
-- `extraResources` 打包整个 `statics/`，托盘运行时从 `resources/statics` 读取
+- `electron-builder.yml` → `icon: "statics/icons/app-icon"`（无后缀，按平台选 `.ico` / `.icns` / `.png`）
+- `extraResources` 打包整个 `statics/`，但 **filter 排除母图** `icons/main-icon-900x900*.png`；运行时从 `resources/statics/icons` 读取
 - Tray 代码：`projects/ChatAIO/src/Main/services/tray/index.ts`
   - Darwin → `tray-icon.macos.png` + `setTemplateImage(true)`
-  - 其他 → `gpt.ico`
+  - 其他 → `app-icon.png`（resize 32）
 
 ---
 
@@ -122,7 +122,7 @@ python scripts/replace-app-icons/replace-app-icons.py "<dev.png>" --project Chat
 ### 成功判定
 
 - Exit code `0`
-- `statics/gpt.ico` 体积通常远大于 1KB，且含 256 层（脚本会自动 verify）
+- `statics/icons/app-icon.ico` 体积通常远大于 1KB，且含 256 层（脚本会自动 verify）
 - 源 PNG 的 mtime / 内容未变
 
 ### 失败处理
@@ -141,7 +141,7 @@ python scripts/replace-app-icons/replace-app-icons.py "<dev.png>" --project Chat
 
 **构建产物里已经是新图标时，资源管理器仍显示旧图 = 系统 Icon Cache**，不是脚本失败。
 
-已验证手段：对比 `win-unpacked\ChatAIO.exe` 内嵌 PNG hash 与 `statics/gpt.ico` 是否一致。
+已验证手段：对比 `win-unpacked\ChatAIO.exe` 内嵌 PNG hash 与 `statics/icons/app-icon.ico` 是否一致。
 
 刷新建议（告诉用户即可，勿默认擅自清系统缓存）：
 
@@ -158,11 +158,11 @@ Stop-Process -Name explorer -Force; Start-Process explorer
 
 | 平台 | App Icon | 最低 / 推荐 | Tray |
 |------|----------|-------------|------|
-| Windows | `.ico` 多尺寸 | 必须含 **256×256**；推荐源图 ≥1024 | 推荐 ICO；本仓库复用 app `.ico` |
+| Windows | `.ico` 多尺寸 | 必须含 **256×256**；推荐源图 ≥1024 | 本仓库用 `app-icon.png` 缩到 32px |
 | macOS | `.icns` | 源图推荐 1024；含 16–1024；**生成时自动 Dock padding（主体 13/16）** | Template Image：黑+alpha；常用 16/18 + @2x |
 | Linux | `.png` | 常用 512 | 视实现；本仓库未单独 tray 资产 |
 
-**macOS Dock 边距**：源图按满画布设计即可；`make_icns` 会把主体缩到画布的 **13/16（832/1024）** 并居中贴到透明画布上。Win/Linux 输出保持满画布。运行时 macOS 通过 `getAppIconPath()` 加载 `.icns`（勿再用未加边距的 `gpt.png` 调 `dock.setIcon`）。
+**macOS Dock 边距**：源图按满画布设计即可；`make_icns` 会把主体缩到画布的 **13/16（832/1024）** 并居中贴到透明画布上。Win/Linux 输出保持满画布。运行时 macOS 通过 `getAppIconPath()` 加载 `.icns`（勿再用未加边距的 `app-icon.png` 调 `dock.setIcon`）。
 
 macOS Template：像素为黑、靠 alpha 塑形，系统在深浅菜单栏下自动反色。本脚本生成的 tray PNG 即为此格式；运行时仍调用 `setTemplateImage(true)`。
 
@@ -196,7 +196,7 @@ Agent **优先调用 monorepo 根脚本**，不要再维护第二套生成逻辑
 
 - ❌ 不要编辑用户传入的原始 PNG / 桌面源文件  
 - ❌ 不要用「把 PNG 改后缀成 .ico」冒充图标  
-- ❌ 不要只更新某一个平台文件而漏掉 tray / shared master（除非用户明确只要单文件）  
+- ❌ 不要只更新某一个平台文件而漏掉 tray / master 母图（除非用户明确只要单文件）  
 - ❌ 不要在未确认 `--project` 的情况下写到错误子工程  
 - ❌ 不要擅自 `git commit` / `git push`  
 - ❌ 不要删除 `statics/` 里与图标无关的其它资源  

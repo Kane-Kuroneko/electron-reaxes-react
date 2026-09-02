@@ -3,19 +3,23 @@
  *
  * 接收来自渲染进程（通过 IPC）和主进程自身的 PerfEvent，写入
  * projects/ChatAIO/performance-logs/perf-<timestamp>.jsonl
+ * Settings 侧栏切页另写 settings-menu-perf.jsonl（见 docs/features/settings-menu-switch-perf.md）
  */
 
-import { perf } from '#src/shared/utils/switch-perf-recorder.utility';
-import type { PerfEvent } from '#src/shared/utils/switch-perf-recorder.utility';
+import { perf } from '#shared/utils/switch-perf-recorder.utility';
+import type { PerfEvent } from '#shared/utils/switch-perf-recorder.utility';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { app } from 'electron';
 
 const PERF_LOG_DIR_NAME = 'performance-logs';
+const SETTINGS_MENU_LOG_NAME = 'settings-menu-perf.jsonl';
 const FLUSH_INTERVAL_MS = 5000;
 
 let logStream: fs.WriteStream | null = null;
 let logPath: string | null = null;
+let settingsMenuLogStream: fs.WriteStream | null = null;
+let settingsMenuLogPath: string | null = null;
 let flushTimer: ReturnType<typeof setInterval> | null = null;
 
 /** 初始化性能日志系统：创建日志文件并注册 flush 处理器 */
@@ -30,8 +34,11 @@ export function initSwitchPerformanceLogging(): void {
 	const timestamp = new Date().toISOString().replace( /:/g , '-' ).replace( /\..+/ , '' );
 	logPath = path.join( logDir , `perf-${ timestamp }.jsonl` );
 	logStream = fs.createWriteStream( logPath , { flags : 'a' } );
+	settingsMenuLogPath = path.join( logDir , SETTINGS_MENU_LOG_NAME );
+	settingsMenuLogStream = fs.createWriteStream( settingsMenuLogPath , { flags : 'a' } );
 
 	console.log( `[SwitchPerf] Logging to: ${ logPath }` );
+	console.log( `[SwitchPerf] Settings menu log: ${ settingsMenuLogPath }` );
 
 	/* 主进程自身事件的 flush：直接写文件 */
 	perf.onFlush( ( events ) => {
@@ -77,12 +84,21 @@ export function shutdownPerformanceLogging(): void {
 		logStream = null;
 		console.log( `[SwitchPerf] Log closed: ${ logPath }` );
 	}
+	if( settingsMenuLogStream ) {
+		settingsMenuLogStream.end();
+		settingsMenuLogStream = null;
+		console.log( `[SwitchPerf] Settings menu log closed: ${ settingsMenuLogPath }` );
+	}
 }
 
 function writeEvents( events: PerfEvent[] ): void {
 	if( !logStream ) return;
 	for( const event of events ) {
-		logStream.write( JSON.stringify( event ) + '\n' );
+		const line = JSON.stringify( event ) + '\n';
+		logStream.write( line );
+		if( settingsMenuLogStream && typeof event.phase === 'string' && event.phase.startsWith( 'settings-menu:' ) ) {
+			settingsMenuLogStream.write( line );
+		}
 	}
 }
 

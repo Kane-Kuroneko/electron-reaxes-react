@@ -60,7 +60,7 @@ const renderLanguageSelectedLabel = (
 	return getLanguageDisplayName( value as Languages );
 };
 
-import { getLanguageDisplayName } from '#src/shared/appearance';
+import { getLanguageDisplayName } from '#shared/appearance';
 import type { Languages } from '#src/Types/Languages';
 import type { Appearance } from '#src/Types/SettingsTypes/Appearance';
 import { Select } from 'antd';

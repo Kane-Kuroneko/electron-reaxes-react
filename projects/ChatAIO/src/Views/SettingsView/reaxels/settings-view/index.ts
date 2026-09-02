@@ -53,7 +53,22 @@ export const reaxel_SettingsView = reaxel( () => {
 			manage_AIs : {
 				startupAIPageLoadMode : checkAs<Startup.AIPageLoadMode>( 'last-used-ai' ) ,
 				/** 待删除 AI ID 列表 — 标记后仅在 Apply/Save 时过滤持久化，UI 中仍可见（可撤销） */
-				pendingDeleteAIIds : checkAs<string[]>( [] ),
+				pendingDeleteAIIds : checkAs<string[]>( [] ) ,
+				/**
+				 * Manage AIs 表头列筛选。只改展示 dataSource，不 persist、不计 dirty。
+				 * 面板是 reaxper，从本 store 读 value/open；不要用 React Context / 父级 useState 灌值。
+				 * 见 docs/features/manage-ais-table-ux.md
+				 */
+				column_filter : {
+					open : createEmptyManageAIsColumnFilterOpen() ,
+					value : createEmptyManageAIsColumnFilters() ,
+				} ,
+				/** 目录更新预览。checking/applying 是 IPC in-flight 唯一真相。checking 不锁侧栏。见 docs/features/ai-catalog-manual-update.md */
+				catalog_update : {
+					checking : false ,
+					applying : false ,
+					preview : checkAs<AICatalog.CatalogUpdateCheckResult | null>( null ),
+				} ,
 				edit_AI_modal : {
 					visible : false ,
 					mode : checkAs<"edit" | "add">( 'edit' ) ,
@@ -100,9 +115,13 @@ export const reaxel_SettingsView = reaxel( () => {
 	let _committedAIIds = new Set<string>();
 	// 已提交的 AI 快照，用于判断是否已修改
 	let _committedAISnapshot = new Map<string , string>();
+	/* Manage AIs 置底只看上次 Apply/Save 的 disabled；未保存 toggle 不跳行。见 docs/features/manage-ais-table-ux.md */
+	let _committedDisabledById = new Map<string , boolean>();
 	let _proxyTestURLSubmitQueue:Promise<unknown> = Promise.resolve();
 	let _aiOrderPersistQueue:Promise<unknown> = Promise.resolve();
 	let _aiOrderPersistGeneration = 0;
+	let _catalogCheckGeneration = 0;
+	let _catalogApplyGeneration = 0;
 	
 	function updateSnapshot() {
 		_lastSavedSnapshot = JSON.stringify( buildDirtySettingsSnapshot() );
@@ -110,6 +129,9 @@ export const reaxel_SettingsView = reaxel( () => {
 		_committedAIIds = new Set( store.Data.AIs.map( ai => ai.id ) );
 		_committedAISnapshot = new Map(
 			store.Data.AIs.map( ai => [ ai.id , JSON.stringify( ai ) ] ),
+		);
+		_committedDisabledById = new Map(
+			store.Data.AIs.map( ai => [ ai.id , Boolean( ai.disabled ) ] ),
 		);
 			// 重置待删除标记 — 快照同步后所有标记已反映在磁盘/快照中
 			setState.UIControls.manage_AIs( { pendingDeleteAIIds : [] } );
@@ -305,8 +327,24 @@ export const reaxel_SettingsView = reaxel( () => {
 	
 	/**
 	 * 放弃未保存编辑并关闭设置页。先 reload 磁盘配置以复位 reaxel 状态与 PromptView 预览，再 exit。
+	 * 若目录预览还开着，先丢掉 main pending（与 Modal 取消同一条路径）。
 	 */
+	function dismissCatalogUpdate() {
+		if( store.UIControls.manage_AIs.catalog_update.applying ) {
+			return;
+		}
+		_catalogCheckGeneration += 1;
+		mutate.UIControls.manage_AIs.catalog_update( ( catalogUpdate ) => {
+			catalogUpdate.preview = null;
+			catalogUpdate.checking = false;
+		} );
+		void discardAiCatalogUpdateService().catch( error => {
+			console.error( '[SettingsView] discard catalog pending failed:' , error );
+		} );
+	}
+
 	async function exitWithoutSave() {
+		dismissCatalogUpdate();
 		try {
 			await reloadSettings();
 		} catch ( error ) {
@@ -375,6 +413,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		} );
 	};
 	
+	/** 只翻转 disabled，不改 `AIs` 下标。展示置底等 Apply/Save 更新 committed 快照后再做。见 docs/features/manage-ais-table-ux.md */
 	const setAIEnabled = (id:string , enabled:boolean) => {
 		mutate.Data( state => {
 			state.AIs = state.AIs.map( ai => ai.id === id
@@ -414,7 +453,9 @@ export const reaxel_SettingsView = reaxel( () => {
 				if( generation !== _aiOrderPersistGeneration ) {
 					return { success : true };
 				}
-				/* 未 Apply 新建项不能进 reorder-ais；待删除仍已提交，必须带着走。见 docs/features/ai-list-reorder.md */
+				/* 未 Apply 新建项不能进 reorder-ais；待删除仍已提交，必须带着走。
+				 * 此处按 store.Data.AIs（真实序，不是表内启用置顶的展示序）取已提交 id。
+				 * 表内拖拽已在 mutate 时按启用槽位写回。见 docs/features/ai-list-reorder.md 、docs/features/manage-ais-table-ux.md */
 				const orderedIds = committedAIIdsInVisualOrder( store.Data.AIs , _committedAIIds );
 				if( orderedIds.length === 0 ) {
 					return { success : true };
@@ -457,6 +498,131 @@ export const reaxel_SettingsView = reaxel( () => {
 		return _proxyTestURLSubmitQueue;
 	};
 
+	const clearCatalogChecking = () => {
+		mutate.UIControls.manage_AIs.catalog_update( ( catalogUpdate ) => {
+			catalogUpdate.checking = false;
+		} );
+	};
+
+	const clearCatalogApplying = () => {
+		mutate.UIControls.manage_AIs.catalog_update( ( catalogUpdate ) => {
+			catalogUpdate.applying = false;
+		} );
+	};
+
+	/**
+	 * Settings → Manage AIs 检查供应商目录。未 Apply 的编辑会挡住。
+	 * in-flight 以 catalog_update.checking / applying 为唯一真相：busy 时同步 return，不发第二次 IPC。
+	 * 预览放 catalog_update.preview，不写 Data.AIs。
+	 * checking 必须在 finally 清掉；IPC 若挂住，UI watchdog 到期也要解锁按钮。
+	 */
+	const checkAiCatalog = async():Promise<
+		| { blocked: 'dirty' }
+		| { blocked: 'in-flight' }
+		| AICatalog.CatalogUpdateCheckResult
+	> => {
+		if( isCatalogUpdateInFlight( store.UIControls.manage_AIs.catalog_update ) ) {
+			return { blocked : 'in-flight' };
+		}
+		if( isDirty() ) {
+			return { blocked : 'dirty' };
+		}
+		const generation = ++_catalogCheckGeneration;
+		// 同步写入，同帧后续点击能读到 busy（check 与 apply 互斥）
+		mutate.UIControls.manage_AIs.catalog_update( ( catalogUpdate ) => {
+			catalogUpdate.checking = true;
+		} );
+		try {
+			const result = await rejectWhenTimedOut(
+				checkAiCatalogUpdateService() ,
+				CATALOG_UPDATE_UI_WATCHDOG_MS ,
+				'catalog check UI watchdog',
+			);
+			if( generation !== _catalogCheckGeneration ) {
+				return result;
+			}
+			if( result.status === 'available' ) {
+				if( isDirty() ) {
+					setState.UIControls.manage_AIs.catalog_update( { preview : null } );
+					void discardAiCatalogUpdateService().catch( error => {
+						console.error( '[SettingsView] discard catalog pending after dirty check:' , error );
+					} );
+					return { blocked : 'dirty' };
+				}
+				setState.UIControls.manage_AIs.catalog_update( {
+					preview : result,
+				} );
+			} else if( result.status === 'up-to-date' ) {
+				setState.UIControls.manage_AIs.catalog_update( {
+					preview : null,
+				} );
+			}
+			return result;
+		} finally {
+			if( generation === _catalogCheckGeneration ) {
+				clearCatalogChecking();
+			}
+		}
+	};
+
+	/**
+	 * 确认合并这次 check 的 revision。成功后 reload Settings。
+	 * busy 时同步 return，避免连点第二次走到 main 的 no-pending 盖住第一次的成功 toast。
+	 * applying 必须在 finally 清掉，避免 Modal confirmLoading 卡死。
+	 */
+	const applyAiCatalog = async():Promise<
+		| { blocked: 'dirty' }
+		| { blocked: 'in-flight' }
+		| AICatalog.CatalogUpdateApplyResult
+	> => {
+		if( isCatalogUpdateInFlight( store.UIControls.manage_AIs.catalog_update ) ) {
+			return { blocked : 'in-flight' };
+		}
+		if( isDirty() ) {
+			return { blocked : 'dirty' };
+		}
+		const revision = store.UIControls.manage_AIs.catalog_update.preview?.remoteRevision;
+		if( revision == null ) {
+			return {
+				success : false ,
+				errorCode : 'no-pending',
+			};
+		}
+		const generation = ++_catalogApplyGeneration;
+		// 同步写入，同帧后续点击能读到 busy（check 与 apply 互斥）
+		mutate.UIControls.manage_AIs.catalog_update( ( catalogUpdate ) => {
+			catalogUpdate.applying = true;
+		} );
+		try {
+			const result = await rejectWhenTimedOut(
+				applyAiCatalogUpdateService( revision ) ,
+				CATALOG_UPDATE_UI_WATCHDOG_MS ,
+				'catalog apply UI watchdog',
+			);
+			if( generation !== _catalogApplyGeneration ) {
+				return result;
+			}
+			if( result.success ) {
+				setState.UIControls.manage_AIs.catalog_update( {
+					preview : null,
+				} );
+				if( result.restartRequired ) {
+					return result;
+				}
+				try {
+					await reloadSettings();
+				} catch ( error ) {
+					console.error( '[SettingsView] catalog applied but reload Settings failed:' , error );
+				}
+			}
+			return result;
+		} finally {
+			if( generation === _catalogApplyGeneration ) {
+				clearCatalogApplying();
+			}
+		}
+	};
+
 	const rtn = {
 		fetchSettings ,
 		reloadSettings ,
@@ -475,6 +641,9 @@ export const reaxel_SettingsView = reaxel( () => {
 		applyExternalEnabledAIOrder ,
 		persistCommittedAIOrder ,
 		setProxyTestURL ,
+		checkAiCatalog ,
+		applyAiCatalog ,
+		dismissCatalogUpdate ,
 		submitSettings ,
 		exitSettings ,
 		exitWithoutSave ,
@@ -510,6 +679,38 @@ export const reaxel_SettingsView = reaxel( () => {
 			return store.UIControls.manage_AIs.pendingDeleteAIIds.includes( id );
 		},
 		/**
+		 * 打开某一列筛选面板。点空白不关；多列可同时开。不 persist。
+		 */
+		openManageAIsColumnFilter( key : ManageAIsColumnFilterKey ): void {
+			if( store.UIControls.manage_AIs.column_filter.open[key] ) {
+				return;
+			}
+			setState.UIControls.manage_AIs.column_filter.open( { [key] : true } );
+		},
+		/**
+		 * 输入即筛。只改 UIControls，不写 Data.AIs。
+		 */
+		setManageAIsColumnFilterValue( key : ManageAIsColumnFilterKey , value : string ): void {
+			if( store.UIControls.manage_AIs.column_filter.value[key] === value ) {
+				return;
+			}
+			setState.UIControls.manage_AIs.column_filter.value( { [key] : value } );
+		},
+		/**
+		 * 面板右上 x：关这一列并清空该列条件。
+		 */
+		closeAndClearManageAIsColumnFilter( key : ManageAIsColumnFilterKey ): void {
+			setState.UIControls.manage_AIs.column_filter.open( { [key] : false } );
+			setState.UIControls.manage_AIs.column_filter.value( { [key] : '' } );
+		},
+		/**
+		 * 上次 Apply/Save 时该行是否未启用。不在快照里的新建行视为启用区，直到 Save。
+		 * 表格置底 / 禁拖用这个，不要用当前 `ai.disabled`。见 docs/features/manage-ais-table-ux.md
+		 */
+		isCommittedDisabled( id: string ): boolean {
+			return _committedDisabledById.get( id ) === true;
+		},
+		/**
 		 * 判断某个 AI 是否已修改但未保存
 		 */
 		isModifiedAI( id: string ): boolean {
@@ -519,6 +720,9 @@ export const reaxel_SettingsView = reaxel( () => {
 			return JSON.stringify( current ) !== _committedAISnapshot.get( id );
 		},
 		navigateFromMain( payload : AppUpdater.NavigatePayload ) {
+			if( shouldLockSettingsChromeForCatalogUpdate( store.UIControls.manage_AIs.catalog_update ) ) {
+				return;
+			}
 			/* `version` 为旧导航别名，统一落到 About */
 			if( payload.menu !== 'about' && payload.menu !== 'version' ) return;
 			setState.RootMenu( { current : checkAs<Menus>( 'about' ) } );
@@ -655,6 +859,9 @@ import { rehancer_Dev } from './rehancer_Dev';
 import { reaxel_I18n } from "#SettingsView/reaxels/i18n";
 import {
 	applySettings as applySettingsService ,
+	applyAiCatalogUpdate as applyAiCatalogUpdateService ,
+	checkAiCatalogUpdate as checkAiCatalogUpdateService ,
+	discardAiCatalogUpdate as discardAiCatalogUpdateService ,
 	exitSettings ,
 	fetchSettings as fetchSettingsService ,
 	getAppearanceEnvironment ,
@@ -668,31 +875,45 @@ import {
 	normalizeThemePreference ,
 	resolveLanguagePreference ,
 	resolveThemePreference,
-} from '#src/shared/appearance';
-import { cloneForIPC } from '#src/shared/utils/clone-for-ipc.utility';
+} from '#shared/appearance';
+import {
+	isCatalogUpdateInFlight ,
+	shouldLockSettingsChromeForCatalogUpdate,
+} from '#shared/utils/catalog-update-inflight.utility';
+import {
+	CATALOG_UPDATE_UI_WATCHDOG_MS ,
+	rejectWhenTimedOut,
+} from '#shared/utils/catalog-update-timeout.utility';
+import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
+import {
+	createEmptyManageAIsColumnFilterOpen ,
+	createEmptyManageAIsColumnFilters ,
+	type ManageAIsColumnFilterKey,
+} from '#shared/utils/manage-ais-table.utility';
 import {
 	applyEnabledAIOrder ,
 	committedAIIdsInVisualOrder ,
 	enabledAIIdsEqual ,
 	snapshotAIsForDirty,
-} from '#src/shared/utils/merge-enabled-ai-order.utility';
+} from '#shared/utils/merge-enabled-ai-order.utility';
 import {
 	createDefaultGlobalProxy as defaultGlobalProxyFields ,
 	createDefaultProxyConf as defaultProxyConf ,
 	createDefaultProxyServers as defaultProxyServers,
 	createDefaultProxyTestURLs as defaultProxyTestURLs,
-} from '#src/shared/statics/default-proxy';
+} from '#shared/statics/default-proxy';
 import type { Languages } from '#src/Types/Languages';
 import type { PromptView } from '#src/Types/PromptView';
 import type {
 	Menus,
-} from '#src/shared/structs/settings';
+} from '#shared/structs/settings';
 import type { AppUpdater } from '#src/Types/AppUpdater';
 import type {
 	Settings ,
 	SettingsFetchResult,
 } from '#src/Types/SettingsTypes';
 import { AI } from "#src/Types/SettingsTypes/AI";
+import type { AICatalog } from "#src/Types/AICatalog";
 import { Appearance } from "#src/Types/SettingsTypes/Appearance";
 import type { Startup } from "#src/Types/SettingsTypes/Startup";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";

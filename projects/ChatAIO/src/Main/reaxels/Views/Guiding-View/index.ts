@@ -93,12 +93,13 @@ export const reaxel_GuidingView = reaxel( () => {
 			guidingWindow.show();
 		} );
 		
-		if( dev() ) {
-			const url = createDevRendererEntryURL( 'GuidingView' );
-			guidingWindow.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
-		} else {
-			guidingWindow.webContents.loadFile( getRendererEntryFilePath( absAppRunningPath , 'GuidingView' ) );
-		}
+		void loadRendererEntry(
+			guidingWindow.webContents ,
+			'GuidingView' ,
+			absAppRunningPath ,
+			{} ,
+			'GuidingView',
+		);
 		
 		return guidingWindow;
 	};
@@ -157,7 +158,8 @@ const sanitizeGuidingAIs = (ais:AI.AIItem[]) => {
 			label : ai.label || 'Custom AI' ,
 			disabled : ai.disabled === true ,
 			AI_family : family ,
-			url : ai.url || getAIDomainByFamily( family ) ,
+			/* 默认 URL 由 AIConfigService.normalize 按 catalog 补；此处禁止 family 域名表回退。提案批次 2。 */
+			url : ai.url || '' ,
 			url_override : ai.url_override || null ,
 			desc : ai.desc || '' ,
 			proxy_mode : ai.proxy_mode || 'follow_global_setting' ,
@@ -228,11 +230,7 @@ import {
 	startMainRuntime,
 } from '#main/runtime';
 import { useIpcRpc } from '#main/services/ipc';
-import {
-	createDevRendererEntryURL ,
-	getFreshRendererLoadURLOptions ,
-	getRendererEntryFilePath,
-} from '#main/services/dev/renderer-entry';
+import { loadRendererEntry } from '#main/services/dev/renderer-entry';
 import {
 	applyElectronAppearance ,
 	getAppearanceEnvironment ,
@@ -244,7 +242,6 @@ import {
 	normalizeRuntimeSettings,
 } from '#main/services/settings/settings-config-service';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';
-import { getAIDomainByFamily } from '#main/reaxels/Views/AI-Views/data';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
 import type { Guiding } from '#src/Types/Guiding';
 import { AI } from '#src/Types/SettingsTypes/AI';
@@ -253,7 +250,6 @@ import {
 	BrowserWindow ,
 	net,
 } from 'electron';
-import { dev } from 'electron-is';
 import {
 	createReaxable ,
 	reaxel,

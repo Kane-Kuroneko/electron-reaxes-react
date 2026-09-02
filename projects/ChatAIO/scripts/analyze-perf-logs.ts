@@ -19,7 +19,7 @@ import {
 	analyzeAllSessions ,
 	listPerfLogFiles ,
 	CI_THRESHOLDS ,
-} from '../src/shared/utils/perf-log-analyzer.utility';
+} from '#shared/utils/perf-log-analyzer.utility';
 import * as path from 'node:path';
 
 const args = process.argv.slice( 2 );

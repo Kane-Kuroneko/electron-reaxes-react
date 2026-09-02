@@ -317,12 +317,14 @@ import { reaxper } from 'reaxes-react';
 import { reaxel_HotkeyEnhancer } from '#renderer/reaxels/hotkey-enhancer';
 ```
 
-### React 类组件（支持 Hooks）
+### React 类组件（reaxper 下可用 Hooks）
 
-**重要**：`Reaxlass` 仅为 class 组件提供基础类，它的作用是扩展生命周期及在 render 函数内使用 Hooks 的能力。而根据响应式数据自动更新组件则是由 `reaxper` 提供的能力。
-- `class extends Reaxlass`不是必须搭配reaxper使用,reaxper类似mobx::observer提供响应式渲染能力,而reaxlass则类似react::Component;
+**重要**：class 的 `render` 里能用 React hooks，是 `reaxper`（内部 `withHoC`）提供的，不是 `Reaxlass`。`reaxper` 给任意 class（`Component` / `PureComponent` / `Reaxlass`）开 hooks 洞；只 `extends Reaxlass` 不够。
+- 官方主路径是 `@reaxper class extends Component`
+- `reaxper` 类似 mobx::observer：响应式渲染，并让 class 的 `render` 能用 hooks
+- `Reaxlass` 只是带 `JSX` / `actions` / 生命周期栈字段的 `Component` 子类，本身不提供 hooks；`extends Reaxlass` 不必搭配 `reaxper`，但不包 `reaxper` 则没有响应式刷新，也没有 class hooks
 ```tsx
-export const Test_Reaxel_i18n = reaxper( class extends Reaxlass {
+export const Test_Reaxel_i18n = reaxper( class extends Component {
    // 类属性 - 调用 reaxel 获取方法（不是 Hooks）
    reaxel_i18n_instance = reaxel_i18n();
    
@@ -371,8 +373,8 @@ export const Test_Reaxel_i18n = reaxper( class extends Reaxlass {
    }
 } );
 
-import { reaxper , Reaxlass } from 'reaxes-react';
-import { useState , useEffect , useRef } from 'react';
+import { reaxper } from 'reaxes-react';
+import { Component , useState , useEffect , useRef } from 'react';
 ```
 
 ### 类组件特性
@@ -388,7 +390,7 @@ export const AdvancedComponent = reaxper( class extends Reaxlass {
    render() {
       const { data } = reaxel_MyModule();
       
-      // 可以使用所有 React Hooks
+      // 可以使用 React Hooks（来自 reaxper，不是 Reaxlass）
       const [ count , setCount ] = useState( 0 );
       const memoizedValue = useMemo( () => computeExpensive( data ) , [ data ] );
       
@@ -408,12 +410,12 @@ export const AdvancedComponent = reaxper( class extends Reaxlass {
 
 ### 类组件 vs 函数组件
 
-| 特性        | 函数组件       | 类组件（Reaxlass）                            |
+| 特性        | 函数组件       | 类组件（需 `reaxper`）                            |
 |-----------|------------|------------------------------------------|
-| Hooks 支持  | ✅ 原生支持     | ✅ Reaxlass 提供（可在 render 中使用）             |
+| Hooks 支持  | ✅ 原生支持     | ✅ `reaxper` 提供（可在 render 中使用；`Component` / `PureComponent` / `Reaxlass` 均可） |
 | 响应式更新     | reaxper 提供 | reaxper 提供                               |
 | reaxel 调用 | render 内调用 | 类属性或 render 内调用                          |
-| 生命周期      | useEffect  | componentDidMount 等 + componentDidRender |
+| 生命周期      | useEffect  | componentDidMount 等；`Reaxlass` 另有 componentDidRender |
 
 ## 去重回调（distinctCallback）
 

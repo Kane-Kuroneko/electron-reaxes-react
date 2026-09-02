@@ -7,15 +7,19 @@ install();
 
 app.setName( 'ChatAIO' );
 setAppProfilePath();
+installE2EFaultCollector();
 applyPendingDevCleanStart();
 registerBrowserWindowKeyboardGuards();
 
-/* 所有 BrowserWindow（含 Guiding / Floating）统一按 isPackaged 选 gpt / gpt-dev */
+/* 所有 BrowserWindow（含 Guiding / Floating）统一按 isPackaged 选 app-icon / app-icon-dev */
 app.on( 'browser-window-created' , ( _event , win ) => {
 	applyRuntimeAppIcon( win );
 } );
 
-export const isFirstLaunchWithoutUserData = !fs.existsSync( app.getPath( 'userData' ) );
+/* E2E 的 mkdtemp 会先建目录，不能再用 existsSync 判断首启；显式 env 才走 GuidingView。 */
+export const isFirstLaunchWithoutUserData = isChatAioE2E()
+	? process.env.CHATAIO_E2E_FIRST_LAUNCH === '1'
+	: !fs.existsSync( app.getPath( 'userData' ) );
 
 // 初始化日志系统
 logger.initialize();
@@ -87,6 +91,8 @@ import process from 'node:process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { setAppProfilePath } from "#main/foundation/debug/app-data-path";
+import { isChatAioE2E } from '#main/foundation/e2e-mode';
+import { installE2EFaultCollector } from '#main/foundation/e2e-faults';
 import { applyPendingDevCleanStart } from '#main/services/dev/clean-start';
 import { registerBrowserWindowKeyboardGuards } from '#main/services/shortcuts/window-keyboard';
 import {
@@ -94,4 +100,4 @@ import {
 	normalizeThemePreference ,
 	resolvePreferredSystemLanguage ,
 	resolveLanguagePreference,
-} from '#src/shared/appearance';
+} from '#shared/appearance';
