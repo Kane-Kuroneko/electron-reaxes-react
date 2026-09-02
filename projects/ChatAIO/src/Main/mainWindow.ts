@@ -142,19 +142,12 @@ const loadMainViewHTML = ( theme:'light' | 'dark' ) => {
 	mainWindow.webContents.once( 'dom-ready' , paintEarly );
 	mainWindow.webContents.once( 'did-finish-load' , paintEarly );
 
-	if( dev() ) {
-		void loadDevRendererEntryWithRetry(
-			mainWindow.webContents ,
-			'MainView' ,
-			{ theme } ,
-			'MainView/menubar',
-		);
-		return;
-	}
-
-	mainWindow.webContents.loadFile(
-		getRendererEntryFilePath( reaxel_ElectronENV().absAppRunningPath , 'MainView' ) ,
-		{ query : { theme } },
+	void loadRendererEntry(
+		mainWindow.webContents ,
+		'MainView' ,
+		reaxel_ElectronENV().absAppRunningPath ,
+		{ theme } ,
+		'MainView/menubar',
 	);
 };
 
@@ -192,10 +185,7 @@ import {
 	getAppIconPath,
 } from '#main/services/app-icons';
 import { dev } from 'electron-is';
-import {
-	loadDevRendererEntryWithRetry ,
-	getRendererEntryFilePath,
-} from '#main/services/dev/renderer-entry';
+import { loadRendererEntry } from '#main/services/dev/renderer-entry';
 import {
 	app ,
 	BrowserWindow ,

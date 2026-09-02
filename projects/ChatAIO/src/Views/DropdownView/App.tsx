@@ -72,6 +72,7 @@ export const App = reaxper( () => {
 	return (
 		<div
 			className="dropdown-view-root"
+			data-testid="dropdown-view"
 			data-theme={ store.theme }
 			style={ windowSizeStyle }
 			onContextMenuCapture={ ( e ) => {
@@ -378,6 +379,10 @@ const MenuItemComponent = ( {
 			ref={ setItemNode }
 			className={ `menu-item ${ item.type === 'checkbox' || item.type === 'radio' ? 'menu-item--checkable' : '' } ${ !item.enabled ? 'menu-item--disabled' : '' } ${ focused ? 'menu-item--focused' : '' } ${ loadStateClass }${ sortingClass }` }
 			style={ sortable?.style }
+			data-testid="menu-item"
+			data-item-id={ item.id }
+			data-item-action={ item.action || '' }
+			data-item-payload={ typeof item.actionPayload === 'string' ? item.actionPayload : '' }
 			data-item-index={ itemIndex }
 			{ ...( sortable?.listeners ?? {} ) }
 			{ ...( sortable?.attributes ?? {} ) }

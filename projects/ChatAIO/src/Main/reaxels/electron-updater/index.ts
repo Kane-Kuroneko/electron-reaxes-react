@@ -357,10 +357,12 @@ export const reaxel_AppUpdater = reaxel( () => {
 		openSettingsVersion( versionTab || 'latest' );
 	} );
 
-	/* 启动后静默检查（延后，避免阻塞启动） */
-	setTimeout( () => {
-		void checkForUpdates();
-	} , 4000 );
+	/* 启动后静默检查（延后，避免阻塞启动）。E2E 禁止打 GitHub，避免弹窗/超时。 */
+	if( isChatAioE2E() === false ) {
+		setTimeout( () => {
+			void checkForUpdates();
+		} , 4000 );
+	}
 
 	const rtn = {
 		checkForUpdates ,
@@ -382,6 +384,7 @@ import { Reaxel_View } from '#main/reaxels/Views';
 import { reaxel_Menu } from '#main/reaxels/Menu';
 import { reaxel_I18n } from '#main/reaxels/I18n';
 import { mainWindow } from '#main/mainWindow';
+import { isChatAioE2E } from '#main/foundation/e2e-mode';
 import { destroyTray } from '#main/services/tray';
 import {
 	useIpcMainToRenderer ,

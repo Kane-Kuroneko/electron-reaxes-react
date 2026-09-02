@@ -22,6 +22,7 @@ export const CurrentContextBadge = reaxper( ( {
 		<button
 			type="button"
 			className={ `main-view-context-badge${ staticClassName }${ openClassName }` }
+			data-testid="current-ai-badge"
 			title={ label }
 			aria-haspopup={ interactive ? 'menu' : undefined }
 			aria-expanded={ interactive ? isOpen : undefined }

@@ -60,6 +60,10 @@
 - [Manage AIs 表格展示序 / 筛选](./docs/features/manage-ais-table-ux.md)
 - [外观 / 主题](./docs/architecture/appearance-theme-environment.md)、[i18n](./docs/architecture/i18n.md)
 
+### E2E
+
+- [Playwright E2E 框架](./docs/features/e2e-playwright.md)（`yarn test:e2e`；隔离 userData；不测远程 AI DOM）
+
 ### 换图标
 
 - [图标布局 `statics/icons/`](./docs/architecture/app-icons.md)
@@ -104,6 +108,7 @@
 | [settings-exit-discard-and-prompt-scrollbar.md](./docs/features/settings-exit-discard-and-prompt-scrollbar.md) | Settings 退出丢弃 / 滚动条 |
 | [settings-view-preload.md](./docs/features/settings-view-preload.md) | Settings WCV 晚于启动 AI 页再 preload |
 | [settings-menu-switch-perf.md](./docs/features/settings-menu-switch-perf.md) | Settings 侧栏切页 JSONL 埋点 |
+| [e2e-playwright.md](./docs/features/e2e-playwright.md) | Playwright Electron E2E 框架与第一批用例 |
 
 ### issues/
 

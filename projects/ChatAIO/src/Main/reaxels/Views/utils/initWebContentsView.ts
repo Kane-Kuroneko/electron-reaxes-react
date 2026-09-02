@@ -25,6 +25,9 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 			options.refreshBounds( view );
 			return;
 		}
+		if( hasUsableBrowserWindowContent( mainWindow ) === false ) {
+			return;
+		}
 		/* 禁止回退到 y=0 全窗：会与主壳 menubar drag 在屏幕坐标重叠 */
 		const { width , height } = mainWindow.getContentBounds();
 		const menuBarHeight = getMenuBarHeight();
@@ -104,7 +107,7 @@ const useSettingsView = (view:WebContentsView,options:WebContentsViewConstructor
 			event.preventDefault();
 		}
 	} );
-	if(dev()){
+	if( shouldUseDevRendererServer() ){
 		~async function loadDevSettingsView() {
 			const loaded = await safeLoadURL( view , createDevRendererEntryURL( 'SettingsView' ) , 'Settings-View' );
 			if( !loaded ) {
@@ -118,7 +121,7 @@ const useSettingsView = (view:WebContentsView,options:WebContentsViewConstructor
 }
 const usePromptView = (view:WebContentsView,options:WebContentsViewConstructorOptions&ExtraBrowserWindowOptions) => {
 	const side = options.promptSide || 'left';
-	if(dev()){
+	if( shouldUseDevRendererServer() ){
 		~async function loadDevPromptView() {
 			const loaded = await safeLoadURL(
 				view ,
@@ -271,6 +274,7 @@ type ExtraBrowserWindowOptions = {
 }
 
 import { mainWindow } from "#main/mainWindow";
+import { hasUsableBrowserWindowContent } from '#main/services/usable-window-content.utility';
 import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
 import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 import { applyAIProxyToView } from "#main/services/settings/proxy-service";
@@ -282,6 +286,7 @@ import {
 	getFreshRendererLoadURLOptions ,
 	getRendererEntryFilePath,
 } from '#main/services/dev/renderer-entry';
+import { shouldUseDevRendererServer } from '#main/foundation/e2e-mode';
 import { useBeautifulDevtool } from '#generics/modify-electron/beautiful-devtool';
 import { reaxel_ElectronENV } from "#generics/reaxels/runtime-paths";
 import { getMenuBarHeight } from '#shared/menubar-geometry';

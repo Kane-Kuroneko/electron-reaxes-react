@@ -40,7 +40,7 @@ export const App = reaxper( () => {
 		} }
 		modal={ SETTINGS_MODAL_CONFIG }
 	>
-		<div className="settings-root">
+		<div className="settings-root" data-testid="settings-root">
 			<div className="settings-body">
 				<div className={ catalogChromeLocked ? 'settings-sider settings-sider--locked' : 'settings-sider' }>
 					<Menu

@@ -18,7 +18,12 @@ export const Reaxel_View = reaxel( () => {
 		}
 		clipMainShellToMenuBar( mainWindow );
 		const { width , height } = mainWindow.getContentBounds();
-		const centerBounds = getCenterBounds( { x : 0 , y : 0 , width , height } );
+		const centerBounds = getCenterBounds( {
+			x : 0 ,
+			y : 0 ,
+			width ,
+			height,
+		} );
 		/* 当前中心页 + 未首展预加载（盖下全尺寸）。已首展闲置仍 detach，不要拉回中心区。 */
 		if( target ) {
 			if( !store.settingsViewOpened && target === store.currentAIViewKey ) {
@@ -824,14 +829,29 @@ export const Reaxel_View = reaxel( () => {
 		}
 	}
 
-	function getCenterBounds(bounds = mainWindow.getContentBounds()):Rectangle {
+	function getCenterBounds(bounds?:Rectangle):Rectangle {
+		/* 禁止 `bounds = mainWindow.getContentBounds()`：关窗后 mainWindow 为 null */
+		const source = bounds ?? (
+			hasUsableBrowserWindowContent( mainWindow )
+				? mainWindow.getContentBounds()
+				: null
+		);
+		if( !source ) {
+			const menuBarHeight = getMenuBarHeight();
+			return {
+				x : 0 ,
+				y : menuBarHeight ,
+				width : 1 ,
+				height : 1,
+			};
+		}
 		const promptInsets = reaxel_PromptViews().getLayoutInsets();
 		const menuBarHeight = getMenuBarHeight();
 		return {
 			x : promptInsets.left ,
 			y : menuBarHeight ,
-			width : Math.max( 1 , bounds.width - promptInsets.left - promptInsets.right ) ,
-			height : Math.max( 1 , bounds.height - menuBarHeight ),
+			width : Math.max( 1 , source.width - promptInsets.left - promptInsets.right ) ,
+			height : Math.max( 1 , source.height - menuBarHeight ),
 		};
 	}
 

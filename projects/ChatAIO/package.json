@@ -23,6 +23,8 @@
 		"test:menubar-boot": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json --test projects/ChatAIO/tests/menubar-cold-start-verdict.test.ts",
 		"test:ai-order": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json --test projects/ChatAIO/tests/ai-list-reorder.test.ts projects/ChatAIO/tests/manage-ais-table-ux.test.ts",
 		"test:ai-catalog": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json --test projects/ChatAIO/tests/ai-catalog-defaults.test.ts projects/ChatAIO/tests/ai-catalog-merge.test.ts projects/ChatAIO/tests/ai-catalog-sign.test.ts projects/ChatAIO/tests/ai-catalog-update.test.ts",
+		"test:e2e": "yarn --cwd ../.. playwright test --config projects/ChatAIO/e2e/playwright.config.ts",
+		"test:e2e:headed": "yarn --cwd ../.. playwright test --config projects/ChatAIO/e2e/playwright.config.ts --headed",
 		"sign:ai-catalog": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json projects/ChatAIO/scripts/sign-ai-catalog.ts",
 		"publish:ai-catalog": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json projects/ChatAIO/scripts/publish-ai-catalog.ts",
 		"generate-icons": "yarn --cwd ../.. bash projects/ChatAIO/scripts/generate-icons.sh"

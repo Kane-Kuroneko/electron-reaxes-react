@@ -14,6 +14,7 @@ export const WindowsMenuBar = reaxper( () => {
 	return (
 		<div
 			className="main-view-root win-menu-bar"
+			data-testid="main-view-menubar"
 			data-theme={ store.theme }
 			style={ getMenuBarRootStyleVars() as React.CSSProperties }
 		>

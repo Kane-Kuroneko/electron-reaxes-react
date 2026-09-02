@@ -45,7 +45,7 @@ export const App = reaxper( () => {
 				: antdTheme.defaultAlgorithm ,
 		} }
 	>
-		<main className="prompt-view-root">
+		<main className="prompt-view-root" data-testid="prompt-view-root" data-prompt-side={ store.side }>
 			{/* ═══ Header：左侧模块名 + 侧标识，右侧仅关闭按钮 ═══ */}
 			<header className="prompt-view-header">
 				<div className="prompt-view-heading">

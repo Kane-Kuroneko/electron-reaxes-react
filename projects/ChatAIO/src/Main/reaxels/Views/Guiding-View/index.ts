@@ -93,12 +93,13 @@ export const reaxel_GuidingView = reaxel( () => {
 			guidingWindow.show();
 		} );
 		
-		if( dev() ) {
-			const url = createDevRendererEntryURL( 'GuidingView' );
-			guidingWindow.webContents.loadURL( url , getFreshRendererLoadURLOptions( url ) );
-		} else {
-			guidingWindow.webContents.loadFile( getRendererEntryFilePath( absAppRunningPath , 'GuidingView' ) );
-		}
+		void loadRendererEntry(
+			guidingWindow.webContents ,
+			'GuidingView' ,
+			absAppRunningPath ,
+			{} ,
+			'GuidingView',
+		);
 		
 		return guidingWindow;
 	};
@@ -229,11 +230,7 @@ import {
 	startMainRuntime,
 } from '#main/runtime';
 import { useIpcRpc } from '#main/services/ipc';
-import {
-	createDevRendererEntryURL ,
-	getFreshRendererLoadURLOptions ,
-	getRendererEntryFilePath,
-} from '#main/services/dev/renderer-entry';
+import { loadRendererEntry } from '#main/services/dev/renderer-entry';
 import {
 	applyElectronAppearance ,
 	getAppearanceEnvironment ,
@@ -253,7 +250,6 @@ import {
 	BrowserWindow ,
 	net,
 } from 'electron';
-import { dev } from 'electron-is';
 import {
 	createReaxable ,
 	reaxel,

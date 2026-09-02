@@ -11,6 +11,7 @@ export const MacMenuBar = reaxper( () => {
 	return (
 		<div
 			className="main-view-root mac-menu-bar"
+			data-testid="main-view-menubar"
 			data-theme={ store.theme }
 			style={ getMenuBarRootStyleVars() as React.CSSProperties }
 		>

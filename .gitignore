@@ -18,6 +18,12 @@ projects/ChatAIO/performance-logs/
 projects/ChatAIO/logs/
 logs/
 
+# Playwright E2E (ChatAIO)
+projects/ChatAIO/e2e/test-results/
+projects/ChatAIO/e2e/playwright-report/
+projects/ChatAIO/e2e/blob-report/
+projects/ChatAIO/e2e/playwright/.cache/
+
 # macOS — based on github/gitignore Global/macOS.gitignore
 .DS_Store
 .localized

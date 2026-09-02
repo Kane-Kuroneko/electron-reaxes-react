@@ -20,8 +20,19 @@ export const getRendererEntryFilePath = (
 	return path.join( absAppRunningPath , 'renderer' , entry , 'index.html' );
 };
 
+export const toLoadFileQuery = (query:RendererEntryQuery = {}) => {
+	const result:Record<string , string> = {};
+	Object.entries( query ).forEach( ( [ key , value ] ) => {
+		if( value === null || typeof value === 'undefined' ) {
+			return;
+		}
+		result[key] = String( value );
+	} );
+	return result;
+};
+
 export const getFreshRendererLoadURLOptions = (url:string) => {
-	if( !dev() || !url.startsWith( `https://localhost:${ __DEV_PORT__ }/` ) ) {
+	if( shouldUseDevRendererServer() === false || !url.startsWith( `https://localhost:${ __DEV_PORT__ }/` ) ) {
 		return undefined;
 	}
 	return {
@@ -30,6 +41,36 @@ export const getFreshRendererLoadURLOptions = (url:string) => {
 			'Pragma: no-cache',
 		].join( '\n' ),
 	};
+};
+
+/**
+ * 统一加载本地 renderer：dev 走 webpack HTTPS；E2E / 生产走 dist/renderer 文件。
+ * 设计：docs/features/e2e-playwright.md
+ */
+export const loadRendererEntry = async(
+	webContents:WebContents ,
+	entry:AIWebAppRendererEntryName ,
+	absAppRunningPath:string ,
+	query:RendererEntryQuery = {} ,
+	context:string = entry,
+) => {
+	if( shouldUseDevRendererServer() ) {
+		return loadDevRendererEntryWithRetry( webContents , entry , query , context );
+	}
+	if( !webContents || webContents.isDestroyed() ) {
+		return false;
+	}
+	const fileQuery = toLoadFileQuery( query );
+	try {
+		await webContents.loadFile(
+			getRendererEntryFilePath( absAppRunningPath , entry ) ,
+			Object.keys( fileQuery ).length ? { query : fileQuery } : undefined,
+		);
+		return true;
+	} catch ( error ) {
+		console.warn( `[RendererEntry] ${ context } loadFile failed:` , error );
+		return false;
+	}
 };
 
 /**
@@ -44,7 +85,7 @@ export const loadDevRendererEntryWithRetry = async(
 	context:string = entry ,
 	options:LoadDevRendererRetryOptions = {},
 ) => {
-	if( !dev() ) {
+	if( shouldUseDevRendererServer() === false ) {
 		return false;
 	}
 	if( !webContents || webContents.isDestroyed() ) {
@@ -106,7 +147,7 @@ const sleep = (ms:number) => new Promise<void>( resolve => {
 	setTimeout( resolve , ms );
 } );
 
-type RendererEntryQuery = Record<string , string | number | boolean | null | undefined>;
+export type RendererEntryQuery = Record<string , string | number | boolean | null | undefined>;
 
 type LoadDevRendererRetryOptions = {
 	maxAttempts?: number;
@@ -115,6 +156,6 @@ type LoadDevRendererRetryOptions = {
 
 import type { AIWebAppRendererEntryName } from '#shared/renderer-entries';
 import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
-import { dev } from 'electron-is';
+import { shouldUseDevRendererServer } from '#main/foundation/e2e-mode';
 import type { WebContents } from 'electron';
 import * as path from 'node:path';

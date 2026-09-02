@@ -590,19 +590,13 @@ export const reaxel_MainView = reaxel( () => {
 			} );
 		} );
 
-		if( dev() ) {
-			void loadDevRendererEntryWithRetry(
-				dropdownWindow.webContents ,
-				'DropdownView' ,
-				{} ,
-				'DropdownView',
-			);
-		} else {
-			dropdownWindow.webContents.loadFile( getRendererEntryFilePath(
-				reaxel_ElectronENV().absAppRunningPath ,
-				'DropdownView'
-			) );
-		}
+		void loadRendererEntry(
+			dropdownWindow.webContents ,
+			'DropdownView' ,
+			reaxel_ElectronENV().absAppRunningPath ,
+			{} ,
+			'DropdownView',
+		);
 
 		return dropdownWindow;
 	};
@@ -1000,10 +994,7 @@ import { reaxel_AppUpdater } from '#main/reaxels/electron-updater';
 import { mainWindow } from '#main/mainWindow';
 import { isWebContentsViewAlive } from '#main/services/web-contents-view-alive.utility';
 import { useIpcMainToRenderer , useIpcRendererToMain , useIpcSync } from '#main/services/ipc';
-import {
-	loadDevRendererEntryWithRetry ,
-	getRendererEntryFilePath,
-} from '#main/services/dev/renderer-entry';
+import { loadRendererEntry } from '#main/services/dev/renderer-entry';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';
 import { getSettingsConfigService } from '#main/services/settings/settings-config-service';
 import { reaxel_ElectronENV } from '#generics/reaxels/runtime-paths';
