@@ -43,6 +43,8 @@
 
 ### 登录 / 身份 / 代理
 
+- [升级后登录全丢](./docs/issues/ai-login-session-lost-after-catalog-uuid.md)（站点 `Set-Cookie` 覆盖旧分区；不是安装器清空）
+- [提案：升级前备份 / 升级后还原 session](./docs/feature-proposal--update-session-backup.md)
 - [Google AI Studio / Chrome 身份](./docs/issues/google-ai-studio-electron-browser-identity.md)
 - [AI 配置双层](./docs/architecture/ai-config.md)
 - [提案：AI 供应商目录单一事实源（分批；目录 ≠ 用户页实例）](./docs/feature-proposal--ai-catalog-source.md)
@@ -114,6 +116,7 @@
 | [floating-view-missing-after-background.md](./docs/issues/floating-view-missing-after-background.md) | overlay 冷 reveal |
 | [menubar-drag-investigation.md](./docs/issues/menubar-drag-investigation.md) | Windows `forward: true` |
 | [menubar-drag-region-leak-below-content.md](./docs/issues/menubar-drag-region-leak-below-content.md) | 拖拽区漏到内容下方 |
+| [ai-login-session-lost-after-catalog-uuid.md](./docs/issues/ai-login-session-lost-after-catalog-uuid.md) | 升级后登录丢失：旧分区被 `Set-Cookie` 覆盖 |
 | [google-ai-studio-electron-browser-identity.md](./docs/issues/google-ai-studio-electron-browser-identity.md) | AI Studio / Chrome 身份 |
 | [i18n-architecture-issues.md](./docs/issues/i18n-architecture-issues.md) | i18n 架构问题 |
 | [i18n-fixes.md](./docs/issues/i18n-fixes.md) | i18n 修复记录 |
@@ -126,6 +129,7 @@
 | [menu-label-width.md](./docs/modules/menu-label-width.md) | 菜单标签宽度 |
 | [feature-proposal--ai-catalog-source.md](./docs/feature-proposal--ai-catalog-source.md) | AI 供应商目录单一事实源（分批；目录 ≠ 运行时实例） |
 | [feature-proposal--cross-instance-session-migration.md](./docs/feature-proposal--cross-instance-session-migration.md) | 跨实例会话迁移提案 |
+| [feature-proposal--update-session-backup.md](./docs/feature-proposal--update-session-backup.md) | 升级前备份 / 升级后还原 session（本机安全网） |
 | [prompt-view-improvements.md](./docs/prompt-view-improvements.md) | Prompt 改进笔记 |
 | [prompt-view-redesign.md](./docs/prompt-view-redesign.md) | Prompt 重设计 |
 | [prompt-view-settings-fixes.md](./docs/prompt-view-settings-fixes.md) | Prompt / Settings 修复 |

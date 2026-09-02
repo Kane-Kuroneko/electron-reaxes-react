@@ -13,6 +13,8 @@
 | id | 供应商 UUID | 实例 id（官方种子页 = 供应商 UUID） |
 | 字段 | `id` + `family` + `label` + `url` + `region` | 完整 `AI.AIItem` |
 
+> **升级陷阱**：从 1.0.5 跳到含 Chrome 身份补丁 + 目录 UUID 的包后，预加载页会对旧分区 `loadURL`，站点 `Set-Cookie` 覆盖登录。无 `user-ais.json` 还会整表切到 UUID 空分区。见 [`../issues/ai-login-session-lost-after-catalog-uuid.md`](../issues/ai-login-session-lost-after-catalog-uuid.md)。
+
 1. **Bundled catalog**（`statics/ai-catalog/default-ais.json`）
    - main 启动用 `fs` 读（不是 webpack import），**用户永不改这份文件**
    - 落盘形状在 [`src/Types/AICatalog.d.ts`](../../src/Types/AICatalog.d.ts)：`Catalog.ais` 是 `Vendor[]`，**不是** `AI.AIItem[]`
