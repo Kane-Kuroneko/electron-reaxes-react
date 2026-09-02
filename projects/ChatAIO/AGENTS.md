@@ -46,7 +46,7 @@
 - [Google AI Studio / Chrome 身份](./docs/issues/google-ai-studio-electron-browser-identity.md)
 - [AI 配置双层](./docs/architecture/ai-config.md)
 - [提案：AI 供应商目录单一事实源（分批；目录 ≠ 用户页实例）](./docs/feature-proposal--ai-catalog-source.md)
-- [Settings 手动检查 AI 目录](./docs/features/ai-catalog-manual-update.md)
+- [Settings 手动检查 AI 目录](./docs/features/ai-catalog-manual-update.md)（检查中无限 loading / 侧栏锁死：不要 await 内存 session 的 clearCache）
 - [敏感地区访问阻断](./docs/features/sensitive-region-access-blocking.md)
 
 ### Prompt / Settings / 外观

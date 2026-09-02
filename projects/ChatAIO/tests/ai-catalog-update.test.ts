@@ -567,10 +567,15 @@ describe( 'catalog_update in-flight（UI 层应在 store busy 时不调用 IPC�
 		assert.equal( isCatalogUpdateInFlight( { checking : false , applying : false } ) , false );
 	} );
 
-	it( '检查中或预览未关闭时锁住 Settings 侧栏和页脚' , () => {
+	it( 'checking 单独不锁 chrome；applying 或预览未关闭才锁侧栏和页脚' , () => {
 		assert.equal( shouldLockSettingsChromeForCatalogUpdate( {
 			checking : true ,
 			applying : false ,
+			preview : null,
+		} ) , false );
+		assert.equal( shouldLockSettingsChromeForCatalogUpdate( {
+			checking : false ,
+			applying : true ,
 			preview : null,
 		} ) , true );
 		assert.equal( shouldLockSettingsChromeForCatalogUpdate( {
@@ -583,6 +588,36 @@ describe( 'catalog_update in-flight（UI 层应在 store busy 时不调用 IPC�
 			applying : false ,
 			preview : null,
 		} ) , false );
+	} );
+} );
+
+describe( 'catalog update 硬超时' , () => {
+	it( '工作先完成则返回工作结果' , async() => {
+		const result = await raceWithTimeout( Promise.resolve( 'ok' ) , 50 , () => 'timeout' );
+		assert.equal( result , 'ok' );
+	} );
+
+	it( '工作挂住则返回超时结果' , async() => {
+		const result = await raceWithTimeout( new Promise( () => {} ) , 20 , () => 'timeout' );
+		assert.equal( result , 'timeout' );
+	} );
+
+	it( '超时后原 Promise 再拒绝不会变成 unhandledRejection' , async() => {
+		let rejectLate:( error:Error ) => void = () => {};
+		const hanging = new Promise<string>( ( _resolve , reject ) => {
+			rejectLate = reject;
+		} );
+		const result = await raceWithTimeout( hanging , 20 , () => 'timeout' );
+		assert.equal( result , 'timeout' );
+		rejectLate( new Error( 'late' ) );
+		await new Promise( ( resolve ) => setTimeout( resolve , 15 ) );
+	} );
+
+	it( 'rejectWhenTimedOut 在超时后拒绝' , async() => {
+		await assert.rejects(
+			() => rejectWhenTimedOut( new Promise( () => {} ) , 20 , 'catalog fetch timeout' ) ,
+			/catalog fetch timeout/,
+		);
 	} );
 } );
 
@@ -600,6 +635,10 @@ import {
 	isCatalogUpdateInFlight ,
 	shouldLockSettingsChromeForCatalogUpdate,
 } from '#shared/utils/catalog-update-inflight.utility';
+import {
+	raceWithTimeout ,
+	rejectWhenTimedOut,
+} from '#shared/utils/catalog-update-timeout.utility';
 import { CATALOG_MAX_BYTES } from '#main/services/settings/utils/ai-catalog-validate.utility';
 import type { AICatalog } from '#src/Types/AICatalog';
 import type { AI } from '#src/Types/SettingsTypes/AI';

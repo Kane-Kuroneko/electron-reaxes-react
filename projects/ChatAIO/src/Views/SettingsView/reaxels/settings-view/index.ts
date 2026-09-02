@@ -63,7 +63,7 @@ export const reaxel_SettingsView = reaxel( () => {
 					open : createEmptyManageAIsColumnFilterOpen() ,
 					value : createEmptyManageAIsColumnFilters() ,
 				} ,
-				/** 目录更新预览。checking/applying 是 in-flight 唯一真相。不把瘦目录放进 Data.AIs。见 docs/features/ai-catalog-manual-update.md */
+				/** 目录更新预览。checking/applying 是 IPC in-flight 唯一真相。checking 不锁侧栏。见 docs/features/ai-catalog-manual-update.md */
 				catalog_update : {
 					checking : false ,
 					applying : false ,
@@ -118,6 +118,8 @@ export const reaxel_SettingsView = reaxel( () => {
 	let _proxyTestURLSubmitQueue:Promise<unknown> = Promise.resolve();
 	let _aiOrderPersistQueue:Promise<unknown> = Promise.resolve();
 	let _aiOrderPersistGeneration = 0;
+	let _catalogCheckGeneration = 0;
+	let _catalogApplyGeneration = 0;
 	
 	function updateSnapshot() {
 		_lastSavedSnapshot = JSON.stringify( buildDirtySettingsSnapshot() );
@@ -326,7 +328,11 @@ export const reaxel_SettingsView = reaxel( () => {
 		if( store.UIControls.manage_AIs.catalog_update.applying ) {
 			return;
 		}
-		setState.UIControls.manage_AIs.catalog_update( { preview : null } );
+		_catalogCheckGeneration += 1;
+		mutate.UIControls.manage_AIs.catalog_update( ( catalogUpdate ) => {
+			catalogUpdate.preview = null;
+			catalogUpdate.checking = false;
+		} );
 		void discardAiCatalogUpdateService().catch( error => {
 			console.error( '[SettingsView] discard catalog pending failed:' , error );
 		} );
@@ -487,10 +493,23 @@ export const reaxel_SettingsView = reaxel( () => {
 		return _proxyTestURLSubmitQueue;
 	};
 
+	const clearCatalogChecking = () => {
+		mutate.UIControls.manage_AIs.catalog_update( ( catalogUpdate ) => {
+			catalogUpdate.checking = false;
+		} );
+	};
+
+	const clearCatalogApplying = () => {
+		mutate.UIControls.manage_AIs.catalog_update( ( catalogUpdate ) => {
+			catalogUpdate.applying = false;
+		} );
+	};
+
 	/**
 	 * Settings → Manage AIs 检查供应商目录。未 Apply 的编辑会挡住。
 	 * in-flight 以 catalog_update.checking / applying 为唯一真相：busy 时同步 return，不发第二次 IPC。
 	 * 预览放 catalog_update.preview，不写 Data.AIs。
+	 * checking 必须在 finally 清掉；IPC 若挂住，UI watchdog 到期也要解锁按钮。
 	 */
 	const checkAiCatalog = async():Promise<
 		| { blocked: 'dirty' }
@@ -503,33 +522,48 @@ export const reaxel_SettingsView = reaxel( () => {
 		if( isDirty() ) {
 			return { blocked : 'dirty' };
 		}
+		const generation = ++_catalogCheckGeneration;
 		// 同步写入，同帧后续点击能读到 busy（check 与 apply 互斥）
-		setState.UIControls.manage_AIs.catalog_update( { checking : true } );
+		mutate.UIControls.manage_AIs.catalog_update( ( catalogUpdate ) => {
+			catalogUpdate.checking = true;
+		} );
 		try {
-			const result = await checkAiCatalogUpdateService();
+			const result = await rejectWhenTimedOut(
+				checkAiCatalogUpdateService() ,
+				CATALOG_UPDATE_UI_WATCHDOG_MS ,
+				'catalog check UI watchdog',
+			);
+			if( generation !== _catalogCheckGeneration ) {
+				return result;
+			}
 			if( result.status === 'available' ) {
+				if( isDirty() ) {
+					setState.UIControls.manage_AIs.catalog_update( { preview : null } );
+					void discardAiCatalogUpdateService().catch( error => {
+						console.error( '[SettingsView] discard catalog pending after dirty check:' , error );
+					} );
+					return { blocked : 'dirty' };
+				}
 				setState.UIControls.manage_AIs.catalog_update( {
-					checking : false ,
 					preview : result,
 				} );
 			} else if( result.status === 'up-to-date' ) {
 				setState.UIControls.manage_AIs.catalog_update( {
-					checking : false ,
 					preview : null,
 				} );
-			} else {
-				setState.UIControls.manage_AIs.catalog_update( { checking : false } );
 			}
 			return result;
-		} catch ( error ) {
-			setState.UIControls.manage_AIs.catalog_update( { checking : false } );
-			throw error;
+		} finally {
+			if( generation === _catalogCheckGeneration ) {
+				clearCatalogChecking();
+			}
 		}
 	};
 
 	/**
 	 * 确认合并这次 check 的 revision。成功后 reload Settings。
 	 * busy 时同步 return，避免连点第二次走到 main 的 no-pending 盖住第一次的成功 toast。
+	 * applying 必须在 finally 清掉，避免 Modal confirmLoading 卡死。
 	 */
 	const applyAiCatalog = async():Promise<
 		| { blocked: 'dirty' }
@@ -549,13 +583,22 @@ export const reaxel_SettingsView = reaxel( () => {
 				errorCode : 'no-pending',
 			};
 		}
+		const generation = ++_catalogApplyGeneration;
 		// 同步写入，同帧后续点击能读到 busy（check 与 apply 互斥）
-		setState.UIControls.manage_AIs.catalog_update( { applying : true } );
+		mutate.UIControls.manage_AIs.catalog_update( ( catalogUpdate ) => {
+			catalogUpdate.applying = true;
+		} );
 		try {
-			const result = await applyAiCatalogUpdateService( revision );
+			const result = await rejectWhenTimedOut(
+				applyAiCatalogUpdateService( revision ) ,
+				CATALOG_UPDATE_UI_WATCHDOG_MS ,
+				'catalog apply UI watchdog',
+			);
+			if( generation !== _catalogApplyGeneration ) {
+				return result;
+			}
 			if( result.success ) {
 				setState.UIControls.manage_AIs.catalog_update( {
-					applying : false ,
 					preview : null,
 				} );
 				if( result.restartRequired ) {
@@ -566,13 +609,12 @@ export const reaxel_SettingsView = reaxel( () => {
 				} catch ( error ) {
 					console.error( '[SettingsView] catalog applied but reload Settings failed:' , error );
 				}
-			} else {
-				setState.UIControls.manage_AIs.catalog_update( { applying : false } );
 			}
 			return result;
-		} catch ( error ) {
-			setState.UIControls.manage_AIs.catalog_update( { applying : false } );
-			throw error;
+		} finally {
+			if( generation === _catalogApplyGeneration ) {
+				clearCatalogApplying();
+			}
 		}
 	};
 
@@ -826,6 +868,10 @@ import {
 	isCatalogUpdateInFlight ,
 	shouldLockSettingsChromeForCatalogUpdate,
 } from '#shared/utils/catalog-update-inflight.utility';
+import {
+	CATALOG_UPDATE_UI_WATCHDOG_MS ,
+	rejectWhenTimedOut,
+} from '#shared/utils/catalog-update-timeout.utility';
 import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
 import {
 	createEmptyManageAIsColumnFilterOpen ,

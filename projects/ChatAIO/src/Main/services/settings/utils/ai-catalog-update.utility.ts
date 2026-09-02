@@ -4,8 +4,6 @@
  * 远程字节由调用方注入。见 docs/features/ai-catalog-manual-update.md。
  */
 
-export const CATALOG_UPDATE_FETCH_TIMEOUT_MS = 20_000;
-
 /** 失败才有 errorCode。调用方必须 `ok === false` 收窄（本仓 strictNullChecks:false，`!ok` 无效）。 */
 type IngestOk = {
 	ok: true;
@@ -383,3 +381,4 @@ import {
 } from './ai-catalog-validate.utility';
 import type { AICatalog } from '#src/Types/AICatalog';
 import type { AI } from '#src/Types/SettingsTypes/AI';
+export { CATALOG_UPDATE_FETCH_TIMEOUT_MS } from '#shared/utils/catalog-update-timeout.utility';

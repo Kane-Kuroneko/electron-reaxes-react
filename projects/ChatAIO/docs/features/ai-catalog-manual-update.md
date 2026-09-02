@@ -13,10 +13,11 @@ Settings → Manage AIs 可以检查**供应商目录**更新。远程是 [ChatA
 5. **用户改过的种子页、`url_override`、`custom-` id、用户自加的同 family 第二页，目录更新碰不到。** 目录删行不自动从 user 表删，diff 标「ChatAIO已停止维护，但已存在的本地数据仍会被保留」。**用户 `deletedIds` 里已经没有的页不出现在 catalogDropped。**
 6. **region 只活在目录上。** 只改 region、页字段没变时仍要 apply（把 cache 写成新 revision），否则覆盖判定不更新。
 7. **Settings 有未 Apply 的改动时先保存或放弃。** 目录合并写的是磁盘上的 user 表，不能盖掉编辑器里没保存的页。
-8. **in-flight 真相在 `reaxel_SettingsView` 的 `catalog_update`（`checking` / `applying`）。** 任一为 true，`checkAiCatalog` / `applyAiCatalog` 同步 return，不发第二次 IPC。check 与 apply 互斥。组件不用 `useRef` / `useState` 做锁。主进程队列仍串行；busy 时若仍发 IPC，第一次写盘成功后第二次会 `no-pending`。**预览未关闭或 in-flight 时锁住 Settings 侧栏和页脚**，必须在 Modal 里应用或取消。
+8. **in-flight 真相在 `reaxel_SettingsView` 的 `catalog_update`（`checking` / `applying`）。** 任一为 true，`checkAiCatalog` / `applyAiCatalog` 同步 return，不发第二次 IPC。check 与 apply 互斥。组件不用 `useRef` / `useState` 做锁。主进程队列仍串行；busy 时若仍发 IPC，第一次写盘成功后第二次会 `no-pending`。**侧栏/页脚只在预览未关闭或 `applying` 时锁住**，必须在 Modal 里应用或取消。**`checking` 单独不锁 chrome**：检查中没有可取消的 Modal；fetch / 内存 session 清理若卡住，把 tab 和页脚一起冻住就是无限 loading。按钮 spinner 已经表示 in-flight。`checking` / `applying` 必须在 `finally` 清掉。
 9. **缺公钥（ENOENT）或空 PEM 是 `verify-failed`，不是 `network`。** 交给 ingest 验签失败，不要把 `readFileSync` 抛错丢给 IPC catch。
 10. **GitHub 下载走 App 全局代理**（与 Settings 里同一套 `resolveGlobalProxy`），边下边限体积；超限是 `invalid-catalog`。维护者 env 本地读盘不走代理。
 11. **写盘成功后 sync AI 页失败：IPC 仍 `success`，带 `restartRequired`。** UI 提示后强制重启。单页 init/update 失败尽量吞掉并打日志，不让一次坏页挡掉整次 sync。
+12. **check IPC 必须能 settle。** 禁止 `await` 内存 partition（无 `persist:`）的 `clearCache` / `clearStorageData`：Electron 上 historically 永不 resolve（[electron#16141](https://github.com/electron/electron/issues/16141)），会卡住队列，`checking` 清不掉。单次 fetch 20s、整次 check 25s 硬超时；AbortController 只是尽力，不能当唯一超时。不匹配的 proxy `login` 必须 `callback()` 取消，否则 `session.fetch` 一直挂。Renderer 30s watchdog 是最后一道闸。目录 fetch 复用名为 `ai-catalog-fetch` 的内存 partition，不要每次 unique name 再清 session。
 
 ## 入口与数据流
 
@@ -64,7 +65,7 @@ Modal 面向用户写「列表发生了什么」：新增页、名称/网址、�
 
 检查按钮 loading **不用** antd `Button loading`（会往 flex 里插入 spinner 节点，宽度必跳）。文案始终在 DOM 里占位，spinner 用 CSS Grid 叠在同一格（Wes Bos grid-stack / MUI LoadingButton overlay 同思路）。按钮 `disabled` + `aria-busy`；spinner `aria-hidden`。
 
-切入 Manage AIs **不**发检查请求。Settings 切过的页留在树上藏起来，避免表格 + DnD 每次重挂载。目录预览打开或 in-flight 时侧栏和页脚锁住，Modal 盖住整个 Settings。
+切入 Manage AIs **不**发检查请求。Settings 切过的页留在树上藏起来，避免表格 + DnD 每次重挂载。目录预览打开或 applying 时侧栏和页脚锁住，Modal 盖住整个 Settings。checking 期间可以切 tab / 用页脚；若检查回来时 Settings 已 dirty，丢掉这次 pending，提示先保存或放弃，不要弹出预览把 chrome 锁死。
 
 ## 关键文件
 
@@ -76,7 +77,8 @@ Modal 面向用户写「列表发生了什么」：新增页、名称/网址、�
 | [`src/Main/reaxels/Settings/index.ts`](../../src/Main/reaxels/Settings/index.ts) | IPC；apply 成功后 `syncRuntimeViews` |
 | [`src/Views/SettingsView/reaxels/settings-view/index.ts`](../../src/Views/SettingsView/reaxels/settings-view/index.ts) | `checkAiCatalog` / `applyAiCatalog`；in-flight 在 `catalog_update` |
 | [`src/Views/SettingsView/components/ManageAIs/CatalogUpdate.tsx`](../../src/Views/SettingsView/components/ManageAIs/CatalogUpdate.tsx) | 只渲染；检查按钮 loading 用文案叠层 spinner，不用 antd `loading` |
-| [`src/shared/utils/catalog-update-inflight.utility.ts`](../../src/shared/utils/catalog-update-inflight.utility.ts) | `checking` / `applying` 互斥判定 |
+| [`src/shared/utils/catalog-update-inflight.utility.ts`](../../src/shared/utils/catalog-update-inflight.utility.ts) | `checking` / `applying` 互斥判定；chrome 锁只看 applying / preview |
+| [`src/shared/utils/catalog-update-timeout.utility.ts`](../../src/shared/utils/catalog-update-timeout.utility.ts) | fetch / 整次 check / UI watchdog 硬超时；迟到的 reject 必须吞掉 |
 | [`tests/ai-catalog-update.test.ts`](../../tests/ai-catalog-update.test.ts) | 业务契约（不打 GitHub） |
 
 ## 禁止项
@@ -90,9 +92,12 @@ Modal 面向用户写「列表发生了什么」：新增页、名称/网址、�
 - 不要改 `get-ais` / `get-default-ais` / `reorder-ais` 的返回形状。
 - 不要用组件 `useRef` / `useState` 做 check/apply in-flight 锁；锁在 `catalog_update` store。
 - 不要把 `beginCatalogCheck` / `checkSignedCatalog` / `applySignedCatalog` 再暴露给 IPC 或其它 reaxel。
-- 目录预览未关闭时不要允许切 Settings tab / 用页脚退出；必须先应用或取消。
+- 目录预览未关闭或 applying 时不要允许切 Settings tab / 用页脚退出；必须先应用或取消。不要因为 `checking` 就把 chrome 锁死。
 - 取消预览必须丢掉 main pending，不要只清 UI。
 - 读 `{ ok:true } | { ok:false; errorCode }` 时必须 `x.ok === false` 收窄，不要 `!x.ok`（本仓 `strictNullChecks: false`，见根 [`CODING_STANDARD.md`](../../../../CODING_STANDARD.md) TypeScript）。
+- **禁止 `await session.clearCache()` / `clearStorageData()` 作为目录 fetch 的收尾**（内存 partition 可能永不 resolve，Settings 无限 loading）。
+- 禁止只靠 `AbortController` 当 check 超时；必须另有 `Promise.race` 硬超时，且超时后原 Promise 的迟到 reject 要吞掉，避免 `unhandledRejection` 把队列卡死。
+- 禁止为每次 check 新建 unique partition 再清 session；复用 `ai-catalog-fetch`。
 
 ## 与现有文档
 

@@ -17,6 +17,7 @@ export const App = reaxper( () => {
 	
 	const { applySettings , exitSettings , exitWithoutSave , reloadSettings , isDirty } = reaxel_SettingsView();
 	const catalogUpdate = reaxel_SettingsView.store.UIControls.manage_AIs.catalog_update;
+	/* 只在预览/applying 时锁 chrome；checking 不锁。见 docs/features/ai-catalog-manual-update.md */
 	const catalogChromeLocked = shouldLockSettingsChromeForCatalogUpdate( catalogUpdate );
 
 	/*

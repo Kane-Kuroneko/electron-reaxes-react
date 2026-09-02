@@ -10,8 +10,10 @@ export const isCatalogUpdateInFlight = (
 };
 
 /**
- * Settings 侧栏 / 页脚在目录检查或预览未结束前锁住。
- * 真相在 catalog_update store，不要靠组件生命周期。
+ * Settings 侧栏 / 页脚只在「有预览 Modal」或 applying 时锁住。
+ * checking 单独不得锁 chrome：检查中没有可取消的 Modal；fetch/session 清理若卡住，
+ * 把 tab 和页脚一起冻住就是无限 loading。按钮自己的 spinner 已经表示 in-flight。
+ * 见 docs/features/ai-catalog-manual-update.md
  */
 export const shouldLockSettingsChromeForCatalogUpdate = (
 	catalogUpdate:{
@@ -20,5 +22,5 @@ export const shouldLockSettingsChromeForCatalogUpdate = (
 		preview?:unknown | null;
 	},
 ):boolean => {
-	return isCatalogUpdateInFlight( catalogUpdate ) || catalogUpdate.preview != null;
+	return catalogUpdate.applying === true || catalogUpdate.preview != null;
 };

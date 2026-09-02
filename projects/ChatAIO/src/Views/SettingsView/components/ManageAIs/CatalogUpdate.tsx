@@ -3,6 +3,7 @@
  * 业务在 reaxel_SettingsView（checkAiCatalog / applyAiCatalog）；这里只渲染。
  * 见 docs/features/ai-catalog-manual-update.md
  * 检查按钮不用 antd `loading`（会插入 icon 撑宽）。文案占位，spinner 叠在同一格。
+ * checking 只转按钮，不锁侧栏/页脚；预览 Modal 打开或 applying 才锁 chrome。
  */
 
 export const CatalogUpdateControls = reaxper( () => {
