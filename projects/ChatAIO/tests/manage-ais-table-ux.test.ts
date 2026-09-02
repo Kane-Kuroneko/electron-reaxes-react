@@ -66,6 +66,39 @@ describe( 'Manage AIs 列筛选：只改展示' , () => {
 	} );
 } );
 
+describe( 'Manage AIs 置底：未 Apply 的 Enabled 不跳行' , () => {
+	it( '分区按传入的 isDisabled，不跟当前 live disabled' , () => {
+		const saved = ais( 'A,B(d),C' );
+		const live = ais( 'A(d),B(d),C' );
+		const isSavedDisabled = ( row : Row ) => saved.find( item => item.id === row.id )?.disabled === true;
+		assert.equal( idsOf( displayedManageAIs( live , {} , isSavedDisabled ) ) , 'A(d),C,B(d)' );
+		assert.equal( idsOf( partitionAIsEnabledFirst( live ) ) , 'C,A(d),B(d)' );
+	} );
+
+	it( 'Save 后 isDisabled 与 live 对齐，才把未启用置底' , () => {
+		const live = ais( 'A(d),B(d),C' );
+		assert.equal( idsOf( displayedManageAIs( live , {} ) ) , 'C,A(d),B(d)' );
+	} );
+
+	it( '新建行不在 saved 快照里，视为启用区直到 Save' , () => {
+		const saved = ais( 'A,B(d)' );
+		const live = ais( 'A,B(d),N(d)' );
+		const isSavedDisabled = ( row : Row ) => saved.find( item => item.id === row.id )?.disabled === true;
+		assert.equal( idsOf( displayedManageAIs( live , {} , isSavedDisabled ) ) , 'A,N(d),B(d)' );
+	} );
+
+	it( '未 Apply 的 disable 仍按已保存启用槽拖拽' , () => {
+		const saved = ais( 'A,B(d),C' );
+		const live = ais( 'A(d),B(d),C' );
+		const isSavedDisabled = ( row : Row ) => saved.find( item => item.id === row.id )?.disabled === true;
+		const visible = displayedManageAIs( live , {} , isSavedDisabled );
+		assert.equal( idsOf( visible ) , 'A(d),C,B(d)' );
+		const next = reorderEnabledAIsByVisualDrag( live , visible , 'C' , 'A' , isSavedDisabled );
+		assert.equal( idsOf( next ) , 'C,B(d),A(d)' );
+		assert.equal( next.find( row => row.id === 'A' )?.disabled , true );
+	} );
+} );
+
 describe( 'Manage AIs 拖启用项：未启用钉在真实下标' , () => {
 	it( '展示 [A,C,E,B,D] 把 E 拖到 A 前 → 数据 [E,B,A,D,C]' , () => {
 		const disk = ais( 'A,B(d),C,D(d),E' );

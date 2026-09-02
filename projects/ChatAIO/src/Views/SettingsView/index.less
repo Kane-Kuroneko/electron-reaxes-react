@@ -305,13 +305,19 @@ html, body {
 	}
 
 	/*
-	 * 空表表头宽度：rc-table 有数据时 body overflow-y:scroll，空表改 auto，
+	 * 空表表头宽度：rc-table 有数据时 body 常 overflow-y:scroll，空表改 auto，
 	 * 再叠加 FixedHolder noData 丢掉算宽 colgroup，滚动条槽 ~15px 和弹性列一起跳。
 	 * 只压这一张表。见 docs/features/manage-ais-table-ux.md
 	 * https://github.com/ant-design/ant-design/issues/56713
+	 * 槽位用 scrollbar-gutter 留着，空筛选结果不要画出滚动条（overflow:hidden）。
 	 */
 	.ant-table-body {
-		overflow-y: scroll !important;
+		overflow-y: auto !important;
+		scrollbar-gutter: stable;
+	}
+
+	&.manage-ais-table--empty .ant-table-body {
+		overflow-y: hidden !important;
 		scrollbar-gutter: stable;
 	}
 

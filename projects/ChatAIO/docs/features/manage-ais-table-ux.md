@@ -2,17 +2,20 @@
 
 Settings → Manage AIs 的表只是**观察窗**：未启用行沉底、列筛选、拖启用项，都不把「看见的顺序」当成 `user-ais.json` 里 `ais` 的顺序。
 
+Enabled 列是 `Switch`，Preload on Startup 列是 `Checkbox`（控件对调，列顺序不变）。置底按上次 Apply/Save 的 `disabled`，编辑 Enabled 时行不跳，明确保存后才分区。
+
 写盘顺序仍是持久化 `AIs` 数组下标。Switch AI 菜单 / 热键跟那条数组走，不跟表内展示序走。排序 IPC 见 [`ai-list-reorder.md`](./ai-list-reorder.md)。改前跑 `yarn test:ai-order`。
 
 ## 不变量
 
 1. **展示序 ≠ 持久化序**。表里启用在上、未启用置底；两边各自保持真实数组中的相对序。
 2. **未启用项钉在真实数组原下标**。拖启用项只重排启用槽，把新的启用序列填回原来的启用下标。禁止 drop 时对整表 `arrayMove`（会把未启用项挤走）。
-3. **未启用行禁拖、也不能当投放目标**。不能把启用项拖进未启用区。
-4. **启用/禁用只翻转 `disabled`**，不改下标。行立刻跳到对应视觉分区。
-5. **列筛选只改 `dataSource`**，不写盘、不改 `AIs` 顺序。多列 AND。筛选 open/value 在 `reaxel_SettingsView.store.UIControls.manage_AIs.column_filter`，与 `pendingDeleteAIIds` 一样是 UI-only：**不 persist、不计 dirty**。
-6. **筛选面板**点开后不因空白处 / clickOutside / 失焦关闭；多列可同时开。关掉某一列并清空该列条件，不影响其它列。
-7. **空表不能拆掉筛选 Input**。`dataSource=[]` 时 Table 仍挂着（`locale.emptyText` / placeholder 行）；真正的 Input 不进 antd `filterDropdown`，而走 `document.body` portal。
+3. **未启用行禁拖、也不能当投放目标**。不能把启用项拖进未启用区。分区与禁拖都看**上次 Apply/Save** 的 `disabled`，不是当前未保存的 toggle。
+4. **启用/禁用只翻转 `disabled`**，不改下标。行**不要**立刻跳到对应视觉分区；等用户点 Apply / Save（`updateSnapshot` 刷新 committed disabled）后再置底。新建未保存行不在快照里，视为启用区。
+5. **Enabled 列用 `Switch`，Preload on Startup 列用 `Checkbox`**。列顺序仍是 Enabled 在左、Preload 在右；不要把 Enabled 改回 Checkbox。
+6. **列筛选只改 `dataSource`**，不写盘、不改 `AIs` 顺序。多列 AND。筛选 open/value 在 `reaxel_SettingsView.store.UIControls.manage_AIs.column_filter`，与 `pendingDeleteAIIds` 一样是 UI-only：**不 persist、不计 dirty**。
+7. **筛选面板**点开后不因空白处 / clickOutside / 失焦关闭；多列可同时开。关掉某一列并清空该列条件，不影响其它列。
+8. **空表不能拆掉筛选 Input**。`dataSource=[]` 时 Table 仍挂着（`locale.emptyText` / placeholder 行）；真正的 Input 不进 antd `filterDropdown`，而走 `document.body` portal。
 
 ## 拖拽映射
 
@@ -59,7 +62,7 @@ antd Table `dataSource=[]` 时：
 1. `Body` 有数据时 `overflow-y: scroll`（常占 ~15px 槽），空数据改成 `auto`，槽消失，整表变宽。
 2. `FixedHolder` `noData` 时 `isColGroupEmpty`，表头丢掉算宽 `<colgroup>`，scrollbar 占位 `th` 被浏览器当普通列均分，列宽再跳一次。[antd#56713](https://github.com/ant-design/ant-design/issues/56713)、[antd#57365](https://github.com/ant-design/ant-design/issues/57365)。
 
-社区常见修法：`tableLayout: fixed`、body 常显纵向滚动条 / `scrollbar-gutter: stable`、空表把 scrollbar `th` 钉在 15px（不要 `width: 0`，那会往反方向跳）。只作用在 `.manage-ais-table`，不改其它 Settings 表。
+社区常见修法：`tableLayout: fixed`、`scrollbar-gutter: stable` 留槽、空表把 scrollbar `th` 钉在 15px（不要 `width: 0`，那会往反方向跳）。空筛选结果加 `.manage-ais-table--empty`，body `overflow-y: hidden`，**不要**为了稳表头而 `overflow-y: scroll` 画出一条空滚动条。只作用在 `.manage-ais-table`，不改其它 Settings 表。
 
 ## 关键文件
 
@@ -67,8 +70,8 @@ antd Table `dataSource=[]` 时：
 |------|------|
 | [`src/shared/utils/manage-ais-table.utility.ts`](../../src/shared/utils/manage-ais-table.utility.ts) | 分区展示、列筛选、拖拽→启用槽位映射 |
 | [`src/shared/utils/merge-enabled-ai-order.utility.ts`](../../src/shared/utils/merge-enabled-ai-order.utility.ts) | 启用槽位合并；松手后 persist 仍送已提交全表 id |
-| [`src/Views/SettingsView/reaxels/settings-view/index.ts`](../../src/Views/SettingsView/reaxels/settings-view/index.ts) | `UIControls.manage_AIs.column_filter`（UI-only） |
-| [`src/Views/SettingsView/components/ManageAIs/index.tsx`](../../src/Views/SettingsView/components/ManageAIs/index.tsx) | 表、DnD；`displayedAIs` 读 store 筛选项 |
+| [`src/Views/SettingsView/reaxels/settings-view/index.ts`](../../src/Views/SettingsView/reaxels/settings-view/index.ts) | `column_filter`（UI-only）；`isCommittedDisabled` 给表格置底 / 禁拖 |
+| [`src/Views/SettingsView/components/ManageAIs/index.tsx`](../../src/Views/SettingsView/components/ManageAIs/index.tsx) | 表、DnD；Enabled=`Switch` / Preload=`Checkbox`；`displayedAIs` 读筛选项与 committed disabled |
 | [`src/Views/SettingsView/layout/column-text-filter.tsx`](../../src/Views/SettingsView/layout/column-text-filter.tsx) | reaxper 面板 / 图标 / body portal |
 | [`tests/manage-ais-table-ux.test.ts`](../../tests/manage-ais-table-ux.test.ts) | 展示序 / 筛选 / 钉位拖拽 |
 
@@ -76,7 +79,9 @@ antd Table `dataSource=[]` 时：
 
 - 不要把表内展示序写回 `Data.AIs` / `reorder-ais`。
 - 不要让未启用行参与 `@dnd-kit/sortable` 的拖/放。
-- 不要在 toggle enable 时顺手重排数组。
+- 不要在 toggle enable 时顺手重排数组，也不要用当前 `ai.disabled` 立刻置底；置底等 Apply/Save。
+- 不要把 Enabled 列改回 Checkbox；Preload 列保持 Checkbox。
+- 不要用 `overflow-y: scroll` 在空 `dataSource` 上常显滚动条。
 - 不要为了表格改 FloatingView `forward` 或 menubar drag region。
 - 不要把列筛选 open/value 放进组件 `useState` 或 React Context。
 - 不要把筛选 Input 挂在 antd `filterDropdown` 里：空 `dataSource` 会跟表头单元格一起拆掉它。

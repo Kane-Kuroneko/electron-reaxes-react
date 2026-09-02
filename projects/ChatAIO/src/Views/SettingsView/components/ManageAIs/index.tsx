@@ -1,38 +1,38 @@
-	const AIEnabledCheckbox = reaxper( ( { id }:{ id:string } ) => {
+	const AIEnabledSwitch = reaxper( ( { id }:{ id:string } ) => {
 		const target = reaxel_SettingsView.store.Data.AIs.find( ai => ai.id === id );
 		const { setAIEnabled , isAIPendingDeletion } = reaxel_SettingsView();
 		const isPendingDelete = isAIPendingDeletion( id );
 
-		return <Checkbox
+		return <Switch
+			size="small"
 			checked={ target ? !target.disabled : false }
 			disabled={ !target || isPendingDelete }
-			onChange={ e => {
-				setAIEnabled( id , e.target.checked );
+			onChange={ value => {
+				setAIEnabled( id , value );
 			} }
 		/>;
 	} );
 
 	/**
-	 * "Load this AI when app starts" 表格列开关。
+	 * "Load this AI when app starts" 表格列勾选。
 	 * 直接从表格行 toggle preloadOnStartup，无需进入 Edit Modal。
 	 * 当 startupAIPageLoadMode 为 'first-ai' 且该 AI 为列表第一项时强制启用。
 	 */
-	const PreloadOnStartupSwitch = reaxper( ( { id }:{ id:string } ) => {
+	const PreloadOnStartupCheckbox = reaxper( ( { id }:{ id:string } ) => {
 		const target = reaxel_SettingsView.store.Data.AIs.find( ai => ai.id === id );
 		const isFirstAI = reaxel_SettingsView.store.Data.AIs[0]?.id === id;
 		const isFirstAIForcedPreload = reaxel_SettingsView.store.UIControls.manage_AIs.startupAIPageLoadMode === 'first-ai' && isFirstAI;
-			const { isAIPendingDeletion } = reaxel_SettingsView();
+		const { isAIPendingDeletion } = reaxel_SettingsView();
 		const isPendingDelete = isAIPendingDeletion( id );
 		const checked = isFirstAIForcedPreload || ( target?.preloadOnStartup ?? false );
 
-		return <Switch
-			size="small"
+		return <Checkbox
 			checked={ checked }
 			disabled={ isFirstAIForcedPreload || !target || isPendingDelete }
-			onChange={ value => {
+			onChange={ e => {
 				reaxel_SettingsView.mutate.Data( state => {
 					state.AIs = state.AIs.map( ai => ai.id === id
-						? { ...ai , preloadOnStartup : value }
+						? { ...ai , preloadOnStartup : e.target.checked }
 						: ai );
 				} );
 			} }
@@ -143,7 +143,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			align : 'center' ,
 			onHeaderCell : compactTableHeaderCell ,
 			render( _value , record ) {
-				return <AIEnabledCheckbox id={ record.id }/>;
+				return <AIEnabledSwitch id={ record.id }/>;
 			},
 		} ,
 		{
@@ -152,7 +152,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			align : 'center' ,
 			onHeaderCell : compactTableHeaderCell ,
 			render( _value , record ) {
-				return <PreloadOnStartupSwitch id={ record.id }/>;
+				return <PreloadOnStartupCheckbox id={ record.id }/>;
 			},
 		} ,
 		{
@@ -228,7 +228,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	];
 
 	/**
-	 * Manage AIs 表：展示启用在上、未启用置底；筛选与展示序都不改真实 `AIs`。
+	 * Manage AIs 表：展示按上次 Save 的启用态分区（启用在上、未启用置底）；筛选与展示序都不改真实 `AIs`。
 	 * 拖启用项松手后按启用槽位写回，未启用钉在原下标。见 docs/features/manage-ais-table-ux.md
 	 */
 	export const RCManageAIsPanel = reaxper( () => {
@@ -237,6 +237,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			persistCommittedAIOrder ,
 			reloadSettings ,
 			setStartupAIPageLoadMode,
+			isCommittedDisabled,
 		} = reaxel_SettingsView();
 		const pendingDeleteAIIds = reaxel_SettingsView.store.UIControls.manage_AIs.pendingDeleteAIIds;
 		const [resetModalVisible , setResetModalVisible] = React.useState( false );
@@ -244,10 +245,11 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		const tableScrollY = useHostScrollY( tableHostRef );
 		const sourceAIs = reaxel_SettingsView.store.Data.AIs;
 		const columnFilterValue = reaxel_SettingsView.store.UIControls.manage_AIs.column_filter.value;
-		const displayedAIs = displayedManageAIs( sourceAIs , columnFilterValue );
+		const isVisuallyDisabled = ( ai:{ id:string } ) => isCommittedDisabled( ai.id );
+		const displayedAIs = displayedManageAIs( sourceAIs , columnFilterValue , isVisuallyDisabled );
 		const disabledDisplayedIdSet = React.useMemo( () => {
-			return new Set( displayedAIs.filter( ai => ai.disabled ).map( ai => ai.id ) );
-		} , [ displayedAIs ] );
+			return new Set( displayedAIs.filter( ai => isCommittedDisabled( ai.id ) ).map( ai => ai.id ) );
+		} , [ displayedAIs , isCommittedDisabled ] );
 		/* columns 不吃筛选 value/open：漏斗图标与面板各自是 reaxper，从 store 读。 */
 		const columns = React.useMemo( () => createManageAIsColumns() , [] );
 		/* 量高在 useLayoutEffect 里 setState，会在 paint 前同步再渲一次。
@@ -317,7 +319,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			} );
 		};
 
-		/* 只重排启用槽，未启用钉在真实下标。失败由 persistCommittedAIOrder 回滚。 */
+		/* 只重排启用槽，未启用钉在真实下标。失败由 persistCommittedAIOrder 回滚。槽位按已保存的 disabled 算。 */
 		const onDragEnd = ( { active , over }:DragEndEvent ) => {
 			if( !over || active.id === over.id ) {
 				return;
@@ -328,6 +330,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 				displayedAIs ,
 				String( active.id ) ,
 				String( over.id ) ,
+				isVisuallyDisabled ,
 			);
 			if( !nextAIs || enabledAIIdsEqual(
 				previousAIs.map( ai => ai.id ) ,
@@ -413,9 +416,9 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 						{ tableReady && tableScrollY != null ? <>
 							<Table
 							key={ `ais-table-${ pendingDeleteAIIds.join(',') || 'none' }` }
-							className="manage-ais-table"
+							className={ displayedAIs.length === 0 ? 'manage-ais-table manage-ais-table--empty' : 'manage-ais-table' }
 							style={ { width: '100%' } }
-							/* 空表仍 fixed，配合 less 常显滚动条槽，避免 colgroup 被 noData 丢掉后整表变宽。 */
+							/* 空表仍 fixed，配合 less 的 scrollbar-gutter，避免 colgroup 被 noData 丢掉后整表变宽。 */
 							tableLayout="fixed"
 							components={ {
 								body : {
@@ -493,10 +496,9 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 
 	const SortableDataRow:React.FC<Readonly<RowProps>> = reaxper( props => {
 		const rowId = props['data-row-key'];
-		const record = reaxel_SettingsView.store.Data.AIs.find( ai => ai.id === rowId );
-		const { isAIPendingDeletion } = reaxel_SettingsView();
+		const { isAIPendingDeletion , isCommittedDisabled } = reaxel_SettingsView();
 		const isPendingDelete = isAIPendingDeletion( rowId );
-		const isDisabledAI = Boolean( record?.disabled );
+		const isDisabledAI = isCommittedDisabled( rowId );
 		const {
 			attributes ,
 			listeners ,
@@ -506,7 +508,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			isDragging,
 		} = useSortable( {
 			id : rowId ,
-			/* 未启用行禁拖也禁投放，避免拖进未启用区把它们挤走。见 docs/features/manage-ais-table-ux.md */
+			/* 未启用行禁拖也禁投放，避免拖进未启用区把它们挤走。置底分区看上次 Save 的 disabled。见 docs/features/manage-ais-table-ux.md */
 			disabled : isDisabledAI ,
 		} );
 

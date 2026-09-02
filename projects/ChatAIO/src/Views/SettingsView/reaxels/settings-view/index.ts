@@ -115,6 +115,8 @@ export const reaxel_SettingsView = reaxel( () => {
 	let _committedAIIds = new Set<string>();
 	// 已提交的 AI 快照，用于判断是否已修改
 	let _committedAISnapshot = new Map<string , string>();
+	/* Manage AIs 置底只看上次 Apply/Save 的 disabled；未保存 toggle 不跳行。见 docs/features/manage-ais-table-ux.md */
+	let _committedDisabledById = new Map<string , boolean>();
 	let _proxyTestURLSubmitQueue:Promise<unknown> = Promise.resolve();
 	let _aiOrderPersistQueue:Promise<unknown> = Promise.resolve();
 	let _aiOrderPersistGeneration = 0;
@@ -127,6 +129,9 @@ export const reaxel_SettingsView = reaxel( () => {
 		_committedAIIds = new Set( store.Data.AIs.map( ai => ai.id ) );
 		_committedAISnapshot = new Map(
 			store.Data.AIs.map( ai => [ ai.id , JSON.stringify( ai ) ] ),
+		);
+		_committedDisabledById = new Map(
+			store.Data.AIs.map( ai => [ ai.id , Boolean( ai.disabled ) ] ),
 		);
 			// 重置待删除标记 — 快照同步后所有标记已反映在磁盘/快照中
 			setState.UIControls.manage_AIs( { pendingDeleteAIIds : [] } );
@@ -408,7 +413,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		} );
 	};
 	
-	/** 只翻转 disabled，不改 `AIs` 下标。表格展示会把未启用行立刻沉底。见 docs/features/manage-ais-table-ux.md */
+	/** 只翻转 disabled，不改 `AIs` 下标。展示置底等 Apply/Save 更新 committed 快照后再做。见 docs/features/manage-ais-table-ux.md */
 	const setAIEnabled = (id:string , enabled:boolean) => {
 		mutate.Data( state => {
 			state.AIs = state.AIs.map( ai => ai.id === id
@@ -697,6 +702,13 @@ export const reaxel_SettingsView = reaxel( () => {
 		closeAndClearManageAIsColumnFilter( key : ManageAIsColumnFilterKey ): void {
 			setState.UIControls.manage_AIs.column_filter.open( { [key] : false } );
 			setState.UIControls.manage_AIs.column_filter.value( { [key] : '' } );
+		},
+		/**
+		 * 上次 Apply/Save 时该行是否未启用。不在快照里的新建行视为启用区，直到 Save。
+		 * 表格置底 / 禁拖用这个，不要用当前 `ai.disabled`。见 docs/features/manage-ais-table-ux.md
+		 */
+		isCommittedDisabled( id: string ): boolean {
+			return _committedDisabledById.get( id ) === true;
 		},
 		/**
 		 * 判断某个 AI 是否已修改但未保存

@@ -1,6 +1,7 @@
 /**
  * Settings → Manage AIs 表格的展示序 / 列筛选 / 拖拽映射。
  * 只影响表格看见的顺序；真实 `AIs` 数组顺序仍由启用槽位合并决定。
+ * 置底按「上次 Apply/Save 的 disabled」分区，未保存的 Enabled 编辑不跳行。
  * 设计：docs/features/manage-ais-table-ux.md
  */
 
@@ -32,6 +33,11 @@ const MANAGE_AIS_FILTER_GETTERS : Record<ManageAIsColumnFilterKey , ( record : {
 	url : record => record.url || '' ,
 };
 
+/** 展示/拖拽用的 disabled 判定。默认读当前 `ai.disabled`；表格传入已保存快照，避免未 Apply 的 toggle 立刻置底。 */
+export type ManageAIsDisabledPredicate<T> = ( ai : T ) => boolean;
+
+const liveDisabled = <T extends { disabled? : boolean }>( ai : T ) : boolean => Boolean( ai.disabled );
+
 const arrayMoveIndex = <T ,>( list : T[] , from : number , to : number ) : T[] => {
 	const next = list.slice();
 	const [ item ] = next.splice( from , 1 );
@@ -40,14 +46,17 @@ const arrayMoveIndex = <T ,>( list : T[] , from : number , to : number ) : T[] =
 };
 
 /** 展示用：启用项保持相对序在上，未启用项保持相对序置底。不改传入数组。 */
-export const partitionAIsEnabledFirst = <T extends { disabled? : boolean }>( ais : T[] ) : T[] => {
+export const partitionAIsEnabledFirst = <T extends { disabled? : boolean }>(
+	ais : T[] ,
+	isDisabled : ManageAIsDisabledPredicate<T> = liveDisabled ,
+) : T[] => {
 	if( !Array.isArray( ais ) ) {
 		return [];
 	}
 	const enabled : T[] = [];
 	const disabled : T[] = [];
 	for( const ai of ais ) {
-		if( ai.disabled ) {
+		if( isDisabled( ai ) ) {
 			disabled.push( ai );
 		} else {
 			enabled.push( ai );
@@ -87,8 +96,12 @@ export const displayedManageAIs = <T extends {
 	label? : string;
 	AI_family? : string;
 	url? : string;
-}>( ais : T[] , filters : ManageAIsColumnFilters ) : T[] => {
-	return filterAIsByColumnText( partitionAIsEnabledFirst( ais ) , filters );
+}>(
+	ais : T[] ,
+	filters : ManageAIsColumnFilters ,
+	isDisabled : ManageAIsDisabledPredicate<T> = liveDisabled ,
+) : T[] => {
+	return filterAIsByColumnText( partitionAIsEnabledFirst( ais , isDisabled ) , filters );
 };
 
 /**
@@ -102,6 +115,7 @@ export const reorderEnabledAIsByVisualDrag = <T extends { id : string; disabled?
 	visibleAIs : T[] ,
 	activeId : string ,
 	overId : string ,
+	isDisabled : ManageAIsDisabledPredicate<T> = liveDisabled ,
 ) : T[] | null => {
 	if( !Array.isArray( ais ) || !Array.isArray( visibleAIs ) || !activeId || !overId ) {
 		return null;
@@ -112,11 +126,11 @@ export const reorderEnabledAIsByVisualDrag = <T extends { id : string; disabled?
 	const byId = new Map( ais.map( ai => [ ai.id , ai ] as const ) );
 	const active = byId.get( activeId );
 	const over = byId.get( overId );
-	if( !active || !over || active.disabled || over.disabled ) {
+	if( !active || !over || isDisabled( active ) || isDisabled( over ) ) {
 		return null;
 	}
 
-	const visibleEnabledIds = visibleAIs.filter( ai => !ai.disabled ).map( ai => ai.id );
+	const visibleEnabledIds = visibleAIs.filter( ai => !isDisabled( ai ) ).map( ai => ai.id );
 	const from = visibleEnabledIds.indexOf( activeId );
 	const to = visibleEnabledIds.indexOf( overId );
 	if( from < 0 || to < 0 ) {
@@ -126,13 +140,24 @@ export const reorderEnabledAIsByVisualDrag = <T extends { id : string; disabled?
 	const nextVisibleEnabledIds = arrayMoveIndex( visibleEnabledIds , from , to );
 	const visibleSet = new Set( visibleEnabledIds );
 	let nextVisibleIndex = 0;
-	const nextEnabledIds = ais.filter( ai => !ai.disabled ).map( ai => {
+	const nextEnabledIds = ais.filter( ai => !isDisabled( ai ) ).map( ai => {
 		if( !visibleSet.has( ai.id ) ) {
 			return ai.id;
 		}
 		return nextVisibleEnabledIds[nextVisibleIndex++];
 	} );
-	return mergeEnabledAIOrder( ais , nextEnabledIds );
+	/* merge 只认对象上的 disabled。未 Apply 的 toggle 可能和展示分区不一致，
+	 * 先按 isDisabled 盖一层再合并，再按 id 取回 live 对象，保留当前 disabled。 */
+	const visualAIs = ais.map( ai => ( {
+		...ai ,
+		disabled : isDisabled( ai ),
+	} ) );
+	const nextVisual = mergeEnabledAIOrder( visualAIs , nextEnabledIds );
+	if( !nextVisual ) {
+		return null;
+	}
+	const liveById = new Map( ais.map( ai => [ ai.id , ai ] as const ) );
+	return nextVisual.map( row => liveById.get( row.id )! );
 };
 
 import { mergeEnabledAIOrder } from './merge-enabled-ai-order.utility';
