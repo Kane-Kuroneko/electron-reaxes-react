@@ -10,6 +10,10 @@ export const applySettings = (settings: Settings) => {
 	return api.applySettings(settings);
 }
 
+export const applyAIs = (ais: AI.AIItem[]) => {
+	return api.applyAIs(cloneForIPC(ais));
+}
+
 export const exitSettings = () => {
 	return api.exitSettings();
 }
@@ -25,11 +29,11 @@ export const getDefaultAIs = () => {
 }
 
 export const updateAI = (id: string, updates: Partial<AI.AIItem>) => {
-	return api.updateAI(id, updates);
+	return api.updateAI(id, cloneForIPC(updates));
 }
 
 export const addAI = (ai: Omit<AI.AIItem, 'id'> & { id?: string }) => {
-	return api.addAI(ai);
+	return api.addAI(cloneForIPC(ai));
 }
 
 export const deleteAI = (id: string) => {

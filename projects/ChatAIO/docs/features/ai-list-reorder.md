@@ -7,7 +7,7 @@ Switch AI 菜单与 Settings → Manage AIs 共用一套**立即持久化**的�
 ## 不变量
 
 1. **菜单顺序 = 持久化 `AIs` 数组顺序**，disabled 项不出现在 Switch AI。
-2. **排序松手即写盘**。Settings 拖拽不再进入 Apply dirty；启用 / 改名 / 删除仍要 Apply。
+2. **排序松手即写盘**。Settings 拖拽不进表底 dirty；启用 / 预加载 / 待删除走表底 Save；弹窗改字段当场 persist。页脚不管 AIs。见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)。
 3. **左键切 AI，右键拖排序**。Application / View 菜单、Switch AI 底栏 Prev/Next 不参与拖拽。中区 Current AI 精简下拉同样走这条手势（无 footer）。
 4. **禁止**为排序改 menubar `-webkit-app-region: drag` 或 FloatingView `forward: true`。排序只发生在 Dropdown 窗口或 Settings 表内。
 5. Renderer → Main 的 id 列表必须 `cloneForIPC`。
@@ -53,7 +53,7 @@ flowchart TD
 
 ## Settings dirty
 
-`buildDirtySettingsSnapshot` 对 `AIs` 做 `snapshotAIsForDirty`（去掉待删除行，顺序不计）。只改顺序不会点亮 Apply；改名 / 启用禁用 / 待删除仍 dirty。Discard / 退出仍 `reloadSettings`，磁盘上已是新序。
+`isDirty()`（页脚）对 runtime 配置做 `snapshotRuntimeSettingsForDirty`（无 AIs、无测试 URL）。`isAIsDirty()`（表底）对 `AIs` 做 `snapshotAIsForDirty`（去掉待删除行，顺序不计）。只改顺序不会点亮表底 Save；改名走弹窗即时写盘，也不点亮；启用禁用 / 待删除仍表底 dirty。页脚 Discard / 退出只 reload runtime；表底 Undo 只 reload AIs。详见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)。
 
 ## 测试锁定的契约
 
@@ -63,7 +63,7 @@ flowchart TD
 2. Settings persist 仍给已提交全表 id（含钉在原位的 disabled、含待删除、不含未 Apply 新建项）→ 整表按该序落盘。表内拖拽本身不再移动 disabled 下标，见 [`manage-ais-table-ux.md`](./manage-ais-table-ux.md)。
 3. payload 集合对不上（含「enabled 里夹了 disabled 但不是全表」）→ 不写盘。
 4. 未 Apply 新行误进 payload → 拒写；过滤后再套回本地，新行仍在原槽。
-5. 顺序变化不 dirty；改名 / disabled / 待删除 dirty。
+5. 顺序变化不 dirty；启用 / 待删除点亮表底 Save；改名走弹窗即时写盘。页脚 Apply 不因 AIs 变亮。
 6. Settings 自己是 `reorder-ais` 的 sender 时不 echo `ais-order-changed`。
 
 左键切页、右键拖、footer 钉死是 DropdownView 手势，本 suite 不覆盖。
@@ -86,7 +86,7 @@ flowchart TD
 ## 禁止项
 
 - 不要用 HTML5 `draggable` 或默认 `PointerSensor` 做 Switch AI 排序（只认左键）。
-- 不要让 Settings 拖拽只改 store 等 Apply：会和 menubar 立即写盘打架。
+- 不要让 Settings 拖拽只改 store 等表底 Save：会和 menubar 立即写盘打架。
 - 不要把未 Apply 的新建 AI id 送进 `reorder-ais`。
 - 不要把待删除行从 Settings 排序 payload 里滤掉：它们仍在磁盘上，滤掉会退化成菜单槽位合并。
 - 不要在 Manage AIs drop 时对整表 `arrayMove`：会挤走未启用项。表内映射见 [`manage-ais-table-ux.md`](./manage-ais-table-ux.md)。

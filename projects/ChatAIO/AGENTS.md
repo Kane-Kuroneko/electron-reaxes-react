@@ -29,6 +29,7 @@
 - [切后台后再切 AI，SwitchAiBar 不见](./docs/issues/floating-view-missing-after-background.md)
 - [拖拽排序、顺序写盘](./docs/features/ai-list-reorder.md)
 - [Manage AIs 表格展示序 / 筛选](./docs/features/manage-ais-table-ux.md)
+- [Manage AIs 与页脚两套提交](./docs/features/manage-ais-save-scopes.md)
 - [中区 Current AI 下拉切换](./docs/features/menubar-current-ai-dropdown.md)
 - [卡片 UX](./docs/features/floating-view-card-ux-optimization.md)、[Swiper 迁移](./docs/features/floating-view-swiper-migration.md)
 - [切换热路径](./docs/features/ai-page-switch-performance-optimization.md)
@@ -59,6 +60,7 @@
 - [Settings 首次打开延迟（预加载晚于 AI 页）](./docs/features/settings-view-preload.md)
 - [Settings 切 Manage AIs 卡顿埋点](./docs/features/settings-menu-switch-perf.md)
 - [Manage AIs 表格展示序 / 筛选](./docs/features/manage-ais-table-ux.md)
+- [Manage AIs 与页脚两套提交](./docs/features/manage-ais-save-scopes.md)
 - [外观 / 主题](./docs/architecture/appearance-theme-environment.md)、[i18n](./docs/architecture/i18n.md)
 
 ### E2E
@@ -94,6 +96,7 @@
 | [menubar-cold-start-monitor.md](./docs/features/menubar-cold-start-monitor.md) | 冷启动 menubar 白屏 vs 当前 WCV 加载时序 |
 | [ai-list-reorder.md](./docs/features/ai-list-reorder.md) | Switch AI / Manage AIs 立即持久化排序 |
 | [manage-ais-table-ux.md](./docs/features/manage-ais-table-ux.md) | Manage AIs 未启用置底、启用槽位拖拽、列筛选进 reaxel、空表不拆筛选浮层 |
+| [manage-ais-save-scopes.md](./docs/features/manage-ais-save-scopes.md) | 页脚与表底两套 dirty；弹窗 Save 当场写盘 |
 | [menubar-current-ai-dropdown.md](./docs/features/menubar-current-ai-dropdown.md) | 中区 Current AI 块点击下拉切 AI |
 | [ai-catalog-manual-update.md](./docs/features/ai-catalog-manual-update.md) | Settings 手动检查供应商目录（GitHub Release 资产） |
 | [ai-page-switch-performance-optimization.md](./docs/features/ai-page-switch-performance-optimization.md) | 切换热路径 CPU / z-order |

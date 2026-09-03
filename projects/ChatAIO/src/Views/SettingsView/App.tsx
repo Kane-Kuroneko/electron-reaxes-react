@@ -15,7 +15,7 @@ export const App = reaxper( () => {
 		reaxel_SettingsView.store.Environment.systemTheme,
 	);
 	
-	const { applySettings , exitSettings , exitWithoutSave , reloadSettings , isDirty } = reaxel_SettingsView();
+	const { applySettings , exitSettings , exitWithoutSave , reloadRuntimeSettings , isDirty } = reaxel_SettingsView();
 	const catalogUpdate = reaxel_SettingsView.store.UIControls.manage_AIs.catalog_update;
 	/* 只在预览/applying 时锁 chrome；checking 不锁。见 docs/features/ai-catalog-manual-update.md */
 	const catalogChromeLocked = shouldLockSettingsChromeForCatalogUpdate( catalogUpdate );
@@ -104,7 +104,7 @@ export const App = reaxper( () => {
 					type="dashed"
 					disabled={ !dirty || catalogChromeLocked }
 					onClick={ async() => {
-						await reloadSettings();
+						await reloadRuntimeSettings();
 					} }
 				><I18n>Discard Changes</I18n></Button>
 

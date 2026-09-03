@@ -42,6 +42,7 @@ export interface IpcSyncRpc extends Record<string , IpcStructure.IpcRpc<unknown[
 export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , unknown>>{
 	'fetch-settings' : IpcStructure.IpcRpc<[void] , SettingsFetchResult>;
 	'apply-settings' : IpcStructure.IpcRpc<[settings: Settings], SettingsApplyResult>;
+	'apply-ais' : IpcStructure.IpcRpc<[ais: AI.AIItem[]], SettingsApplyResult>;
 	'submit-settings' : IpcStructure.IpcRpc<[path: PatchPath<Settings>, data: PatchData<PatchPath<Settings>, Settings>], {success: boolean, error?: string}>;
 
 	// AI Configuration Management RPCs

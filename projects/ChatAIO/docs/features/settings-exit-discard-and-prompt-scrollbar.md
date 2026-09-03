@@ -50,6 +50,7 @@ async function exitWithoutSave() {
 ### 验收标准
 
 - 修改任意设置项（如主题、语言、代理模式）后不 Apply/Save，点 **Exit Without Save**，再次进入应显示磁盘持久化值。
+- **Manage AIs 表内未保存的 Enabled / 删除草稿会保留**（页脚不讨表 dirty）。要丢掉表草稿用表底 **Undo Changes**。见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)。
 - 修改主题/语言后 **Exit Without Save**，PromptView 外观应恢复为已保存配置，而非预览值。
 - **Discard Changes**、**Apply**、**Save & Exit** 行为不变。
 - `reloadSettings` 失败时记录错误；仍执行 `exitSettings()`（用户意图是离开，与脏数据滞留相比更可接受）。

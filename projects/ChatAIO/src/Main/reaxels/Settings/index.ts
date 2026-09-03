@@ -84,21 +84,8 @@ export const reaxel_Settings = reaxel( () => {
 			startup : settings.startup ,
 			appearance : settings.appearance,
 		} );
-		const normalizedAIs = ( settings.AIs || [] ).map( ai => ( {
-			...ai ,
-			disabled : ai.disabled === true ,
-			url_override : ai.url_override || null ,
-			proxy_mode : ai.proxy_mode || 'follow_global_setting' ,
-			from_server_list_proxy : getEnabledProxyServerId(
-				ai.from_server_list_proxy ,
-				normalizedRuntimeSettings.networks.proxy_server_list,
-			) ,
-			user_fill_proxy : ai.user_fill_proxy || null ,
-			preloadOnStartup : ai.preloadOnStartup === true,
-		} ) );
-		
 		settingsConfigService.saveSettings( normalizedRuntimeSettings );
-		aiConfigService.replaceAllAIs( normalizedAIs );
+		/* AIs 不走 apply-settings。表底 Save 用 apply-ais，弹窗 Save 用 update-ai / add-ai。见 docs/features/manage-ais-save-scopes.md */
 		
 		mutate( s => {
 			s.networks = normalizedRuntimeSettings.networks;
@@ -129,6 +116,40 @@ export const reaxel_Settings = reaxel( () => {
 			settings : getCurrentSettings(),
 		};
 	};
+
+	const normalizeAIsForPersist = ( ais:Settings['AIs'] ):Settings['AIs'] => {
+		const proxyList = store.networks.proxy_server_list;
+		return ( Array.isArray( ais ) ? ais : [] ).map( ai => ( {
+			...ai ,
+			disabled : ai.disabled === true ,
+			url_override : ai.url_override || null ,
+			proxy_mode : ai.proxy_mode || 'follow_global_setting' ,
+			from_server_list_proxy : getEnabledProxyServerId(
+				ai.from_server_list_proxy ,
+				proxyList,
+			) ,
+			user_fill_proxy : ai.user_fill_proxy || null ,
+			preloadOnStartup : ai.preloadOnStartup === true,
+		} ) );
+	};
+
+	/** Manage AIs 表底 Save：整表写盘。弹窗单条走 update-ai / add-ai。见 docs/features/manage-ais-save-scopes.md */
+	const applyAIs = async( ais:Settings['AIs'] ):Promise<SettingsApplyResult> => {
+		aiConfigService.replaceAllAIs( normalizeAIsForPersist( ais ) );
+		const viewsSynced = await syncRuntimeViewsSafe();
+		return {
+			success : true ,
+			restartRequired : !viewsSynced ,
+			restartReasons : [] ,
+			applied : {
+				settingsPersisted : false ,
+				aiViewsSynced : viewsSynced ,
+				menuRebuilt : viewsSynced ,
+				proxyUpdated : false,
+			} ,
+			settings : getCurrentSettings(),
+		};
+	};
 	
 	rehancer_ipcReceive( { store , setState , mutate } )();
 	
@@ -149,6 +170,26 @@ export const reaxel_Settings = reaxel( () => {
 			return await applySettings( settings );
 		} catch ( error ) {
 			console.error( '[Settings] Failed to apply settings:' , error );
+			return {
+				success : false ,
+				restartRequired : false ,
+				restartReasons : [] ,
+				applied : {
+					settingsPersisted : false ,
+					aiViewsSynced : false ,
+					menuRebuilt : false ,
+					proxyUpdated : false,
+				} ,
+				error : error?.message || String( error ),
+			};
+		}
+	} );
+
+	useIpcRpc( 'apply-ais' ).handle( async( { event } , ais ) => {
+		try {
+			return await applyAIs( ais );
+		} catch ( error ) {
+			console.error( '[Settings] Failed to apply AIs:' , error );
 			return {
 				success : false ,
 				restartRequired : false ,
@@ -220,10 +261,18 @@ export const reaxel_Settings = reaxel( () => {
 		return aiConfigService.getDefaultAIs();
 	} );
 	
-	useIpcRpc( 'update-ai' ).handle( async( { event } , id , updates ) => {
-		const updatedAI = aiConfigService.updateAI( id , updates );
-		await syncRuntimeViews();
+	const persistUpdatedAI = async( id:string , updates:Partial<Settings['AIs'][number]> ) => {
+		/* 弹窗即时保存不得改 enabled 列；disabled 只走 apply-ais。见 docs/features/manage-ais-save-scopes.md */
+		const { disabled : _disabled , ...fieldUpdates } = updates || {};
+		const updatedAI = aiConfigService.updateAI( id , fieldUpdates );
+		if( updatedAI ) {
+			await syncRuntimeViews();
+		}
 		return updatedAI;
+	};
+
+	useIpcRpc( 'update-ai' ).handle( async( { event } , id , updates ) => {
+		return await persistUpdatedAI( id , updates );
 	} );
 	
 	useIpcRpc( 'add-ai' ).handle( async( { event } , ai ) => {
@@ -387,6 +436,8 @@ export const reaxel_Settings = reaxel( () => {
 	const rtn = {
 		getCurrentSettings ,
 		applySettings ,
+		applyAIs ,
+		persistUpdatedAI ,
 		reloadFromDisk,
 	};
 	

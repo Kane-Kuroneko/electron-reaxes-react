@@ -142,7 +142,7 @@ describe( '非法 payload 不写盘' , () => {
 } );
 
 describe( 'Settings dirty：顺序不计，条目变更要计' , () => {
-	it( '只改顺序不点亮 Apply' , () => {
+	it( '只改顺序不点亮表底 Save' , () => {
 		assert.equal(
 			dirtyFingerprint( ais( 'C,A,B(d)' ) ) ,
 			dirtyFingerprint( ais( 'A,B(d),C' ) ),

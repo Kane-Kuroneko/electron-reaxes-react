@@ -48,7 +48,11 @@ export const CatalogUpdateControls = reaxper( () => {
 				if( result.blocked === 'in-flight' ) {
 					return;
 				}
-				message.warning( i18n( 'Save or discard Settings changes before checking the AI catalog' ) );
+				message.warning( i18n(
+					reaxel_SettingsView().isAIsDirty()
+						? 'Save or discard AI page changes before checking the AI catalog'
+						: 'Save or discard Settings changes before checking the AI catalog',
+				) );
 				return;
 			}
 			if( result.status === 'error' ) {
@@ -71,7 +75,11 @@ export const CatalogUpdateControls = reaxper( () => {
 				if( result.blocked === 'in-flight' ) {
 					return;
 				}
-				message.warning( i18n( 'Save or discard Settings changes before applying the AI catalog update' ) );
+				message.warning( i18n(
+					reaxel_SettingsView().isAIsDirty()
+						? 'Save or discard AI page changes before applying the AI catalog update'
+						: 'Save or discard Settings changes before applying the AI catalog update',
+				) );
 				return;
 			}
 			if( !result.success ) {

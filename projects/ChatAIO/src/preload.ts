@@ -5,6 +5,7 @@ const useMtr = createIpc<MainToRendererEvents>('mtrEvent');
 
 const fetchSettings = useRpc( 'fetch-settings' );
 const applySettings = useRpc( 'apply-settings' );
+const applyAIs = useRpc( 'apply-ais' );
 const submitSettings = useRpc( 'submit-settings' );
 const exitSettings = useRtm('exit-settings');
 const updatePreloadAIConfig = useRtm('update-preload-ai-config');
@@ -99,6 +100,7 @@ const openExternalUrl = useRpc('open-external-url');
 const api = {
 	fetchSettings ,
 	applySettings ,
+	applyAIs ,
 	submitSettings ,
 	exitSettings,
 	updatePreloadAIConfig,

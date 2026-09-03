@@ -1,3 +1,7 @@
+/**
+ * SettingsView 业务。页脚 dirty 与 Manage AIs 表 dirty 分开；弹窗 Save 当场 persist。
+ * 见 docs/features/manage-ais-save-scopes.md
+ */
 export const reaxel_SettingsView = reaxel( () => {
 	const { store , setState , mutate } = createReaxable( {
 		RootMenu : {
@@ -52,7 +56,7 @@ export const reaxel_SettingsView = reaxel( () => {
 			} ,
 			manage_AIs : {
 				startupAIPageLoadMode : checkAs<Startup.AIPageLoadMode>( 'last-used-ai' ) ,
-				/** 待删除 AI ID 列表 — 标记后仅在 Apply/Save 时过滤持久化，UI 中仍可见（可撤销） */
+				/** 待删除 AI ID 列表 — 标记后仅在表底 Save 时过滤持久化，UI 中仍可见（可撤销）。见 docs/features/manage-ais-save-scopes.md */
 				pendingDeleteAIIds : checkAs<string[]>( [] ) ,
 				/**
 				 * Manage AIs 表头列筛选。只改展示 dataSource，不 persist、不计 dirty。
@@ -109,13 +113,14 @@ export const reaxel_SettingsView = reaxel( () => {
 	
 	rehancer_Dev( { store , setState , mutate } )();
 
-	// dirty 状态追踪: 存储上次加载/应用成功后的设置快照
-	let _lastSavedSnapshot = '';
+	/* 两套 dirty：页脚 runtime vs 表内 AIs。见 docs/features/manage-ais-save-scopes.md */
+	let _lastSavedSettingsSnapshot = '';
+	let _lastSavedAIsSnapshot = '';
 	// 已提交(已生效)的 AI IDs 集合，用于前端判断哪些 AI 是新增未保存的
 	let _committedAIIds = new Set<string>();
 	// 已提交的 AI 快照，用于判断是否已修改
 	let _committedAISnapshot = new Map<string , string>();
-	/* Manage AIs 置底只看上次 Apply/Save 的 disabled；未保存 toggle 不跳行。见 docs/features/manage-ais-table-ux.md */
+	/* Manage AIs 置底只看上次表底 Save / 弹窗 persist 的 disabled；未保存 toggle 不跳行。见 docs/features/manage-ais-table-ux.md */
 	let _committedDisabledById = new Map<string , boolean>();
 	let _proxyTestURLSubmitQueue:Promise<unknown> = Promise.resolve();
 	let _aiOrderPersistQueue:Promise<unknown> = Promise.resolve();
@@ -123,9 +128,11 @@ export const reaxel_SettingsView = reaxel( () => {
 	let _catalogCheckGeneration = 0;
 	let _catalogApplyGeneration = 0;
 	
-	function updateSnapshot() {
-		_lastSavedSnapshot = JSON.stringify( buildDirtySettingsSnapshot() );
-		// 同步更新 committed AI 状态
+	function updateSettingsSnapshot() {
+		_lastSavedSettingsSnapshot = JSON.stringify( buildDirtyRuntimeSnapshot() );
+	}
+
+	function updateAIsSnapshotFromStore() {
 		_committedAIIds = new Set( store.Data.AIs.map( ai => ai.id ) );
 		_committedAISnapshot = new Map(
 			store.Data.AIs.map( ai => [ ai.id , JSON.stringify( ai ) ] ),
@@ -133,25 +140,28 @@ export const reaxel_SettingsView = reaxel( () => {
 		_committedDisabledById = new Map(
 			store.Data.AIs.map( ai => [ ai.id , Boolean( ai.disabled ) ] ),
 		);
-			// 重置待删除标记 — 快照同步后所有标记已反映在磁盘/快照中
-			setState.UIControls.manage_AIs( { pendingDeleteAIIds : [] } );
-	}
-	
-	function isDirty(): boolean {
-		if( !_lastSavedSnapshot ) return false;
-		return JSON.stringify( buildDirtySettingsSnapshot() ) !== _lastSavedSnapshot;
+		_lastSavedAIsSnapshot = fingerprintAIsDirtyState( store.Data.AIs , [] );
 	}
 
-	function buildDirtySettingsSnapshot() {
-		const settings = buildSettingsFromStore();
-		// 测试 URL 是输入时即时持久化字段，不参与底部 Apply/Save 的 dirty 判断。
-		delete ( settings.networks as Partial<Settings['networks']> ).proxy_test_urls;
-		/* 顺序不计；待删除行不在 Apply 快照里所以仍会 dirty。见 docs/features/ai-list-reorder.md */
-		settings.AIs = snapshotAIsForDirty(
-			settings.AIs ,
+	function isDirty(): boolean {
+		if( !_lastSavedSettingsSnapshot ) return false;
+		return JSON.stringify( buildDirtyRuntimeSnapshot() ) !== _lastSavedSettingsSnapshot;
+	}
+
+	function isAIsDirty(): boolean {
+		if( !_lastSavedAIsSnapshot ) return false;
+		return fingerprintAIsDirtyState(
+			store.Data.AIs ,
 			store.UIControls.manage_AIs.pendingDeleteAIIds,
-		);
-		return settings;
+		) !== _lastSavedAIsSnapshot;
+	}
+
+	function hasBlockingUnsavedChanges(): boolean {
+		return isDirty() || isAIsDirty();
+	}
+
+	function buildDirtyRuntimeSnapshot() {
+		return snapshotRuntimeSettingsForDirty( buildSettingsFromStore() );
 	}
 	
 	~async function loadSettingsOnStartup() {
@@ -170,6 +180,39 @@ export const reaxel_SettingsView = reaxel( () => {
 		return await fetchSettingsService();
 	}
 	
+	async function reloadRuntimeSettings() {
+		setState.get_settings_status( {
+			pending : true ,
+			error : false,
+		} );
+		try {
+			const [ environment , settings ] = await Promise.all( [
+				getAppearanceEnvironment(),
+				fetchSettings(),
+			] );
+			setState.Environment( environment );
+			applyRuntimeSettingsToStore( settings );
+			setState.get_settings_status( {
+				pending : false ,
+				error : false,
+			} );
+			return settings;
+		} catch ( error ) {
+			console.error( '[SettingsView] Failed to reload runtime settings:' , error );
+			setState.get_settings_status( {
+				pending : false ,
+				error : true,
+			} );
+			throw error;
+		}
+	}
+
+	async function reloadAIs() {
+		const ais = await getAIs();
+		applyAIsToStore( Array.isArray( ais ) ? ais : [] );
+		return ais;
+	}
+
 	async function reloadSettings() {
 		setState.get_settings_status( {
 			pending : true ,
@@ -211,7 +254,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		}
 	}
 	
-	function setSettings( settings:SettingsFetchResult | Settings ) {
+	function applyRuntimeSettingsToStore( settings:SettingsFetchResult | Settings ) {
 		const proxyServerList = settings.networks.proxy_server_list || defaultProxyServers();
 		setState.UIControls.networks( {
 			proxy_mode : settings.networks.global_proxy.proxy_mode ,
@@ -238,9 +281,6 @@ export const reaxel_SettingsView = reaxel( () => {
 		setState.UIControls.manage_AIs( {
 			startupAIPageLoadMode : settings.startup?.aiPageLoadMode || 'last-used-ai',
 		} );
-		mutate( s => {
-			s.Data.AIs = settings.AIs || [];
-		} );
 		
 		// 同步 i18n 语言到渲染进程的 i18n 模块
 		// 以持久化配置 (user-settings.json) 为单一数据源
@@ -256,8 +296,20 @@ export const reaxel_SettingsView = reaxel( () => {
 			language : settings.appearance.language,
 		} );
 		
-		// 更新快照，用于 dirty 状态检测
-		updateSnapshot();
+		updateSettingsSnapshot();
+	}
+
+	function applyAIsToStore( ais:AI.AIItem[] ) {
+		mutate( s => {
+			s.Data.AIs = ais || [];
+		} );
+		setState.UIControls.manage_AIs( { pendingDeleteAIIds : [] } );
+		updateAIsSnapshotFromStore();
+	}
+
+	function setSettings( settings:SettingsFetchResult | Settings ) {
+		applyRuntimeSettingsToStore( settings );
+		applyAIsToStore( settings.AIs || [] );
 	}
 
 	async function setTheme( theme:Appearance.Theme ) {
@@ -346,7 +398,7 @@ export const reaxel_SettingsView = reaxel( () => {
 	async function exitWithoutSave() {
 		dismissCatalogUpdate();
 		try {
-			await reloadSettings();
+			await reloadRuntimeSettings();
 		} catch ( error ) {
 			console.error( '[SettingsView] Failed to discard changes on exit:' , error );
 		}
@@ -361,7 +413,11 @@ export const reaxel_SettingsView = reaxel( () => {
 		try {
 			const result = await applySettingsService( buildSettingsFromStore() );
 			if( result.success ) {
-				await reloadSettings();
+				if( result.settings ) {
+					applyRuntimeSettingsToStore( result.settings );
+				} else {
+					await reloadRuntimeSettings();
+				}
 			}
 			setState.submit_settings_status( {
 				pending : false ,
@@ -375,6 +431,94 @@ export const reaxel_SettingsView = reaxel( () => {
 				error : true,
 			} );
 			throw error;
+		}
+	}
+
+	async function applyAIs() {
+		setState.submit_settings_status( {
+			pending : true ,
+			error : false,
+		} );
+		try {
+			const nextAIs = buildSettingsFromStore().AIs;
+			const result = await applyAIsService( cloneForIPC( nextAIs ) );
+			if( result.success ) {
+				applyAIsToStore( nextAIs );
+			}
+			setState.submit_settings_status( {
+				pending : false ,
+				error : !result.success,
+			} );
+			return result;
+		} catch ( error ) {
+			console.error( '[SettingsView] Failed to apply AI pages:' , error );
+			setState.submit_settings_status( {
+				pending : false ,
+				error : true,
+			} );
+			throw error;
+		}
+	}
+
+	/**
+	 * 弹窗 Save 成功后只把这一条并进 committed，其它行的 Enabled/待删除草稿仍 dirty。
+	 * 不覆盖本地未提交的 disabled。见 docs/features/manage-ais-save-scopes.md
+	 */
+	function commitOneAIAfterPersist( persisted:AI.AIItem ) {
+		mutate.Data( state => {
+			const index = state.AIs.findIndex( ai => ai.id === persisted.id );
+			if( index === -1 ) {
+				state.AIs = [ ...state.AIs , persisted ];
+				return;
+			}
+			state.AIs = state.AIs.map( ( ai , i ) => i === index
+				? { ...persisted , disabled : ai.disabled }
+				: ai );
+		} );
+		const live = store.Data.AIs.find( ai => ai.id === persisted.id );
+		if( !live ) {
+			return;
+		}
+		const isNew = !_committedAIIds.has( live.id );
+		_committedAIIds.add( live.id );
+		if( isNew ) {
+			_committedDisabledById.set( live.id , Boolean( persisted.disabled ) );
+		}
+		const committedDisabled = _committedDisabledById.get( live.id ) === true;
+		_committedAISnapshot.set( live.id , JSON.stringify( {
+			...live ,
+			disabled : committedDisabled,
+		} ) );
+		_lastSavedAIsSnapshot = fingerprintCommittedAIsForDirty(
+			store.Data.AIs ,
+			_committedAIIds ,
+			_committedAISnapshot,
+		);
+	}
+
+	async function persistAIFromModal( nextAI:AI.AIItem , mode:'edit' | 'add' ):Promise<{ success:boolean; error?:string }> {
+		try {
+			if( mode === 'add' ) {
+				const created = await addAI( cloneForIPC( nextAI ) );
+				if( !created ) {
+					return { success : false , error : 'Failed to add AI page' };
+				}
+				commitOneAIAfterPersist( created );
+				return { success : true };
+			}
+			const { disabled : _disabled , id , ...updates } = nextAI;
+			const updated = await updateAI( id , cloneForIPC( updates ) );
+			if( !updated ) {
+				return { success : false , error : 'Failed to update AI page' };
+			}
+			commitOneAIAfterPersist( updated );
+			return { success : true };
+		} catch ( error ) {
+			console.error( '[SettingsView] Failed to persist AI from modal:' , error );
+			return {
+				success : false ,
+				error : error instanceof Error ? error.message : String( error ),
+			};
 		}
 	}
 	
@@ -413,7 +557,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		} );
 	};
 	
-	/** 只翻转 disabled，不改 `AIs` 下标。展示置底等 Apply/Save 更新 committed 快照后再做。见 docs/features/manage-ais-table-ux.md */
+	/** 只翻转 disabled，不改 `AIs` 下标。展示置底等表底 Save 更新 committed 快照后再做。见 docs/features/manage-ais-table-ux.md */
 	const setAIEnabled = (id:string , enabled:boolean) => {
 		mutate.Data( state => {
 			state.AIs = state.AIs.map( ai => ai.id === id
@@ -433,7 +577,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		setState.UIControls.manage_AIs( { startupAIPageLoadMode : aiPageLoadMode } );
 	};
 
-	/** Switch AI menubar 拖完后同步表格；只改顺序，保留未 Apply 的新项/改名字段。 */
+/** Switch AI menubar 拖完后同步表格；只改顺序，保留未提交的 toggle / 待删除。 */
 	const applyExternalEnabledAIOrder = ( enabledIds:string[] ) => {
 		const current = store.Data.AIs;
 		const next = applyEnabledAIOrder( current , enabledIds );
@@ -453,7 +597,8 @@ export const reaxel_SettingsView = reaxel( () => {
 				if( generation !== _aiOrderPersistGeneration ) {
 					return { success : true };
 				}
-				/* 未 Apply 新建项不能进 reorder-ais；待删除仍已提交，必须带着走。
+				/* 未提交新建项不能进 reorder-ais；待删除仍已提交，必须带着走。
+				 * 弹窗 Add 已即时 persist，一般都会在 committed 里。
 				 * 此处按 store.Data.AIs（真实序，不是表内启用置顶的展示序）取已提交 id。
 				 * 表内拖拽已在 mutate 时按启用槽位写回。见 docs/features/ai-list-reorder.md 、docs/features/manage-ais-table-ux.md */
 				const orderedIds = committedAIIdsInVisualOrder( store.Data.AIs , _committedAIIds );
@@ -511,7 +656,7 @@ export const reaxel_SettingsView = reaxel( () => {
 	};
 
 	/**
-	 * Settings → Manage AIs 检查供应商目录。未 Apply 的编辑会挡住。
+	 * Settings → Manage AIs 检查供应商目录。Settings 或 AI 表任一 dirty 会挡住。
 	 * in-flight 以 catalog_update.checking / applying 为唯一真相：busy 时同步 return，不发第二次 IPC。
 	 * 预览放 catalog_update.preview，不写 Data.AIs。
 	 * checking 必须在 finally 清掉；IPC 若挂住，UI watchdog 到期也要解锁按钮。
@@ -524,7 +669,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		if( isCatalogUpdateInFlight( store.UIControls.manage_AIs.catalog_update ) ) {
 			return { blocked : 'in-flight' };
 		}
-		if( isDirty() ) {
+		if( hasBlockingUnsavedChanges() ) {
 			return { blocked : 'dirty' };
 		}
 		const generation = ++_catalogCheckGeneration;
@@ -542,7 +687,7 @@ export const reaxel_SettingsView = reaxel( () => {
 				return result;
 			}
 			if( result.status === 'available' ) {
-				if( isDirty() ) {
+				if( hasBlockingUnsavedChanges() ) {
 					setState.UIControls.manage_AIs.catalog_update( { preview : null } );
 					void discardAiCatalogUpdateService().catch( error => {
 						console.error( '[SettingsView] discard catalog pending after dirty check:' , error );
@@ -566,7 +711,7 @@ export const reaxel_SettingsView = reaxel( () => {
 	};
 
 	/**
-	 * 确认合并这次 check 的 revision。成功后 reload Settings。
+	 * 确认合并这次 check 的 revision。成功后只 reload AIs，不动 runtime 草稿。
 	 * busy 时同步 return，避免连点第二次走到 main 的 no-pending 盖住第一次的成功 toast。
 	 * applying 必须在 finally 清掉，避免 Modal confirmLoading 卡死。
 	 */
@@ -578,7 +723,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		if( isCatalogUpdateInFlight( store.UIControls.manage_AIs.catalog_update ) ) {
 			return { blocked : 'in-flight' };
 		}
-		if( isDirty() ) {
+		if( hasBlockingUnsavedChanges() ) {
 			return { blocked : 'dirty' };
 		}
 		const revision = store.UIControls.manage_AIs.catalog_update.preview?.remoteRevision;
@@ -610,9 +755,9 @@ export const reaxel_SettingsView = reaxel( () => {
 					return result;
 				}
 				try {
-					await reloadSettings();
+					await reloadAIs();
 				} catch ( error ) {
-					console.error( '[SettingsView] catalog applied but reload Settings failed:' , error );
+					console.error( '[SettingsView] catalog applied but reload AIs failed:' , error );
 				}
 			}
 			return result;
@@ -626,13 +771,18 @@ export const reaxel_SettingsView = reaxel( () => {
 	const rtn = {
 		fetchSettings ,
 		reloadSettings ,
+		reloadRuntimeSettings ,
+		reloadAIs ,
 		setSettings ,
 		refreshAppearanceEnvironment ,
 		setTheme ,
 		setLanguage ,
 		buildSettingsFromStore ,
 		applySettings ,
+		applyAIs ,
+		persistAIFromModal ,
 		isDirty ,
+		isAIsDirty ,
 		changeEditAIModalVisible ,
 		changeCloneAIModalVisible ,
 		setAIEnabled ,
@@ -656,7 +806,7 @@ export const reaxel_SettingsView = reaxel( () => {
 			return !_committedAIIds.has( id );
 		},
 		/**
-		 * 标记 AI 为待删除 — 仅在 Apply/Save 时真正移除并持久化
+		 * 标记 AI 为待删除 — 仅在表底 Save 时真正移除并持久化
 		 */
 		markAIForDeletion( id: string ): void {
 			const current = store.UIControls.manage_AIs.pendingDeleteAIIds;
@@ -704,7 +854,7 @@ export const reaxel_SettingsView = reaxel( () => {
 			setState.UIControls.manage_AIs.column_filter.value( { [key] : '' } );
 		},
 		/**
-		 * 上次 Apply/Save 时该行是否未启用。不在快照里的新建行视为启用区，直到 Save。
+		 * 上次表底 Save / 弹窗 persist 时该行是否未启用。不在快照里的新建行视为启用区，直到写入 committed。
 		 * 表格置底 / 禁拖用这个，不要用当前 `ai.disabled`。见 docs/features/manage-ais-table-ux.md
 		 */
 		isCommittedDisabled( id: string ): boolean {
@@ -858,18 +1008,22 @@ export type Reaxel_SettingsView = Pick<typeof reaxel_SettingsView , "mutate"|"st
 import { rehancer_Dev } from './rehancer_Dev';
 import { reaxel_I18n } from "#SettingsView/reaxels/i18n";
 import {
+	addAI ,
+	applyAIs as applyAIsService ,
 	applySettings as applySettingsService ,
 	applyAiCatalogUpdate as applyAiCatalogUpdateService ,
 	checkAiCatalogUpdate as checkAiCatalogUpdateService ,
 	discardAiCatalogUpdate as discardAiCatalogUpdateService ,
 	exitSettings ,
 	fetchSettings as fetchSettingsService ,
+	getAIs ,
 	getAppearanceEnvironment ,
 	previewPromptViewAppearance ,
 	reorderAIs ,
 	submitSettings ,
 	turnToNextAiPage ,
-	turnToPreviousAiPage,
+	turnToPreviousAiPage ,
+	updateAI,
 } from '#SettingsView/services/Settings';
 import {
 	normalizeThemePreference ,
@@ -893,9 +1047,13 @@ import {
 import {
 	applyEnabledAIOrder ,
 	committedAIIdsInVisualOrder ,
-	enabledAIIdsEqual ,
-	snapshotAIsForDirty,
+	enabledAIIdsEqual,
 } from '#shared/utils/merge-enabled-ai-order.utility';
+import {
+	fingerprintAIsDirtyState ,
+	fingerprintCommittedAIsForDirty ,
+	snapshotRuntimeSettingsForDirty,
+} from '#shared/utils/settings-dirty-scopes.utility';
 import {
 	createDefaultGlobalProxy as defaultGlobalProxyFields ,
 	createDefaultProxyConf as defaultProxyConf ,

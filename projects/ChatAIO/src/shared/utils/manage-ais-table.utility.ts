@@ -1,8 +1,8 @@
 /**
  * Settings → Manage AIs 表格的展示序 / 列筛选 / 拖拽映射。
  * 只影响表格看见的顺序；真实 `AIs` 数组顺序仍由启用槽位合并决定。
- * 置底按「上次 Apply/Save 的 disabled」分区，未保存的 Enabled 编辑不跳行。
- * 设计：docs/features/manage-ais-table-ux.md
+ * 置底按「上次表底 Save 的 disabled」分区，未保存的 Enabled 编辑不跳行。
+ * 设计：docs/features/manage-ais-table-ux.md 、docs/features/manage-ais-save-scopes.md
  */
 
 export type ManageAIsColumnFilterKey = 'label' | 'AI_family' | 'url';

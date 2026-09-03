@@ -228,18 +228,24 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	];
 
 	/**
-	 * Manage AIs 表：展示按上次 Save 的启用态分区（启用在上、未启用置底）；筛选与展示序都不改真实 `AIs`。
-	 * 拖启用项松手后按启用槽位写回，未启用钉在原下标。见 docs/features/manage-ais-table-ux.md
+	 * Manage AIs 表：展示按上次表底 Save 的启用态分区（启用在上、未启用置底）；筛选与展示序都不改真实 `AIs`。
+	 * 表底 Save/Undo 只管 Enabled / Preload / 删除；弹窗 Save 当场写盘。见 docs/features/manage-ais-save-scopes.md
 	 */
 	export const RCManageAIsPanel = reaxper( () => {
 		const {
 			changeEditAIModalVisible ,
 			persistCommittedAIOrder ,
-			reloadSettings ,
+			reloadAIs ,
+			applyAIs ,
 			setStartupAIPageLoadMode,
 			isCommittedDisabled,
+			isAIsDirty,
 		} = reaxel_SettingsView();
 		const pendingDeleteAIIds = reaxel_SettingsView.store.UIControls.manage_AIs.pendingDeleteAIIds;
+		const catalogUpdate = reaxel_SettingsView.store.UIControls.manage_AIs.catalog_update;
+		const catalogChromeLocked = shouldLockSettingsChromeForCatalogUpdate( catalogUpdate );
+		const aisDirty = isAIsDirty();
+		const aisSubmitPending = reaxel_SettingsView.store.submit_settings_status.pending;
 		const [resetModalVisible , setResetModalVisible] = React.useState( false );
 		const tableHostRef = React.useRef<HTMLDivElement>( null );
 		const tableScrollY = useHostScrollY( tableHostRef );
@@ -354,7 +360,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 					message.error( result.error || i18n( 'Failed to reset AI pages' ) );
 					return;
 				}
-				await reloadSettings();
+				await reloadAIs();
 				setResetModalVisible( false );
 				message.success( i18n( 'AI pages reset to defaults' ) );
 			} catch ( err ) {
@@ -447,12 +453,53 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 					</div>
 				</SortableContext>
 			</DndContext>
-			<div className="settings-section__footer" style={ { marginTop : 16 , display : 'flex' , justifyContent : 'flex-end' } }>
+			<div className="settings-section__footer" style={ { marginTop : 16 , display : 'flex' , justifyContent : 'flex-end' , gap : 8 , alignItems : 'center' } }>
 				<Button
-					danger
+					type="dashed"
+					disabled={ !aisDirty || catalogChromeLocked || aisSubmitPending }
+					onClick={ async() => {
+						try {
+							await reloadAIs();
+						} catch ( error ) {
+							console.error( '[ManageAIs] Undo AI changes failed:' , error );
+							message.error( i18n( 'Failed to apply AI pages' ) );
+						}
+					} }
+				><I18n>Undo Changes</I18n></Button>
+				<Button
 					type="primary"
-					onClick={ () => setResetModalVisible( true ) }
-				><I18n>Reset All AI Pages</I18n></Button>
+					disabled={ !aisDirty || catalogChromeLocked || aisSubmitPending }
+					loading={ aisSubmitPending }
+					onClick={ async() => {
+						try {
+							const result = await applyAIs();
+							if( !result.success ) {
+								message.error( result.error || i18n( 'Failed to apply AI pages' ) );
+								return;
+							}
+							message.success( i18n( 'AI pages applied' ) );
+						} catch ( error ) {
+							console.error( '[ManageAIs] Apply AIs failed:' , error );
+							message.error( i18n( 'Failed to apply AI pages' ) );
+						}
+					} }
+				><I18n>Save</I18n></Button>
+				<Dropdown
+					trigger={ [ 'click' ] }
+					disabled={ catalogChromeLocked }
+					menu={ {
+						items : [
+							{
+								key : 'reset' ,
+								danger : true ,
+								label : <I18n>Reset All AI Pages</I18n> ,
+								onClick : () => setResetModalVisible( true ),
+							},
+						],
+					} }
+				>
+					<Button><I18n>Advanced</I18n></Button>
+				</Dropdown>
 			</div>
 			<ResetConfirmModal
 				visible={ resetModalVisible }
@@ -538,6 +585,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		const {
 			changeEditAIModalVisible ,
 			createDefaultAIName,
+			persistAIFromModal,
 		} = reaxel_SettingsView();
 
 		const fields = store.fields;
@@ -549,6 +597,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		const [urlEditing , setUrlEditing] = React.useState( false );
 		const [urlDraft , setUrlDraft] = React.useState( '' );
 		const [catalogDefaults , setCatalogDefaults] = React.useState<AI.AIItem[]>( [] );
+		const [saving , setSaving] = React.useState( false );
 
 		// 当modal开始打开时重置编辑状态，并拉取 catalog 默认 URL（已有 IPC，不进 store）
 		React.useEffect( () => {
@@ -574,10 +623,14 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			&& store.mode === 'edit'
 			&& reaxel_SettingsView.store.Data.AIs[0]?.id === store.editing_id;
 
-		const handleSave = () => {
+		const handleSave = async() => {
+			/* 弹窗 Save 当场 update-ai / add-ai，不进表底 dirty。见 docs/features/manage-ais-save-scopes.md */
 			const effectiveUrl = ( isCustomFamily ? fields.url : fields.url_override || familyDefaultUrl ).trim();
 			if( !effectiveUrl ) {
 				message.error( i18n( 'URL is required for custom AI' ) );
+				return;
+			}
+			if( saving ) {
 				return;
 			}
 			const nextAI:AI.AIItem = {
@@ -588,29 +641,27 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 				url : effectiveUrl ,
 				url_override : isCustomFamily ? null : fields.url_override ,
 				desc : fields.desc ,
-				preloadOnStartup : fields.preloadOnStartup === true ,
+				preloadOnStartup : isFirstAIForcedPreload || fields.preloadOnStartup === true ,
 				proxy_mode : fields.proxy_mode ,
 				from_server_list_proxy : getEnabledProxyServerId( fields.from_server_list_proxy ) ,
 				user_fill_proxy : fields.user_fill_proxy || null,
 			};
 
-			reaxel_SettingsView.mutate.Data( state => {
-				const index = state.AIs.findIndex( ai => ai.id === nextAI.id );
-				if( index === -1 ) {
-					state.AIs = [ ...state.AIs , nextAI ];
-				} else {
-					state.AIs = state.AIs.map( ( ai , i ) =>
-						i === index
-							? { ...ai , ...nextAI , disabled : ai.disabled }
-							: ai,
-					);
+			setSaving( true );
+			try {
+				const result = await persistAIFromModal( nextAI , store.mode );
+				if( result.success === false ) {
+					message.error( result.error || i18n( 'Failed to save AI page' ) );
+					return;
 				}
-			} );
-
-			setState( {
-				visible : false ,
-				editing_id : null,
-			} );
+				message.success( i18n( 'AI page saved' ) );
+				setState( {
+					visible : false ,
+					editing_id : null,
+				} );
+			} finally {
+				setSaving( false );
+			}
 		};
 
 		// URL尾部按钮组
@@ -664,11 +715,16 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			open={ store.visible }
 			title={ store.mode === 'add' ? <I18n>Add AI Page</I18n> : <I18n>Edit AI Page</I18n> }
 			onCancel={ () => {
+				if( saving ) {
+					return;
+				}
 				changeEditAIModalVisible( false );
 			} }
 			onOk={ handleSave }
 			okText={i18n('Save')}
 			cancelText={i18n('Cancel')}
+			confirmLoading={ saving }
+			okButtonProps={ { disabled : saving } }
 			width={ 520 }
 		>
 			<Form layout="vertical" style={ { marginTop : 16 } }>
@@ -1111,6 +1167,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	import { getDefaultAIs , resetAIsToDefaults } from "#SettingsView/services/Settings";
 	import { AIFamily } from "#shared/statics/AI-family";
 	import { createDefaultProxyConf as defaultProxyConf } from "#shared/statics/default-proxy";
+	import { shouldLockSettingsChromeForCatalogUpdate } from '#shared/utils/catalog-update-inflight.utility';
 	import {
 		displayedManageAIs ,
 		reorderEnabledAIsByVisualDrag ,
@@ -1126,6 +1183,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		Button ,
 		Popover ,
 		Checkbox ,
+		Dropdown ,
 		Form ,
 		Input ,
 		InputNumber ,

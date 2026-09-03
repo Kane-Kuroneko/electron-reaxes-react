@@ -12,7 +12,7 @@ Settings → Manage AIs 可以检查**供应商目录**更新。远程是 [ChatA
 4. **跨进程仍是实例。** check 下发的 diff 是种子页的瘦预览（id / label / url），不是整份 `AIItem`，也不是瘦目录原样。`get-ais` / `get-default-ais` 返回类型不变。
 5. **用户改过的种子页、`url_override`、`custom-` id、用户自加的同 family 第二页，目录更新碰不到。** 目录删行不自动从 user 表删，diff 标「ChatAIO已停止维护，但已存在的本地数据仍会被保留」。**用户 `deletedIds` 里已经没有的页不出现在 catalogDropped。**
 6. **region 只活在目录上。** 只改 region、页字段没变时仍要 apply（把 cache 写成新 revision），否则覆盖判定不更新。
-7. **Settings 有未 Apply 的改动时先保存或放弃。** 目录合并写的是磁盘上的 user 表，不能盖掉编辑器里没保存的页。
+7. **Settings 或 AI 表有未保存改动时先保存或放弃。** 目录合并写的是磁盘上的 user 表，不能盖掉编辑器里没保存的页；页脚草稿未落盘时也不该改目录。两套 dirty 见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)。
 8. **in-flight 真相在 `reaxel_SettingsView` 的 `catalog_update`（`checking` / `applying`）。** 任一为 true，`checkAiCatalog` / `applyAiCatalog` 同步 return，不发第二次 IPC。check 与 apply 互斥。组件不用 `useRef` / `useState` 做锁。主进程队列仍串行；busy 时若仍发 IPC，第一次写盘成功后第二次会 `no-pending`。**侧栏/页脚只在预览未关闭或 `applying` 时锁住**，必须在 Modal 里应用或取消。**`checking` 单独不锁 chrome**：检查中没有可取消的 Modal；fetch / 内存 session 清理若卡住，把 tab 和页脚一起冻住就是无限 loading。按钮 spinner 已经表示 in-flight。`checking` / `applying` 必须在 `finally` 清掉。
 9. **缺公钥（ENOENT）或空 PEM 是 `verify-failed`，不是 `network`。** 交给 ingest 验签失败，不要把 `readFileSync` 抛错丢给 IPC catch。
 10. **GitHub 下载走 App 全局代理**（与 Settings 里同一套 `resolveGlobalProxy`），边下边限体积；超限是 `invalid-catalog`。维护者 env 本地读盘不走代理。
