@@ -129,6 +129,7 @@ const MenuDropdown = ( {
 	const footerItems = items.filter( item => !isSwitchAiItem( item ) );
 	const isSwitchAiMenu = switchAiItemsFromProps.length > 0;
 	const [ aiItems , setAiItems ] = useState( switchAiItemsFromProps );
+	/* 真正抬起条目仍要移动 8px；grabbing 光标在 RightClickMouseSensor 的 mousedown 里同步武装。 */
 	const sensors = useSensors(
 		useSensor( RightClickMouseSensor , {
 			activationConstraint : {

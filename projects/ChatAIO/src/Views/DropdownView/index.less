@@ -75,8 +75,17 @@ body {
 }
 
 .menu-item--sorting .menu-item__button {
-	cursor: grabbing;
 	background: var(--menu-view-active-bg, rgba(15, 23, 42, 0.1));
+}
+
+/* 右键按下即 grabbing（先于 8px 激活）。条目上的 pointer 会盖掉继承，必须打到所有子孙。 */
+html.dropdown-drag-cursor {
+	user-select: none;
+}
+
+html.dropdown-drag-cursor,
+html.dropdown-drag-cursor * {
+	cursor: grabbing !important;
 }
 
 /* ── Menu Item ─────────────────────────────────────────── */

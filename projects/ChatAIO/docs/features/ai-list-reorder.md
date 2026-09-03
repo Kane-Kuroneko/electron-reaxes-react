@@ -8,7 +8,7 @@ Switch AI 菜单与 Settings → Manage AIs 共用一套**立即持久化**的�
 
 1. **菜单顺序 = 持久化 `AIs` 数组顺序**，disabled 项不出现在 Switch AI。
 2. **排序松手即写盘**。Settings 拖拽不进表底 dirty；启用 / 预加载 / 待删除走表底 Save；弹窗改字段当场 persist。页脚不管 AIs。见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)。
-3. **左键切 AI，右键拖排序**。Application / View 菜单、Switch AI 底栏 Prev/Next 不参与拖拽。中区 Current AI 精简下拉同样走这条手势（无 footer）。
+3. **左键切 AI，右键拖排序**。Application / View 菜单、Switch AI 底栏 Prev/Next 不参与拖拽。中区 Current AI 精简下拉同样走这条手势（无 footer）。右键**按下即** `grabbing`（在 sensor 的 mousedown 同步改光标，不经 React setState）；条目抬起 / 写盘仍要移动 ≥ 8px。
 4. **禁止**为排序改 menubar `-webkit-app-region: drag` 或 FloatingView `forward: true`。排序只发生在 Dropdown 窗口或 Settings 表内。
 5. Renderer → Main 的 id 列表必须 `cloneForIPC`。
 
@@ -36,7 +36,7 @@ flowchart TD
 
 | 入口 | 手势 | payload | 写盘结果 |
 |------|------|---------|----------|
-| Switch AI | 右键按住，移动 ≥ 8px | 当前 enabled id 序列 | disabled 下标不动，enabled 按菜单新序填回 |
+| Switch AI | 右键按下即 grabbing；移动 ≥ 8px 才抬起并排序 | 当前 enabled id 序列 | disabled 下标不动，enabled 按菜单新序填回 |
 | Manage AIs | 只拖启用行（未启用禁拖） | 本地先按启用槽位合并，再送**已提交**全表 id（disabled 仍在原下标；含待删除，不含未 Apply 新建项） | 与 Switch AI 相同：disabled 钉住原下标 |
 
 全部 enabled 时两种 payload 集合相同，结果一致。
@@ -76,7 +76,7 @@ flowchart TD
 | [`src/Main/services/settings/ai-config-service.ts`](../../src/Main/services/settings/ai-config-service.ts) | `reorderEnabledAIs` |
 | [`src/Main/reaxels/Settings/index.ts`](../../src/Main/reaxels/Settings/index.ts) | IPC、rebuildMenu、按需 echo |
 | [`src/Views/DropdownView/App.tsx`](../../src/Views/DropdownView/App.tsx) | 右键 sensor、AI / footer 分区 |
-| [`src/Views/DropdownView/right-click-mouse-sensor.utility.ts`](../../src/Views/DropdownView/right-click-mouse-sensor.utility.ts) | 只激活 `button === 2` |
+| [`src/Views/DropdownView/right-click-mouse-sensor.utility.ts`](../../src/Views/DropdownView/right-click-mouse-sensor.utility.ts) | 只激活 `button === 2`；mousedown 同步武装 grabbing |
 | [`src/shared/utils/manage-ais-table.utility.ts`](../../src/shared/utils/manage-ais-table.utility.ts) | Manage AIs 展示序 / 列筛选 / 拖启用项→槽位映射 |
 | [`src/Views/SettingsView/reaxels/settings-view/index.ts`](../../src/Views/SettingsView/reaxels/settings-view/index.ts) | `persistCommittedAIOrder` / `applyExternalEnabledAIOrder` |
 | [`src/Views/SettingsView/components/ManageAIs/index.tsx`](../../src/Views/SettingsView/components/ManageAIs/index.tsx) | 表内拖启用项；展示序与筛选不写盘 |
@@ -91,4 +91,5 @@ flowchart TD
 - 不要把待删除行从 Settings 排序 payload 里滤掉：它们仍在磁盘上，滤掉会退化成菜单槽位合并。
 - 不要在 Manage AIs drop 时对整表 `arrayMove`：会挤走未启用项。表内映射见 [`manage-ais-table-ux.md`](./manage-ais-table-ux.md)。
 - 不要为排序给 Dropdown 加 `app-region: drag`。
+- 不要把 Switch AI 的 grabbing 光标绑在 `onDragStart` / `isDragging` 上：按下到移动 8px 之间会一直是 pointer；须在右键 mousedown 同步武装。
 - 不要把测试写成内部 helper（`mergeEnabledAIOrder` / `isIdPermutation`）的黄金输出快照。
