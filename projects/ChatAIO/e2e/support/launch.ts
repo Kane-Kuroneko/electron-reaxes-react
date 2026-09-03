@@ -35,6 +35,7 @@ export const launchChatAio = async( options:{
 		launchEnv.CHATAIO_E2E_FIRST_LAUNCH = '1';
 	}
 
+	/* 1.62 的 electron.launch 没有 browser.launch 那种 slowMo；观测走 CHATAIO_E2E_WATCH。 */
 	const electronApp = await electron.launch( {
 		executablePath : paths.electronExecutable ,
 		args : [ paths.chatAioRoot ] ,
@@ -57,6 +58,11 @@ export const launchChatAio = async( options:{
 };
 
 export const closeChatAio = async( launched:LaunchedChatAio ) => {
+	const holdMs = e2eHoldMs();
+	if( holdMs > 0 ) {
+		/* 让人看清最后一帧再关窗。见 docs/features/e2e-playwright.md 「观测 Settings 执行」 */
+		await sleep( holdMs );
+	}
 	const pid = launched.electronApp.process()?.pid;
 	try {
 		await launched.electronApp.evaluate( ( { app } ) => {
@@ -92,6 +98,7 @@ import { resolveChatAioE2EPaths , type ChatAioE2EPaths } from './env';
 import { attachRendererPageErrors , collectProcessLogs , readPersistedE2EFaults , type ElectronProcessLogs } from './faults';
 import { seedReturningUserProfile } from './seed-profile';
 import { sleep } from './app-probe';
+import { e2eHoldMs } from './observe';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';

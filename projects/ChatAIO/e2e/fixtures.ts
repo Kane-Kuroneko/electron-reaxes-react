@@ -45,6 +45,8 @@ export const test = base.extend<ChatAioFixtures>( {
 			timeout : 45_000,
 		} );
 		await waitForE2ESnapshot( electronApp , ( snapshot ) => snapshot.kind === 'main' , 45_000 );
+		await focusHostWindowForObserve( electronApp );
+		await enableActionOverlays( page );
 		await use( page );
 	},
 } );
@@ -60,5 +62,6 @@ export const testFirstLaunch = test.extend<ChatAioFixtures>( {
 import { test as base , type ElectronApplication , type Page } from '@playwright/test';
 import { closeChatAio , launchChatAio , type LaunchMode } from './support/launch';
 import { drainMainFaults , waitForE2ESnapshot , waitForWindowByUrl } from './support/app-probe';
+import { enableActionOverlays , focusHostWindowForObserve } from './support/observe';
 import { formatElectronFaults } from './support/faults';
 import { TEST_IDS } from './support/selectors';

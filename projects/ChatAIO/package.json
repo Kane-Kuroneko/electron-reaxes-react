@@ -25,6 +25,9 @@
 		"test:ai-catalog": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json --test projects/ChatAIO/tests/ai-catalog-defaults.test.ts projects/ChatAIO/tests/ai-catalog-merge.test.ts projects/ChatAIO/tests/ai-catalog-sign.test.ts projects/ChatAIO/tests/ai-catalog-update.test.ts",
 		"test:e2e": "yarn --cwd ../.. playwright test --config projects/ChatAIO/e2e/playwright.config.ts",
 		"test:e2e:headed": "yarn --cwd ../.. playwright test --config projects/ChatAIO/e2e/playwright.config.ts --headed",
+		"test:e2e:watch": "yarn --cwd ../.. cross-env CHATAIO_E2E_WATCH=1 playwright test --config projects/ChatAIO/e2e/playwright.config.ts",
+		"test:e2e:settings:watch": "yarn --cwd ../.. cross-env CHATAIO_E2E_WATCH=1 playwright test --config projects/ChatAIO/e2e/playwright.config.ts projects/ChatAIO/e2e/tests/settings-open.spec.ts projects/ChatAIO/e2e/tests/settings-wcv-discovery.spec.ts projects/ChatAIO/e2e/tests/settings-ais-save-scopes-ui.spec.ts",
+		"test:e2e:debug": "yarn --cwd ../.. playwright test --config projects/ChatAIO/e2e/playwright.config.ts --debug",
 		"sign:ai-catalog": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json projects/ChatAIO/scripts/sign-ai-catalog.ts",
 		"publish:ai-catalog": "yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json projects/ChatAIO/scripts/publish-ai-catalog.ts",
 		"generate-icons": "yarn --cwd ../.. bash projects/ChatAIO/scripts/generate-icons.sh"

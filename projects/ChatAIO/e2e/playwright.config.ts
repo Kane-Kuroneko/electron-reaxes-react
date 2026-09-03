@@ -20,7 +20,7 @@ export default defineConfig( {
 	retries : process.env.CI ? 2 : 0 ,
 	forbidOnly : !!process.env.CI ,
 	reporter : [
-		[ 'list' ] ,
+		[ path.join( e2eDir , 'reporters/console.ts' ) ] ,
 		[ 'html' , {
 			open : 'never' ,
 			outputFolder : path.join( e2eDir , 'playwright-report' ),
@@ -29,7 +29,8 @@ export default defineConfig( {
 	outputDir : path.join( e2eDir , 'test-results' ) ,
 	globalSetup : path.join( e2eDir , 'global-setup.ts' ) ,
 	use : {
-		trace : 'retain-on-failure' ,
+		/* WATCH 时留完整 trace 方便事后 show-trace；日常仍只在失败时保留。 */
+		trace : process.env.CHATAIO_E2E_WATCH === '1' ? 'on' : 'retain-on-failure' ,
 		screenshot : 'only-on-failure' ,
 		/* Windows 上 Electron+ffmpeg 写视频容易卡死测试收尾，默认关掉。见 Dyad e2e。 */
 		video : 'off' ,

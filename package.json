@@ -22,7 +22,10 @@
 		"setup:git-symlinks": "tsx scripts/setup-git-symlinks.ts",
 		"replace-app-icons": "python scripts/replace-app-icons/replace-app-icons.py",
 		"test:e2e": "playwright test --config projects/ChatAIO/e2e/playwright.config.ts",
-		"test:e2e:headed": "playwright test --config projects/ChatAIO/e2e/playwright.config.ts --headed"
+		"test:e2e:headed": "playwright test --config projects/ChatAIO/e2e/playwright.config.ts --headed",
+		"test:e2e:watch": "cross-env CHATAIO_E2E_WATCH=1 playwright test --config projects/ChatAIO/e2e/playwright.config.ts",
+		"test:e2e:settings:watch": "cross-env CHATAIO_E2E_WATCH=1 playwright test --config projects/ChatAIO/e2e/playwright.config.ts projects/ChatAIO/e2e/tests/settings-open.spec.ts projects/ChatAIO/e2e/tests/settings-wcv-discovery.spec.ts projects/ChatAIO/e2e/tests/settings-ais-save-scopes-ui.spec.ts",
+		"test:e2e:debug": "playwright test --config projects/ChatAIO/e2e/playwright.config.ts --debug"
 	},
 	"electronmon": {
 		"patterns": [

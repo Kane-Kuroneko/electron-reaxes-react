@@ -129,18 +129,60 @@ set CHATAIO_E2E_SKIP_BUILD=1
 yarn test:e2e
 ```
 
-看 Electron 日志：`CHATAIO_E2E_DEBUG=1`。headed：`yarn test:e2e:headed`。
+看 Electron 日志：`CHATAIO_E2E_DEBUG=1`。`--headed` 对 unpackaged Electron **几乎无效果**（窗本来就在）；要看清点击请用下面的观测命令。
+
+终端按 spec 短名分组（不再把 `[electron] › 长路径 › 标题` 挤一行），跑完会打醒目横幅 **`9/9  通过`**。实现：`e2e/reporters/console.ts`。关色：`CHATAIO_E2E_NO_COLOR=1`。
 
 `@playwright/test` 安装时设 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`，因为测的是仓库里的 Electron，不需要额外 Chromium。
+
+## 观测 Settings 执行
+
+默认 `yarn test:e2e` 大约 1–2 秒跑完一条 Settings 用例，窗立刻关掉，人眼跟不上。社区常见四条路：
+
+| 做法 | 来源 | 本仓怎么用 |
+|------|------|------------|
+| headed + **slowMo** | [Playwright headed](https://playwright.dev/docs/running-tests#run-tests-in-headed-mode)；[Orca `ORCA_E2E_SLOWMO_MS`](https://github.com/stablyai/orca/blob/main/tests/e2e/helpers/orca-app.ts) | `CHATAIO_E2E_WATCH=1`（默认 slowMo 600ms）。**不要**写进 `electron.launch`：1.62 的 Electron launch **没有** `slowMo` 选项 |
+| `locator.highlight()` + 点完再停 | 官方 debug API | `watchClick`：WATCH 时先高亮再点 |
+| `page.screencast.showActions({ cursor: 'pointer' })` | Playwright 1.59+ 操作叠加层 | WATCH 时在 Main / Dropdown / Settings Page 上打开；主要服务录屏，现场仍靠高亮 |
+| `--debug` / `PWDEBUG` Inspector | [官方推荐](https://github.com/microsoft/playwright/issues/5900) 替代扩 slowMo | `yarn test:e2e:debug`，逐步点 Resume |
+| `--ui` Trace 时间旅行 | [UI Mode](https://playwright.dev/docs/test-ui-mode) | `yarn test:e2e --ui`。Electron 的 trace **常常没有**完整 DOM snapshot（Orca 因此才 opt-in 录视频） |
+| 录视频 | Orca `ORCA_E2E_RECORD_VIDEO` | **默认关**。Windows 上 Electron+ffmpeg 收尾易挂（Dyad）；不要为了观测打开默认 video |
+
+命令（仓库根）：
+
+```bash
+yarn test:e2e:settings:watch
+```
+
+只跑会动 Settings DOM 的三条：`settings-open`、`settings-wcv-discovery`、`settings-ais-save-scopes-ui`。探针写盘那条（`settings-ais-save-scopes.spec.ts`）几乎没有可见手势，不必盯着看。
+
+看全部用例：`yarn test:e2e:watch`。单文件：
+
+```bash
+yarn test:e2e:watch projects/ChatAIO/e2e/tests/settings-ais-save-scopes-ui.spec.ts
+```
+
+环境变量（均可单独用，不必开 WATCH）：
+
+| 变量 | WATCH=1 时默认 | 作用 |
+|------|----------------|------|
+| `CHATAIO_E2E_WATCH` | — | 高亮、叠加层、把主窗提到前台、打开 trace |
+| `CHATAIO_E2E_SLOWMO_MS` | 600 | 每个 `watchClick` 前/后停这么久 |
+| `CHATAIO_E2E_HOLD_MS` | 2000 | `close` 前停住，看最后一帧 |
+
+CI / 日常全量保持 `yarn test:e2e`，WATCH 为 0。不要在观测时用鼠标去点正在跑的窗（会抢 Playwright 的指针）。
+
+单步：`yarn test:e2e:debug projects/ChatAIO/e2e/tests/settings-ais-save-scopes-ui.spec.ts`。WATCH 跑完的 trace 在 `projects/ChatAIO/e2e/test-results/`，可用 `yarn playwright show-trace <zip>`。
 
 ## 目录
 
 | 路径 | 职责 |
 |------|------|
-| `projects/ChatAIO/e2e/playwright.config.ts` | workers=1、trace/screenshot on failure、关闭 video |
+| `projects/ChatAIO/e2e/reporters/console.ts` | 终端报告：按 spec 分组、结尾 9/9 通过 |
 | `projects/ChatAIO/e2e/global-setup.ts` | 检查 / 补齐 webpack 产物 |
 | `projects/ChatAIO/e2e/fixtures.ts` | `electronApp` / `mainWindow` |
 | `projects/ChatAIO/e2e/support/app-probe.ts` | 快照 / `waitForSettingsPage` / `openSettingsFromApplicationMenu` |
+| `projects/ChatAIO/e2e/support/observe.ts` | WATCH / slowMo / highlight / 关窗前停住 |
 | `projects/ChatAIO/e2e/support/launch.ts` | `_electron.launch`、env、按 pid 关闭 |
 | `projects/ChatAIO/e2e/tests/*.spec.ts` | 用例 |
 | `src/Main/foundation/e2e-bootstrap.ts` | **index.ts 第一个 import**，赶在 before-launch 依赖图之前挂收集器 |
@@ -170,6 +212,8 @@ yarn test:e2e
 - 不要让 E2E 默认打开 webpack-dev-server。
 - 不要把 userData 写进 `test-results/`（会当 artifact 上传）。
 - 不要为了点 Settings 把生产 `WebContentsView` 改成 `BrowserWindow`。`windows()` 已经能发现 Settings / AI WCV；远程 AI 站点 DOM 仍然不测。
+- 不要把 `CHATAIO_E2E_WATCH` 设进默认 CI / `yarn test:e2e`。观测是本地 opt-in。
+- 不要为了看清动作默认打开 `video`（Windows ffmpeg 易卡死收尾）。
 - 不要把 `mainWindow.getContentBounds()` 写进函数默认参数：`closed` 会把 `mainWindow` 置 `null`，Prompt 动画 tick 会炸（`Cannot read properties of null (reading 'getContentBounds')`），窗口弹错而测试仍绿。
 - 不要只靠 `uncaughtException` 内存数组：进程死了或主线程被原生对话框卡住时，`evaluate` 读不到。必须写 jsonl。
 - 不要在 E2E 里真弹 `showErrorBox`：Playwright 点不掉，后续探针也会挂死。

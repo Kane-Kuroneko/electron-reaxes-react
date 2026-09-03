@@ -268,6 +268,8 @@ export const waitForSettingsPage = async(
 		state : 'visible' ,
 		timeout : timeoutMs,
 	} );
+	await enableActionOverlays( page );
+	await observePause();
 	return page;
 };
 
@@ -278,9 +280,11 @@ export const openSettingsFromApplicationMenu = async(
 	mainWindow : Page ,
 	timeoutMs = 30_000,
 ) => {
-	await mainWindow.locator( `[data-menu-id="${ MENU_IDS.application }"] button` ).click();
+	await focusHostWindowForObserve( electronApp );
+	await watchClick( mainWindow.locator( `[data-menu-id="${ MENU_IDS.application }"] button` ) );
 	const dropdown = await waitForVisibleDropdown( electronApp );
-	await dropdown.locator( `[data-item-id="${ MENU_IDS.settings }"]` ).click();
+	await enableActionOverlays( dropdown );
+	await watchClick( dropdown.locator( `[data-item-id="${ MENU_IDS.settings }"]` ) );
 	await waitForE2ESnapshot(
 		electronApp ,
 		( state ) => state.kind === 'main' && state.settingsViewOpened === true ,
@@ -291,3 +295,9 @@ export const openSettingsFromApplicationMenu = async(
 
 import type { ElectronApplication , Page } from '@playwright/test';
 import { MENU_IDS , TEST_IDS } from './selectors';
+import {
+	enableActionOverlays ,
+	focusHostWindowForObserve ,
+	observePause ,
+	watchClick,
+} from './observe';
