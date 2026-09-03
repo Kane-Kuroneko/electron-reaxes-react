@@ -56,6 +56,7 @@ flowchart TD
 | [`src/Views/SettingsView/App.tsx`](../../src/Views/SettingsView/App.tsx) | 页脚只绑 `isDirty`；Discard 只 reload runtime |
 | [`src/Main/reaxels/Settings/index.ts`](../../src/Main/reaxels/Settings/index.ts) | `apply-settings` 不写 AIs；`apply-ais` |
 | [`e2e/tests/settings-ais-save-scopes.spec.ts`](../../e2e/tests/settings-ais-save-scopes.spec.ts) | 主进程探针：`apply-settings` 不写 AIs；`apply-ais` / `update-ai` |
+| [`e2e/tests/settings-ais-save-scopes-ui.spec.ts`](../../e2e/tests/settings-ais-save-scopes-ui.spec.ts) | Settings WCV Page：点 Enabled 只点亮表底 Save |
 
 ## 禁止项
 
@@ -65,6 +66,19 @@ flowchart TD
 - 不要用整页 `reloadSettings` 当表底 Undo 或页脚 Discard：会串掉另一套草稿。
 - 不要把「重置所有 AI 页面」放回表底主按钮。
 - 不要为这套交互改 FloatingView `forward`。
+- 不要为了点 Settings 把生产 WCV 改成 BrowserWindow。Settings Page 用 `openSettingsFromApplicationMenu`。
+
+## 测试分层
+
+不变量 1–4 按层拆，不要一条 E2E 既当单元又当手势：
+
+| 层 | 覆盖 | 文件 |
+|----|------|------|
+| 纯函数 | 指纹、单条提交不洗净表草稿 | [`tests/settings-dirty-scopes.test.ts`](../../tests/settings-dirty-scopes.test.ts) |
+| 主进程 | `apply-settings` 忽略 AIs；`apply-ais` / `update-ai` 落盘 | [`e2e/tests/settings-ais-save-scopes.spec.ts`](../../e2e/tests/settings-ais-save-scopes.spec.ts) |
+| Settings DOM | 页脚 Apply vs 表底 Save 是否互点亮 | [`e2e/tests/settings-ais-save-scopes-ui.spec.ts`](../../e2e/tests/settings-ais-save-scopes-ui.spec.ts) |
+
+后续用例（弹窗 Save 不点亮表、Startup 单选走页脚、Discard 不丢表草稿、目录 dirty 挡板等）优先补 DOM 或探针；完整 backlog 见 [`e2e-playwright.md`](./e2e-playwright.md)「后续用例 backlog」。入口：`openSettingsFromApplicationMenu`。
 
 ## 与现有文档的关系
 

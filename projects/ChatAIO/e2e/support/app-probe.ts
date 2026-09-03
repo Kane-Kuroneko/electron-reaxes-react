@@ -256,5 +256,38 @@ export const waitForVisibleDropdown = async(
 	return page;
 };
 
+/* Settings 是中心 WebContentsView，不是独立 BW；Playwright 1.62 起 windows() 仍收得到。
+   不要用 electronApp.browserWindow(page)：fromWebContents(WCV) 为 null。
+   见 docs/features/e2e-playwright.md 「Settings WCV：探路结论」 */
+export const waitForSettingsPage = async(
+	electronApp : ElectronApplication ,
+	timeoutMs = 30_000,
+) => {
+	const page = await waitForWindowByUrl( electronApp , 'SettingsView' , timeoutMs );
+	await page.getByTestId( TEST_IDS.settingsRoot ).waitFor( {
+		state : 'visible' ,
+		timeout : timeoutMs,
+	} );
+	return page;
+};
+
+/* Application → Settings；等探针 settingsViewOpened 后再等 Settings Page。
+   Settings preload 可能比菜单点击更早把 SettingsView 放进 windows()，用 URL 查找即可。 */
+export const openSettingsFromApplicationMenu = async(
+	electronApp : ElectronApplication ,
+	mainWindow : Page ,
+	timeoutMs = 30_000,
+) => {
+	await mainWindow.locator( `[data-menu-id="${ MENU_IDS.application }"] button` ).click();
+	const dropdown = await waitForVisibleDropdown( electronApp );
+	await dropdown.locator( `[data-item-id="${ MENU_IDS.settings }"]` ).click();
+	await waitForE2ESnapshot(
+		electronApp ,
+		( state ) => state.kind === 'main' && state.settingsViewOpened === true ,
+		timeoutMs,
+	);
+	return waitForSettingsPage( electronApp , timeoutMs );
+};
+
 import type { ElectronApplication , Page } from '@playwright/test';
-import { TEST_IDS } from './selectors';
+import { MENU_IDS , TEST_IDS } from './selectors';

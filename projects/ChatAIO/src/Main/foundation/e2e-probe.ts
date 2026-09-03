@@ -1,8 +1,7 @@
 /**
- * 主进程 E2E 探针。只在 CHATAIO_E2E=1 时挂到 globalThis，
- * 给 Playwright `electronApp.evaluate` 读可序列化快照。
- * WebContentsView 不是 Playwright Page，Settings / Prompt / AI 页用这份状态补齐。
- * 保存范围契约走 getSettings / applySettings / applyAIs / updateAI，不要点 Settings DOM。
+ * 主进程 E2E 探针。只在 CHATAIO_E2E=1 时挂到 globalThis。
+ * Settings WCV 已能作为 Playwright Page 点 DOM（waitForSettingsPage）。
+ * 本探针继续覆盖写盘契约与壳层快照：getSnapshot / getSettings / applySettings / applyAIs / updateAI。
  * 设计：docs/features/e2e-playwright.md 、docs/features/manage-ais-save-scopes.md
  */
 

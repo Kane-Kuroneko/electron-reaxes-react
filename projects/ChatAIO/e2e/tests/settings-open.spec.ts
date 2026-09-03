@@ -7,14 +7,8 @@ test( 'opening Settings from Application menu marks badge static' , async( {
 	electronApp ,
 	mainWindow,
 } ) => {
-	await mainWindow.locator( `[data-menu-id="${ MENU_IDS.application }"] button` ).click();
-	const dropdown = await waitForVisibleDropdown( electronApp );
-	await dropdown.locator( `[data-item-id="${ MENU_IDS.settings }"]` ).click();
-
-	await waitForE2ESnapshot(
-		electronApp ,
-		( state ) => state.kind === 'main' && state.settingsViewOpened === true,
-	);
+	const settings = await openSettingsFromApplicationMenu( electronApp , mainWindow );
+	await expect( settings.getByTestId( TEST_IDS.settingsRoot ) ).toBeVisible();
 
 	const badge = mainWindow.getByTestId( TEST_IDS.currentAiBadge );
 	await expect( badge ).toHaveText( /settings/i );
@@ -22,5 +16,5 @@ test( 'opening Settings from Application menu marks badge static' , async( {
 } );
 
 import { test , expect } from '../fixtures';
-import { waitForE2ESnapshot , waitForVisibleDropdown } from '../support/app-probe';
-import { MENU_IDS , TEST_IDS } from '../support/selectors';
+import { openSettingsFromApplicationMenu } from '../support/app-probe';
+import { TEST_IDS } from '../support/selectors';
