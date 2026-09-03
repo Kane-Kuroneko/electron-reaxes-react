@@ -23,7 +23,7 @@ Spectron 已死。本仓不引入打包后的 `findLatestBuild`：E2E 打 unpack
 2. **不改操作系统全局状态**：不 `npx playwright install` Chromium、不改系统代理、不 `taskkill /im electron.exe`（只杀本次 pid）。
 3. **workers = 1**：Electron GPU / 单用户数据模型；并行要另开隔离端口与 userData，本阶段不做。
 4. **E2E 加载 `dist/renderer/*/index.html`**：`shouldUseDevRendererServer()` 在 `CHATAIO_E2E=1` 时为 false。日常 `yarn start:electron` 仍走 localhost:4444。
-5. **Playwright 管得了 BrowserWindow，管不了 WebContentsView**（上游 issue #39507 同类限制）。Settings / Prompt / AI 页用主进程探针 `__CHATAIO_E2E__.getSnapshot()`。
+5. **Playwright 管得了 BrowserWindow，管不了 WebContentsView**（上游 issue #39507 同类限制）。Settings / Prompt / AI 页用主进程探针 `__CHATAIO_E2E__.getSnapshot()`。Manage AIs 两套提交测 persist 契约：`getSettings` / `applySettings` / `applyAIs` / `updateAI`（见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)），不要点 Settings DOM。`kind === 'main'` 在 runtime Phase 0 就为真，调用这些写盘方法前要等 `runtimeViewsReady`（overlay / 中心页挂完）。
 6. **首启**：测试 mkdtemp 会先建目录，不能再用 `existsSync(userData)`。只有 `CHATAIO_E2E_FIRST_LAUNCH=1` 才走 GuidingView。
 7. **Windows FloatingView 仍禁止 `forward: true`**。E2E 不改鼠标穿透。
 8. **Electron 故障必须让测试失败**，不能只断言 UI。捕获矩阵见下一节。禁止只靠 Playwright `page` 断言当绿。
@@ -84,7 +84,7 @@ yarn test:e2e
 | `src/Main/foundation/e2e-bootstrap.ts` | **index.ts 第一个 import**，赶在 before-launch 依赖图之前挂收集器 |
 | `src/Main/foundation/e2e-mode.ts` | `CHATAIO_E2E` 闸门 |
 | `src/Main/foundation/e2e-faults.ts` | uncaught / dialog.showErrorBox / process-gone / preload-error → 内存 + jsonl |
-| `src/Main/foundation/e2e-probe.ts` | 主进程快照；`drainFaults` 只是热路径，关进程后以 jsonl 为准 |
+| `src/Main/foundation/e2e-probe.ts` | 主进程快照；`getSettings` / `applySettings` / `applyAIs` / `updateAI` 测保存范围；`drainFaults` 只是热路径，关进程后以 jsonl 为准 |
 
 ## 当前用例（按工程文档选的）
 
@@ -94,6 +94,7 @@ yarn test:e2e
 | `guiding-first-launch.spec.ts` | 首启 GuidingView | GuidingView |
 | `menubar-current-ai.spec.ts` | 中区 badge 下拉切 AI | menubar-current-ai-dropdown |
 | `settings-open.spec.ts` | Application → Settings，badge 变静态 | menubar-current-ai-dropdown 不变量 6 |
+| `settings-ais-save-scopes.spec.ts` | `apply-settings` 不写 AIs；`apply-ais` 写启用列；`update-ai` 单条改名且丢掉 `disabled` | manage-ais-save-scopes |
 | `prompt-toggle.spec.ts` | View → Left Prompt Showcase | prompt-view |
 
 不把远程 ChatGPT/Gemini 登录、白屏监控、Windows `forward: true` 放进第一批：那些要站点 DOM 或禁止项本身就不能用自动化去「修」。

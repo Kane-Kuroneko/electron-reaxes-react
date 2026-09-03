@@ -1360,6 +1360,7 @@ export const Reaxel_View = reaxel( () => {
 	};
 
 	let runtimeViewsInitialized = false;
+	let runtimeViewsReady = false;
 
 	const initRuntimeViews = async() => {
 		if( runtimeViewsInitialized ) return;
@@ -1482,6 +1483,8 @@ export const Reaxel_View = reaxel( () => {
 		useIpcRendererToMain( 'turn-to-previous-ai-page' ).on( () => {
 			void turnToPreviousAiPage();
 		} );
+		/* kind===main 在 Phase 0 就真了；E2E 调 apply-settings/apply-ais 要等 overlay 挂完。见 docs/features/e2e-playwright.md */
+		runtimeViewsReady = true;
 	};
 
 	obsReaction( ( first ) => {
@@ -1530,6 +1533,7 @@ export const Reaxel_View = reaxel( () => {
 	const rtn = {
 		initRuntimeViews ,
 		areRuntimeViewsInitialized : () => runtimeViewsInitialized ,
+		areRuntimeViewsReady : () => runtimeViewsReady === true ,
 		fitWindow,
 		fitContentView ,
 		fitCurrentCenterView ,

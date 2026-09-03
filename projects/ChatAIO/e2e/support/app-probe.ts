@@ -7,6 +7,7 @@ export type ChatAioE2ESnapshot = {
 	promptLeftWidth : number;
 	promptRightWidth : number;
 	enabledAIIds : string[];
+	runtimeViewsReady : boolean;
 	faults : string[];
 };
 
@@ -72,6 +73,96 @@ export const drainMainFaults = async( electronApp:ElectronApplication ) => {
 	} catch {
 		return [];
 	}
+};
+
+export type ChatAioE2EAIItem = {
+	id : string;
+	label : string;
+	disabled? : boolean;
+	preloadOnStartup? : boolean;
+	[key : string] : unknown;
+};
+
+export type ChatAioE2ESettings = {
+	appearance : {
+		theme : string;
+		language : string;
+		darkmode : boolean;
+		[key : string] : unknown;
+	};
+	startup : {
+		aiPageLoadMode : string;
+		[key : string] : unknown;
+	};
+	AIs : ChatAioE2EAIItem[];
+	[key : string] : unknown;
+};
+
+export type ChatAioE2EApplyResult = {
+	success : boolean;
+	error? : string;
+};
+
+type ChatAioE2EProbe = {
+	getSnapshot : () => ChatAioE2ESnapshot;
+	drainFaults : () => string[];
+	getSettings : () => ChatAioE2ESettings;
+	applySettings : ( settings : ChatAioE2ESettings ) => Promise<ChatAioE2EApplyResult>;
+	applyAIs : ( ais : ChatAioE2EAIItem[] ) => Promise<ChatAioE2EApplyResult>;
+	updateAI : ( payload : {
+		id : string;
+		updates : Partial<ChatAioE2EAIItem>;
+	} ) => Promise<ChatAioE2EAIItem | null>;
+};
+
+export const e2eGetSettings = async( electronApp:ElectronApplication ) => {
+	return evaluateMain( electronApp , () => {
+		const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
+		if( !probe ) {
+			throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
+		}
+		return probe.getSettings();
+	} );
+};
+
+export const e2eApplySettings = async(
+	electronApp : ElectronApplication ,
+	settings : ChatAioE2ESettings,
+) => {
+	return retryOnContextError( () => electronApp.evaluate( async( _electron , payload ) => {
+		const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
+		if( !probe ) {
+			throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
+		}
+		return probe.applySettings( payload );
+	} , settings ) );
+};
+
+export const e2eApplyAIs = async(
+	electronApp : ElectronApplication ,
+	ais : ChatAioE2EAIItem[],
+) => {
+	return retryOnContextError( () => electronApp.evaluate( async( _electron , payload ) => {
+		const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
+		if( !probe ) {
+			throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
+		}
+		return probe.applyAIs( payload );
+	} , ais ) );
+};
+
+export const e2eUpdateAI = async(
+	electronApp : ElectronApplication ,
+	id : string ,
+	updates : Partial<ChatAioE2EAIItem>,
+) => {
+	return retryOnContextError( () => electronApp.evaluate( async( _electron , payload ) => {
+		const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
+		if( !probe ) {
+			throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
+		}
+		return probe.updateAI( payload );
+	} , { id , updates } ) );
 };
 
 export const waitForE2ESnapshot = async(

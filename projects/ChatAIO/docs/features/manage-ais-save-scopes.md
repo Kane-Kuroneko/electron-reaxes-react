@@ -55,8 +55,7 @@ flowchart TD
 | [`src/Views/SettingsView/components/ManageAIs/index.tsx`](../../src/Views/SettingsView/components/ManageAIs/index.tsx) | 表底按钮组、Advanced、弹窗即时保存 |
 | [`src/Views/SettingsView/App.tsx`](../../src/Views/SettingsView/App.tsx) | 页脚只绑 `isDirty`；Discard 只 reload runtime |
 | [`src/Main/reaxels/Settings/index.ts`](../../src/Main/reaxels/Settings/index.ts) | `apply-settings` 不写 AIs；`apply-ais` |
-| [`src/shared/utils/settings-dirty-scopes.utility.ts`](../../src/shared/utils/settings-dirty-scopes.utility.ts) | runtime dirty 快照；弹窗提交后重建 AIs fingerprint |
-| [`tests/settings-dirty-scopes.test.ts`](../../tests/settings-dirty-scopes.test.ts) | 两套 dirty / 单条提交不洗净表草稿 |
+| [`e2e/tests/settings-ais-save-scopes.spec.ts`](../../e2e/tests/settings-ais-save-scopes.spec.ts) | 主进程探针：`apply-settings` 不写 AIs；`apply-ais` / `update-ai` |
 
 ## 禁止项
 
