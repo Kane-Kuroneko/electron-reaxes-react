@@ -1,5 +1,4 @@
 let mainRuntimeStarted = false;
-let closeHandlerBound = false;
 
 export const isMainRuntimeStarted = () => mainRuntimeStarted;
 
@@ -67,6 +66,8 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 		} );
 
 		app.on( 'window-all-closed' , () => {
+			/* 兜底。用户窗清零后的退出在 bindBrowserWindowQuitLifecycle。
+			   设计：docs/issues/close-without-tray-process-lingers.md */
 			if( process.platform !== 'darwin' ) {
 				app.quit();
 			}
@@ -92,20 +93,6 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 		const win = await createMainWindow( { theme : resolvedAppearance.theme } );
 		reaxel_MainView().attachMainWindow();
 		useBeautifulDevtool( win );
-
-		if( !closeHandlerBound ) {
-			closeHandlerBound = true;
-			win.on( 'close' , event => {
-				if( ( app as any ).__chatAIOQuitting ) {
-					return;
-				}
-				const currentSettings = getSettingsConfigService().getEffectiveSettings();
-				if( currentSettings.system.show_tray && currentSettings.system.close_to_tray ) {
-					event.preventDefault();
-					win.hide();
-				}
-			} );
-		}
 
 		/* Phase 4 — ShellChrome（原生 tray/菜单，不抢 MainView webpack） */
 		getMenubarColdStartMonitor().note( 'phase-4-shell-chrome' );

@@ -7,38 +7,39 @@ install();
 
 app.setName( 'ChatAIO' );
 setAppProfilePath();
-installE2EFaultCollector();
-applyPendingDevCleanStart();
-registerBrowserWindowKeyboardGuards();
+/* 单实例锁必须跟 userData：生产 / ChatAIO-dev / E2E 临时目录互不抢。
+   设计：docs/features/single-instance.md */
+if( acquireChatAIOSingleInstanceLock() === false ) {
+	app.exit( 0 );
+} else {
+	installE2EFaultCollector();
+	applyPendingDevCleanStart();
+	registerBrowserWindowKeyboardGuards();
 
-/* 所有 BrowserWindow（含 Guiding / Floating）统一按 isPackaged 选 app-icon / app-icon-dev */
-app.on( 'browser-window-created' , ( _event , win ) => {
-	applyRuntimeAppIcon( win );
-} );
+	/* 所有 BrowserWindow（含 Guiding / Floating）统一按 isPackaged 选 app-icon / app-icon-dev */
+	app.on( 'browser-window-created' , ( _event , win ) => {
+		applyRuntimeAppIcon( win );
+	} );
+	/* 每扇窗 close：托盘两层勾选 hide，或用户窗清零后 Windows 退出。
+	   设计：docs/issues/close-without-tray-process-lingers.md */
+	registerAppWindowQuitLifecycle();
+
+	logger.initialize();
+	process.title = "ChatAIO";
+	applyPreLaunchSettings();
+
+	app.on( 'before-quit' , () => {
+		/* 菜单 Quit / app.quit() 走这里。点 X 的 Windows 路径见 app-quit（app.exit）。
+		   设计：docs/issues/close-without-tray-process-lingers.md */
+		markChatAIOQuitting();
+		destroyAllBrowserWindows();
+	} );
+}
 
 /* E2E 的 mkdtemp 会先建目录，不能再用 existsSync 判断首启；显式 env 才走 GuidingView。 */
 export const isFirstLaunchWithoutUserData = isChatAioE2E()
 	? process.env.CHATAIO_E2E_FIRST_LAUNCH === '1'
 	: !fs.existsSync( app.getPath( 'userData' ) );
-
-// 初始化日志系统
-logger.initialize();
-
-// 设置进程标题
-process.title = "ChatAIO";
-
-// 读取持久化设置, 应用需要在app.ready之前设置的Chromium flags
-applyPreLaunchSettings();
-
-// 监听应用退出前事件
-app.on('before-quit', () => {
-	( app as any ).__chatAIOQuitting = true;
-	BrowserWindow.getAllWindows().forEach( win => {
-		if( !win.isDestroyed() ) {
-			win.destroy();
-		}
-	} );
-});
 
 function applyPreLaunchSettings() {
 	try {
@@ -93,6 +94,14 @@ import * as path from 'node:path';
 import { setAppProfilePath } from "#main/foundation/debug/app-data-path";
 import { isChatAioE2E } from '#main/foundation/e2e-mode';
 import { installE2EFaultCollector } from '#main/foundation/e2e-faults';
+import {
+	acquireChatAIOSingleInstanceLock,
+} from '#main/services/single-instance';
+import {
+	destroyAllBrowserWindows ,
+	markChatAIOQuitting ,
+	registerAppWindowQuitLifecycle,
+} from '#main/services/app-quit';
 import { applyPendingDevCleanStart } from '#main/services/dev/clean-start';
 import { registerBrowserWindowKeyboardGuards } from '#main/services/shortcuts/window-keyboard';
 import {

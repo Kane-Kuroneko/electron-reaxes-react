@@ -248,6 +248,9 @@ export const reaxel_MainView = reaxel( () => {
 			} );
 		}
 		win.once( 'closed' , () => {
+			/* DropdownView 无 parent，不随主窗自动销毁；不 destroy 会拦住 window-all-closed。
+			   设计：docs/issues/close-without-tray-process-lingers.md */
+			destroyDropdownWindow();
 			if( boundMainWindow === win ) {
 				boundMainWindow = null;
 				setState( {
@@ -528,6 +531,9 @@ export const reaxel_MainView = reaxel( () => {
 			return existingWindow;
 		}
 
+		/* 无 parent：下拉需要独立 focus/blur。因此它是常驻隐藏 BrowserWindow，
+		   关主窗时必须显式 destroy，否则 Windows 进程不退。
+		   设计：docs/issues/close-without-tray-process-lingers.md */
 		const dropdownWindow = new BrowserWindow( {
 			show : false ,
 			frame : false ,
@@ -599,6 +605,13 @@ export const reaxel_MainView = reaxel( () => {
 		);
 
 		return dropdownWindow;
+	};
+
+	const destroyDropdownWindow = () => {
+		const window = store.dropdownWindow;
+		if( window && window.isDestroyed() === false ) {
+			window.destroy();
+		}
 	};
 
 	const sendDropdownCommand = ( command : DropdownView.Command ) => {

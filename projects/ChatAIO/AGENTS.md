@@ -34,13 +34,15 @@
 - [卡片 UX](./docs/features/floating-view-card-ux-optimization.md)、[Swiper 迁移](./docs/features/floating-view-swiper-migration.md)
 - [切换热路径](./docs/features/ai-page-switch-performance-optimization.md)
 
-### menubar / 透明窗
+### menubar / 透明窗 / 退出
 
 - [冷启动 menubar 白屏检测器](./docs/features/menubar-cold-start-monitor.md)（Phase 5 等 visual-ready，不是 menu-view:ready）
 - [Windows 拖 menubar 抖动](./docs/issues/menubar-drag-investigation.md)（禁止 `forward: true`）
 - [拖拽区漏到内容下方](./docs/issues/menubar-drag-region-leak-below-content.md)
 - [平台 menubar 路径](./docs/architecture/menubar-platform-paths.md)
 - [中区 Current AI 下拉切换](./docs/features/menubar-current-ai-dropdown.md)
+- [禁用托盘后点 X 进程不退](./docs/issues/close-without-tray-process-lingers.md)（用户窗清零必须退；辅助窗不算实例）
+- [单实例唤起已有窗口](./docs/features/single-instance.md)（同一 userData 第二次启动 focus Main，不叠进程）
 
 ### 登录 / 身份 / 代理
 
@@ -66,6 +68,7 @@
 ### E2E
 
 - [Playwright E2E 框架](./docs/features/e2e-playwright.md)（`yarn test:e2e`；观测 Settings：`yarn test:e2e:settings:watch`；写盘走探针；不测远程 AI DOM）
+- 关窗退进程 / 单实例：现有默认 E2E **测不到**（teardown 会 `app.exit` + `kill pid`）。做法见 [close-without-tray-process-lingers.md](./docs/issues/close-without-tray-process-lingers.md)「怎么测」
 
 ### 换图标
 
@@ -113,6 +116,7 @@
 | [settings-view-preload.md](./docs/features/settings-view-preload.md) | Settings WCV 晚于启动 AI 页再 preload |
 | [settings-menu-switch-perf.md](./docs/features/settings-menu-switch-perf.md) | Settings 侧栏切页 JSONL 埋点 |
 | [e2e-playwright.md](./docs/features/e2e-playwright.md) | Playwright Electron E2E；Settings WCV 可点；`yarn test:e2e:settings:watch` 观测 |
+| [single-instance.md](./docs/features/single-instance.md) | 同一 userData 单实例；第二次启动唤起 Main |
 
 ### issues/
 
@@ -125,6 +129,7 @@
 | [floating-view-missing-after-background.md](./docs/issues/floating-view-missing-after-background.md) | overlay 冷 reveal |
 | [menubar-drag-investigation.md](./docs/issues/menubar-drag-investigation.md) | Windows `forward: true` |
 | [menubar-drag-region-leak-below-content.md](./docs/issues/menubar-drag-region-leak-below-content.md) | 拖拽区漏到内容下方 |
+| [close-without-tray-process-lingers.md](./docs/issues/close-without-tray-process-lingers.md) | 禁用托盘后点 X 进程不退 |
 | [ai-login-session-lost-after-catalog-uuid.md](./docs/issues/ai-login-session-lost-after-catalog-uuid.md) | 升级后登录丢失：旧分区被 `Set-Cookie` 覆盖 |
 | [google-ai-studio-electron-browser-identity.md](./docs/issues/google-ai-studio-electron-browser-identity.md) | AI Studio / Chrome 身份 |
 | [google-ai-studio-available-regions-redirect.md](./docs/issues/google-ai-studio-available-regions-redirect.md) | AI Studio 跳地区页；9222 CDP + 9229 main inspect |

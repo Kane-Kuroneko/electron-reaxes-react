@@ -63,6 +63,8 @@ export function updateTrayMenu() {
 		{
 			label : t('Quit') ,
 			click : () => {
+				/* 必须 destroy 隐藏窗再 exit，不能只 close 主窗。
+				   设计：docs/issues/close-without-tray-process-lingers.md */
 				( app as any ).__chatAIOQuitting = true;
 				destroyTray();
 				BrowserWindow.getAllWindows().forEach( win => {
