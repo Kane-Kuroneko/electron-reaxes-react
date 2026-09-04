@@ -3,14 +3,21 @@ export type ChatAioFixtures = {
 	mainWindow : Page;
 	userDataDir : string;
 	launchMode : LaunchMode;
+	userAisPatch : E2EUserAisPatch | undefined;
 };
 
 export const test = base.extend<ChatAioFixtures>( {
 	launchMode : async( {} , use ) => {
 		await use( 'returning-user' );
 	} ,
-	electronApp : async( { launchMode } , use ) => {
-		const launched = await launchChatAio( { mode : launchMode } );
+	userAisPatch : async( {} , use ) => {
+		await use( undefined );
+	} ,
+	electronApp : async( { launchMode , userAisPatch } , use ) => {
+		const launched = await launchChatAio( {
+			mode : launchMode ,
+			patchUserAis : userAisPatch,
+		} );
 		let probeFaults : string[] = [];
 		let persistedFaults : string[] = [];
 		try {
@@ -45,6 +52,7 @@ export const test = base.extend<ChatAioFixtures>( {
 			timeout : 45_000,
 		} );
 		await waitForE2ESnapshot( electronApp , ( snapshot ) => snapshot.kind === 'main' , 45_000 );
+		await waitForWindowByUrl( electronApp , 'SettingsView' , 20_000 ).catch( () => {} );
 		await focusHostWindowForObserve( electronApp );
 		await enableActionOverlays( page );
 		await use( page );
@@ -65,3 +73,4 @@ import { drainMainFaults , waitForE2ESnapshot , waitForWindowByUrl } from './sup
 import { enableActionOverlays , focusHostWindowForObserve } from './support/observe';
 import { formatElectronFaults } from './support/faults';
 import { TEST_IDS } from './support/selectors';
+import type { E2EUserAisPatch } from './support/e2e-ais';

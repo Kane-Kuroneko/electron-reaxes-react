@@ -2,7 +2,7 @@
  * 对瘦供应商目录 default-ais.json 原文签名。
  * 私钥：环境变量 CHATAIO_CATALOG_ED25519_PRIVATE_KEY（PEM 全文），
  * 或 CHATAIO_CATALOG_ED25519_PRIVATE_KEY_FILE（默认 `~/.chataio/ai-catalog-ed25519.key`）。
- * 用法：yarn sign:ai-catalog
+ * 用法：见 projects/ChatAIO/scripts.md「供应商目录签名 / 发布」
  * JSON 必须是 LF（见仓库根 .gitattributes）；签的是工作区原文字节。
  * 见 docs/feature-proposal--ai-catalog-source.md 批次 4。
  */

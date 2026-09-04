@@ -1,7 +1,7 @@
 /**
  * 把已签名的瘦目录推到 ChatAIO-Releases tag `ai-catalog`。
  * 先跑 sign-ai-catalog.ts。需要 gh 已登录且对该仓有写权限。
- * 用法：yarn --cwd ../.. tsx --tsconfig projects/ChatAIO/tsconfig.json projects/ChatAIO/scripts/publish-ai-catalog.ts
+ * 用法：见 projects/ChatAIO/scripts.md「供应商目录签名 / 发布」
  * 见 docs/feature-proposal--ai-catalog-source.md 批次 4。
  *
  * 必须 `--latest=false`：electron-updater 读的是仓库 Latest 上的 latest.yml，

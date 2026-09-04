@@ -3,13 +3,13 @@
 	"version": "0.0.1",
 	"licenses": "MIT",
 	"scripts": {
-		"start:webpack": "tsx scripts/webpack.start/index.ts",
-		"start:electron": "tsx scripts/electron.start/index.ts",
+		"start:webpack": "tsx scripts/webpack.start/index.ts ChatAIO 4444",
+		"start:electron": "tsx scripts/electron.start/index.ts ChatAIO",
+		"build": "yarn build:webpack && yarn build:electron",
 		"build:webpack": "tsx ./scripts/webpack.build/index.ts ChatAIO production",
 		"build:electron": "tsx scripts/electron.build/index.ts ChatAIO",
-		"build:electron:mac": "tsx scripts/electron.build/index.ts ChatAIO -- --mac",
-		"build:electron:win": "tsx scripts/electron.build/index.ts ChatAIO -- --win",
-		"build:electron:linux": "tsx scripts/electron.build/index.ts ChatAIO -- --linux",
+		"test": "tsx --tsconfig projects/ChatAIO/tsconfig.json --test projects/ChatAIO/tests/ai-list-reorder.test.ts projects/ChatAIO/tests/manage-ais-table-ux.test.ts projects/ChatAIO/tests/settings-dirty-scopes.test.ts projects/ChatAIO/tests/menubar-cold-start-verdict.test.ts projects/ChatAIO/tests/ai-catalog-defaults.test.ts projects/ChatAIO/tests/ai-catalog-merge.test.ts projects/ChatAIO/tests/ai-catalog-sign.test.ts projects/ChatAIO/tests/ai-catalog-update.test.ts projects/ChatAIO/tests/close-without-tray-process-lingers.test.ts",
+		"test:e2e": "playwright test --config projects/ChatAIO/e2e/playwright.config.ts",
 		"webpack-start:ahk-war3": "tsx scripts/webpack.start/index.ts Autohotkey-GUI/War3 4444 ",
 		"electron-start:ahk-war3": "tsx scripts/electron.start/index.ts Autohotkey-GUI/War3",
 		"webpack-build:ahk-war3": "tsx scripts/webpack.build/index.ts Autohotkey-GUI/War3 production",
@@ -20,12 +20,7 @@
 		"electron-build:AI-WebTools-AIO": "cd projects/AI-WebTools-AIO & electron-builder build -w",
 		"postinstall": "tsx scripts/postinstall/index.ts && patch-package",
 		"setup:git-symlinks": "tsx scripts/setup-git-symlinks.ts",
-		"replace-app-icons": "python scripts/replace-app-icons/replace-app-icons.py",
-		"test:e2e": "playwright test --config projects/ChatAIO/e2e/playwright.config.ts",
-		"test:e2e:headed": "playwright test --config projects/ChatAIO/e2e/playwright.config.ts --headed",
-		"test:e2e:watch": "cross-env CHATAIO_E2E_WATCH=1 playwright test --config projects/ChatAIO/e2e/playwright.config.ts",
-		"test:e2e:settings:watch": "cross-env CHATAIO_E2E_WATCH=1 playwright test --config projects/ChatAIO/e2e/playwright.config.ts projects/ChatAIO/e2e/tests/settings-open.spec.ts projects/ChatAIO/e2e/tests/settings-wcv-discovery.spec.ts projects/ChatAIO/e2e/tests/settings-ais-save-scopes-ui.spec.ts",
-		"test:e2e:debug": "playwright test --config projects/ChatAIO/e2e/playwright.config.ts --debug"
+		"replace-app-icons": "python scripts/replace-app-icons/replace-app-icons.py"
 	},
 	"electronmon": {
 		"patterns": [

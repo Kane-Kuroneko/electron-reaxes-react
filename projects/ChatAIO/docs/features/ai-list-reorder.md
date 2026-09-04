@@ -2,7 +2,7 @@
 
 Switch AI 菜单与 Settings → Manage AIs 共用一套**立即持久化**的顺序模型。顺序就是 `user-ais.json` 里 `ais` 数组下标，没有独立 `order` 字段。
 
-改交互或 `reorder-ais` 前先读本文，并跑 `yarn test:ai-order`（在 `projects/ChatAIO`）。
+改交互或 `reorder-ais` 前先读本文，并跑 `yarn test`（见 [`scripts.md`](../../scripts.md)；本 suite 在 `tests/ai-list-reorder.test.ts` / `manage-ais-table-ux.test.ts` / `settings-dirty-scopes.test.ts`）。
 
 ## 不变量
 
@@ -57,7 +57,7 @@ flowchart TD
 
 ## 测试锁定的契约
 
-`yarn test:ai-order` 按**用户可见结果**锁下面几条，不锁内部「槽位合并 / 全表置换」函数切分，也不锁 dirty 是否按 id 排序：
+`yarn test` 里上述三个文件按**用户可见结果**锁下面几条，不锁内部「槽位合并 / 全表置换」函数切分，也不锁 dirty 是否按 id 排序：
 
 1. Switch AI 只给 enabled id → disabled 下标不动，字段跟着 id 走。
 2. Settings persist 仍给已提交全表 id（含钉在原位的 disabled、含待删除、不含未 Apply 新建项）→ 整表按该序落盘。表内拖拽本身不再移动 disabled 下标，见 [`manage-ais-table-ux.md`](./manage-ais-table-ux.md)。
@@ -66,7 +66,7 @@ flowchart TD
 5. 顺序变化不 dirty；启用 / 待删除点亮表底 Save；改名走弹窗即时写盘。页脚 Apply 不因 AIs 变亮。
 6. Settings 自己是 `reorder-ais` 的 sender 时不 echo `ais-order-changed`。
 
-左键切页、右键拖、footer 钉死是 DropdownView 手势，本 suite 不覆盖。
+左键切页、右键拖、footer 钉死是 DropdownView 手势；表内左键拖是 Manage AIs。单元 suite 不覆盖这些，E2E 见 [`e2e-playwright.md`](./e2e-playwright.md)。
 
 ## 关键文件
 

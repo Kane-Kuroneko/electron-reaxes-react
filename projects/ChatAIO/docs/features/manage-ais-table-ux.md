@@ -4,7 +4,7 @@ Settings → Manage AIs 的表只是**观察窗**：未启用行沉底、列筛�
 
 Enabled 列是 `Switch`，Preload on Startup 列是 `Checkbox`（控件对调，列顺序不变）。置底按上次表底 Save / 弹窗 persist 的 `disabled`，编辑 Enabled 时行不跳，明确保存后才分区。
 
-写盘顺序仍是持久化 `AIs` 数组下标。Switch AI 菜单 / 热键跟那条数组走，不跟表内展示序走。排序 IPC 见 [`ai-list-reorder.md`](./ai-list-reorder.md)。改前跑 `yarn test:ai-order`。
+写盘顺序仍是持久化 `AIs` 数组下标。Switch AI 菜单 / 热键跟那条数组走，不跟表内展示序走。排序 IPC 见 [`ai-list-reorder.md`](./ai-list-reorder.md)。改前跑 `yarn test`（见 [`scripts.md`](../../scripts.md)）。
 
 ## 不变量
 
@@ -74,6 +74,9 @@ antd Table `dataSource=[]` 时：
 | [`src/Views/SettingsView/components/ManageAIs/index.tsx`](../../src/Views/SettingsView/components/ManageAIs/index.tsx) | 表、DnD；Enabled=`Switch` / Preload=`Checkbox`；`displayedAIs` 读筛选项与 committed disabled |
 | [`src/Views/SettingsView/layout/column-text-filter.tsx`](../../src/Views/SettingsView/layout/column-text-filter.tsx) | reaxper 面板 / 图标 / body portal |
 | [`tests/manage-ais-table-ux.test.ts`](../../tests/manage-ais-table-ux.test.ts) | 展示序 / 筛选 / 钉位拖拽 |
+| [`e2e/tests/ai-reorder-manage-ais.spec.ts`](../../e2e/tests/ai-reorder-manage-ais.spec.ts) | 表内左键拖启用行 |
+| [`e2e/tests/manage-ais-filter.spec.ts`](../../e2e/tests/manage-ais-filter.spec.ts) | 列筛选不计 dirty；空表 portal Input |
+| [`e2e/tests/ai-enable-draft-no-jump.spec.ts`](../../e2e/tests/ai-enable-draft-no-jump.spec.ts) | 未 Save 的 Enabled 不跳分区、不进菜单 |
 
 ## 禁止项
 

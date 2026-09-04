@@ -1,5 +1,5 @@
 /**
- * ChatAIO E2E 终端报告：按 spec 短名分组，结尾大字 9/9 通过。
+ * ChatAIO E2E 终端报告：按 spec 短名分组，结尾大字 N/N 通过。
  * 替换内置 list（路径、project、标题挤一行）。对齐 Playwright custom reporter + Cypress 式收尾横幅。
  * 设计：docs/features/e2e-playwright.md
  */

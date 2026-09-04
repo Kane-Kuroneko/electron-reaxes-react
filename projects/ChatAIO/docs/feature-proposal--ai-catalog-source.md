@@ -1,6 +1,6 @@
 # AI 目录单一事实源（落地记录）
 
-**状态：已落地（2026-09-03）。** 现行规范见 [`architecture/ai-config.md`](./architecture/ai-config.md)；Settings 手动检查见 [`features/ai-catalog-manual-update.md`](./features/ai-catalog-manual-update.md)。本文只保留分批执行记录、方向纠偏和已否决项，不要再当施工清单。
+**状态：已落地（2026-09-03）。** 现行规范见 [`architecture/ai-config.md`](./architecture/ai-config.md)；Settings 手动检查见 [`features/ai-catalog-manual-update.md`](./features/ai-catalog-manual-update.md)。签名 / 发布 / 单测的现行命令见 [`scripts.md`](./scripts.md)（文中历史批次写的 `yarn test:ai-order` / `yarn publish:ai-catalog` 已从 `package.json` 收拢）。本文只保留分批执行记录、方向纠偏和已否决项，不要再当施工清单。
 
 ## 方向纠偏（2026-08-28）
 

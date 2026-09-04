@@ -162,14 +162,15 @@ yarn start:electron
 
 ## 日常开发命令
 
-根目录常用脚本（完整列表见根 [`package.json`](./package.json)）：
+根目录常用脚本（ChatAIO 完整参数见 [`projects/ChatAIO/scripts.md`](./projects/ChatAIO/scripts.md)）：
 
 | 命令 | 作用 |
 |------|------|
-| `yarn start:webpack` | 开发态 webpack（默认面向当前配置的工程流程） |
-| `yarn start:electron` | 开发态启动 Electron |
-| `yarn build:webpack` | 生产打包 ChatAIO 前端产物 |
-| `yarn build:electron` / `:win` / `:mac` / `:linux` | electron-builder 打包 |
+| `yarn start:webpack` | 开发态 webpack（默认 **ChatAIO**，端口从 **4444** 起找空闲） |
+| `yarn start:electron` | 开发态启动 Electron（默认 ChatAIO） |
+| `yarn build` / `yarn build:webpack` / `yarn build:electron` | 生产 webpack；electron-builder 打当前宿主平台。跨平台参数见 scripts.md |
+| `yarn test` | ChatAIO 单元测试（`projects/ChatAIO/tests`） |
+| `yarn test:e2e` | ChatAIO Playwright E2E |
 | `yarn webpack-start:AI-WebTools-AIO` 等 | 其他子工程的快捷脚本 |
 | `yarn replace-app-icons` | 统一替换应用 / 托盘图标（见 [`scripts/replace-app-icons/AGENTS.md`](./scripts/replace-app-icons/AGENTS.md)） |
 

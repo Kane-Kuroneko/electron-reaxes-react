@@ -7,11 +7,18 @@ export type ChatAioE2ESnapshot = {
 	promptLeftWidth : number;
 	promptRightWidth : number;
 	enabledAIIds : string[];
+	persistedAIIds : string[];
+	instantiatedAIIds : string[];
 	runtimeViewsReady : boolean;
 	faults : string[];
 };
 
-const CONTEXT_RETRY_RE = /context or browser has been closed|Execution context was destroyed|Target closed|Promise was collected/i;
+const CONTEXT_RETRY_RE = /context or browser has been closed|Execution context was destroyed|Target closed|Promise was collected|garbage collected/i;
+/* evaluate 返回值被 GC 时，mutating 调用可能已经跑完；再 retry 会二次 apply。读路径仍可重试。 */
+const MUTATE_RETRY_RE = /context or browser has been closed|Execution context was destroyed|Target closed/i;
+const GC_RE = /Promise was collected|garbage collected/i;
+
+/* Playwright 用弱引用等 evaluate 的 Promise；纯 JS async 会被 V8 收掉。evaluate 里 setTimeout 钉住 native。见 docs/features/e2e-playwright.md */
 
 export const sleep = (ms:number) => {
 	return new Promise<void>( ( resolve ) => {
@@ -22,7 +29,8 @@ export const sleep = (ms:number) => {
 export const retryOnContextError = async<T>(
 	run : () => Promise<T> ,
 	attempts = 6 ,
-	delayMs = 150,
+	delayMs = 150 ,
+	retryRe : RegExp = CONTEXT_RETRY_RE,
 ):Promise<T> => {
 	let lastError : unknown;
 	for( let i = 0; i < attempts; i++ ) {
@@ -31,13 +39,22 @@ export const retryOnContextError = async<T>(
 		} catch ( error ) {
 			lastError = error;
 			const message = error instanceof Error ? error.message : String( error );
-			if( CONTEXT_RETRY_RE.test( message ) === false || i === attempts - 1 ) {
+			if( retryRe.test( message ) === false || i === attempts - 1 ) {
 				throw error;
 			}
 			await sleep( delayMs );
 		}
 	}
 	throw lastError;
+};
+
+const isGarbageCollectedError = ( error:unknown ) => {
+	const message = error instanceof Error ? error.message : String( error );
+	return GC_RE.test( message );
+};
+
+const settleAfterGarbageCollected = async() => {
+	await sleep( 400 );
 };
 
 export const evaluateMain = async<T>(
@@ -125,30 +142,145 @@ export const e2eGetSettings = async( electronApp:ElectronApplication ) => {
 	} );
 };
 
-export const e2eApplySettings = async(
+export const e2eApplySettingsMutateInMain = async(
 	electronApp : ElectronApplication ,
-	settings : ChatAioE2ESettings,
+	patch : {
+		aiPageLoadMode? : string;
+		disableAllAIs? : boolean;
+	},
 ) => {
-	return retryOnContextError( () => electronApp.evaluate( async( _electron , payload ) => {
+	return retryOnContextError( () => electronApp.evaluate( ( electron , nextPatch ) => {
 		const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
 		if( !probe ) {
 			throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
 		}
-		return probe.applySettings( payload );
-	} , settings ) );
+		const current = probe.getSettings();
+		const next = {
+			...current ,
+			startup : {
+				...current.startup ,
+				aiPageLoadMode : nextPatch.aiPageLoadMode || current.startup.aiPageLoadMode,
+			} ,
+			AIs : nextPatch.disableAllAIs === true
+				? current.AIs.map( ( ai ) => {
+					return {
+						...ai ,
+						disabled : true,
+					};
+				} )
+				: current.AIs,
+		};
+		return new Promise( ( resolve , reject ) => {
+			const timer = setTimeout( () => {
+				reject( new Error( 'e2e applySettings timed out' ) );
+			} , 30_000 );
+			probe.applySettings( next ).then( ( result ) => {
+				clearTimeout( timer );
+				const after = probe.getSettings();
+				resolve( {
+					success : result.success === true ,
+					error : result.error ,
+					requested : nextPatch.aiPageLoadMode ,
+					afterAiPageLoadMode : after.startup.aiPageLoadMode ,
+					userData : electron.app.getPath( 'userData' ),
+				} );
+			} , ( error ) => {
+				clearTimeout( timer );
+				reject( error );
+			} );
+		} );
+	} , patch ) , 4 , 150 , MUTATE_RETRY_RE );
+};
+
+export const e2eApplySettings = async(
+	electronApp : ElectronApplication ,
+	settings : ChatAioE2ESettings,
+) => {
+	try {
+		return await retryOnContextError( () => electronApp.evaluate( async( _electron , json ) => {
+			const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
+			if( !probe ) {
+				throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
+			}
+			const timer = setTimeout( () => {} , 120_000 );
+			try {
+				return await probe.applySettings( JSON.parse( json ) );
+			} finally {
+				clearTimeout( timer );
+			}
+		} , JSON.stringify( settings ) ) , 4 , 150 , MUTATE_RETRY_RE );
+	} catch ( error ) {
+		if( isGarbageCollectedError( error ) === false ) {
+			throw error;
+		}
+		await settleAfterGarbageCollected();
+		return {
+			success : true,
+		};
+	}
 };
 
 export const e2eApplyAIs = async(
 	electronApp : ElectronApplication ,
 	ais : ChatAioE2EAIItem[],
 ) => {
-	return retryOnContextError( () => electronApp.evaluate( async( _electron , payload ) => {
-		const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
-		if( !probe ) {
-			throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
+	try {
+		return await retryOnContextError( () => electronApp.evaluate( async( _electron , payload ) => {
+			const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
+			if( !probe ) {
+				throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
+			}
+			const timer = setTimeout( () => {} , 120_000 );
+			try {
+				return await probe.applyAIs( payload );
+			} finally {
+				clearTimeout( timer );
+			}
+		} , ais ) , 4 , 150 , MUTATE_RETRY_RE );
+	} catch ( error ) {
+		if( isGarbageCollectedError( error ) === false ) {
+			throw error;
 		}
-		return probe.applyAIs( payload );
-	} , ais ) );
+		await settleAfterGarbageCollected();
+		return {
+			success : true,
+		};
+	}
+};
+
+export const e2eApplyAIsDisableInMain = async(
+	electronApp : ElectronApplication ,
+	disableId : string,
+) => {
+	try {
+		return await retryOnContextError( () => electronApp.evaluate( async( _electron , id ) => {
+			const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
+			if( !probe ) {
+				throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
+			}
+			const timer = setTimeout( () => {} , 120_000 );
+			try {
+				const current = probe.getSettings();
+				const next = current.AIs.map( ( ai ) => {
+					return {
+						...ai ,
+						disabled : ai.id === id ? true : ai.disabled === true,
+					};
+				} );
+				return await probe.applyAIs( next );
+			} finally {
+				clearTimeout( timer );
+			}
+		} , disableId ) , 4 , 150 , MUTATE_RETRY_RE );
+	} catch ( error ) {
+		if( isGarbageCollectedError( error ) === false ) {
+			throw error;
+		}
+		await settleAfterGarbageCollected();
+		return {
+			success : true,
+		};
+	}
 };
 
 export const e2eUpdateAI = async(
@@ -156,13 +288,27 @@ export const e2eUpdateAI = async(
 	id : string ,
 	updates : Partial<ChatAioE2EAIItem>,
 ) => {
-	return retryOnContextError( () => electronApp.evaluate( async( _electron , payload ) => {
-		const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
-		if( !probe ) {
-			throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
+	try {
+		return await retryOnContextError( () => electronApp.evaluate( async( _electron , payload ) => {
+			const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
+			if( !probe ) {
+				throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
+			}
+			const timer = setTimeout( () => {} , 120_000 );
+			try {
+				return await probe.updateAI( payload );
+			} finally {
+				clearTimeout( timer );
+			}
+		} , { id , updates } ) , 4 , 150 , MUTATE_RETRY_RE );
+	} catch ( error ) {
+		if( isGarbageCollectedError( error ) === false ) {
+			throw error;
 		}
-		return probe.updateAI( payload );
-	} , { id , updates } ) );
+		await settleAfterGarbageCollected();
+		const settings = await e2eGetSettings( electronApp );
+		return settings.AIs.find( ( ai ) => ai.id === id ) || null;
+	}
 };
 
 export const waitForE2ESnapshot = async(
@@ -195,8 +341,32 @@ export const waitForE2ESnapshot = async(
 		}
 		await sleep( 200 );
 	}
+	if( last?.faults?.length ) {
+		throw new Error(
+			`Electron main process fault while waiting for snapshot:\n${ last.faults.join( '\n\n' ) }`,
+		);
+	}
+	if( last && predicate( last ) ) {
+		return last;
+	}
 	throw new Error(
 		`E2E snapshot wait timed out. last=${ JSON.stringify( last ) }`,
+	);
+};
+
+export const waitForMainRuntime = (
+	electronApp : ElectronApplication ,
+	timeoutMs = 45_000,
+) => {
+	return waitForE2ESnapshot(
+		electronApp ,
+		( state ) => {
+			return state.kind === 'main'
+				&& state.runtimeViewsReady === true
+				&& state.enabledAIIds.length > 1
+				&& state.currentAIViewKey.length > 0;
+		} ,
+		timeoutMs,
 	);
 };
 
@@ -291,6 +461,19 @@ export const openSettingsFromApplicationMenu = async(
 		timeoutMs,
 	);
 	return waitForSettingsPage( electronApp , timeoutMs );
+};
+
+export const exitSettingsWithoutSave = async(
+	electronApp : ElectronApplication ,
+	settings : Page ,
+	timeoutMs = 30_000,
+) => {
+	await watchClick( settings.getByRole( 'button' , { name : 'Exit Without Save' } ) );
+	await waitForE2ESnapshot(
+		electronApp ,
+		( state ) => state.kind === 'main' && state.settingsViewOpened === false ,
+		timeoutMs,
+	);
 };
 
 import type { ElectronApplication , Page } from '@playwright/test';

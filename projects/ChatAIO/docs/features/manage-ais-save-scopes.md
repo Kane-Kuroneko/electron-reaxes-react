@@ -52,7 +52,7 @@ flowchart TD
 | 路径 | 职责 |
 |------|------|
 | [`src/Views/SettingsView/reaxels/settings-view/index.ts`](../../src/Views/SettingsView/reaxels/settings-view/index.ts) | `isDirty` / `isAIsDirty` / `applyAIs` / `reloadAIs` / `persistAIFromModal` / `commitOneAIAfterPersist` |
-| [`src/Views/SettingsView/components/ManageAIs/index.tsx`](../../src/Views/SettingsView/components/ManageAIs/index.tsx) | 表底按钮组、Advanced、弹窗即时保存 |
+| [`src/Views/SettingsView/components/ManageAIs/index.tsx`](../../src/Views/SettingsView/components/ManageAIs/index.tsx) | 表底按钮组、Advanced、弹窗即时保存；Startup 单选 `data-testid=startup-ai-page-*`（E2E 点 wrapper，不要 `check()`） |
 | [`src/Views/SettingsView/App.tsx`](../../src/Views/SettingsView/App.tsx) | 页脚只绑 `isDirty`；Discard 只 reload runtime |
 | [`src/Main/reaxels/Settings/index.ts`](../../src/Main/reaxels/Settings/index.ts) | `apply-settings` 不写 AIs；`apply-ais` |
 | [`e2e/tests/settings-ais-save-scopes.spec.ts`](../../e2e/tests/settings-ais-save-scopes.spec.ts) | 主进程探针：`apply-settings` 不写 AIs；`apply-ais` / `update-ai` |
@@ -76,9 +76,9 @@ flowchart TD
 |----|------|------|
 | 纯函数 | 指纹、单条提交不洗净表草稿 | [`tests/settings-dirty-scopes.test.ts`](../../tests/settings-dirty-scopes.test.ts) |
 | 主进程 | `apply-settings` 忽略 AIs；`apply-ais` / `update-ai` 落盘 | [`e2e/tests/settings-ais-save-scopes.spec.ts`](../../e2e/tests/settings-ais-save-scopes.spec.ts) |
-| Settings DOM | 页脚 Apply vs 表底 Save 是否互点亮 | [`e2e/tests/settings-ais-save-scopes-ui.spec.ts`](../../e2e/tests/settings-ais-save-scopes-ui.spec.ts) |
+| Settings DOM | 页脚 vs 表底、弹窗 Save/Cancel、Undo/Discard、Startup、目录挡板、Add / Clone、待删除 | [`e2e/tests/settings-ais-save-scopes-ui.spec.ts`](../../e2e/tests/settings-ais-save-scopes-ui.spec.ts)、[`e2e/tests/settings-ais-pending-delete.spec.ts`](../../e2e/tests/settings-ais-pending-delete.spec.ts)、[`e2e/tests/settings-exit-without-save.spec.ts`](../../e2e/tests/settings-exit-without-save.spec.ts) |
 
-后续用例（弹窗 Save 不点亮表、Startup 单选走页脚、Discard 不丢表草稿、目录 dirty 挡板等）优先补 DOM 或探针；完整 backlog 见 [`e2e-playwright.md`](./e2e-playwright.md)「后续用例 backlog」。入口：`openSettingsFromApplicationMenu`。
+顺序与环切见 [`e2e-playwright.md`](./e2e-playwright.md)「当前用例」。入口：`openSettingsFromApplicationMenu` / `openSwitchAiMenu`。
 
 ## 与现有文档的关系
 

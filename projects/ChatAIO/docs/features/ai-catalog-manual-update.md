@@ -2,7 +2,7 @@
 
 Settings → Manage AIs 可以检查**供应商目录**更新。远程是 [ChatAIO-Releases](https://github.com/Kane-Kuroneko/ChatAIO-Releases) 滚动 tag `ai-catalog` 的 **GitHub Release 资产**，不是 Releases 仓工作区里的一份拷贝。
 
-本仓 `statics/ai-catalog/` 是下一版草稿 / 安装包兜底。`yarn publish:ai-catalog` 把签过名的 JSON+sig 推上 tag 之后，已装 App 才拉得到。目录更新不是 App 安装包更新（About 里那条是 electron-updater）。ChatAIO-Releases 的 `ai-catalog` tag **禁止**标成 GitHub Latest，否则 updater 会去拉 `.../download/ai-catalog/latest.yml` 并 404。`yarn publish:ai-catalog` 必须 `--latest=false`。
+本仓 `statics/ai-catalog/` 是下一版草稿 / 安装包兜底。`projects/ChatAIO/scripts/publish-ai-catalog.ts` 把签过名的 JSON+sig 推上 tag 之后，已装 App 才拉得到（命令见 [`scripts.md`](../../scripts.md)）。目录更新不是 App 安装包更新（About 里那条是 electron-updater）。ChatAIO-Releases 的 `ai-catalog` tag **禁止**标成 GitHub Latest，否则 updater 会去拉 `.../download/ai-catalog/latest.yml` 并 404。发布脚本里的 `gh release create` / `gh release edit` **已经写死** `--latest=false`，不是再给 npm script 传一遍。
 
 ## 不变量
 

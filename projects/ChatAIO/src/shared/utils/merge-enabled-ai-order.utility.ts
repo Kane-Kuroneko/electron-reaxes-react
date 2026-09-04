@@ -1,6 +1,6 @@
 /**
  * AI 列表排序的产品契约函数（写盘 / dirty / echo / Settings payload）。
- * 交互与禁止项见 docs/features/ai-list-reorder.md。改前跑 `yarn test:ai-order`。
+ * 交互与禁止项见 docs/features/ai-list-reorder.md。改前跑 `yarn test`。
  *
  * 测试按用户可见结果锁契约，不要把内部槽位合并 / 全表置换拆成两套对偶用例。
  */

@@ -1,7 +1,7 @@
 /**
  * 主进程 E2E 探针。只在 CHATAIO_E2E=1 时挂到 globalThis。
  * Settings WCV 已能作为 Playwright Page 点 DOM（waitForSettingsPage）。
- * 本探针继续覆盖写盘契约与壳层快照：getSnapshot / getSettings / applySettings / applyAIs / updateAI。
+ * 本探针继续覆盖写盘契约与壳层快照：getSnapshot（含 persistedAIIds / instantiatedAIIds）/ getSettings / applySettings / applyAIs / updateAI。
  * 设计：docs/features/e2e-playwright.md 、docs/features/manage-ais-save-scopes.md
  */
 
@@ -14,6 +14,10 @@ export type ChatAioE2ESnapshot = {
 	promptLeftWidth : number;
 	promptRightWidth : number;
 	enabledAIIds : string[];
+	/* 含 disabled；顺序 = user-ais / effective 数组下标。切页与排序用例用。 */
+	persistedAIIds : string[];
+	/* 已创建的 AI WCV，按持久化相对序。Ctrl+[ ] / Previous Opened 走这条。 */
+	instantiatedAIIds : string[];
 	runtimeViewsReady : boolean;
 	faults : string[];
 };
@@ -48,6 +52,8 @@ const emptySnapshot = ():ChatAioE2ESnapshot => {
 		promptLeftWidth : 0 ,
 		promptRightWidth : 0 ,
 		enabledAIIds : [] ,
+		persistedAIIds : [] ,
+		instantiatedAIIds : [] ,
 		runtimeViewsReady : false ,
 		faults : peekE2EFaults(),
 	};
@@ -69,12 +75,21 @@ const readE2ESnapshot = ():ChatAioE2ESnapshot => {
 	}
 	const promptStore = reaxel_PromptViews.store;
 	let enabledAIIds : string[] = [];
+	let persistedAIIds : string[] = [];
+	let instantiatedAIIds : string[] = [];
 	try {
-		enabledAIIds = getAIConfigService().getEffectiveAIs()
+		const effectiveAIs = getAIConfigService().getEffectiveAIs();
+		persistedAIIds = effectiveAIs.map( ( ai ) => ai.id );
+		enabledAIIds = effectiveAIs
 			.filter( ( ai ) => ai.disabled !== true )
 			.map( ( ai ) => ai.id );
+		const settings = reaxel_Settings().getCurrentSettings();
+		instantiatedAIIds = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings )
+			.map( ( runtimeView ) => runtimeView.id );
 	} catch {
 		enabledAIIds = [];
+		persistedAIIds = [];
+		instantiatedAIIds = [];
 	}
 	return {
 		kind : 'main' ,
@@ -85,6 +100,8 @@ const readE2ESnapshot = ():ChatAioE2ESnapshot => {
 		promptLeftWidth : promptStore.left.width || 0 ,
 		promptRightWidth : promptStore.right.width || 0 ,
 		enabledAIIds ,
+		persistedAIIds ,
+		instantiatedAIIds ,
 		runtimeViewsReady : Reaxel_View().areRuntimeViewsReady() === true ,
 		faults : peekE2EFaults(),
 	};
@@ -141,6 +158,7 @@ import { drainE2EFaults , installE2EFaultCollector , peekE2EFaults } from './e2e
 import { isMainRuntimeStarted } from '#main/runtime';
 import { Reaxel_View } from '#main/reaxels/Views';
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
+import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
 import { reaxel_Settings } from '#main/reaxels/Settings';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';
 import type { Settings } from '#src/Types/SettingsTypes';

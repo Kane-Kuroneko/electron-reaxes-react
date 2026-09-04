@@ -11,30 +11,37 @@ test( 'apply-settings writes runtime but ignores AIs in the payload' , async( {
 	const settings = await e2eGetSettings( electronApp );
 	expect( settings.AIs.length ).toBeGreaterThan( 1 );
 	const aisFingerprint = fingerprintAIs( settings.AIs );
-	expect( await userAisFileExists( userDataDir ) ).toBe( false );
-	expect( settings.startup.aiPageLoadMode ).toBe( 'last-used-ai' );
+	expect( await userAisFileExists( userDataDir ) ).toBe( true );
+	const aisBefore = await readUserAisFile( userDataDir );
+	const diskBefore = await readUserSettingsFile( userDataDir );
+	expect( diskBefore.settings.startup.aiPageLoadMode ).toBe( 'last-used-ai' );
 
-	const poisoned = JSON.parse( JSON.stringify( settings ) ) as typeof settings;
-	poisoned.startup = {
-		...poisoned.startup ,
-		aiPageLoadMode : 'first-ai',
-	};
-	poisoned.AIs = poisoned.AIs.map( ( ai ) => {
-		return {
-			...ai ,
-			disabled : true,
-		};
+	const result = await e2eApplySettingsMutateInMain( electronApp , {
+		aiPageLoadMode : 'first-ai' ,
+		disableAllAIs : true,
 	} );
-
-	const result = await e2eApplySettings( electronApp , poisoned );
 	expect( result.success ).toBe( true );
+	expect( result.requested ).toBe( 'first-ai' );
+	expect( result.afterAiPageLoadMode ).toBe( 'first-ai' );
+	expect( result.userData ).toBe( userDataDir );
 
-	const afterSettings = await e2eGetSettings( electronApp );
+	const deadline = Date.now() + 10_000;
+	let afterSettings = await e2eGetSettings( electronApp );
+	let diskSettings = await readUserSettingsFile( userDataDir );
+	while( Date.now() < deadline ) {
+		if(
+			afterSettings.startup.aiPageLoadMode === 'first-ai'
+			&& diskSettings.settings.startup.aiPageLoadMode === 'first-ai'
+		) {
+			break;
+		}
+		await new Promise<void>( ( resolve ) => setTimeout( resolve , 200 ) );
+		afterSettings = await e2eGetSettings( electronApp );
+		diskSettings = await readUserSettingsFile( userDataDir );
+	}
 	expect( afterSettings.startup.aiPageLoadMode ).toBe( 'first-ai' );
 	expect( fingerprintAIs( afterSettings.AIs ) ).toBe( aisFingerprint );
-	expect( await userAisFileExists( userDataDir ) ).toBe( false );
-
-	const diskSettings = await readUserSettingsFile( userDataDir );
+	expect( persistedIdsOf( await readUserAisFile( userDataDir ) ) ).toEqual( persistedIdsOf( aisBefore ) );
 	expect( diskSettings.settings.startup.aiPageLoadMode ).toBe( 'first-ai' );
 	expect( diskSettings.settings ).not.toHaveProperty( 'AIs' );
 
@@ -57,13 +64,7 @@ test( 'apply-ais persists enabled flags; update-ai patches one row without takin
 	expect( sibling ).toBeTruthy();
 	const siblingLabel = sibling!.label;
 
-	const nextAIs = JSON.parse( JSON.stringify( settings.AIs ) ).map( ( ai:{ id:string; disabled?:boolean } ) => {
-		return {
-			...ai ,
-			disabled : ai.id === targetId ? true : ai.disabled === true,
-		};
-	} );
-	const applyResult = await e2eApplyAIs( electronApp , nextAIs );
+	const applyResult = await e2eApplyAIsDisableInMain( electronApp , targetId! );
 	expect( applyResult.success ).toBe( true );
 
 	const afterDisable = await waitForE2ESnapshot(
@@ -121,26 +122,6 @@ const fingerprintAIs = ( ais:{ id:string; disabled?:boolean }[] ) => {
 		.join( '|' );
 };
 
-const userAisPath = ( userDataDir:string ) => {
-	return path.join( userDataDir , 'user-ais.json' );
-};
-
-const userAisFileExists = async( userDataDir:string ) => {
-	try {
-		await fs.access( userAisPath( userDataDir ) );
-		return true;
-	} catch {
-		return false;
-	}
-};
-
-const readUserAisFile = async( userDataDir:string ) => {
-	const raw = await fs.readFile( userAisPath( userDataDir ) , 'utf8' );
-	return JSON.parse( raw ) as {
-		ais : { id:string; label:string; disabled?:boolean }[];
-	};
-};
-
 const readUserSettingsFile = async( userDataDir:string ) => {
 	const raw = await fs.readFile( path.join( userDataDir , 'user-settings.json' ) , 'utf8' );
 	return JSON.parse( raw ) as {
@@ -154,11 +135,12 @@ const readUserSettingsFile = async( userDataDir:string ) => {
 
 import { test , expect } from '../fixtures';
 import {
-	e2eApplyAIs ,
-	e2eApplySettings ,
+	e2eApplyAIsDisableInMain ,
+	e2eApplySettingsMutateInMain ,
 	e2eGetSettings ,
 	e2eUpdateAI ,
 	waitForE2ESnapshot,
 } from '../support/app-probe';
+import { persistedIdsOf , readUserAisFile , userAisFileExists } from '../support/user-ais-file';
 import fs from 'node:fs/promises';
 import path from 'node:path';

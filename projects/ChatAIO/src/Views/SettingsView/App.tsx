@@ -116,7 +116,10 @@ export const App = reaxper( () => {
 					} }
 				><I18n>Exit Without Save</I18n></Button>
 
+				{ /* E2E：data-dirty 是 isDirty() 的 DOM 镜像，Apply disabled 还可能是目录锁。见 docs/features/e2e-playwright.md */ }
 				<Button
+					data-testid="settings-footer-apply"
+					data-dirty={ dirty ? 'true' : 'false' }
 					disabled={ !dirty || catalogChromeLocked }
 					onClick={ async() => {
 						const result = await applySettings();

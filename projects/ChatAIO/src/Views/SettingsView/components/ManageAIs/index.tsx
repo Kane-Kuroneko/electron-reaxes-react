@@ -382,15 +382,23 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 							onChange={ event => {
 								setStartupAIPageLoadMode( event.target.value as Startup.AIPageLoadMode );
 							} }
-							style={ { userSelect : 'none' } }
+							style={ { userSelect : 'none' , display : 'flex' , flexDirection : 'column' , gap : 4 } }
 						>
-							<Space
-								direction="vertical"
-								size={ 4 }
-							>
-								<Radio value="last-used-ai"><I18n>Load the AI page used last time before exit</I18n></Radio>
-								<Radio value="first-ai"><I18n>Always load the first AI page when app starts</I18n></Radio>
-							</Space>
+							{ /* E2E 点 wrapper；onClick 兜底 antd Group+label 有时不冒泡 onChange。见 docs/features/e2e-playwright.md */ }
+							<Radio
+								value="last-used-ai"
+								data-testid="startup-ai-page-last-used"
+								onClick={ () => {
+									setStartupAIPageLoadMode( 'last-used-ai' );
+								} }
+							><I18n>Load the AI page used last time before exit</I18n></Radio>
+							<Radio
+								value="first-ai"
+								data-testid="startup-ai-page-first"
+								onClick={ () => {
+									setStartupAIPageLoadMode( 'first-ai' );
+								} }
+							><I18n>Always load the first AI page when app starts</I18n></Radio>
 						</Radio.Group>
 					</Form.Item>
 				</Form>
@@ -454,8 +462,10 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 				</SortableContext>
 			</DndContext>
 			<div className="settings-section__footer" style={ { marginTop : 16 , display : 'flex' , justifyContent : 'flex-end' , gap : 8 , alignItems : 'center' } }>
+				{ /* antd loading 会拿掉 accessible name；E2E 用 testid。见 docs/features/e2e-playwright.md */ }
 				<Button
 					type="dashed"
+					data-testid="manage-ais-undo"
 					disabled={ !aisDirty || catalogChromeLocked || aisSubmitPending }
 					onClick={ async() => {
 						try {
@@ -468,6 +478,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 				><I18n>Undo Changes</I18n></Button>
 				<Button
 					type="primary"
+					data-testid="manage-ais-save"
 					disabled={ !aisDirty || catalogChromeLocked || aisSubmitPending }
 					loading={ aisSubmitPending }
 					onClick={ async() => {
@@ -521,7 +532,9 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 
 	const DragHandle:React.FC = () => {
 		const { listeners , attributes , disabled } = React.useContext( DragHandleContext );
+		/* E2E 点这一格做左键拖；dnd-kit 不吃 HTML5 dragTo。见 docs/features/e2e-playwright.md */
 		return <span
+			data-testid="manage-ais-drag-handle"
 			style={ { display : 'inline-flex' , alignItems : 'center' , cursor : disabled ? 'not-allowed' : 'move' , opacity : disabled ? 0.4 : 1 } }
 			{ ...( disabled ? {} : attributes ) }
 			{ ...( disabled ? {} : listeners ) }

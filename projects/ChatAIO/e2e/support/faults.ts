@@ -2,6 +2,9 @@ export const E2E_FAULTS_FILE = 'e2e-faults.jsonl';
 
 export const PROCESS_FAULT_RE = /Uncaught Exception|A JavaScript error occurred|Cannot read propert(?:y|ies) of null|getContentBounds|uncaughtException|Unhandled[ _]Rejection|TypeError:|ReferenceError:/;
 
+/* about:blank 让启动 AI 很快 settle，Settings preload 常和 app.exit 撞车；产品已 catch，stderr 仍带 TypeError。 */
+const IGNORED_PROCESS_LOG_RE = /SettingsView preload failed|Object has been destroyed/;
+
 export const collectProcessLogs = (electronApp:ElectronApplication) => {
 	const logs : ElectronProcessLogs = {
 		stdout : [] ,
@@ -59,11 +62,17 @@ export const readPersistedE2EFaults = async( userDataDir:string ) => {
 };
 
 export const formatElectronFaults = (faults:string[] , logs:ElectronProcessLogs) => {
-	const blob = `${ logs.stderr.join( '' ) }\n${ logs.stdout.join( '' ) }`;
+	const blob = `${ logs.stderr.join( '' ) }\n${ logs.stdout.join( '' ) }`
+		.split( /\r?\n/ )
+		.filter( ( line ) => IGNORED_PROCESS_LOG_RE.test( line ) === false )
+		.join( '\n' );
 	const processHits = PROCESS_FAULT_RE.test( blob )
 		? [ blob.trim().slice( -4000 ) ]
 		: [];
-	const all = uniqueFaults( [ ...faults , ...processHits ] );
+	const all = uniqueFaults( [
+		...faults.filter( ( line ) => IGNORED_PROCESS_LOG_RE.test( line ) === false ) ,
+		...processHits,
+	] );
 	if( all.length === 0 ) {
 		return null;
 	}

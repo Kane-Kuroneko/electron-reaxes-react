@@ -1,3 +1,8 @@
+/**
+ * user-settings.json：runtime 配置（不含 AIs）。
+ * 路径每次 I/O 现取 app.getPath('userData')，避免 import 期单例把路径钉在 setAppProfilePath 之前。
+ * 见 docs/features/e2e-playwright.md
+ */
 const SETTINGS_CONFIG_FILE = 'user-settings.json';
 const SETTINGS_CONFIG_VERSION = '1.0.0';
 
@@ -131,10 +136,9 @@ const normalizeProxyServerId = (
 };
 
 class SettingsConfigService {
-	private userConfigPath:string;
-	
-	constructor() {
-		this.userConfigPath = path.join( app.getPath( 'userData' ) , SETTINGS_CONFIG_FILE );
+	private resolveUserConfigPath():string {
+		/* 每次 I/O 现取 userData：禁止在 setAppProfilePath 之前把路径钉死。见 docs/features/e2e-playwright.md */
+		return path.join( app.getPath( 'userData' ) , SETTINGS_CONFIG_FILE );
 	}
 	
 	getDefaultSettings():RuntimeSettings {
@@ -142,11 +146,12 @@ class SettingsConfigService {
 	}
 	
 	getUserSettings():RuntimeSettings | null {
+		const userConfigPath = this.resolveUserConfigPath();
 		try {
-			if( !fs.existsSync( this.userConfigPath ) ) {
+			if( !fs.existsSync( userConfigPath ) ) {
 				return null;
 			}
-			const content = fs.readFileSync( this.userConfigPath , 'utf-8' );
+			const content = fs.readFileSync( userConfigPath , 'utf-8' );
 			const parsed = JSON.parse( content ) as SettingsConfigFile;
 			return normalizeRuntimeSettings( parsed.settings );
 		} catch ( error ) {
@@ -160,20 +165,21 @@ class SettingsConfigService {
 	}
 	
 	saveSettings( settings:RuntimeSettings ):void {
+		const userConfigPath = this.resolveUserConfigPath();
 		const normalizedSettings = normalizeRuntimeSettings( settings );
 		const settingsFile:SettingsConfigFile = {
 			version : SETTINGS_CONFIG_VERSION ,
 			settings : normalizedSettings,
 		};
-		const dir = path.dirname( this.userConfigPath );
+		const dir = path.dirname( userConfigPath );
 		if( !fs.existsSync( dir ) ) {
 			fs.mkdirSync( dir , { recursive : true } );
 		}
-		fs.writeFileSync( this.userConfigPath , JSON.stringify( settingsFile , null , 2 ) , 'utf-8' );
+		fs.writeFileSync( userConfigPath , JSON.stringify( settingsFile , null , 2 ) , 'utf-8' );
 	}
 	
 	hasUserModifications():boolean {
-		return fs.existsSync( this.userConfigPath );
+		return fs.existsSync( this.resolveUserConfigPath() );
 	}
 }
 

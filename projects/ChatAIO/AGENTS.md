@@ -10,7 +10,13 @@
 
 `docs/README.md` 只指向本文，不在 `docs/` 里再维护一份总目录。
 
+npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scripts.md)。
+
 ## 按任务 / 症状
+
+### 开发 / 打包 / 测试
+
+- [npm 脚本与参数](./scripts.md)（常用入口在 `package.json`；平台出包、E2E 观测、目录签名、性能分析的完整命令也在这里）
 
 ### 中心 AI 页闪白、回前台
 
@@ -67,7 +73,7 @@
 
 ### E2E
 
-- [Playwright E2E 框架](./docs/features/e2e-playwright.md)（`yarn test:e2e`；观测 Settings：`yarn test:e2e:settings:watch`；写盘走探针；不测远程 AI DOM）
+- [Playwright E2E 框架](./docs/features/e2e-playwright.md)（`yarn test:e2e`；观测命令见 [`scripts.md`](./scripts.md)；返回用户 seed 固定 4 页 `about:blank`；写盘走探针；不测远程 AI DOM）
 - 关窗退进程 / 单实例：默认 fixture **测不到**（teardown 会 `app.exit` + `kill pid`）。套件：`e2e/tests/app-lifecycle.spec.ts`；见 [close-without-tray-process-lingers.md](./docs/issues/close-without-tray-process-lingers.md)「怎么测」
 
 ### 换图标
@@ -115,7 +121,7 @@
 | [settings-exit-discard-and-prompt-scrollbar.md](./docs/features/settings-exit-discard-and-prompt-scrollbar.md) | Settings 退出丢弃 / 滚动条 |
 | [settings-view-preload.md](./docs/features/settings-view-preload.md) | Settings WCV 晚于启动 AI 页再 preload |
 | [settings-menu-switch-perf.md](./docs/features/settings-menu-switch-perf.md) | Settings 侧栏切页 JSONL 埋点 |
-| [e2e-playwright.md](./docs/features/e2e-playwright.md) | Playwright Electron E2E；Settings WCV 可点；`yarn test:e2e:settings:watch` 观测 |
+| [e2e-playwright.md](./docs/features/e2e-playwright.md) | Playwright Electron E2E；Settings WCV 可点；观测命令见 [scripts.md](./scripts.md) |
 | [single-instance.md](./docs/features/single-instance.md) | 同一 userData 单实例；第二次启动唤起 Main |
 
 ### issues/
@@ -140,6 +146,7 @@
 
 | 文档 | 内容 |
 |------|------|
+| [scripts.md](./scripts.md) | 本工程 npm 脚本：常用入口、参数、已从 package.json 拿掉的完整命令 |
 | [feature-design-and-comments.md](./docs/agent/feature-design-and-comments.md) | 新增功能：设计文档 + 关键注释 |
 | [menu-label-width.md](./docs/modules/menu-label-width.md) | 菜单标签宽度 |
 | [feature-proposal--ai-catalog-source.md](./docs/feature-proposal--ai-catalog-source.md) | 目录单一事实源分批记录（已落地；现行见 ai-config.md） |

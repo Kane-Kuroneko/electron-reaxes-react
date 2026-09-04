@@ -42,6 +42,14 @@ describe( '页脚 dirty 不计 AIs / 测试 URL' , () => {
 		} ) );
 		assert.notEqual( JSON.stringify( base ) , JSON.stringify( dark ) );
 	} );
+
+	it( '改 startup.aiPageLoadMode 会变' , () => {
+		const base = snapshotRuntimeSettingsForDirty( runtime() );
+		const firstAi = snapshotRuntimeSettingsForDirty( runtime( {
+			startup : { aiPageLoadMode : 'first-ai' } ,
+		} ) );
+		assert.notEqual( JSON.stringify( base ) , JSON.stringify( firstAi ) );
+	} );
 } );
 
 describe( '弹窗单条提交不洗净表草稿' , () => {

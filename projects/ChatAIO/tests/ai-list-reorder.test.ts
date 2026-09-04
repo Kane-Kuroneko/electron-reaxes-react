@@ -4,7 +4,7 @@
  * 契约见 docs/features/ai-list-reorder.md。
  * 本文件不覆盖 UI 手势（左键切页 / 右键拖 / footer 钉死）——那些在 DropdownView。
  *
- * 运行：在 projects/ChatAIO 执行 `yarn test:ai-order`
+ * 运行：仓库根或 projects/ChatAIO 执行 `yarn test`（见 scripts.md）
  */
 
 type Row = {

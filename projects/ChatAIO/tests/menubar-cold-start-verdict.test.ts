@@ -2,7 +2,7 @@
  * 冷启动 menubar 白屏检测器：裁决纯函数回归。
  * 契约见 docs/features/menubar-cold-start-monitor.md
  *
- * 运行：yarn test:menubar-boot
+ * 运行：yarn test（见 scripts.md）
  */
 
 const ev = (

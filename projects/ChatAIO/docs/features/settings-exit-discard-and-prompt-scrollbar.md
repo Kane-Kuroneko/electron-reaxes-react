@@ -55,6 +55,8 @@ async function exitWithoutSave() {
 - **Discard Changes**、**Apply**、**Save & Exit** 行为不变。
 - `reloadSettings` 失败时记录错误；仍执行 `exitSettings()`（用户意图是离开，与脏数据滞留相比更可接受）。
 
+E2E：[`e2e/tests/settings-exit-without-save.spec.ts`](../../e2e/tests/settings-exit-without-save.spec.ts)。
+
 ---
 
 ## 需求 2: PromptView 纵向滚动条美化

@@ -10,6 +10,7 @@ export type LaunchedChatAio = {
 
 export const launchChatAio = async( options:{
 	mode : LaunchMode;
+	patchUserAis? : E2EUserAisPatch;
 } ):Promise<LaunchedChatAio> => {
 	const paths = resolveChatAioE2EPaths();
 	if( fs.existsSync( paths.electronExecutable ) === false ) {
@@ -19,7 +20,7 @@ export const launchChatAio = async( options:{
 		path.join( os.tmpdir() , 'chataio-e2e-' ),
 	);
 	if( options.mode === 'returning-user' ) {
-		await seedReturningUserProfile( userDataDir );
+		await seedReturningUserProfile( userDataDir , options.patchUserAis );
 	}
 
 	const launchEnv : Record<string , string> = {};
@@ -97,6 +98,7 @@ import { _electron as electron , type ElectronApplication } from '@playwright/te
 import { resolveChatAioE2EPaths , type ChatAioE2EPaths } from './env';
 import { attachRendererPageErrors , collectProcessLogs , readPersistedE2EFaults , type ElectronProcessLogs } from './faults';
 import { seedReturningUserProfile } from './seed-profile';
+import type { E2EUserAisPatch } from './e2e-ais';
 import { sleep } from './app-probe';
 import { e2eHoldMs } from './observe';
 import fs from 'node:fs';

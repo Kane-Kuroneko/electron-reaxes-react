@@ -2,8 +2,8 @@
  * 读取 menubar-cold-start.jsonl，打印最后一条 verdict。
  *
  * 用法（仓库根）：
- *   yarn --cwd projects/ChatAIO analyze:menubar-boot
- *   yarn --cwd projects/ChatAIO analyze:menubar-boot -- path/to/menubar-cold-start.jsonl
+ *   yarn tsx --tsconfig projects/ChatAIO/tsconfig.json projects/ChatAIO/scripts/analyze-menubar-cold-start.ts
+ *   yarn tsx --tsconfig projects/ChatAIO/tsconfig.json projects/ChatAIO/scripts/analyze-menubar-cold-start.ts -- path/to/menubar-cold-start.jsonl
  */
 
 const readEvents = ( filePath : string ) : MenubarBootLogEvent[] => {

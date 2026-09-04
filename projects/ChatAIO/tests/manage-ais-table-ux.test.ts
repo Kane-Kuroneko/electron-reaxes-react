@@ -1,7 +1,7 @@
 /**
  * Manage AIs 表格展示序 / 列筛选 / 拖启用项映射。
  * 契约见 docs/features/manage-ais-table-ux.md。
- * 运行：在 projects/ChatAIO 执行 `yarn test:ai-order`
+ * 运行：仓库根或 projects/ChatAIO 执行 `yarn test`（见 scripts.md）
  */
 
 type Row = {
