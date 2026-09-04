@@ -68,7 +68,7 @@
 ### E2E
 
 - [Playwright E2E 框架](./docs/features/e2e-playwright.md)（`yarn test:e2e`；观测 Settings：`yarn test:e2e:settings:watch`；写盘走探针；不测远程 AI DOM）
-- 关窗退进程 / 单实例：现有默认 E2E **测不到**（teardown 会 `app.exit` + `kill pid`）。做法见 [close-without-tray-process-lingers.md](./docs/issues/close-without-tray-process-lingers.md)「怎么测」
+- 关窗退进程 / 单实例：默认 fixture **测不到**（teardown 会 `app.exit` + `kill pid`）。套件：`e2e/tests/app-lifecycle.spec.ts`；见 [close-without-tray-process-lingers.md](./docs/issues/close-without-tray-process-lingers.md)「怎么测」
 
 ### 换图标
 

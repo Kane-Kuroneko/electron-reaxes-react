@@ -97,7 +97,7 @@ flowchart LR
 
 1. **纯函数**（已有）：`close-without-tray-process-lingers.test.ts`。改判定时先红。
 2. **默认 E2E**：继续测菜单、Settings；**不要**把「点 X 进程没了」塞进默认 fixture。
-3. **生命周期套件**（未写，建议 `e2e/tests/app-lifecycle.spec.ts`，**自己 launch / 自己收尾**）：
+3. **生命周期套件**（`e2e/tests/app-lifecycle.spec.ts`，**自己 launch / 自己收尾**，辅助函数在 `e2e/support/app-lifecycle.ts`）：
 
 **用例 A — 关主窗必须整棵进程树退出（本 bug）**
 
@@ -135,7 +135,7 @@ flowchart LR
 ### 和现有文档
 
 - 单实例产品契约：[single-instance.md](../features/single-instance.md)。
-- 默认 E2E 仍以 [e2e-playwright.md](../features/e2e-playwright.md) 为准；本节约束的是 **尚未落地的生命周期套件**。
+- 默认 E2E 仍以 [e2e-playwright.md](../features/e2e-playwright.md) 为准；生命周期套件是 `app-lifecycle.spec.ts`，不要并进默认 fixture。
 
 ## 与现有文档
 

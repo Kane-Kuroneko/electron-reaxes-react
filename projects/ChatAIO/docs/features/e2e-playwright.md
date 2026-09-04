@@ -75,12 +75,13 @@ Spectron 已死。本仓不引入打包后的 `findLatestBuild`：E2E 打 unpack
 | 目录检查挡板 | DOM 或探针 | `isDirty() \|\| isAIsDirty()` 都挡住 |
 | Add / Clone 当场写盘 | 探针 + 可选 DOM | 不点亮表 dirty；磁盘多一条 |
 | 表底 Save 整表 | DOM + 探针 | Enabled 落盘；页脚仍灭 |
+| 关窗后进程必须死 / 第二次启动唤起已有窗 | 进程生命周期（**不用**默认 fixture） | 已写：`e2e/tests/app-lifecycle.spec.ts` |
 
 i18n / antd 选择器不稳时再给页脚、表底、弹窗加 `data-testid`，不要先改生产默认侧栏 tab。
 
 ## 不变量
 
-1. **隔离 userData**：`CHATAIO_E2E=1` + `CHATAIO_E2E_USER_DATA_DIR` 覆盖 `setAppProfilePath`。禁止写本机 `%APPDATA%/ChatAIO-dev`。
+1. **隔离 userData**：`CHATAIO_E2E=1` + `CHATAIO_E2E_USER_DATA_DIR` 覆盖 `setAppProfilePath`。禁止写本机 `%APPDATA%/ChatAIO-dev`。单实例锁跟 userData 走，因此 E2E 临时目录不会和本机生产/开发包抢实例（见 [single-instance.md](./single-instance.md)）。
 2. **不改操作系统全局状态**：不 `npx playwright install` Chromium、不改系统代理、不 `taskkill /im electron.exe`（只杀本次 pid）。
 3. **workers = 1**：Electron GPU / 单用户数据模型；并行要另开隔离端口与 userData，本阶段不做。
 4. **E2E 加载 `dist/renderer/*/index.html`**：`shouldUseDevRendererServer()` 在 `CHATAIO_E2E=1` 时为 false。日常 `yarn start:electron` 仍走 localhost:4444。
@@ -184,6 +185,7 @@ CI / 日常全量保持 `yarn test:e2e`，WATCH 为 0。不要在观测时用鼠
 | `projects/ChatAIO/e2e/support/app-probe.ts` | 快照 / `waitForSettingsPage` / `openSettingsFromApplicationMenu` |
 | `projects/ChatAIO/e2e/support/observe.ts` | WATCH / slowMo / highlight / 关窗前停住 |
 | `projects/ChatAIO/e2e/support/launch.ts` | `_electron.launch`、env、按 pid 关闭 |
+| `projects/ChatAIO/e2e/support/app-lifecycle.ts` | 关窗退进程 / 单实例：等 pid 树自己死；禁止默认 fixture |
 | `projects/ChatAIO/e2e/tests/*.spec.ts` | 用例 |
 | `src/Main/foundation/e2e-bootstrap.ts` | **index.ts 第一个 import**，赶在 before-launch 依赖图之前挂收集器 |
 | `src/Main/foundation/e2e-mode.ts` | `CHATAIO_E2E` 闸门 |
@@ -202,6 +204,7 @@ CI / 日常全量保持 `yarn test:e2e`，WATCH 为 0。不要在观测时用鼠
 | `settings-ais-save-scopes.spec.ts` | `apply-settings` 不写 AIs；`apply-ais` 写启用列；`update-ai` 单条改名且丢掉 `disabled` | manage-ais-save-scopes |
 | `settings-ais-save-scopes-ui.spec.ts` | 点 Enabled 只点亮表底 Save，页脚 Apply 仍灭 | manage-ais-save-scopes |
 | `prompt-toggle.spec.ts` | View → Left Prompt Showcase | prompt-view |
+| `app-lifecycle.spec.ts` | 关主窗后进程树必须退；同一 userData 第二次启动立刻退出并唤起第一扇 | close-without-tray / single-instance |
 
 不把远程 ChatGPT/Gemini 登录、白屏监控、Windows `forward: true` 放进第一批：那些要站点 DOM 或禁止项本身就不能用自动化去「修」。
 
