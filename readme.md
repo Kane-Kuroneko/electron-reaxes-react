@@ -132,7 +132,7 @@ yarn tsx scripts/setup-git-symlinks.ts --restore
 yarn
 ```
 
-> **Reaxes 依赖说明**：根 `package.json` 当前通过 `file:../reaxes/...` 链接本地 [Reaxes](https://www.npmjs.com/package/reaxes) 构建产物。若你没有并列的 `../reaxes` 源码树，请改为使用 npm 上的 `reaxes` / `reaxes-react` / `reaxes-utils`，或自行克隆 Reaxes 源码并产出 `dist` 后再安装。文档：[Reaxes Document](https://kane-7.gitbook.io/reaxes-document)。
+> **Reaxes 依赖**：根 `package.json` 使用 npm 上的 [`reaxes`](https://www.npmjs.com/package/reaxes) / [`reaxes-react`](https://www.npmjs.com/package/reaxes-react) / [`reaxes-utils`](https://www.npmjs.com/package/reaxes-utils)，无需并列的 `../reaxes` 源码树。文档：[Reaxes Document](https://kane-7.gitbook.io/reaxes-document)。
 
 ### 跑起来（以 ChatAIO 为例）
 

@@ -59,10 +59,10 @@
 		"react-router-dom": "^7.0.2",
 		"react-split": "^2.0.14",
 		"react-split-grid": "^1.0.4",
-		"reaxes": "file:../reaxes/packages/reaxes/dist",
-		"reaxes-react": "file:../reaxes/packages/reaxes-react/dist",
+		"reaxes": "^1.5.0",
+		"reaxes-react": "^0.1.3",
 		"reaxes-toolkit": "^1.0.4",
-		"reaxes-utils": "file:../reaxes/packages/reaxes-utils/dist",
+		"reaxes-utils": "^2.1.0",
 		"remark-gfm": "^4.0.1",
 		"shallowequal": "^1.1.0",
 		"swiper": "^12.1.2"

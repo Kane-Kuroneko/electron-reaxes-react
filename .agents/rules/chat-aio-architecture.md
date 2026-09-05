@@ -45,4 +45,4 @@ Known caveat: current tsconfigs may surface pre-existing `typeRoots`/generic-ser
 
 ## Reaxes Source
 
-The local Reaxes implementation lives at `Z:\reaxes` — consult it when library behavior is unclear.
+Runtime packages come from npm (`reaxes`, `reaxes-react`, `reaxes-utils`). Optional local source at `Z:\reaxes` can be consulted when library behavior is unclear.
