@@ -34,14 +34,19 @@ export const reaxel_Settings = reaxel( () => {
 		return getCurrentSettings();
 	};
 
-	const syncRuntimeViews = async() => {
+	const syncRuntimeViews = async( options?:{ syncAIViews?:boolean } ) => {
 		const settings = getCurrentSettings();
 		const errors:unknown[] = [];
-		try {
-			await reaxel_AIViews().syncAIViewsWithConfig( settings );
-		} catch ( error ) {
-			console.error( '[Settings] syncAIViewsWithConfig failed:' , error );
-			errors.push( error );
+		/* 只改顺序时禁止走 syncAIViewsWithConfig：那条路径会为 current/preload 补 WCV，
+		   已关闭的页若被幽灵 click 切成 current，就会被重新打开。
+		   见 docs/features/ai-list-reorder.md */
+		if( options?.syncAIViews !== false ) {
+			try {
+				await reaxel_AIViews().syncAIViewsWithConfig( settings );
+			} catch ( error ) {
+				console.error( '[Settings] syncAIViewsWithConfig failed:' , error );
+				errors.push( error );
+			}
 		}
 		try {
 			reaxel_Menu().rebuildMenu();
@@ -298,7 +303,8 @@ export const reaxel_Settings = reaxel( () => {
 				};
 			}
 			if( result.changed ) {
-				await syncRuntimeViews();
+				/* 只改顺序：rebuildMenu 即可。禁止 syncAIViewsWithConfig，见 docs/features/ai-list-reorder.md */
+				await syncRuntimeViews( { syncAIViews : false } );
 				/* Settings 自己当 sender 时禁止 echo，见 docs/features/ai-list-reorder.md */
 				const settingsWebContents = reaxel_SettingsView.store.settingsView.view?.webContents;
 				if( shouldEchoAIOrderToSettings( event.sender , settingsWebContents ) ) {

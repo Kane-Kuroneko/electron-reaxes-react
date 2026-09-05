@@ -101,6 +101,22 @@ const isSwitchAiItem = ( item : MenuView.Item ) => {
 	return item.action === 'switch-ai' && typeof item.actionPayload === 'string';
 };
 
+/** 写盘期间 props 可能已带新 loadState；按 id 套回本地序，避免下标错位。 */
+const overlaySwitchAiMetaById = ( ordered : MenuView.Item[] , source : MenuView.Item[] ) : MenuView.Item[] => {
+	const byPayload = new Map<string , MenuView.Item>();
+	for( const item of source ) {
+		if( isSwitchAiItem( item ) ) {
+			byPayload.set( item.actionPayload as string , item );
+		}
+	}
+	return ordered.map( item => {
+		if( isSwitchAiItem( item ) === false ) {
+			return item;
+		}
+		return byPayload.get( item.actionPayload as string ) ?? item;
+	} );
+};
+
 const switchAiIdsOf = ( items : MenuView.Item[] ) => {
 	return items.filter( isSwitchAiItem ).map( item => item.actionPayload as string );
 };
@@ -124,6 +140,8 @@ const MenuDropdown = ( {
 	const listRef = useRef<HTMLDivElement | null>( null );
 	const draggingRef = useRef( false );
 	const persistingRef = useRef( false );
+	const itemsRef = useRef( items );
+	itemsRef.current = items;
 	const [ isSorting , setIsSorting ] = useState( false );
 	const switchAiItemsFromProps = items.filter( isSwitchAiItem );
 	const footerItems = items.filter( item => !isSwitchAiItem( item ) );
@@ -137,6 +155,10 @@ const MenuDropdown = ( {
 			},
 		} ),
 	);
+
+	useEffect( () => {
+		return () => disarmGhostClickAfterSort();
+	} , [] );
 
 	useEffect( () => {
 		if( draggingRef.current || persistingRef.current ) {
@@ -159,32 +181,39 @@ const MenuDropdown = ( {
 		}
 		persistingRef.current = true;
 		setAiItems( nextItems );
+		let committed = nextItems;
 		try {
 			const result = await api.reorderAIs( cloneForIPC( nextIds ) );
 			if( !result?.success ) {
+				committed = previousItems;
 				setAiItems( previousItems );
 				reportMenubarRendererError( 'reorderAIs' , result?.error || 'reorder failed' , 'dropdown-view-renderer' , {
 					nextIds,
 				} );
 			}
 		} catch ( error ) {
+			committed = previousItems;
 			setAiItems( previousItems );
 			reportMenubarRendererError( 'reorderAIs' , error , 'dropdown-view-renderer' , {
 				nextIds,
 			} );
 		} finally {
 			persistingRef.current = false;
+			setAiItems( overlaySwitchAiMetaById( committed , itemsRef.current ) );
 		}
 	};
 
 	const onDragStart = () => {
 		draggingRef.current = true;
 		setIsSorting( true );
+		/* 拖到更小下标松手后 dnd-kit 会打幽灵 click，见 suppress-ghost-click-after-sort.utility.ts */
+		armGhostClickAfterSort();
 	};
 
 	const onDragEnd = ( event : DragEndEvent ) => {
 		draggingRef.current = false;
 		setIsSorting( false );
+		armGhostClickAfterSort();
 		const { active , over } = event;
 		if( !over || active.id === over.id ) {
 			return;
@@ -201,6 +230,7 @@ const MenuDropdown = ( {
 	const onDragCancel = () => {
 		draggingRef.current = false;
 		setIsSorting( false );
+		armGhostClickAfterSort();
 	};
 
 	return (
@@ -355,6 +385,12 @@ const MenuItemComponent = ( {
 
 	const handleClick = ( e : React.MouseEvent ) => {
 		e.stopPropagation();
+		if( sortable?.isDragging ) return;
+		/* 右键拖到更小下标后的幽灵 click 只拦 switch-ai，其它菜单项必须还能点。
+		   见 suppress-ghost-click-after-sort.utility.ts / docs/features/ai-list-reorder.md */
+		if( item.action === 'switch-ai' && isGhostClickAfterSort() ) {
+			return;
+		}
 		if( !item.enabled ) return;
 
 		if( hasSubmenu ) {
@@ -385,6 +421,7 @@ const MenuItemComponent = ( {
 			data-item-action={ item.action || '' }
 			data-item-payload={ typeof item.actionPayload === 'string' ? item.actionPayload : '' }
 			data-item-index={ itemIndex }
+			data-load-state={ item.loadState || undefined }
 			{ ...( sortable?.listeners ?? {} ) }
 			{ ...( sortable?.attributes ?? {} ) }
 			role="none"
@@ -522,6 +559,11 @@ const triggerAction = ( action : MenuView.Action ) => {
 
 
 import { RightClickMouseSensor } from './right-click-mouse-sensor.utility';
+import {
+	armGhostClickAfterSort ,
+	disarmGhostClickAfterSort ,
+	isGhostClickAfterSort,
+} from './suppress-ghost-click-after-sort.utility';
 import { reaxel_DropdownView } from '#DropdownView/reaxels/dropdown-view';
 import { getDropdownRootStyleVars } from '#shared/dropdown-geometry';
 import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';

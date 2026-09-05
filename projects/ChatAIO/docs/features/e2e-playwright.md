@@ -208,6 +208,7 @@ CI / 日常全量保持 `yarn test:e2e`，WATCH 为 0。不要在观测时用鼠
 | `ai-enable-draft-no-jump.spec.ts` | 只拨 Enabled 不 Save：行不跳分区，菜单仍无 Bravo | manage-ais-table-ux |
 | `ai-enable-save-walk.spec.ts` | 启用 Bravo + 表底 Save 后菜单与 Next AI Page 插入原下标 | ai-list-reorder |
 | `ai-reorder-switch-ai.spec.ts` | 右键拖 Switch AI：松手写盘；重排后环切跟新序 | ai-list-reorder |
+| `ai-reorder-closed-item.spec.ts` | 关掉中间页后再把开启页拖到其上方：不得重新实例化（真 WCV，非纯 CSS） | ai-list-reorder |
 | `ai-reorder-current-ai.spec.ts` | Current AI 下拉右键拖，契约与 Switch AI 相同 | menubar-current-ai-dropdown |
 | `ai-reorder-manage-ais.spec.ts` | 表内左键拖启用行：disabled 钉位、表底不亮 | manage-ais-table-ux |
 | `ai-reorder-echo-settings.spec.ts` | Settings 开着时 menubar 重排：表跟新序、不盖 Enabled 草稿 | ai-list-reorder |

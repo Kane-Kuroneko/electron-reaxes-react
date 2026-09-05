@@ -4,38 +4,14 @@
  * 设计：docs/features/ai-list-reorder.md 、docs/features/e2e-playwright.md
  */
 
-export const dismissDropdown = async( electronApp:ElectronApplication ) => {
-	const dropdown = findWindowByUrl( electronApp , 'DropdownView' );
-	if( !dropdown ) {
-		return;
-	}
-	try {
-		await dropdown.evaluate( () => {
-			const api = ( window as { api?:{ closeDropdownView?:() => void } } ).api;
-			api?.closeDropdownView?.();
-		} );
-	} catch {
-		/* 已经关了 */
-	}
-};
-
-export const waitForDropdownHidden = async(
-	electronApp : ElectronApplication ,
-	timeoutMs = 10_000,
-) => {
-	const dropdown = findWindowByUrl( electronApp , 'DropdownView' );
-	if( !dropdown ) {
-		return;
-	}
-	await dropdown.getByTestId( TEST_IDS.dropdown ).waitFor( {
-		state : 'hidden' ,
-		timeout : timeoutMs,
-	} );
-};
+export {
+	dismissDropdown ,
+	waitForDropdownHidden,
+} from './app-probe';
 
 /**
  * Dropdown 已开着时不要直接再点同一个顶级项（会 toggle 关掉）。
- * 先切到 View，再开 Switch AI。closeDropdownView 也不会清 MainView openMenuId。
+ * 先切到 View，再开 Switch AI。
  */
 export const reopenSwitchAiMenu = async(
 	electronApp : ElectronApplication ,
@@ -137,6 +113,50 @@ export const clickPreviousOpenedAi = (
 	return clickSwitchAiMenuItem( electronApp , mainWindow , MENU_IDS.prevInstantiated );
 };
 
+export const closeCurrentAiPage = async(
+	electronApp : ElectronApplication ,
+	mainWindow : Page,
+) => {
+	await focusHostWindowForObserve( electronApp );
+	await watchClick( mainWindow.locator( `[data-menu-id="${ MENU_IDS.view }"] button` ) );
+	const dropdown = await waitForVisibleDropdown( electronApp );
+	await enableActionOverlays( dropdown );
+	await watchClick( dropdown.locator( `[data-item-id="${ MENU_IDS.closeCurrentAi }"]` ) );
+};
+
+export const readSwitchAiLoadStates = async( dropdown:Page ) => {
+	const items = dropdown.locator( '[data-item-action="switch-ai"]' );
+	await expect( items.first() ).toBeVisible();
+	const count = await items.count();
+	const rows : { id : string; loadState : string }[] = [];
+	for( let i = 0; i < count; i++ ) {
+		const item = items.nth( i );
+		const id = await item.getAttribute( 'data-item-payload' );
+		const loadState = await item.getAttribute( 'data-load-state' );
+		if( id ) {
+			rows.push( {
+				id ,
+				loadState : loadState || '',
+			} );
+		}
+	}
+	return rows;
+};
+
+export const ensureVisibleSwitchAiMenu = async(
+	dropdown : Page ,
+	openMenu : () => Promise<Page>,
+) => {
+	try {
+		if( await dropdown.getByTestId( TEST_IDS.dropdown ).isVisible() ) {
+			return dropdown;
+		}
+	} catch {
+		/* 已经关了 */
+	}
+	return openMenu();
+};
+
 /**
  * Switch AI 右键拖：activationConstraint.distance = 8。
  * 对齐 Playwright 对 dnd-kit 的建议：不要 dragTo，用 right + steps。
@@ -176,7 +196,6 @@ export const rightClickDragMenuItem = async(
 };
 
 import {
-	findWindowByUrl ,
 	waitForE2ESnapshot ,
 	waitForVisibleDropdown,
 } from './app-probe';

@@ -161,7 +161,10 @@ export const reaxel_MainView = reaxel( () => {
 
 		useIpcRendererToMain( 'dropdown-view:close' ).on( () => {
 			runMenubarHandler( 'dropdown-view:close' , () => {
-				hideDropdownView( { syncMainView : false } );
+				/* 必须同步清 MainView.openMenuId。否则 closeDropdownView 只藏窗，
+				   随后 rebuildMenu → updateStructure 会按残留 id 把 Switch AI 再打开，
+				   Application → Settings 会点到错误的下拉。见 docs/features/ai-list-reorder.md */
+				hideDropdownView();
 			} );
 		} );
 

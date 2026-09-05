@@ -426,6 +426,40 @@ export const waitForVisibleDropdown = async(
 	return page;
 };
 
+export const waitForDropdownHidden = async(
+	electronApp : ElectronApplication ,
+	timeoutMs = 10_000,
+) => {
+	const dropdown = findWindowByUrl( electronApp , 'DropdownView' );
+	if( !dropdown ) {
+		return;
+	}
+	try {
+		await dropdown.getByTestId( TEST_IDS.dropdown ).waitFor( {
+			state : 'hidden' ,
+			timeout : timeoutMs,
+		} );
+	} catch {
+		/* 已经卸了 */
+	}
+};
+
+export const dismissDropdown = async( electronApp : ElectronApplication ) => {
+	const dropdown = findWindowByUrl( electronApp , 'DropdownView' );
+	if( !dropdown ) {
+		return;
+	}
+	try {
+		await dropdown.evaluate( () => {
+			const api = ( window as { api?:{ closeDropdownView?:() => void } } ).api;
+			api?.closeDropdownView?.();
+		} );
+	} catch {
+		/* 已经关了 */
+	}
+	await waitForDropdownHidden( electronApp );
+};
+
 /* Settings 是中心 WebContentsView，不是独立 BW；Playwright 1.62 起 windows() 仍收得到。
    不要用 electronApp.browserWindow(page)：fromWebContents(WCV) 为 null。
    见 docs/features/e2e-playwright.md 「Settings WCV：探路结论」 */
@@ -444,13 +478,15 @@ export const waitForSettingsPage = async(
 };
 
 /* Application → Settings；等探针 settingsViewOpened 后再等 Settings Page。
-   Settings preload 可能比菜单点击更早把 SettingsView 放进 windows()，用 URL 查找即可。 */
+   Settings preload 可能比菜单点击更早把 SettingsView 放进 windows()，用 URL 查找即可。
+   先关掉残留下拉：Switch AI 拖完后 Dropdown 可能仍可见，waitForVisibleDropdown 会误认。 */
 export const openSettingsFromApplicationMenu = async(
 	electronApp : ElectronApplication ,
 	mainWindow : Page ,
 	timeoutMs = 30_000,
 ) => {
 	await focusHostWindowForObserve( electronApp );
+	await dismissDropdown( electronApp );
 	await watchClick( mainWindow.locator( `[data-menu-id="${ MENU_IDS.application }"] button` ) );
 	const dropdown = await waitForVisibleDropdown( electronApp );
 	await enableActionOverlays( dropdown );

@@ -8,7 +8,7 @@ Switch AI 菜单与 Settings → Manage AIs 共用一套**立即持久化**的�
 
 1. **菜单顺序 = 持久化 `AIs` 数组顺序**，disabled 项不出现在 Switch AI。
 2. **排序松手即写盘**。Settings 拖拽不进表底 dirty；启用 / 预加载 / 待删除走表底 Save；弹窗改字段当场 persist。页脚不管 AIs。见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)。
-3. **左键切 AI，右键拖排序**。Application / View 菜单、Switch AI 底栏 Prev/Next 不参与拖拽。中区 Current AI 精简下拉同样走这条手势（无 footer）。右键**按下即** `grabbing`（在 sensor 的 mousedown 同步改光标，不经 React setState）；条目抬起 / 写盘仍要移动 ≥ 8px。
+3. **左键切 AI，右键拖排序**。Application / View 菜单、Switch AI 底栏 Prev/Next 不参与拖拽。中区 Current AI 精简下拉同样走这条手势（无 footer）。右键**按下即** `grabbing`（在 sensor 的 mousedown 同步改光标，不经 React setState）；条目抬起 / 写盘仍要移动 ≥ 8px。右键拖**不得**切页、不得为未打开项创建 WCV。dnd-kit 把条目拖到更小下标时松手会再打一发 click（[dnd-kit#172](https://github.com/clauderic/dnd-kit/issues/172)）；那发 click 若走到 `switch-ai` 会 `showAIView` 把刚关掉的页重新实例化。必须在 `switch-ai` 的 handleClick 里忽略这一发，不要在 window capture 里拦所有 click。
 4. **禁止**为排序改 menubar `-webkit-app-region: drag` 或 FloatingView `forward: true`。排序只发生在 Dropdown 窗口或 Settings 表内。
 5. Renderer → Main 的 id 列表必须 `cloneForIPC`。
 
@@ -49,7 +49,8 @@ flowchart TD
 
 - RPC `reorder-ais(orderedIds: string[]) → { success, error? }`
 - MTR `ais-order-changed(orderedIds)`：把 menubar 新序同步进已打开的 Settings store
-- **不要**在 Settings 自己调用 `reorder-ais` 后再 echo 回 Settings：会盖掉未保存新建项，或打断连续拖拽
+- 不要在 Settings 自己调用 `reorder-ais` 后再 echo 回 Settings：会盖掉未保存新建项，或打断连续拖拽
+- `reorder-ais` 成功后只 `rebuildMenu`（刷新 loadState / 序），**不要** `syncAIViewsWithConfig`：那条路径会为 current / preload 补 WCV，已关闭的页会被重新打开
 
 ## Settings dirty
 
@@ -74,8 +75,10 @@ flowchart TD
 |------|------|
 | [`src/shared/utils/merge-enabled-ai-order.utility.ts`](../../src/shared/utils/merge-enabled-ai-order.utility.ts) | 写盘 / dirty / echo / Settings payload 的产品契约函数 |
 | [`src/Main/services/settings/ai-config-service.ts`](../../src/Main/services/settings/ai-config-service.ts) | `reorderEnabledAIs` |
-| [`src/Main/reaxels/Settings/index.ts`](../../src/Main/reaxels/Settings/index.ts) | IPC、rebuildMenu、按需 echo |
-| [`src/Views/DropdownView/App.tsx`](../../src/Views/DropdownView/App.tsx) | 右键 sensor、AI / footer 分区 |
+| [`src/Main/reaxels/Settings/index.ts`](../../src/Main/reaxels/Settings/index.ts) | IPC、rebuildMenu、按需 echo；`reorder-ais` 不 `syncAIViewsWithConfig` |
+| [`e2e/tests/ai-reorder-closed-item.spec.ts`](../../e2e/tests/ai-reorder-closed-item.spec.ts) | 关掉中间页后再把开启页拖到其上方：探针 `instantiatedAIIds` 与 load-dot 都不得把被关页标成打开 |
+| [`src/Views/DropdownView/App.tsx`](../../src/Views/DropdownView/App.tsx) | 右键 sensor、AI / footer 分区；吞掉拖到更小下标后的幽灵 click |
+| [`src/Views/DropdownView/suppress-ghost-click-after-sort.utility.ts`](../../src/Views/DropdownView/suppress-ghost-click-after-sort.utility.ts) | 松手后短窗内忽略 `switch-ai` 的 click，避免误 `showAIView`；不拦截其它菜单项 |
 | [`src/Views/DropdownView/right-click-mouse-sensor.utility.ts`](../../src/Views/DropdownView/right-click-mouse-sensor.utility.ts) | 只激活 `button === 2`；mousedown 同步武装 grabbing |
 | [`src/shared/utils/manage-ais-table.utility.ts`](../../src/shared/utils/manage-ais-table.utility.ts) | Manage AIs 展示序 / 列筛选 / 拖启用项→槽位映射 |
 | [`src/Views/SettingsView/reaxels/settings-view/index.ts`](../../src/Views/SettingsView/reaxels/settings-view/index.ts) | `persistCommittedAIOrder` / `applyExternalEnabledAIOrder` |
@@ -92,4 +95,6 @@ flowchart TD
 - 不要在 Manage AIs drop 时对整表 `arrayMove`：会挤走未启用项。表内映射见 [`manage-ais-table-ux.md`](./manage-ais-table-ux.md)。
 - 不要为排序给 Dropdown 加 `app-region: drag`。
 - 不要把 Switch AI 的 grabbing 光标绑在 `onDragStart` / `isDragging` 上：按下到移动 8px 之间会一直是 pointer；须在右键 mousedown 同步武装。
+- 不要让右键拖排序松手后的 click 走到 `switch-ai`：会把 drop 落点（常是刚关掉的未打开页）重新 `showAIView`。这是真 WCV，不是 load-dot CSS 错位。只在 `switch-ai` 的 handleClick 里忽略那一发；不要在 `window` capture 里 `stopPropagation`，否则随后 Application → Settings 会被误伤。
+- 不要让 `closeDropdownView` 只藏窗不清 `MainView.openMenuId`：随后 `rebuildMenu` 会按残留 id 把 Switch AI 再打开。
 - 不要把测试写成内部 helper（`mergeEnabledAIOrder` / `isIdPermutation`）的黄金输出快照。
