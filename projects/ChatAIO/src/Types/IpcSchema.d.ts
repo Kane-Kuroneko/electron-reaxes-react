@@ -50,7 +50,8 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	/* 映射后的默认页实例，不是供应商目录原样。见 docs/feature-proposal--ai-catalog-source.md */
 	'get-default-ais': IpcStructure.IpcRpc<[void], AI.AIItem[]>;
 	'update-ai': IpcStructure.IpcRpc<[id: string, updates: Partial<AI.AIItem>], AI.AIItem | null>;
-	'add-ai': IpcStructure.IpcRpc<[ai: Omit<AI.AIItem, 'id'> & { id?: string }], AI.AIItem>;
+	/* options.insertAfterId：Clone 时把新页插到母项下方；缺省追加表底 */
+	'add-ai': IpcStructure.IpcRpc<[ai: Omit<AI.AIItem, 'id'> & { id?: string }, options?: { insertAfterId?: string }], AI.AIItem>;
 	'delete-ai': IpcStructure.IpcRpc<[id: string], boolean>;
 	'reorder-ais': IpcStructure.IpcRpc<[enabledIds: string[]], { success: boolean, error?: string }>; /* 全表 id 或 enabled-only id，见 docs/features/ai-list-reorder.md */
 	'reset-ais-to-defaults': IpcStructure.IpcRpc<[void], { success: boolean, error?: string }>;

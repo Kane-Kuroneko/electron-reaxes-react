@@ -280,8 +280,8 @@ export const reaxel_Settings = reaxel( () => {
 		return await persistUpdatedAI( id , updates );
 	} );
 	
-	useIpcRpc( 'add-ai' ).handle( async( { event } , ai ) => {
-		const newAI = aiConfigService.addAI( ai );
+	useIpcRpc( 'add-ai' ).handle( async( { event } , ai , options ) => {
+		const newAI = aiConfigService.addAI( ai , options );
 		await syncRuntimeViews();
 		return newAI;
 	} );

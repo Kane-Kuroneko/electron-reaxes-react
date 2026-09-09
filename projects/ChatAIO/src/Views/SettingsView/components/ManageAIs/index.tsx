@@ -241,7 +241,12 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			isCommittedDisabled,
 			isAIsDirty,
 		} = reaxel_SettingsView();
+		/* 显式读 pendingDeleteAIIds 供 MobX 依赖收集：rowClassName / 列 render 由 rc-table 在响应式
+		 * 上下文外调用，标记/撤销删除的行样式要靠本面板重渲染（新 dataSource / rowClassName 引用）带动
+		 * 表体刷新。禁止把它拼进 Table 的 key（e35835056 曾如此修「MobX 回调追踪断裂」）——key 变化
+		 * 会整表 remount，.ant-table-body 滚动位置弹回顶部。见 docs/features/manage-ais-table-ux.md */
 		const pendingDeleteAIIds = reaxel_SettingsView.store.UIControls.manage_AIs.pendingDeleteAIIds;
+		void pendingDeleteAIIds;
 		const catalogUpdate = reaxel_SettingsView.store.UIControls.manage_AIs.catalog_update;
 		const catalogChromeLocked = shouldLockSettingsChromeForCatalogUpdate( catalogUpdate );
 		const aisDirty = isAIsDirty();
@@ -428,8 +433,8 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 						{ /* 先画出工具栏，下一帧再挂 Table，避免 120ms+ 长任务挡住切页。 */ }
 						{ /* 空 dataSource 仍挂 Table；筛选 Input 在 overlays portal，不进 filterDropdown。 */ }
 						{ tableReady && tableScrollY != null ? <>
+							{ /* 不给 Table 挂随状态变化的 key：remount 会重建 .ant-table-body 丢滚动位置。 */ }
 							<Table
-							key={ `ais-table-${ pendingDeleteAIIds.join(',') || 'none' }` }
 							className={ displayedAIs.length === 0 ? 'manage-ais-table manage-ais-table--empty' : 'manage-ais-table' }
 							style={ { width: '100%' } }
 							/* 空表仍 fixed，配合 less 的 scrollbar-gutter，避免 colgroup 被 noData 丢掉后整表变宽。 */
@@ -636,8 +641,23 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			&& store.mode === 'edit'
 			&& reaxel_SettingsView.store.Data.AIs[0]?.id === store.editing_id;
 
+		/** URL 处于行内编辑态时，把草稿按 suffix Save 的规则写回 url_override（与默认相同则清空）。 */
+		const commitUrlDraftIfEditing = () => {
+			if( isCustomFamily || !urlEditing ) {
+				return;
+			}
+			const trimmed = urlDraft.trim();
+			const defaultUrl = getFamilyDefaultUrl( fields.AI_family , catalogDefaults );
+			setState.fields( {
+				url_override : trimmed && trimmed !== defaultUrl ? trimmed : null,
+			} );
+			setUrlEditing( false );
+		};
+
 		const handleSave = async() => {
 			/* 弹窗 Save 当场 update-ai / add-ai，不进表底 dirty。见 docs/features/manage-ais-save-scopes.md */
+			/* Enter 触发保存前可能刚 commit 过 URL 草稿，这里从 store 取最新 fields，别用渲染闭包里的旧引用。 */
+			const fields = store.fields;
 			const effectiveUrl = ( isCustomFamily ? fields.url : fields.url_override || familyDefaultUrl ).trim();
 			if( !effectiveUrl ) {
 				message.error( i18n( 'URL is required for custom AI' ) );
@@ -677,6 +697,27 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			}
 		};
 
+		/**
+		 * 任意文本输入框内按 Enter 即触发保存（表单不合法时 handleSave 自己报错拦下）。
+		 * 排除 Select 搜索框（Enter 是选中选项）与 radio/checkbox；输入法合成中的 Enter 不算。
+		 * URL 行内编辑态先按 suffix Save 规则提交草稿再保存，避免 Enter 把未提交的 URL 静默丢掉。
+		 */
+		const handleFormKeyDown = ( event:React.KeyboardEvent<HTMLFormElement> ) => {
+			if( event.key !== 'Enter' || event.nativeEvent.isComposing || saving ) {
+				return;
+			}
+			const target = event.target as HTMLElement;
+			if( !( target instanceof HTMLInputElement ) ) {
+				return;
+			}
+			if( target.type === 'radio' || target.type === 'checkbox' || target.closest( '.ant-select' ) ) {
+				return;
+			}
+			event.preventDefault();
+			commitUrlDraftIfEditing();
+			void handleSave();
+		};
+
 		// URL尾部按钮组
 		const urlSuffix = isCustomFamily
 			? null
@@ -687,12 +728,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 					size="small"
 					onClick={ () => {
 						// Save: 将draft保存到url_override
-						const trimmed = urlDraft.trim();
-						const defaultUrl = getFamilyDefaultUrl( fields.AI_family , catalogDefaults );
-						setState.fields( {
-							url_override : trimmed && trimmed !== defaultUrl ? trimmed : null,
-						} );
-						setUrlEditing( false );
+						commitUrlDraftIfEditing();
 					} }
 				>Save</Button>
 				<Button
@@ -740,7 +776,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			okButtonProps={ { disabled : saving } }
 			width={ 520 }
 		>
-			<Form layout="vertical" style={ { marginTop : 16 } }>
+			<Form layout="vertical" style={ { marginTop : 16 } } onKeyDown={ handleFormKeyDown }>
 				<Form.Item label={<I18n>AI name</I18n>}>
 					<Input
 						value={ fields.label }

@@ -61,6 +61,14 @@ export const buildE2EUserAisFile = ( catalogVendorIds:string[] ):E2EUserAisFile 
 	};
 };
 
+/** 只给滚动类用例用：追加 20 页启用 AI，让 Manage AIs 表出现纵向滚动条。 */
+export const patchManyAisForScroll:E2EUserAisPatch = ( file ) => {
+	for( let i = 1; i <= 20; i++ ) {
+		const seq = String( i ).padStart( 2 , '0' );
+		file.ais.push( e2eAIItem( `custom-e2e-scroll-${ seq }` , `E2E Scroll ${ seq }` , false ) );
+	}
+};
+
 /** 只给单独用例用：不要改返回用户默认 seed，否则 ai-opened-walk 会假绿。 */
 export const patchCharliePreloadOnStartup:E2EUserAisPatch = ( file ) => {
 	const charlie = file.ais.find( ( ai ) => ai.id === E2E_AI_C.id );

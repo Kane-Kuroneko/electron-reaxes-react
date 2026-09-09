@@ -77,6 +77,8 @@ export const reaxel_SettingsView = reaxel( () => {
 					visible : false ,
 					mode : checkAs<"edit" | "add">( 'edit' ) ,
 					editing_id : null ,
+					/** Clone 打开时记录母 item id：保存时新条目插到母项下方而非表底。 */
+					clone_source_id : checkAs<string | null>( null ) ,
 					fields : defaultAIFields(),
 				},
 			} ,
@@ -464,11 +466,21 @@ export const reaxel_SettingsView = reaxel( () => {
 	 * 弹窗 Save 成功后只把这一条并进 committed，其它行的 Enabled/待删除草稿仍 dirty。
 	 * 不覆盖本地未提交的 disabled。见 docs/features/manage-ais-save-scopes.md
 	 */
-	function commitOneAIAfterPersist( persisted:AI.AIItem ) {
+	function commitOneAIAfterPersist( persisted:AI.AIItem , insertAfterId?:string | null ) {
 		mutate.Data( state => {
 			const index = state.AIs.findIndex( ai => ai.id === persisted.id );
 			if( index === -1 ) {
-				state.AIs = [ ...state.AIs , persisted ];
+				/* Clone：与主进程 add-ai 的 insertAfterId 落位保持一致，插到母项下方。 */
+				const anchorIndex = insertAfterId
+					? state.AIs.findIndex( ai => ai.id === insertAfterId )
+					: -1;
+				state.AIs = anchorIndex === -1
+					? [ ...state.AIs , persisted ]
+					: [
+						...state.AIs.slice( 0 , anchorIndex + 1 ) ,
+						persisted ,
+						...state.AIs.slice( anchorIndex + 1 ),
+					];
 				return;
 			}
 			state.AIs = state.AIs.map( ( ai , i ) => i === index
@@ -499,11 +511,16 @@ export const reaxel_SettingsView = reaxel( () => {
 	async function persistAIFromModal( nextAI:AI.AIItem , mode:'edit' | 'add' ):Promise<{ success:boolean; error?:string }> {
 		try {
 			if( mode === 'add' ) {
-				const created = await addAI( cloneForIPC( nextAI ) );
+				/* Clone 的新条目插到母项下方；普通 Add 仍然追加到表底。 */
+				const insertAfterId = store.UIControls.manage_AIs.edit_AI_modal.clone_source_id;
+				const created = await addAI(
+					cloneForIPC( nextAI ) ,
+					insertAfterId ? { insertAfterId } : undefined,
+				);
 				if( !created ) {
 					return { success : false , error : 'Failed to add AI page' };
 				}
-				commitOneAIAfterPersist( created );
+				commitOneAIAfterPersist( created , insertAfterId );
 				return { success : true };
 			}
 			const { disabled : _disabled , id , ...updates } = nextAI;
@@ -530,6 +547,7 @@ export const reaxel_SettingsView = reaxel( () => {
 			visible ,
 			mode : AI_id ? 'edit' : 'add' ,
 			editing_id : AI_id || null ,
+			clone_source_id : null ,
 			fields : targetFields
 				? checkAs<AI.EditAIItem>( cloneForIPC( targetFields ) )
 				: defaultAIFields(),
@@ -543,6 +561,7 @@ export const reaxel_SettingsView = reaxel( () => {
 			visible : true ,
 			mode : 'add' ,
 			editing_id : null ,
+			clone_source_id : AI_id ,
 			fields : checkAs<AI.EditAIItem>( cloneForIPC( {
 				label : targetFields.label ,
 				AI_family : targetFields.AI_family ,

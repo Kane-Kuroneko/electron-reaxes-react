@@ -55,6 +55,22 @@ antd Table `dataSource=[]` 时：
 
 空表 placeholder 没有 `data-row-key`，不能走 `@dnd-kit/sortable`（`SortableRow` 对此走普通 `<tr>`）。
 
+### 删除确认后滚动条弹顶：不要给 Table 挂随状态变的 key
+
+**症状**：滚到表格下方点 Delete → Popover 确认后，`.ant-table-body` 滚动位置弹回顶部，看起来像整表被重新渲染——因为确实是。
+
+**根因**：`e35835056` 为修「MobX 回调追踪断裂」（标记待删除后行背景 / Edit/Clone 隐藏不刷新），给 `<Table>` 挂了 `key={ais-table-${pendingDeleteAIIds.join(',')}}`。React key 变化 = 卸载重建整个 Table 实例，antd 重建 `.ant-table-body`，滚动位置归零。标记待删、撤销、表底 Save 清空 pending，三个时机都会触发。
+
+**正确修法**：Table 不挂 key。响应式契约是——
+
+1. `RCManageAIsPanel`（reaxper）render 里**显式读** `pendingDeleteAIIds`（且 `isAIsDirty()` 内部也读它），MobX 追踪到变化即重渲面板。
+2. 面板重渲 → `displayedAIs` / `rowClassName` 都是新引用 → rc-table 的 immutable context 触发整个表体重渲 → `rowClassName`（`ai-row--pending-delete`）与 Operations 列 `render`（Edit/Clone 隐藏）重新求值。
+3. 行内控件（`DeleteAICell` / `AIEnabledSwitch` / `PreloadOnStartupCheckbox` / `SortableDataRow`）各自是 reaxper，读 `isAIPendingDeletion` 自行响应。
+
+即：列 `render` / `rowClassName` 这类由 rc-table 在响应式上下文外调用的回调，靠**面板重渲染带动**；per-cell 交互态靠 **reaxper 细粒度组件**。两条腿都在，不需要 remount。
+
+回归用例：[`e2e/tests/manage-ais-delete-scroll.spec.ts`](../../e2e/tests/manage-ais-delete-scroll.spec.ts)——给 `.ant-table-body` 打 dataset sentinel（remount 会重建节点丢 sentinel），断言删除确认 / 撤销 / 表底 Save 后 sentinel 仍在且 scrollTop 不弹顶。seed 用 `patchManyAisForScroll` 追加 20 行使表格可滚动。
+
 ### 空表表头宽度为什么会跳
 
 `scroll.y` 下 rc-table（本仓 `7.54.0`，antd 5.29.3 仍如此）两处一起抖：
@@ -77,6 +93,7 @@ antd Table `dataSource=[]` 时：
 | [`e2e/tests/ai-reorder-manage-ais.spec.ts`](../../e2e/tests/ai-reorder-manage-ais.spec.ts) | 表内左键拖启用行 |
 | [`e2e/tests/manage-ais-filter.spec.ts`](../../e2e/tests/manage-ais-filter.spec.ts) | 列筛选不计 dirty；空表 portal Input |
 | [`e2e/tests/ai-enable-draft-no-jump.spec.ts`](../../e2e/tests/ai-enable-draft-no-jump.spec.ts) | 未 Save 的 Enabled 不跳分区、不进菜单 |
+| [`e2e/tests/manage-ais-delete-scroll.spec.ts`](../../e2e/tests/manage-ais-delete-scroll.spec.ts) | 删除确认 / 撤销 / Save 不整表 remount、滚动不弹顶 |
 
 ## 禁止项
 
@@ -90,6 +107,7 @@ antd Table `dataSource=[]` 时：
 - 不要把筛选 Input 挂在 antd `filterDropdown` 里：空 `dataSource` 会跟表头单元格一起拆掉它。
 - 不要每次按键重建 Table `columns`。
 - 不要把 `column_filter` 写进 `buildSettingsFromStore` / dirty 快照。
+- **不要给 `<Table>` 挂随状态变化的 React key**（如拼 `pendingDeleteAIIds`）：整表 remount，滚动弹顶。行样式刷新走面板重渲 + reaxper 细粒度组件（见上文「删除确认后滚动条弹顶」）。
 
 ## 与现有文档的关系
 

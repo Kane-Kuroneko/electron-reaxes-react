@@ -339,15 +339,25 @@ class AIConfigService {
 		return effectiveAIs[index];
 	}
 	
-	/** 用户加一页（新实例 id）。同 family 第二页不会占用供应商 UUID。 */
-	addAI( ai:Omit<AI.AIItem , 'id'> & { id?: string } ):AI.AIItem {
+	/**
+	 * 用户加一页（新实例 id）。同 family 第二页不会占用供应商 UUID。
+	 * options.insertAfterId：Clone 场景把新页插到母项下方；找不到母项则退回追加表底。
+	 */
+	addAI( ai:Omit<AI.AIItem , 'id'> & { id?: string } , options?:{ insertAfterId?: string } ):AI.AIItem {
 		const effectiveAIs = this.getEffectiveAIs();
 		const newAI = this.normalizeAI( {
 			...ai ,
 			id : ai.id || this.generateUniqueId(),
 		} as AI.AIItem );
 		
-		effectiveAIs.push( newAI );
+		const anchorIndex = options?.insertAfterId
+			? effectiveAIs.findIndex( item => item.id === options.insertAfterId )
+			: -1;
+		if( anchorIndex === -1 ) {
+			effectiveAIs.push( newAI );
+		} else {
+			effectiveAIs.splice( anchorIndex + 1 , 0 , newAI );
+		}
 		this.replaceAllAIs( effectiveAIs );
 		
 		return newAI;

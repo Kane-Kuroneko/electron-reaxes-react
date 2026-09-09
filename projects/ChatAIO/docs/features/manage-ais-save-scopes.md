@@ -11,10 +11,12 @@ Settings 页脚不再为 AI 表 dirty。Manage AIs 表底有自己的保存 / �
 3. **表底 Save** 走 `apply-ais`：把当前表（去掉待删除行）整表写盘并 `syncRuntimeViews`。**表底 Undo Changes** 只 `get-ais` 灌回表格，不动主题 / 代理等。
 4. **编辑弹窗 Save 当场 persist。** Edit → `update-ai`（**不带 `disabled`**，启用列仍归表底）；Add / Clone → `add-ai`。成功后只把这一条并进 committed 快照，其它行未保存的 Enabled / Preload / 待删除仍 dirty。
 5. **弹窗 Cancel** 只丢弹窗草稿，不改 store、不写盘。
-6. **拖拽排序仍松手即写盘**（`reorder-ais`），不计表级 dirty。
-7. **Startup AI Page 单选项在 Manage AIs 页上，但是 runtime 配置**，走页脚 dirty，不走表底。
-8. **目录检查 / 应用**：`isDirty() || isAIsDirty()` 都挡住。合并写的是磁盘 user 表，不能盖掉表内未保存行，也不能在 Settings 草稿未落盘时改目录。
-9. **Renderer → Main 的 AI 数组必须 `cloneForIPC`。**
+6. **弹窗内任意文本输入框按 Enter 即触发 Save**（与点 Save 按钮等价；URL 必填等校验不过则报错留在弹窗）。排除 Select 搜索框（Enter 是选中选项）与 radio/checkbox；输入法合成态的 Enter 不算。URL 处于行内编辑态时，Enter 先按 suffix Save 规则提交草稿再保存，避免静默丢弃未提交的 URL。实现：`EditAIModal` 的 `<Form onKeyDown>`，`handleSave` 保存前从 store 重取 `fields`（不能用渲染闭包旧引用）。
+7. **Clone 的新条目插到母项下方**（真实序），不是表底：`changeCloneAIModalVisible` 记录 `clone_source_id`，`add-ai` IPC 带 `options.insertAfterId`，主进程 `aiConfigService.addAI` 按母项下标 splice；`commitOneAIAfterPersist` 同步在本地 store 同位插入。普通 Add 仍追加表底。母项被并发删除时退回追加表底。
+8. **拖拽排序仍松手即写盘**（`reorder-ais`），不计表级 dirty。
+9. **Startup AI Page 单选项在 Manage AIs 页上，但是 runtime 配置**，走页脚 dirty，不走表底。
+10. **目录检查 / 应用**：`isDirty() || isAIsDirty()` 都挡住。合并写的是磁盘 user 表，不能盖掉表内未保存行，也不能在 Settings 草稿未落盘时改目录。
+11. **Renderer → Main 的 AI 数组必须 `cloneForIPC`。**
 
 ## 入口与数据流
 

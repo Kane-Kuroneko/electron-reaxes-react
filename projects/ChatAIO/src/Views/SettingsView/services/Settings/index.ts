@@ -32,8 +32,8 @@ export const updateAI = (id: string, updates: Partial<AI.AIItem>) => {
 	return api.updateAI(id, cloneForIPC(updates));
 }
 
-export const addAI = (ai: Omit<AI.AIItem, 'id'> & { id?: string }) => {
-	return api.addAI(cloneForIPC(ai));
+export const addAI = (ai: Omit<AI.AIItem, 'id'> & { id?: string }, options?: { insertAfterId?: string }) => {
+	return api.addAI(cloneForIPC(ai), options);
 }
 
 export const deleteAI = (id: string) => {
