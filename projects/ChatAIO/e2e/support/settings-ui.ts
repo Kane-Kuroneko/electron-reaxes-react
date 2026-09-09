@@ -75,12 +75,20 @@ export const expectFooterDirty = async( settings:Page ) => {
 	await expect( footerApply( settings ) ).toBeEnabled();
 };
 
+export const manageAisDialog = ( settings:Page , title:RegExp | string ) => {
+	return settings.getByRole( 'dialog' , { name : title } );
+};
+
 export const dialogSave = ( settings:Page ) => {
 	return settings.getByRole( 'dialog' ).getByRole( 'button' , { name : 'Save' , exact : true } );
 };
 
 export const dialogCancel = ( settings:Page ) => {
 	return settings.getByRole( 'dialog' ).getByRole( 'button' , { name : 'Cancel' } );
+};
+
+export const checkAiCatalogButton = ( settings:Page ) => {
+	return settings.getByRole( 'button' , { name : 'Check AI catalog' } );
 };
 
 export const dragHandleInRow = ( settings:Page , aiId:string ) => {

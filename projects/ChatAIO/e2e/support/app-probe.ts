@@ -426,9 +426,42 @@ export const waitForVisibleDropdown = async(
 	return page;
 };
 
+export const dropdownItem = ( dropdown:Page , itemId:string ) => {
+	return dropdown.locator( `[data-item-id="${ itemId }"]` );
+};
+
+const isDropdownItemVisible = async( electronApp:ElectronApplication , itemId:string ) => {
+	const dropdown = findWindowByUrl( electronApp , 'DropdownView' );
+	if( !dropdown ) {
+		return false;
+	}
+	try {
+		return await dropdownItem( dropdown , itemId ).isVisible();
+	} catch {
+		return false;
+	}
+};
+
+/**
+ * 等到指定菜单项出现。DropdownView 是同一扇窗，只等「下拉可见」会把残留的 Switch AI 当成 Application。
+ * 见 docs/features/e2e-playwright.md 「写 DOM 用例时记住」第 8 条。
+ */
+export const waitForDropdownItem = async(
+	electronApp : ElectronApplication ,
+	itemId : string ,
+	timeoutMs = 20_000,
+) => {
+	const page = await waitForVisibleDropdown( electronApp , timeoutMs );
+	await dropdownItem( page , itemId ).waitFor( {
+		state : 'visible' ,
+		timeout : timeoutMs,
+	} );
+	return page;
+};
+
 export const waitForDropdownHidden = async(
 	electronApp : ElectronApplication ,
-	timeoutMs = 10_000,
+	timeoutMs = 2_000,
 ) => {
 	const dropdown = findWindowByUrl( electronApp , 'DropdownView' );
 	if( !dropdown ) {
@@ -440,7 +473,7 @@ export const waitForDropdownHidden = async(
 			timeout : timeoutMs,
 		} );
 	} catch {
-		/* 已经卸了 */
+		/* 已经卸了，或 rebuildMenu 又打开了；调用方用菜单项 id 再确认。 */
 	}
 };
 
@@ -460,6 +493,45 @@ export const dismissDropdown = async( electronApp : ElectronApplication ) => {
 	await waitForDropdownHidden( electronApp );
 };
 
+const topMenuButton = ( mainWindow:Page , menuId:string ) => {
+	return mainWindow.locator( `[data-menu-id="${ menuId }"] button` );
+};
+
+/**
+ * 点顶级菜单，等到目标项可见。点错（toggle 关掉、残留 Switch AI）时先切到另一个顶级菜单再试一次。
+ * 对齐 gemini-desktop / Playwright 社区：等具体 item，不要只等下拉窗。
+ */
+export const openTopMenuUntilItem = async(
+	electronApp : ElectronApplication ,
+	mainWindow : Page ,
+	menuId : string ,
+	itemId : string ,
+	timeoutMs = 15_000,
+) => {
+	await focusHostWindowForObserve( electronApp );
+	if( await isDropdownItemVisible( electronApp , itemId ) ) {
+		const open = await waitForVisibleDropdown( electronApp , timeoutMs );
+		await enableActionOverlays( open );
+		return open;
+	}
+	await watchClick( topMenuButton( mainWindow , menuId ) );
+	try {
+		const dropdown = await waitForDropdownItem( electronApp , itemId , 2_000 );
+		await enableActionOverlays( dropdown );
+		return dropdown;
+	} catch {
+		/* 下拉仍是上一份菜单，或同项 toggle 把窗关了。 */
+	}
+	const resetMenuId = menuId === MENU_IDS.view ? MENU_IDS.application : MENU_IDS.view;
+	const resetItemId = resetMenuId === MENU_IDS.view ? MENU_IDS.promptLeft : MENU_IDS.settings;
+	await watchClick( topMenuButton( mainWindow , resetMenuId ) );
+	await waitForDropdownItem( electronApp , resetItemId , timeoutMs );
+	await watchClick( topMenuButton( mainWindow , menuId ) );
+	const retry = await waitForDropdownItem( electronApp , itemId , timeoutMs );
+	await enableActionOverlays( retry );
+	return retry;
+};
+
 /* Settings 是中心 WebContentsView，不是独立 BW；Playwright 1.62 起 windows() 仍收得到。
    不要用 electronApp.browserWindow(page)：fromWebContents(WCV) 为 null。
    见 docs/features/e2e-playwright.md 「Settings WCV：探路结论」 */
@@ -477,9 +549,8 @@ export const waitForSettingsPage = async(
 	return page;
 };
 
-/* Application → Settings；等探针 settingsViewOpened 后再等 Settings Page。
-   Settings preload 可能比菜单点击更早把 SettingsView 放进 windows()，用 URL 查找即可。
-   先关掉残留下拉：Switch AI 拖完后 Dropdown 可能仍可见，waitForVisibleDropdown 会误认。 */
+/* Application → Settings。必须等到 Settings 项本身可见，不能只等 Dropdown 窗。
+   Switch AI 拖完 rebuildMenu 可能把同一扇下拉再打开；先 dismiss 再点 Application 仍可能点到错误菜单。 */
 export const openSettingsFromApplicationMenu = async(
 	electronApp : ElectronApplication ,
 	mainWindow : Page ,
@@ -487,10 +558,14 @@ export const openSettingsFromApplicationMenu = async(
 ) => {
 	await focusHostWindowForObserve( electronApp );
 	await dismissDropdown( electronApp );
-	await watchClick( mainWindow.locator( `[data-menu-id="${ MENU_IDS.application }"] button` ) );
-	const dropdown = await waitForVisibleDropdown( electronApp );
-	await enableActionOverlays( dropdown );
-	await watchClick( dropdown.locator( `[data-item-id="${ MENU_IDS.settings }"]` ) );
+	const dropdown = await openTopMenuUntilItem(
+		electronApp ,
+		mainWindow ,
+		MENU_IDS.application ,
+		MENU_IDS.settings ,
+		timeoutMs,
+	);
+	await watchClick( dropdownItem( dropdown , MENU_IDS.settings ) );
 	await waitForE2ESnapshot(
 		electronApp ,
 		( state ) => state.kind === 'main' && state.settingsViewOpened === true ,
@@ -510,9 +585,20 @@ export const exitSettingsWithoutSave = async(
 		( state ) => state.kind === 'main' && state.settingsViewOpened === false ,
 		timeoutMs,
 	);
+	const mainWindow = findWindowByUrl( electronApp , 'MainView' );
+	if( !mainWindow ) {
+		return;
+	}
+	const badge = mainWindow.getByTestId( TEST_IDS.currentAiBadge );
+	await badge.waitFor( {
+		state : 'visible' ,
+		timeout : timeoutMs,
+	} );
+	/* 已首展 Settings 关掉会 detach；badge 恢复可点再开菜单，避免拆页期间点 Application。 */
+	await expect( badge ).not.toHaveAttribute( 'aria-disabled' , 'true' );
 };
 
-import type { ElectronApplication , Page } from '@playwright/test';
+import { expect , type ElectronApplication , type Page } from '@playwright/test';
 import { MENU_IDS , TEST_IDS } from './selectors';
 import {
 	enableActionOverlays ,

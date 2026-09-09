@@ -58,7 +58,7 @@ Spectron 已死。本仓不引入打包后的 `findLatestBuild`：E2E 打 unpack
 5. 调 `applySettings` / `applyAIs` 探针前等 `runtimeViewsReady`（`kind==='main'` 在 Phase 0 就真了）。**mutating `evaluate` 不要把整份 settings 从 Playwright 克隆进 main**（structured clone 会丢 `startup`）；在 main 里 `getSettings()` 再改字段。Playwright 对返回的 Promise 是弱引用，纯 JS `async` 会被 V8 收成 `Promise was garbage collected`——evaluate 里用 `setTimeout` 钉住 native，**不要对 GC 再 retry apply**（可能已经写完）。见 [electron-playwright-helpers](https://www.npmjs.com/package/electron-playwright-helpers)。`user-settings.json` 的路径必须在 **每次 I/O** 读 `app.getPath('userData')`：主进程单例若在 `setAppProfilePath` 之前构造，会把文件写到 Electron 默认 userData，内存是新值、E2E 隔离盘仍是 seed。
 6. 改了 `src/Main` 必须 `yarn build:webpack`；只改 Settings renderer 同样要重建，否则 E2E 仍跑旧 `dist`。
 7. **返回用户 seed 写小型 `user-ais.json`**：`custom-e2e-a`…`d`（Bravo 默认关），URL `about:blank`，`deletedIds` 钉死 bundled 目录 + `dev-proxy-test`。不要假定菜单里还有 ChatGPT。常量：`e2e/support/e2e-ais.ts`。单独用例要改 seed 用 fixture `userAisPatch`，不要改默认表。
-8. **关下拉再立刻 `openSwitchAiMenu` 会不稳**：`closeDropdownView` 不清 MainView `openMenuId`，再点同一顶级项会被当成 toggle 收起。要换菜单先点 View 再开 Switch AI（`reopenSwitchAiMenu`）。能点当前已开菜单就别关再开。读 Manage AIs 行序用 `.manage-ais-table .ant-table-body`，避开 antd 的 hidden measure 行。Startup 单选点 `data-testid=startup-ai-page-first` 的 label（DOM `click()`），页脚 Apply 看 `data-testid=settings-footer-apply` 的 `data-dirty`。不要 `locator.check()`。
+8. **关下拉再立刻点同一顶级项会不稳**：`closeDropdownView` 可能清不掉 MainView `openMenuId`，再点会被当成 toggle 收起；Switch AI 拖完 `rebuildMenu` 还可能把同一扇 Dropdown 再打开。`waitForVisibleDropdown` 只认窗可见，**会把残留 Switch AI 当成 Application**。开 Settings / Switch AI 用 `openTopMenuUntilItem`：等到**具体 `data-item-id`**，点错则先切到另一个顶级菜单再试。目录脏挡板用例先 `expectTableDirty`，警告文案用短 timeout（不要把 GitHub fetch 等满 20s）。Add / Edit 弹窗用 `getByRole('dialog', { name })`。能点当前已开菜单就别关再开。读 Manage AIs 行序用 `.manage-ais-table .ant-table-body`，避开 antd 的 hidden measure 行。Startup 单选点 `data-testid=startup-ai-page-first` 的 label（DOM `click()`），页脚 Apply 看 `data-testid=settings-footer-apply` 的 `data-dirty`。不要 `locator.check()`。
 
 不变量 5 与禁止项与本节一致。后续会话加手势用例时，先对照本节分层和「写 DOM 用例时记住」，不要再探一遍 WCV。
 
@@ -180,7 +180,7 @@ CI / 日常全量保持 `yarn test:e2e`，WATCH 为 0。不要在观测时用鼠
 | `projects/ChatAIO/e2e/reporters/console.ts` | 终端报告：按 spec 分组、结尾 N/N 通过 |
 | `projects/ChatAIO/e2e/global-setup.ts` | 检查 / 补齐 webpack 产物 |
 | `projects/ChatAIO/e2e/fixtures.ts` | `electronApp` / `mainWindow`；`userAisPatch` 只给单独用例覆盖写 seed |
-| `projects/ChatAIO/e2e/support/app-probe.ts` | 快照 / `waitForSettingsPage` / `openSettingsFromApplicationMenu` |
+| `projects/ChatAIO/e2e/support/app-probe.ts` | 快照 / `waitForSettingsPage` / `openTopMenuUntilItem` / `openSettingsFromApplicationMenu` |
 | `projects/ChatAIO/e2e/support/e2e-ais.ts` | 返回用户 fixture 表（4 页 + deletedIds）；`patchCharliePreloadOnStartup` |
 | `projects/ChatAIO/e2e/support/switch-ai.ts` | 打开 Switch AI / Current AI、读序、Prev/Next、右键拖 |
 | `projects/ChatAIO/e2e/support/settings-ui.ts` | Manage AIs / 页脚 locator |

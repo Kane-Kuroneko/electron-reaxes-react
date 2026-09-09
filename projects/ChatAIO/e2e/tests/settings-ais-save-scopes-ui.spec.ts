@@ -23,7 +23,7 @@ test( 'modal Save renames without lighting table Save' , async( {
 	const settings = await openSettingsFromApplicationMenu( electronApp , mainWindow );
 	await openManageAIs( settings );
 	await watchClick( manageAisRow( settings , E2E_AI_C.id ).getByRole( 'button' , { name : 'Edit' } ) );
-	const dialog = settings.getByRole( 'dialog' );
+	const dialog = manageAisDialog( settings , 'Edit AI Page' );
 	await expect( dialog ).toBeVisible();
 	const nameBox = dialog.getByRole( 'textbox' ).first();
 	await nameBox.fill( 'E2E Charlie Renamed' );
@@ -47,7 +47,7 @@ test( 'modal Cancel leaves store and disk unchanged' , async( {
 	await openManageAIs( settings );
 	const before = await readUserAisFile( userDataDir );
 	await watchClick( manageAisRow( settings , E2E_AI_A.id ).getByRole( 'button' , { name : 'Edit' } ) );
-	const dialog = settings.getByRole( 'dialog' );
+	const dialog = manageAisDialog( settings , 'Edit AI Page' );
 	await dialog.getByRole( 'textbox' ).first().fill( 'Should Not Persist' );
 	await watchClick( dialogCancel( settings ) );
 	await expect( dialog ).toBeHidden();
@@ -134,10 +134,14 @@ test( 'catalog check is blocked while the AI table is dirty' , async( {
 	const settings = await openSettingsFromApplicationMenu( electronApp , mainWindow );
 	await openManageAIs( settings );
 	await watchClick( enabledSwitchInRow( settings , E2E_AI_A.id ) );
-	await watchClick( settings.getByRole( 'button' , { name : 'Check AI catalog' } ) );
+	await expectTableDirty( settings );
+	const checkButton = checkAiCatalogButton( settings );
+	await watchClick( checkButton );
+	/* 脏挡板是同步的；3s 内没有文案多半是已经去打 GitHub。不要用默认 20s expect。 */
 	await expect(
 		settings.getByText( 'Save or discard AI page changes before checking the AI catalog' ),
-	).toBeVisible();
+	).toBeVisible( { timeout : 3_000 } );
+	expect( await checkButton.getAttribute( 'aria-busy' ) ).not.toBe( 'true' );
 } );
 
 test( 'Add AI Page persists immediately without lighting table Save' , async( {
@@ -148,8 +152,10 @@ test( 'Add AI Page persists immediately without lighting table Save' , async( {
 	const settings = await openSettingsFromApplicationMenu( electronApp , mainWindow );
 	await openManageAIs( settings );
 	const before = await readUserAisFile( userDataDir );
-	await watchClick( settings.getByRole( 'button' , { name : 'Add AI Page' } ) );
-	const dialog = settings.getByRole( 'dialog' );
+	const addButton = settings.getByRole( 'button' , { name : 'Add AI Page' } );
+	await expect( addButton ).toBeEnabled();
+	await watchClick( addButton );
+	const dialog = manageAisDialog( settings , 'Add AI Page' );
 	await expect( dialog ).toBeVisible();
 	const boxes = dialog.getByRole( 'textbox' );
 	await boxes.nth( 0 ).fill( 'E2E Echo' );
@@ -193,7 +199,7 @@ test( 'Clone persists a new id immediately without lighting table Save' , async(
 	await openManageAIs( settings );
 	const before = await readUserAisFile( userDataDir );
 	await watchClick( manageAisRow( settings , E2E_AI_C.id ).getByRole( 'button' , { name : 'Clone' } ) );
-	const dialog = settings.getByRole( 'dialog' );
+	const dialog = manageAisDialog( settings , 'Edit AI Page' );
 	await expect( dialog ).toBeVisible();
 	await dialog.getByRole( 'textbox' ).first().fill( 'E2E Charlie Copy' );
 	await watchClick( dialogSave( settings ) );
@@ -222,6 +228,7 @@ import { watchClick } from '../support/observe';
 import { TEST_IDS } from '../support/selectors';
 import { readUserAisFile } from '../support/user-ais-file';
 import {
+	checkAiCatalogButton ,
 	dialogCancel ,
 	dialogSave ,
 	enabledSwitchInRow ,
@@ -230,6 +237,7 @@ import {
 	expectTableDirty ,
 	expectTableIdle ,
 	footerDiscard ,
+	manageAisDialog ,
 	manageAisRow ,
 	openGeneral ,
 	openManageAIs ,

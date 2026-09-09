@@ -18,8 +18,7 @@ export const reopenSwitchAiMenu = async(
 	mainWindow : Page,
 ) => {
 	await focusHostWindowForObserve( electronApp );
-	await watchClick( mainWindow.locator( `[data-menu-id="${ MENU_IDS.view }"] button` ) );
-	await waitForVisibleDropdown( electronApp );
+	await openTopMenuUntilItem( electronApp , mainWindow , MENU_IDS.view , MENU_IDS.promptLeft );
 	return openSwitchAiMenu( electronApp , mainWindow );
 };
 
@@ -27,11 +26,12 @@ export const openSwitchAiMenu = async(
 	electronApp : ElectronApplication ,
 	mainWindow : Page,
 ) => {
-	await focusHostWindowForObserve( electronApp );
-	await watchClick( mainWindow.locator( `[data-menu-id="${ MENU_IDS.switchAi }"] button` ) );
-	const dropdown = await waitForVisibleDropdown( electronApp );
-	await enableActionOverlays( dropdown );
-	return dropdown;
+	return openTopMenuUntilItem(
+		electronApp ,
+		mainWindow ,
+		MENU_IDS.switchAi ,
+		MENU_IDS.nextPage,
+	);
 };
 
 export const readSwitchAiItemIds = async( dropdown:Page ) => {
@@ -196,6 +196,7 @@ export const rightClickDragMenuItem = async(
 };
 
 import {
+	openTopMenuUntilItem ,
 	waitForE2ESnapshot ,
 	waitForVisibleDropdown,
 } from './app-probe';
