@@ -39,6 +39,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 - [中区 Current AI 下拉切换](./docs/features/menubar-current-ai-dropdown.md)
 - [卡片 UX](./docs/features/floating-view-card-ux-optimization.md)、[Swiper 迁移](./docs/features/floating-view-swiper-migration.md)
 - [切换热路径](./docs/features/ai-page-switch-performance-optimization.md)
+- [AI 页通知闪任务栏 / dock](./docs/features/ai-notification-taskbar-flash.md)
 
 ### menubar / 透明窗 / 退出
 
@@ -106,6 +107,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [ai-list-reorder.md](./docs/features/ai-list-reorder.md) | Switch AI / Manage AIs 立即持久化排序 |
 | [manage-ais-table-ux.md](./docs/features/manage-ais-table-ux.md) | Manage AIs 未启用置底、启用槽位拖拽、列筛选进 reaxel、空表不拆筛选浮层、删除确认不整表 remount（滚动弹顶复盘） |
 | [manage-ais-save-scopes.md](./docs/features/manage-ais-save-scopes.md) | 页脚与表底两套 dirty；弹窗 Save 当场写盘、Enter 即保存；Clone 插母项下方 |
+| [ai-notification-taskbar-flash.md](./docs/features/ai-notification-taskbar-flash.md) | AI 页 HTML5 通知 → Windows 闪任务栏 / macOS dock 弹跳 |
 | [menubar-current-ai-dropdown.md](./docs/features/menubar-current-ai-dropdown.md) | 中区 Current AI 块点击下拉切 AI |
 | [ai-catalog-manual-update.md](./docs/features/ai-catalog-manual-update.md) | Settings 手动检查供应商目录（GitHub Release 资产） |
 | [ai-page-switch-performance-optimization.md](./docs/features/ai-page-switch-performance-optimization.md) | 切换热路径 CPU / z-order |

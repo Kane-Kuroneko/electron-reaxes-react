@@ -88,6 +88,8 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 		} );
 
 		initSwitchPerformanceLogging();
+		/* AI 页通知 → 任务栏闪烁 / dock 弹跳。见 docs/features/ai-notification-taskbar-flash.md */
+		initAINotificationAttention();
 
 		/* Phase 2 — MainWindow + menubar attach（与 AI 无关） */
 		const win = await createMainWindow( { theme : resolvedAppearance.theme } );
@@ -183,6 +185,7 @@ import {
 } from '#shared/appearance';
 import { dev } from 'electron-is';
 import { initSwitchPerformanceLogging } from '#main/services/performance/switch-perf';
+import { initAINotificationAttention } from '#main/services/ai-notification';
 import {
 	app ,
 	nativeTheme,

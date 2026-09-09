@@ -369,7 +369,78 @@ const applyAIPageEnvironment = (environment:AIPageEnvironment) => {
 	installBrowserIdentitySpoofing();
 };
 
+/**
+ * AI 页通知转发（main world → preload → 主进程）。
+ * 页面 `new Notification(...)` 时：原生 OS 通知照常弹（super 仍执行），
+ * 同时经 window.postMessage 通知 preload，preload 走 `ai-page-notification` IPC，
+ * 主进程在主窗未聚焦时闪任务栏图标（Windows）/ 弹 dock（macOS）。
+ * main world 拿不到 ipcRenderer，postMessage 是跨 world 的标准通道（同 Chrome content script 模式）。
+ * 见 docs/features/ai-notification-taskbar-flash.md
+ */
+const AI_NOTIFICATION_MESSAGE_KEY = '__chataioAiNotification';
+
+const installNotificationForwarding = () => {
+	try {
+		contextBridge.executeInMainWorld( {
+			func : ( magicKey:string ) => {
+				try {
+					const NativeNotification = window.Notification;
+					if( !NativeNotification || ( NativeNotification as any ).__chataioNotificationWrapped ) {
+						return;
+					}
+					class WrappedNotification extends NativeNotification {
+						constructor( title:string , options?:NotificationOptions ) {
+							super( title , options );
+							try {
+								window.postMessage( {
+									[magicKey] : {
+										title : String( title ).slice( 0 , 200 ) ,
+										body : String( options?.body ?? '' ).slice( 0 , 500 ),
+									},
+								} , '*' );
+							} catch { /* 转发失败不影响页面通知 */ }
+						}
+					}
+					( WrappedNotification as any ).__chataioNotificationWrapped = true;
+					/* 降低指纹面：类名对齐原生 */
+					Object.defineProperty( WrappedNotification , 'name' , { value : 'Notification' } );
+					Object.defineProperty( window , 'Notification' , {
+						value : WrappedNotification ,
+						configurable : true ,
+						writable : true,
+					} );
+				} catch { /* never break the page */ }
+			} ,
+			args : [ AI_NOTIFICATION_MESSAGE_KEY ],
+		} );
+	} catch ( error ) {
+		console.warn( '[AIPagePreload] Failed to install notification forwarding:' , error );
+	}
+};
+
+const installNotificationRelay = () => {
+	window.addEventListener( 'message' , ( event ) => {
+		if( event.source !== window ) {
+			return;
+		}
+		const payload = ( event.data as Record<string , unknown> | null )?.[AI_NOTIFICATION_MESSAGE_KEY] as
+			{ title?:unknown; body?:unknown } | undefined;
+		if( !payload || typeof payload.title !== 'string' ) {
+			return;
+		}
+		try {
+			ipcRenderer.send( 'JSON' , { channel : 'ai-page-notification' } , {
+				title : payload.title ,
+				body : typeof payload.body === 'string' ? payload.body : '' ,
+				reportedAt : Date.now(),
+			} );
+		} catch { /* 观测层静默处理 */ }
+	} );
+};
+
 installNavigatorEnvironment();
+installNotificationForwarding();
+installNotificationRelay();
 applyAIPageEnvironment( currentEnvironment );
 
 /* FocusMonitor: 焦点状态追踪（通过 IPC 推送状态变化到主进程） */

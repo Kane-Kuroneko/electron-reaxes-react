@@ -9,6 +9,9 @@ export interface RendererToMainEvents extends Record<string , IpcStructure.Rende
 	'close-prompt-view' : IpcStructure.RendererToMainEvent<[side: PromptView.Side] , {channel:void,args:void[]}>;
 	'perf-event' : IpcStructure.RendererToMainEvent<[events: import('#shared/utils/switch-perf-recorder.utility').PerfEvent[]] , {channel:void,args:void[]}>;
 	'focus-state-change' : IpcStructure.RendererToMainEvent<[import('#src/Types/FocusMonitor').FocusMonitor.FocusState] , {channel:void,args:void[]}>;
+	/* AI 页 main world 的 Notification 被 ai-page-preload 包了一层，页面每发一条通知就上报一次。
+	   主进程据此闪任务栏 / 弹 dock 引起注意。见 docs/features/ai-notification-taskbar-flash.md */
+	'ai-page-notification' : IpcStructure.RendererToMainEvent<[payload: { title: string; body: string; reportedAt: number }] , {channel:void,args:void[]}>;
 	'menu-view:action' : IpcStructure.RendererToMainEvent<[MenuView.Action] , {channel:void,args:void[]}>;
 	'menu-view:ready' : IpcStructure.RendererToMainEvent<[void] , {channel:void,args:void[]}>;
 	'menu-view:visual-ready' : IpcStructure.RendererToMainEvent<[MenubarVisualReadyPayload] , {channel:void,args:void[]}>;
