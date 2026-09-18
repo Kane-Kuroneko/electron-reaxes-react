@@ -147,6 +147,7 @@ export const diffVendorAvailability = (
 		changes.push( {
 			id : their.id ,
 			label : their.label ,
+			AI_family : their.family ,
 			forbiddenAdded ,
 			forbiddenRemoved ,
 			availableChanged ,

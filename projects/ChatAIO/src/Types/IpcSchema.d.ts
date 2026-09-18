@@ -56,6 +56,8 @@ export interface IpcRpc extends Record<string , IpcStructure.IpcRpc<unknown[] , 
 	/* options.insertAfterId：Clone 时把新页插到母项下方；缺省追加表底 */
 	'add-ai': IpcStructure.IpcRpc<[ai: Omit<AI.AIItem, 'id'> & { id?: string }, options?: { insertAfterId?: string }], AI.AIItem>;
 	'delete-ai': IpcStructure.IpcRpc<[id: string], boolean>;
+	/* custom 页 favicon 缓存全表（aiId → data URL），内置 family 不在表里。见 docs/features/ai-vendor-logo-identity.md */
+	'get-ai-favicons': IpcStructure.IpcRpc<[void], Record<string, string>>;
 	'reorder-ais': IpcStructure.IpcRpc<[enabledIds: string[]], { success: boolean, error?: string }>; /* 全表 id 或 enabled-only id，见 docs/features/ai-list-reorder.md */
 	'reset-ais-to-defaults': IpcStructure.IpcRpc<[void], { success: boolean, error?: string }>;
 	/* 供应商目录手动更新：只读 check 不写盘；apply 的 revision 必须对得上这次 check。见 docs/features/ai-catalog-manual-update.md */

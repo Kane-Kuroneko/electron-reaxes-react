@@ -430,9 +430,31 @@ export const dropdownItem = ( dropdown:Page , itemId:string ) => {
 	return dropdown.locator( `[data-item-id="${ itemId }"]` );
 };
 
+/**
+ * 下拉 BrowserWindow 是否真的显示着（主进程事实）。
+ * 点菜单项后主进程先 `window.hide()`，渲染端 `hide` 命令清 DOM 要晚 0–60ms（隐藏窗的渲染进程被降优先级，
+ * 切 AI 期间 CPU 争用更明显）。只看 DOM 会把「已隐藏窗里的旧菜单」当成开着的菜单。
+ */
+export const isDropdownWindowVisible = async( electronApp:ElectronApplication ) => {
+	try {
+		return await electronApp.evaluate( ( { BrowserWindow } ) => {
+			return BrowserWindow.getAllWindows().some( ( win ) => {
+				return win.isDestroyed() === false
+					&& win.webContents.getURL().includes( 'DropdownView' )
+					&& win.isVisible();
+			} );
+		} );
+	} catch {
+		return false;
+	}
+};
+
 const isDropdownItemVisible = async( electronApp:ElectronApplication , itemId:string ) => {
 	const dropdown = findWindowByUrl( electronApp , 'DropdownView' );
 	if( !dropdown ) {
+		return false;
+	}
+	if( await isDropdownWindowVisible( electronApp ) === false ) {
 		return false;
 	}
 	try {

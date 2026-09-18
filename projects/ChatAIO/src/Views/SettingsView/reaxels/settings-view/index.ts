@@ -550,6 +550,7 @@ export const reaxel_SettingsView = reaxel( () => {
 			clone_source_id : null ,
 			fields : targetFields
 				? checkAs<AI.EditAIItem>( cloneForIPC( targetFields ) )
+				/* Add 不预填 name：默认名只当 placeholder，空着保存时才写入。见 docs/features/manage-ais-save-scopes.md */
 				: defaultAIFields(),
 		} );
 	};
@@ -563,7 +564,8 @@ export const reaxel_SettingsView = reaxel( () => {
 			editing_id : null ,
 			clone_source_id : AI_id ,
 			fields : checkAs<AI.EditAIItem>( cloneForIPC( {
-				label : targetFields.label ,
+				/* Clone 同样不预填 name：同 family 两页只靠 label 区分，空着保存时用未占用的默认名 */
+				label : '' ,
 				AI_family : targetFields.AI_family ,
 				url : targetFields.url ,
 				url_override : targetFields.url_override ,
@@ -954,73 +956,7 @@ function getEnabledProxyServerId(
 		: null;
 }
 
-const AINameSuffixPool = [
-	'Anselm' ,
-	'Leopold' ,
-	'Florian' ,
-	'Dietrich' ,
-	'Ludwig' ,
-	'Frieda' ,
-	'Odette' ,
-	'Colette' ,
-	'Mireille' ,
-	'Bastien' ,
-	'Lucien' ,
-	'Claudine' ,
-	'Cosimo' ,
-	'Ludovico' ,
-	'Vittorio' ,
-	'Marcello' ,
-	'Fiorella' ,
-	'Ginevra',
-] as const;
-
-/* family → 默认 AI 名称前缀 */
-const AINameFamilyPrefix:Record<AI.AIFamily , string> = {
-	chatgpt : 'ChatGPT' ,
-	grok : 'Grok' ,
-	gemini : 'Gemini' ,
-	deepseek : 'DeepSeek' ,
-	perplexity : 'Perplexity' ,
-	claude : 'Claude' ,
-	manus : 'Manus' ,
-	aistudio : 'AI Studio' ,
-	copilot : 'Copilot' ,
-	'meta-ai' : 'Meta AI' ,
-	poe : 'Poe' ,
-	mistral : 'Mistral' ,
-	doubao : 'Doubao' ,
-	qianwen : 'Qianwen' ,
-	kimi : 'Kimi' ,
-	chatglm : 'ChatGLM' ,
-	yuanbao : 'Yuanbao' ,
-	hailuo : 'Hailuo' ,
-	yiyan : 'Yiyan' ,
-	custom : 'Custom AI' ,
-	'dev-proxy-test' : 'Proxy Test' ,
-};
-
-function buildDefaultAIName(family:AI.AIFamily , AIs:AI.AIItem[] , excludeId?:string | null) {
-	const prefix = AINameFamilyPrefix[family] || family;
-	const normalizedExistingNames = AIs
-		.filter( ai => ai.id !== excludeId )
-		.map( ai => ai.label.trim().toLowerCase() )
-		.filter( Boolean );
-	const suffix = AINameSuffixPool.find( name => {
-		const normalizedName = name.toLowerCase();
-		return !normalizedExistingNames.some( existing => existing.includes( normalizedName ) );
-	} );
-
-	if( suffix ) {
-		return `${ prefix }-${ suffix }`;
-	}
-
-	let index = 2;
-	while( normalizedExistingNames.some( existing => existing.includes( `${ prefix }-${ index }`.toLowerCase() ) ) ) {
-		index++;
-	}
-	return `${ prefix }-${ index }`;
-}
+/* 默认名不再带厂商前缀（厂商靠 logo 辨识），实现移到 #shared/utils/default-ai-name.utility */
 
 export type Reaxel_SettingsView = Pick<typeof reaxel_SettingsView , "mutate"|"store"|"setState">;
 
@@ -1058,6 +994,7 @@ import {
 	rejectWhenTimedOut,
 } from '#shared/utils/catalog-update-timeout.utility';
 import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
+import { buildDefaultAIName } from '#shared/utils/default-ai-name.utility';
 import {
 	createEmptyManageAIsColumnFilterOpen ,
 	createEmptyManageAIsColumnFilters ,

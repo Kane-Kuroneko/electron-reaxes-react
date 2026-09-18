@@ -37,8 +37,11 @@ export const reaxel_Menu = reaxel( () => {
 		const settings = getRuntimeSettings();
 		const fallbackAI = settings.AIs.find( ai => ai.id === Reaxel_View.store.currentAIViewKey );
 		const label = currentAI?.label || currentAI?.id || fallbackAI?.label || fallbackAI?.id || '';
+		/* 中区 Current AI 块：logo 承担厂商辨识，label 只是用户名。见 ai-vendor-logo-identity.md */
+		const vendorSource = fallbackAI || settings.AIs.find( ai => ai.id === currentAI?.id );
 		return {
 			currentContextLabel : label ,
+			currentContextVendor : vendorSource ? resolveVendorRef( vendorSource ) : null ,
 			settingsViewOpened : false ,
 		};
 	}
@@ -62,6 +65,8 @@ export const reaxel_Menu = reaxel( () => {
 						...enabledAIs.map( ai => ( {
 							id : `ai-${ ai.id }` ,
 							label : ai.label || ai.id ,
+							/* 供应商 logo 单独走 vendor 槽，不占 icon（icon 是 emoji 槽且与 loadState 互斥） */
+							vendor : resolveVendorRef( ai ) ,
 							type : 'radio' as const ,
 							checked : currentAIViewKey === ai.id ,
 							enabled : true ,
@@ -258,6 +263,8 @@ export const reaxel_Menu = reaxel( () => {
 		if( canSwitchInstantiatedAI ) {
 			const prevName = previousInstantiatedAI?.label || previousInstantiatedAI?.id || '';
 			const nextName = nextInstantiatedAI?.label || nextInstantiatedAI?.id || '';
+			const prevAI = settings.AIs.find( ai => ai.id === previousInstantiatedAI?.id );
+			const nextAI = settings.AIs.find( ai => ai.id === nextInstantiatedAI?.id );
 			topLevelItems.push(
 				{
 					id : 'prev-instantiated' ,
@@ -266,6 +273,7 @@ export const reaxel_Menu = reaxel( () => {
 					enabled : true ,
 					icon : 'chevron-left' ,
 					adjacentLabel : prevName || undefined ,
+					adjacentVendor : prevAI ? resolveVendorRef( prevAI ) : undefined ,
 					tooltip : prevName ? `${ t( 'Prev' ) }: ${ prevName }` : t( 'Prev' ) ,
 					action : 'prev-instantiated',
 				} ,
@@ -276,6 +284,7 @@ export const reaxel_Menu = reaxel( () => {
 					enabled : true ,
 					icon : 'chevron-right' ,
 					adjacentLabel : nextName || undefined ,
+					adjacentVendor : nextAI ? resolveVendorRef( nextAI ) : undefined ,
 					tooltip : nextName ? `${ t( 'Next' ) }: ${ nextName }` : t( 'Next' ) ,
 					action : 'next-instantiated',
 				} ,
@@ -675,6 +684,11 @@ const createPlainMenuLabel = (label:string) => {
 	return escapeElectronMenuBarLabel( label.trim() );
 };
 
+/** 页实例 → 跨 IPC 的供应商引用；custom 页附带主进程缓存的 favicon data URL。 */
+const resolveVendorRef = (ai:AI.AIItem):AI.VendorRef => {
+	return toVendorRef( ai , getAIFaviconDataUrl( ai.id ) );
+};
+
 const resolveAdjacentInstantiatedAI = (
 	instantiatedViews:RuntimeAIView[] ,
 	currentAIViewKey:string ,
@@ -707,6 +721,9 @@ import { reaxel_AIViews , type RuntimeAIView } from "#main/reaxels/Views/AI-View
 import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import { getAIConfigService } from "#main/services/settings/ai-config-service";
 import { getSettingsConfigService } from "#main/services/settings/settings-config-service";
+import { getAIFaviconDataUrl } from '#main/services/ai-favicon';
+import { toVendorRef } from '#shared/ai-vendor-logo/vendor-logo.utility';
+import type { AI } from '#src/Types/SettingsTypes/AI';
 import type { MenuView } from "#src/Types/MenuView";
 import type { Settings } from "#src/Types/SettingsTypes";
 import {

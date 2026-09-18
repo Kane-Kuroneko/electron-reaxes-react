@@ -59,6 +59,7 @@ Spectron 已死。本仓不引入打包后的 `findLatestBuild`：E2E 打 unpack
 6. 改了 `src/Main` 必须 `yarn build:webpack`；只改 Settings renderer 同样要重建，否则 E2E 仍跑旧 `dist`。
 7. **返回用户 seed 写小型 `user-ais.json`**：`custom-e2e-a`…`d`（Bravo 默认关），URL `about:blank`，`deletedIds` 钉死 bundled 目录 + `dev-proxy-test`。不要假定菜单里还有 ChatGPT。常量：`e2e/support/e2e-ais.ts`。单独用例要改 seed 用 fixture `userAisPatch`，不要改默认表。
 8. **关下拉再立刻点同一顶级项会不稳**：`closeDropdownView` 可能清不掉 MainView `openMenuId`，再点会被当成 toggle 收起；Switch AI 拖完 `rebuildMenu` 还可能把同一扇 Dropdown 再打开。`waitForVisibleDropdown` 只认窗可见，**会把残留 Switch AI 当成 Application**。开 Settings / Switch AI 用 `openTopMenuUntilItem`：等到**具体 `data-item-id`**，点错则先切到另一个顶级菜单再试。目录脏挡板用例先 `expectTableDirty`，警告文案用短 timeout（不要把 GitHub fetch 等满 20s）。Add / Edit 弹窗用 `getByRole('dialog', { name })`。能点当前已开菜单就别关再开。读 Manage AIs 行序用 `.manage-ais-table .ant-table-body`，避开 antd 的 hidden measure 行。Startup 单选点 `data-testid=startup-ai-page-first` 的 label（DOM `click()`），页脚 Apply 看 `data-testid=settings-footer-apply` 的 `data-dirty`。不要 `locator.check()`。
+9. **「下拉开着」以主进程 `BrowserWindow.isVisible()` 为准，不能只看 DOM**。点菜单项后主进程先 `window.hide()`，渲染端 `hide` 命令清 DOM 要晚 0–60ms（隐藏窗的渲染进程被降优先级，切 AI 期间 CPU 争用更明显）。`openTopMenuUntilItem` 的「已开着就直接用」分支若只看 DOM，会拿到**已隐藏窗里的旧菜单**，随后 DOM 被清、元素脱离，`locator.click()` 在 Playwright 的 stable 检查里等满 30s（症状：`waiting for element to be visible, enabled and stable` → `element is not stable` → 不再有日志）。用 `isDropdownWindowVisible(electronApp)`（`app-probe.ts`）先问主进程；`ensureVisibleSwitchAiMenu` 传 `electronApp`。复现于 `ai-page-walk` / `ai-opened-walk` 连点 3 次后第 4 次点击。
 
 不变量 5 与禁止项与本节一致。后续会话加手势用例时，先对照本节分层和「写 DOM 用例时记住」，不要再探一遍 WCV。
 
@@ -217,7 +218,7 @@ CI / 日常全量保持 `yarn test:e2e`，WATCH 为 0。不要在观测时用鼠
 | `settings-exit-without-save.spec.ts` | Exit Without Save 丢主题草稿、保留 Enabled 草稿 | settings-exit-discard |
 | `settings-wcv-discovery.spec.ts` | 打开 Settings 后 `windows()` 含 Settings WCV Page | e2e-playwright / playwright#39427 |
 | `settings-ais-save-scopes.spec.ts` | `apply-settings` 不写 AIs；`apply-ais` 写启用列；`update-ai` 单条改名且丢掉 `disabled` | manage-ais-save-scopes |
-| `settings-ais-save-scopes-ui.spec.ts` | 页脚 vs 表底 dirty、弹窗 Save/Cancel、Undo/Discard、Startup、目录挡板、Add、Clone、表底 Save | manage-ais-save-scopes |
+| `settings-ais-save-scopes-ui.spec.ts` | 页脚 vs 表底 dirty、弹窗 Save/Cancel、Undo/Discard、Startup、目录挡板、Add、Clone、Add 空名用 placeholder、表底 Save | manage-ais-save-scopes |
 | `settings-ais-pending-delete.spec.ts` | 待删除表底 Save 去掉页；Undo 不写盘 | manage-ais-save-scopes |
 | `prompt-toggle.spec.ts` | View → Left Prompt Showcase | prompt-view |
 | `app-lifecycle.spec.ts` | 关主窗后进程树必须退；同一 userData 第二次启动立刻退出并唤起第一扇 | close-without-tray / single-instance |

@@ -94,7 +94,8 @@ const assertClosedCharlieStaysClosedAfterDrag = async(
 
 	const menu = await ensureVisibleSwitchAiMenu(
 		dropdown ,
-		openMenu,
+		openMenu ,
+		electronApp,
 	);
 	expect( await readSwitchAiLoadStates( menu ) ).toEqual( [
 		{ id : E2E_AI_A.id , loadState : 'instantiated' } ,

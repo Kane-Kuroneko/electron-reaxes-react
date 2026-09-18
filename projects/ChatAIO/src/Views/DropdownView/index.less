@@ -149,6 +149,20 @@ html.dropdown-drag-cursor * {
 	font-size: 14px;
 }
 
+/* 供应商 logo 槽（Switch AI 项）：尺寸来自 dropdown-geometry，与 label 间距只用行 gap；未加载项跟随 label 变淡 */
+.menu-item__vendor {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	width: var(--dropdown-vendor-logo-size, 16px);
+	height: var(--dropdown-vendor-logo-size, 16px);
+	color: var(--menu-view-text, rgba(24, 24, 27, 0.9));
+}
+
+.menu-item--load-unloaded .menu-item__vendor {
+	opacity: 0.55;
+}
+
 .menu-item__load-dot {
 	flex-shrink: 0;
 	width: var(--dropdown-load-dot-size, 6px);

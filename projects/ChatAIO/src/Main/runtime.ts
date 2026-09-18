@@ -90,6 +90,8 @@ export const startMainRuntime = async( options:StartMainRuntimeOptions = {} ) =>
 		initSwitchPerformanceLogging();
 		/* AI 页通知 → 任务栏闪烁 / dock 弹跳。见 docs/features/ai-notification-taskbar-flash.md */
 		initAINotificationAttention();
+		/* custom 页 favicon 抓到后刷新 menubar（Switch AI 项 / Current AI 中区的 logo）。见 ai-vendor-logo-identity.md */
+		onAIFaviconChange( () => reaxel_Menu().scheduleMenuUpdate() );
 
 		/* Phase 2 — MainWindow + menubar attach（与 AI 无关） */
 		const win = await createMainWindow( { theme : resolvedAppearance.theme } );
@@ -186,6 +188,7 @@ import {
 import { dev } from 'electron-is';
 import { initSwitchPerformanceLogging } from '#main/services/performance/switch-perf';
 import { initAINotificationAttention } from '#main/services/ai-notification';
+import { onAIFaviconChange } from '#main/services/ai-favicon';
 import {
 	app ,
 	nativeTheme,

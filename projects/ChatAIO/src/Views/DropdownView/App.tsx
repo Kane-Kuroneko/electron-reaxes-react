@@ -465,6 +465,18 @@ const MenuItemComponent = ( {
 				{/* 图标（emoji 等，loadState 项不占用此列） */}
 				{ item.icon && !item.loadState ? <span className="menu-item__icon">{ item.icon }</span> : null }
 
+				{/* 供应商 logo（Switch AI 项）：厂商辨识靠它，label 只是用户名。见 ai-vendor-logo-identity.md */}
+				{ item.vendor ? (
+					<span className="menu-item__vendor" data-vendor={ item.vendor.family }>
+						<AIVendorLogo
+							family={ item.vendor.family }
+							size={ 16 }
+							faviconUrl={ item.vendor.faviconUrl }
+							fallbackText={ vendorFallbackText( item.vendor , item.label ) }
+						/>
+					</span>
+				) : null }
+
 				{/* 标签文本 */}
 				<span className="menu-item__label">{ item.label }</span>
 
@@ -566,6 +578,8 @@ import {
 } from './suppress-ghost-click-after-sort.utility';
 import { reaxel_DropdownView } from '#DropdownView/reaxels/dropdown-view';
 import { getDropdownRootStyleVars } from '#shared/dropdown-geometry';
+import { AIVendorLogo } from '#shared/ai-vendor-logo';
+import { vendorFallbackText } from '#shared/ai-vendor-logo/vendor-logo.utility';
 import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
 import { enabledAIIdsEqual } from '#shared/utils/merge-enabled-ai-order.utility';
 import { reportMenubarRendererError } from '#shared/utils/menubar-error-report.utility';

@@ -146,9 +146,12 @@ export const readSwitchAiLoadStates = async( dropdown:Page ) => {
 export const ensureVisibleSwitchAiMenu = async(
 	dropdown : Page ,
 	openMenu : () => Promise<Page>,
+	electronApp? : ElectronApplication,
 ) => {
 	try {
-		if( await dropdown.getByTestId( TEST_IDS.dropdown ).isVisible() ) {
+		/* 窗已隐藏但 DOM 还没清时不能当成开着（见 app-probe isDropdownWindowVisible） */
+		const windowVisible = electronApp ? await isDropdownWindowVisible( electronApp ) : true;
+		if( windowVisible && await dropdown.getByTestId( TEST_IDS.dropdown ).isVisible() ) {
 			return dropdown;
 		}
 	} catch {
@@ -196,6 +199,7 @@ export const rightClickDragMenuItem = async(
 };
 
 import {
+	isDropdownWindowVisible ,
 	openTopMenuUntilItem ,
 	waitForE2ESnapshot ,
 	waitForVisibleDropdown,

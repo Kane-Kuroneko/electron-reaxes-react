@@ -9,7 +9,7 @@ Settings → Manage AIs 可以检查**供应商目录**更新。远程是 [ChatA
 1. **启动不拉网。** 只有用户点「检查 AI 目录更新」才 fetch。
 2. **确认前不写盘。** check 只验签 + preview；cache `catalog-ais.json` 和 user 表只在 apply 之后改。
 3. **pending 同一时刻一份，活在 `AIConfigService` 的 cycle 实例上，不是模块全局。** apply 必须带上这次 check 的 `remoteRevision`；对不上或没有 pending → 拒绝。**失败的 check（网络 / 验签 / schema）不清上一份成功 pending**；`up-to-date` 才清；新的 `available` 覆盖。写盘成功才 `commit`。**用户取消预览会 `discard` pending**，必须再检查才能 apply。重叠的 check 串行，只有最新一次能改 pending。`beginCatalogCheck` / `checkSignedCatalog` / `applySignedCatalog` 不是 public API；IPC 只走 `checkAiCatalogUpdate` / `applyAiCatalogUpdate` / `discardAiCatalogUpdate`。
-4. **跨进程仍是实例。** check 下发的 diff 是种子页的瘦预览（id / label / url），不是整份 `AIItem`，也不是瘦目录原样。`get-ais` / `get-default-ais` 返回类型不变。
+4. **跨进程仍是实例。** check 下发的 diff 是种子页的瘦预览（id / label / url / `AI_family`），不是整份 `AIItem`，也不是瘦目录原样。`AI_family` 只给预览行画供应商 logo。`get-ais` / `get-default-ais` 返回类型不变。
 5. **用户改过的种子页、`url_override`、`custom-` id、用户自加的同 family 第二页，目录更新碰不到。** 目录删行不自动从 user 表删，diff 标「ChatAIO已停止维护，但已存在的本地数据仍会被保留」。**用户 `deletedIds` 里已经没有的页不出现在 catalogDropped。**
 6. **region 只活在目录上。** 只改 region、页字段没变时仍要 apply（把 cache 写成新 revision），否则覆盖判定不更新。
 7. **Settings 或 AI 表有未保存改动时先保存或放弃。** 目录合并写的是磁盘上的 user 表，不能盖掉编辑器里没保存的页；页脚草稿未落盘时也不该改目录。两套 dirty 见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)。

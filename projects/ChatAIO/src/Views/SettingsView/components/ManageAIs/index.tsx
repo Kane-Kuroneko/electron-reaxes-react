@@ -100,32 +100,7 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 	</Popover>;
 } );
 
-	/**
- * AI family → Ant Design Tag color 映射
- */
-const AI_FAMILY_TAG_COLORS: Record<string , string> = {
-	chatgpt : 'green' ,
-	claude : 'blue' ,
-	gemini : 'cyan' ,
-	grok : 'orange' ,
-	deepseek : 'purple' ,
-	perplexity : 'magenta' ,
-	manus : 'volcano' ,
-	aistudio : 'geekblue' ,
-	copilot : 'processing' ,
-	'meta-ai' : 'blue' ,
-	poe : 'purple' ,
-	mistral : 'orange' ,
-	doubao : 'red' ,
-	qianwen : 'geekblue' ,
-	kimi : 'gold' ,
-	chatglm : 'cyan' ,
-	yuanbao : 'green' ,
-	hailuo : 'magenta' ,
-	yiyan : 'volcano' ,
-	'dev-proxy-test' : 'lime' ,
-	custom : 'default',
-};
+	/* family 列原来是彩色 Tag 文本；现改为「供应商 logo + 显示名」（AIFamilyIdentity），厂商辨识统一靠 logo。见 ai-vendor-logo-identity.md */
 
 	const createManageAIsColumns = () : TableColumnType<AI.AIItem>[] => [
 		{
@@ -165,8 +140,8 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 				const { isNewAI , isModifiedAI , isAIPendingDeletion } = reaxel_SettingsView();
 				const isNew = isNewAI( record.id );
 				const isModified = isModifiedAI( record.id );
-				return <span style={ { display : 'inline-flex' , alignItems : 'center' , gap : 6 } }>
-					{ record.label }
+				return <span style={ { display : 'inline-flex' , alignItems : 'center' , gap : 6 , maxWidth : '100%' } }>
+					<AIIdentity ai={ record }/>
 					{ isNew && <Tag color="green" style={ { marginLeft : 4 , fontSize : 11 , lineHeight : '18px' , padding : '0 5px' } }>
 						<I18n>New</I18n>
 					</Tag> }
@@ -183,8 +158,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			minWidth : 72,
 			...createColumnTextFilter<AI.AIItem>( 'AI_family' ) ,
 			render( value: AI.AIFamily ) {
-				const color = AI_FAMILY_TAG_COLORS[value] || 'default';
-				return <Tag color={ color }>{ value }</Tag>;
+				return <AIFamilyIdentity family={ value } muted/>;
 			},
 		} ,
 		{
@@ -301,6 +275,11 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			}
 			setTableReady( true );
 		} , [ tableScrollY , tableReady ] );
+
+		/* custom 页 favicon 表：一次拉取，供表格 / 弹窗里的 logo 兜底 */
+		React.useEffect( () => {
+			void reaxel_AIFavicons().ensureLoaded();
+		} , [] );
 
 		React.useEffect( () => {
 			if( !settingsMenuTraceAwaitingPanel() ) {
@@ -658,6 +637,18 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			/* 弹窗 Save 当场 update-ai / add-ai，不进表底 dirty。见 docs/features/manage-ais-save-scopes.md */
 			/* Enter 触发保存前可能刚 commit 过 URL 草稿，这里从 store 取最新 fields，别用渲染闭包里的旧引用。 */
 			const fields = store.fields;
+			/*
+			 * label 是用户自己的名字（厂商靠 logo 辨识），落盘必填。
+			 * Edit 清空必须拦（空名会让多页同 family 无法区分）；Add / Clone 空着保存则写入 placeholder 那个默认名。
+			 * 见 docs/features/ai-vendor-logo-identity.md
+			 */
+			const trimmedLabel = ( fields.label || '' ).trim();
+			const effectiveLabel = trimmedLabel
+				|| ( store.mode === 'edit' ? '' : createDefaultAIName( fields.AI_family ) );
+			if( !effectiveLabel ) {
+				message.error( i18n( 'AI name is required' ) );
+				return;
+			}
 			const effectiveUrl = ( isCustomFamily ? fields.url : fields.url_override || familyDefaultUrl ).trim();
 			if( !effectiveUrl ) {
 				message.error( i18n( 'URL is required for custom AI' ) );
@@ -668,7 +659,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			}
 			const nextAI:AI.AIItem = {
 				id : store.editing_id || createAIId() ,
-				label : fields.label?.trim() || ( isCustomFamily ? 'Custom AI' : fields.AI_family ) ,
+				label : effectiveLabel ,
 				disabled : false ,
 				AI_family : fields.AI_family ,
 				url : effectiveUrl ,
@@ -777,9 +768,22 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 			width={ 520 }
 		>
 			<Form layout="vertical" style={ { marginTop : 16 } } onKeyDown={ handleFormKeyDown }>
-				<Form.Item label={<I18n>AI name</I18n>}>
+				<Form.Item
+					label={<I18n>AI name</I18n>}
+					required
+					extra={ <I18n>Your own name for this page; the provider is shown by its logo.</I18n> }
+				>
 					<Input
 						value={ fields.label }
+						/* Add / Clone 空名合法（保存时取 placeholder 默认名），只有 Edit 清空才算错 */
+						placeholder={ store.mode === 'add' ? createDefaultAIName( fields.AI_family ) : undefined }
+						status={ store.mode === 'edit' && !( fields.label || '' ).trim() ? 'error' : undefined }
+						prefix={ <AIVendorLogo
+							family={ fields.AI_family }
+							size={ 16 }
+							faviconUrl={ store.editing_id ? reaxel_AIFavicons.store.byId[store.editing_id] ?? null : null }
+							fallbackText={ isCustomFamily ? displayUrl : fields.label }
+						/> }
 						onChange={ event => {
 							setState.fields( { label : event.target.value } );
 						} }
@@ -788,30 +792,20 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 				<Form.Item label={<I18n>AI family</I18n>}>
 					<Select
 						showSearch
-						optionFilterProp="children"
+						filterOption={ ( input , option ) => ( option?.searchText || '' ).includes( input.trim().toLowerCase() ) }
 						value={ fields.AI_family }
+						options={ familySelectOptions }
 						onChange={ value => {
 							const family = value as AI.AIFamily;
 							const defaultUrl = getFamilyDefaultUrl( family , catalogDefaults );
-							const patch:Partial<AI.EditAIItem> = {
+							setState.fields( {
 								AI_family : family ,
 								url : defaultUrl ,
 								url_override : null,
-							};
-							if( store.mode === 'add' ) {
-								patch.label = createDefaultAIName( family );
-							}
-							setState.fields( patch );
+							} );
 							setUrlEditing( false );
 						} }
-					>
-						{ AIFamily.map( item => (
-							<Select.Option
-								key={ item }
-								value={ item }
-							>{ item }</Select.Option>
-						) ) }
-					</Select>
+					/>
 				</Form.Item>
 				<Form.Item label={<I18n>AI URL</I18n>}>
 					<Input
@@ -1202,7 +1196,17 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 		return fromSettings?.url || '';
 	};
 
+	/** 弹窗 family 下拉：logo + 显示名；搜索同时匹配 family key 与显示名 */
+	const familySelectOptions = AIFamily.map( family => ( {
+		value : family ,
+		searchText : `${ family } ${ AIFamilyDisplayName[family] || '' }`.toLowerCase() ,
+		label : <AIFamilyIdentity family={ family }/>,
+	} ) );
+
 	import { DragIconSvg } from "./DragIcon.svg";
+	import { AIFamilyIdentity , AIIdentity } from '#SettingsView/components/AIIdentity';
+	import { reaxel_AIFavicons } from '#SettingsView/reaxels/ai-favicons';
+	import { AIVendorLogo } from '#shared/ai-vendor-logo';
 	import { CatalogUpdateControls } from "./CatalogUpdate";
 	import { createColumnTextFilter , ManageAIsColumnFilterOverlays } from '#SettingsView/layout/column-text-filter';
 	import { useHostScrollY } from '#SettingsView/layout/use-host-scroll-y';
@@ -1214,7 +1218,7 @@ const AI_FAMILY_TAG_COLORS: Record<string , string> = {
 	} from '#SettingsView/layout/settings-menu-perf.utility';
 	import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 	import { getDefaultAIs , resetAIsToDefaults } from "#SettingsView/services/Settings";
-	import { AIFamily } from "#shared/statics/AI-family";
+	import { AIFamily , AIFamilyDisplayName } from "#shared/statics/AI-family";
 	import { createDefaultProxyConf as defaultProxyConf } from "#shared/statics/default-proxy";
 	import { shouldLockSettingsChromeForCatalogUpdate } from '#shared/utils/catalog-update-inflight.utility';
 	import {

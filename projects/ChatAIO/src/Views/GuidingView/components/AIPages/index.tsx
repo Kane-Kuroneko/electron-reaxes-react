@@ -40,7 +40,7 @@ export const RCAIPagesPage = reaxper( () => {
 					value={ ai.id }
 					className="ai-option"
 				>
-					<span>{ ai.label }</span>
+					<span className="ai-option__name"><AIVendorLogo family={ ai.AI_family } size={ 16 } fallbackText={ ai.label }/>{ ai.label }</span>
 					<small>{ ai.url }</small>
 				</Checkbox> ) }
 			</Checkbox.Group>
@@ -59,7 +59,7 @@ export const RCAIPagesPage = reaxper( () => {
 					value={ ai.id }
 					className="ai-option"
 				>
-					<span>{ ai.label }</span>
+					<span className="ai-option__name"><AIVendorLogo family={ ai.AI_family } size={ 16 } fallbackText={ ai.label }/>{ ai.label }</span>
 					<small>{ ai.url }</small>
 				</Checkbox> ) }
 			</Checkbox.Group>
@@ -84,7 +84,8 @@ export const RCAIPagesPage = reaxper( () => {
 				className="custom-ai-card"
 			>
 				<div className="custom-ai-card__body">
-					<span>{ ai.label }</span>
+					{/* 向导阶段页面还没打开过，没有 favicon 缓存，直接用域名首字母占位 */}
+					<span className="ai-option__name"><AIVendorLogo family="custom" size={ 16 } fallbackText={ ai.url || ai.label }/>{ ai.label }</span>
 					<small>{ ai.url }</small>
 				</div>
 				<Button
@@ -96,8 +97,9 @@ export const RCAIPagesPage = reaxper( () => {
 	</section>;
 } );
 
-import { groupAIsByRegion } from '#shared/statics/ai-region';
 import { reaxel_GuidingView } from '#GuidingView/reaxels/guiding-view';
+import { groupAIsByRegion } from '#shared/statics/ai-region';
+import { AIVendorLogo } from '#shared/ai-vendor-logo';
 import { I18n , i18n } from '#GuidingView/reaxels/exports';
 import {
 	Button ,

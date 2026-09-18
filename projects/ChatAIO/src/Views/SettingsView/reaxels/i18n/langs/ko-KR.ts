@@ -117,6 +117,8 @@ export default {
 	"App family" : "앱 패밀리" ,
 	"App url" : "앱 URL" ,
 	"URL is required for custom AI" : "사용자 지정 AI에는 URL이 필요합니다" ,
+	"AI name is required" : "AI 이름은 필수입니다" ,
+	"Your own name for this page; the provider is shown by its logo." : "이 페이지에 붙일 나만의 이름입니다. 제공자는 로고로 표시됩니다." ,
 	"Proxy" : "프록시" ,
 	"Follow Global Setting" : "글로벌 설정 따르기" ,
 	"Direct" : "직접 연결" ,

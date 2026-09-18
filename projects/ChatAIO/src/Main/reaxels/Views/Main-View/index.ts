@@ -886,9 +886,11 @@ const estimateDropdownWidth = ( items : MenuView.Item[] ): number => {
 				)
 				: 0;
 			const loadDotWidth = item.loadState ? DROPDOWN_LOAD_DOT_SLOT : 0;
+			/* Switch AI 项 label 前有供应商 logo 槽，不计入会把 accelerator 挤出面板 */
+			const vendorWidth = item.vendor ? DROPDOWN_VENDOR_SLOT : 0;
 			maxContentWidth = Math.max(
 				maxContentWidth ,
-				labelWidth + accelWidth + loadDotWidth + DROPDOWN_ITEM_EXTRA ,
+				labelWidth + accelWidth + loadDotWidth + vendorWidth + DROPDOWN_ITEM_EXTRA ,
 			);
 			if( item.submenu ) walk( item.submenu );
 		}
@@ -1035,6 +1037,7 @@ import {
 	DROPDOWN_PANEL_VPAD ,
 	DROPDOWN_ROW_HEIGHT ,
 	DROPDOWN_SEPARATOR_HEIGHT ,
+	DROPDOWN_VENDOR_SLOT ,
 	getSwitchAiLabelInset ,
 } from '#shared/dropdown-geometry';
 import { applyMenubarWindowChrome } from '#main/services/menubar-window-chrome.utility';

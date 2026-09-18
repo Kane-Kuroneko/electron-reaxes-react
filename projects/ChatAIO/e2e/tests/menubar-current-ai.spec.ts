@@ -16,12 +16,16 @@ test( 'current AI badge opens dropdown and switches AI' , async( {
 	const labelBefore = ( await badge.innerText() ).trim();
 	expect( labelBefore.length ).toBeGreaterThan( 0 );
 	expect( labelBefore ).not.toBe( 'Settings' );
+	/* 厂商辨识靠 logo：badge 带 vendor 槽。见 docs/features/ai-vendor-logo-identity.md */
+	await expect( badge.locator( '.main-view-context-badge__vendor[data-vendor]' ) ).toHaveCount( 1 );
 
 	await badge.click();
 	const dropdown = await waitForVisibleDropdown( electronApp );
 	const switchItems = dropdown.locator( '[data-item-action="switch-ai"]' );
 	await expect( switchItems.first() ).toBeVisible();
 	expect( await switchItems.count() ).toBeGreaterThan( 1 );
+	/* 每个 Switch AI 项都渲染供应商 logo 槽 */
+	expect( await switchItems.locator( '.menu-item__vendor[data-vendor]' ).count() ).toBe( await switchItems.count() );
 
 	const nextId = snapshotBefore.enabledAIIds.find(
 		( id ) => id !== snapshotBefore.currentAIViewKey,

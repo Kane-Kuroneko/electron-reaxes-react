@@ -41,6 +41,17 @@ export const AdjacentNavButton = reaxper( ( {
 						<Icon size={ 13 } strokeWidth={ 2.25 } aria-hidden="true" />
 					</span>
 				) : null }
+				{/* 相邻 AI 的供应商 logo；label 已不含厂商名。见 ai-vendor-logo-identity.md */}
+				{ item.adjacentVendor ? (
+					<span className="main-view-bar-item__nav-vendor" data-vendor={ item.adjacentVendor.family } aria-hidden="true">
+						<AIVendorLogo
+							family={ item.adjacentVendor.family }
+							size={ 14 }
+							faviconUrl={ item.adjacentVendor.faviconUrl }
+							fallbackText={ vendorFallbackText( item.adjacentVendor , displayName ) }
+						/>
+					</span>
+				) : null }
 				<span className="main-view-bar-item__nav-name">{ displayName }</span>
 				{ isNext ? (
 					<span className="main-view-bar-item__nav-icon">
@@ -53,6 +64,8 @@ export const AdjacentNavButton = reaxper( ( {
 } );
 
 
+import { AIVendorLogo } from '#shared/ai-vendor-logo';
+import { vendorFallbackText } from '#shared/ai-vendor-logo/vendor-logo.utility';
+import type { MenuView } from '#src/Types/MenuView';
 import { reaxper } from 'reaxes-react';
 import { ChevronLeft , ChevronRight } from 'lucide-react';
-import type { MenuView } from '#src/Types/MenuView';

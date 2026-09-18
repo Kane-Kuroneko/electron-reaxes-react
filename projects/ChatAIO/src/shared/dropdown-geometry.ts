@@ -21,6 +21,8 @@ export const DROPDOWN_CHECKMARK_WIDTH = 16;
 export const DROPDOWN_LOAD_DOT_SIZE = 6;
 export const DROPDOWN_LOAD_DOT_MARGIN_END = 5;
 export const DROPDOWN_SIDE_GUTTER_WIDTH = 16;
+/** Switch AI 项的供应商 logo 槽（正方形），与 label 之间只靠 flex gap。见 ai-vendor-logo-identity.md */
+export const DROPDOWN_VENDOR_LOGO_SIZE = 16;
 export const DROPDOWN_ROW_HEIGHT = 27;
 export const DROPDOWN_SEPARATOR_LINE = 1;
 export const DROPDOWN_SEPARATOR_MARGIN_Y = 4;
@@ -28,6 +30,8 @@ export const DROPDOWN_SEPARATOR_MARGIN_Y = 4;
 export const DROPDOWN_PANEL_VPAD = DROPDOWN_PANEL_PAD_Y * 2 + DROPDOWN_PANEL_BORDER * 2;
 export const DROPDOWN_SEPARATOR_HEIGHT = DROPDOWN_SEPARATOR_LINE + DROPDOWN_SEPARATOR_MARGIN_Y * 2;
 export const DROPDOWN_LOAD_DOT_SLOT = DROPDOWN_LOAD_DOT_SIZE + DROPDOWN_LOAD_DOT_MARGIN_END;
+/** 带 vendor 的项在 label 前多占的宽度：logo + 一个 gap */
+export const DROPDOWN_VENDOR_SLOT = DROPDOWN_VENDOR_LOGO_SIZE + DROPDOWN_ITEM_GAP;
 export const DROPDOWN_ITEM_EXTRA = DROPDOWN_ITEM_PAD_LEFT
 	+ DROPDOWN_ITEM_PAD_RIGHT
 	+ DROPDOWN_CHECKMARK_WIDTH
@@ -36,7 +40,8 @@ export const DROPDOWN_ITEM_EXTRA = DROPDOWN_ITEM_PAD_LEFT
 
 /**
  * panel 左缘（含 border）到 Switch AI `.menu-item__label` 左缘。
- * 行结构：border | pad | checkmark | gap | load-dot+margin | gap | label
+ * 行结构：border | pad | checkmark | gap | load-dot+margin | gap | vendor-logo | gap | label
+ * Switch AI 项一定带 vendor（Menu 的 resolveVendorRef），所以 inset 固定含 logo 槽。
  */
 export const getSwitchAiLabelInset = (): number => {
 	return DROPDOWN_PANEL_BORDER
@@ -44,7 +49,8 @@ export const getSwitchAiLabelInset = (): number => {
 		+ DROPDOWN_CHECKMARK_WIDTH
 		+ DROPDOWN_ITEM_GAP
 		+ DROPDOWN_LOAD_DOT_SLOT
-		+ DROPDOWN_ITEM_GAP;
+		+ DROPDOWN_ITEM_GAP
+		+ DROPDOWN_VENDOR_SLOT;
 };
 
 export const getDropdownRootStyleVars = (): Record<string , string> => {
@@ -62,6 +68,7 @@ export const getDropdownRootStyleVars = (): Record<string , string> => {
 		'--dropdown-load-dot-size' : `${ DROPDOWN_LOAD_DOT_SIZE }px` ,
 		'--dropdown-load-dot-margin-end' : `${ DROPDOWN_LOAD_DOT_MARGIN_END }px` ,
 		'--dropdown-side-gutter-width' : `${ DROPDOWN_SIDE_GUTTER_WIDTH }px` ,
+		'--dropdown-vendor-logo-size' : `${ DROPDOWN_VENDOR_LOGO_SIZE }px` ,
 		'--dropdown-row-height' : `${ DROPDOWN_ROW_HEIGHT }px` ,
 		'--dropdown-separator-line' : `${ DROPDOWN_SEPARATOR_LINE }px` ,
 		'--dropdown-separator-margin-y' : `${ DROPDOWN_SEPARATOR_MARGIN_Y }px` ,

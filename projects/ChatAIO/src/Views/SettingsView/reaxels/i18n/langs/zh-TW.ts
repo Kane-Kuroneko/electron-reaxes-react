@@ -117,6 +117,8 @@ export default {
 	"App family" : "應用系列" ,
 	"App url" : "應用網址" ,
 	"URL is required for custom AI" : "自訂 AI 必須填寫網址" ,
+	"AI name is required" : "必須填寫 AI 名稱" ,
+	"Your own name for this page; the provider is shown by its logo." : "為這個頁面取一個你自己的名字；供應商由 logo 標識。" ,
 	"Proxy" : "代理" ,
 	"Follow Global Setting" : "跟隨全域設定" ,
 	"Direct" : "直連" ,

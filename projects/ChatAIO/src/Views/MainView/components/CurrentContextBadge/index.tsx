@@ -6,11 +6,14 @@
  */
 export const CurrentContextBadge = reaxper( ( {
 	label ,
+	vendor ,
 	isOpen ,
 	interactive ,
 	onPress ,
 } : {
 	label : string;
+	/** 供应商 logo；Settings 态为 null 只显示文字。见 ai-vendor-logo-identity.md */
+	vendor? : AI.VendorRef | null;
 	isOpen : boolean;
 	interactive : boolean;
 	onPress : () => void;
@@ -47,6 +50,16 @@ export const CurrentContextBadge = reaxper( ( {
 				e.stopPropagation();
 			} }
 		>
+			{ vendor ? (
+				<span className="main-view-context-badge__vendor" data-vendor={ vendor.family } aria-hidden="true">
+					<AIVendorLogo
+						family={ vendor.family }
+						size={ 14 }
+						faviconUrl={ vendor.faviconUrl }
+						fallbackText={ vendorFallbackText( vendor , label ) }
+					/>
+				</span>
+			) : null }
 			<span className="main-view-context-badge__label">{ label }</span>
 		</button>
 	);
@@ -54,4 +67,7 @@ export const CurrentContextBadge = reaxper( ( {
 
 
 import { CURRENT_AI_MENU_ID } from '#MainView/reaxels/main-view/current-ai-menu.utility';
+import { AIVendorLogo } from '#shared/ai-vendor-logo';
+import { vendorFallbackText } from '#shared/ai-vendor-logo/vendor-logo.utility';
+import type { AI } from '#src/Types/SettingsTypes/AI';
 import { reaxper } from 'reaxes-react';

@@ -27,6 +27,7 @@ export const MenuBarCenterCluster = reaxper( () => {
 			{ currentContextLabel ? (
 				<CurrentContextBadge
 					label={ currentContextLabel }
+					vendor={ store.currentContextVendor }
 					isOpen={ store.openMenuId === CURRENT_AI_MENU_ID }
 					interactive={ !store.settingsViewOpened }
 					onPress={ () => pressTopMenuItem( CURRENT_AI_MENU_ID ) }

@@ -204,6 +204,7 @@ describe( '手动检查目录更新' , () => {
 		assert.equal( result.diff?.added.length , 1 );
 		assert.equal( result.diff?.added[0].id , GROK_ID );
 		assert.equal( result.diff?.added[0].label , 'Grok' );
+		assert.equal( result.diff?.added[0].AI_family , 'grok' );
 		assert.ok( result.diff );
 		assert.equal( 'proxy_mode' in result.diff.added[0] , false );
 		assert.equal( cycle.pendingRevision() , 3 );
@@ -367,6 +368,7 @@ describe( '手动检查目录更新' , () => {
 		assert.equal( result.diff?.availability.length , 1 );
 		assert.deepEqual( result.diff?.availability[0].forbiddenAdded , [ 'CN' ] );
 		assert.equal( result.diff?.availability[0].label , 'ChatGPT' );
+		assert.equal( result.diff?.availability[0].AI_family , 'chatgpt' );
 		assert.equal( cycle.pendingRevision() , 3 );
 	} );
 

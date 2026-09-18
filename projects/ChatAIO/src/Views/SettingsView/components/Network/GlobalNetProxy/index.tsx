@@ -160,17 +160,21 @@ const ManualProxy = reaxper( () => {
 
 const AIProxySelector = reaxper( () => {
 	const { AIs } = reaxel_SettingsView.store.Data;
+	/* custom 页 favicon 兜底表（一次拉取） */
+	useEffect( () => {
+		void reaxel_AIFavicons().ensureLoaded();
+	} , [] );
 	
 	// 构建树形结构
 	const treeData = AIs.filter( ai => !ai.disabled ).reduce((acc, ai) => {
 		// 查找是否已存在该family节点
 		let familyNode = acc.find(item => item.value === `family:${ai.AI_family}`);
 		if (!familyNode) {
+			/* family 节点 = 供应商 logo + 显示名；页节点 = logo + 用户 label。见 ai-vendor-logo-identity.md */
 			familyNode = {
 				label: (
 					<span style={{ fontWeight: 'bold', fontSize: '14px' }}>
-						<FolderOutlined style={{ marginRight: 4, color: '#1890ff' }} />
-						{ai.AI_family}
+						<AIFamilyIdentity family={ ai.AI_family } size={ 15 }/>
 					</span>
 				),
 				value: `family:${ai.AI_family}`,
@@ -184,8 +188,7 @@ const AIProxySelector = reaxper( () => {
 		familyNode.children.push({
 			label: (
 				<span style={{ paddingLeft: 4 }}>
-					<RobotOutlined style={{ marginRight: 4, color: '#52c41a' }} />
-					{ai.label}
+					<AIIdentity ai={ ai } size={ 14 }/>
 				</span>
 			),
 			value: `name:${ai.id}`,
@@ -322,7 +325,9 @@ import {
 	TreeSelect,
 	InputNumber
 } from 'antd';
-import { FolderOutlined, RobotOutlined } from '@ant-design/icons';
+// import { FolderOutlined, RobotOutlined } from '@ant-design/icons'; // 已由供应商 logo 取代
+import { AIFamilyIdentity , AIIdentity } from '#SettingsView/components/AIIdentity';
+import { reaxel_AIFavicons } from '#SettingsView/reaxels/ai-favicons';
 
 import { reaxper  } from 'reaxes-react';
 import less from './index.module.less';

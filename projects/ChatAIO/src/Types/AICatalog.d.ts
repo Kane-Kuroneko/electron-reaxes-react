@@ -93,6 +93,8 @@ export namespace AICatalog {
 	export type CatalogAvailabilityChange = {
 		id: string;
 		label: string;
+		/** 预览行画供应商 logo；不把整份 AIItem 下发 */
+		AI_family: AI.AIFamily;
 		forbiddenAdded: string[];
 		forbiddenRemoved: string[];
 		/** available 白名单相对当前目录有没有变 */
@@ -101,11 +103,12 @@ export namespace AICatalog {
 		availableAfter: string[];
 	};
 
-	/** IPC / Modal 预览一行：只有 id、名称、网址，不要整份 AIItem（proxy 等）。 */
+	/** IPC / Modal 预览一行：id / 名称 / 网址 / family（画 logo），不要整份 AIItem（proxy 等）。 */
 	export type CatalogPagePreview = {
 		id: string;
 		label: string;
 		url: string;
+		AI_family: AI.AIFamily;
 	};
 
 	/**

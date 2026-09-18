@@ -40,6 +40,11 @@ export const deleteAI = (id: string) => {
 	return api.deleteAI(id);
 }
 
+/** custom 页 favicon 全表（aiId → data URL）；内置 family 不在表里，用打包 logo */
+export const getAIFavicons = () => {
+	return api.getAIFavicons();
+}
+
 export const reorderAIs = (enabledIds: string[]) => {
 	return api.reorderAIs(cloneForIPC(enabledIds));
 }

@@ -121,9 +121,12 @@ body {
 	width: 100%;
 	height: 64px;
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
 	align-items: center;
 	justify-content: center;
+	gap: 7px;
+	padding: 0 10px;
+	box-sizing: border-box;
 	border-radius: 8px;
 	border: 1px solid rgba(0, 0, 0, 0.07);
 	overflow: hidden;
@@ -202,16 +205,29 @@ body {
 		inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
 
-/* ── 标签文字 ── */
+/* ── 供应商 logo（厂商辨识，取代原 family 文字行）── */
+.switch-ai-bar__vendor {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	color: rgba(38, 36, 46, 0.86);
+	transition: color @settle-duration @settle-easing;
+}
+
+.swiper-slide[data-position="current"] .switch-ai-bar__vendor {
+	/* current 卡是饱和渐变底，单色 logo 反白 */
+	color: #f8fbff;
+	--chataio-vendor-letter-bg: rgba(255, 255, 255, 0.22);
+	--chataio-vendor-letter-color: #f8fbff;
+}
+
+/* ── 标签文字（用户自定义名，不含厂商）── */
 .switch-ai-bar__label {
 	display: block;
-	width: 100%;
-	padding: 0 8px;
-	box-sizing: border-box;
+	min-width: 0;
 	font-size: 15px;
 	line-height: 20px;
 	font-weight: 400;
-	text-align: center;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -220,26 +236,6 @@ body {
 
 .swiper-slide[data-position="current"] .switch-ai-bar__label {
 	color: #f8fbff;
-}
-
-/* ── Family 标签 ── */
-.switch-ai-bar__family {
-	display: block;
-	width: 100%;
-	padding: 0 8px;
-	box-sizing: border-box;
-	margin-top: 2px;
-	font-size: 10px;
-	line-height: 14px;
-	text-align: center;
-	color: rgba(38, 36, 46, 0.42);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.swiper-slide[data-position="current"] .switch-ai-bar__family {
-	color: rgba(255, 255, 255, 0.72);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -273,15 +269,13 @@ body {
 		height: 54px;
 	}
 
-	.switch-ai-bar__label {
-		font-size: 13px;
+	.switch-ai-bar__item {
+		gap: 5px;
 		padding: 0 6px;
-		line-height: 18px;
 	}
 
-	.switch-ai-bar__family {
-		font-size: 9px;
-		padding: 0 6px;
-		line-height: 12px;
+	.switch-ai-bar__label {
+		font-size: 13px;
+		line-height: 18px;
 	}
 }

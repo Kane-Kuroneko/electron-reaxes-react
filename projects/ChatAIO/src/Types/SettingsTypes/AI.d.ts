@@ -25,6 +25,19 @@ export namespace AI {
 	
 	
 	export type UserFillProxy = NetworkProxy.ProxyConf;
+
+	/**
+	 * 跨 IPC 携带的供应商辨识信息，渲染端据此画 logo（label 不再含厂商名）。
+	 * 内置 family 用打包 SVG；custom 走 faviconUrl，缺省退回 url 域名首字母。
+	 * 见 docs/features/ai-vendor-logo-identity.md
+	 */
+	export type VendorRef = {
+		family: AIFamily;
+		/** custom family 站点 favicon（data: URL，主进程缓存）；无则渲染端退首字母 */
+		faviconUrl?: string | null;
+		/** 首字母兜底取字来源（站点 url） */
+		url?: string;
+	};
 	
 	export type AIItem = {
 		id:string;

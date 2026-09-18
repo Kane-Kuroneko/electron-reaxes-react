@@ -288,8 +288,15 @@ export const reaxel_Settings = reaxel( () => {
 	
 	useIpcRpc( 'delete-ai' ).handle( async( { event } , id ) => {
 		const deleted = aiConfigService.deleteAI( id );
+		if( deleted ) {
+			forgetAIFavicon( id );
+		}
 		await syncRuntimeViews();
 		return deleted;
+	} );
+
+	useIpcRpc( 'get-ai-favicons' ).handle( async() => {
+		return getAllAIFavicons();
 	} );
 
 	useIpcRpc( 'reorder-ais' ).handle( async( { event } , enabledIds ) => {
@@ -336,6 +343,7 @@ export const reaxel_Settings = reaxel( () => {
 
 			// session/storage 清理成功后再重置配置，避免失败时丢失可重试的 AI id 来源。
 			aiConfigService.resetToDefaults();
+			resetAIIds.forEach( id => forgetAIFavicon( id ) );
 			await syncRuntimeViews();
 			return { success : true };
 		} catch ( error ) {
@@ -541,6 +549,7 @@ import {
 } from '#main/services/settings/settings-config-service';
 import { testProxyConnectivity } from '#main/services/settings/proxy-service';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';
+import { forgetAIFavicon , getAllAIFavicons } from '#main/services/ai-favicon';
 import {
 	applyAiCatalogUpdate ,
 	checkAiCatalogUpdate ,

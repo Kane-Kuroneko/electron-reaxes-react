@@ -1565,19 +1565,26 @@ const getRuntimeSettings = ():Settings => {
 	};
 };
 
+/* SwitchAiBar 卡片以供应商 logo 辨识；custom 页带 favicon / url 兜底。见 ai-vendor-logo-identity.md */
 const createPayloadItemFromAI = (ai:AI.AIItem):SwitchAiBarPayloadItem => {
+	const vendor = toVendorRef( ai , getAIFaviconDataUrl( ai.id ) );
 	return {
 		id : ai.id ,
 		label : ai.label ,
-		family : ai.AI_family,
+		family : ai.AI_family ,
+		faviconUrl : vendor.faviconUrl ,
+		url : vendor.url,
 	};
 };
 
 const createPayloadItemFromRuntimeView = (runtimeView:RuntimeAIView):SwitchAiBarPayloadItem => {
+	const vendor = toVendorRef( runtimeView.config , getAIFaviconDataUrl( runtimeView.id ) );
 	return {
 		id : runtimeView.id ,
 		label : runtimeView.label ,
-		family : runtimeView.AIName,
+		family : runtimeView.AIName ,
+		faviconUrl : vendor.faviconUrl ,
+		url : vendor.url,
 	};
 };
 
@@ -1591,11 +1598,7 @@ const isSameBounds = (left:Rectangle , right:Rectangle) => {
 /** switch = 换页/Settings/冷启动；recover = 回前台补挂载（禁止 remount）。 */
 export type CenterMountIntent = 'switch' | 'recover';
 
-type SwitchAiBarPayloadItem = {
-	id: string;
-	label: string;
-	family: AI.AIFamily;
-};
+type SwitchAiBarPayloadItem = FloatingView.SwitchAiBarItem;
 
 const resolveStartupAI = (
 	activeAIs:AI.AIItem[] ,
@@ -1657,6 +1660,8 @@ import {
 } from '#main/services/shortcuts/ai-switch';
 import { getAIConfigService } from "#main/services/settings/ai-config-service";
 import { getSettingsConfigService } from "#main/services/settings/settings-config-service";
+import { getAIFaviconDataUrl } from '#main/services/ai-favicon';
+import { toVendorRef } from '#shared/ai-vendor-logo/vendor-logo.utility';
 import type { FloatingView } from "#src/Types/FloatingView";
 import type { AI } from "#src/Types/SettingsTypes/AI";
 import type { Settings } from "#src/Types/SettingsTypes";

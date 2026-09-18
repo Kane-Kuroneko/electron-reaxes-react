@@ -117,6 +117,8 @@ export default {
 	"App family" : "アプリファミリー" ,
 	"App url" : "アプリ URL" ,
 	"URL is required for custom AI" : "カスタム AI には URL が必要です" ,
+	"AI name is required" : "AI 名は必須です" ,
+	"Your own name for this page; the provider is shown by its logo." : "このページにあなた自身の名前を付けてください。プロバイダーはロゴで示されます。" ,
 	"Proxy" : "プロキシ" ,
 	"Follow Global Setting" : "グローバル設定に従う" ,
 	"Direct" : "直接接続" ,

@@ -32,6 +32,8 @@ const getDefaultAIs = useRpc('get-default-ais');
 const updateAI = useRpc('update-ai');
 const addAI = useRpc('add-ai');
 const deleteAI = useRpc('delete-ai');
+/* custom 页 favicon 全表（aiId → data URL），供 AIVendorLogo 兜底 */
+const getAIFavicons = useRpc('get-ai-favicons');
 const reorderAIs = useRpc('reorder-ais');
 const resetAIsToDefaults = useRpc('reset-ais-to-defaults');
 const checkAiCatalogUpdate = useRpc('check-ai-catalog-update');
@@ -117,6 +119,7 @@ const api = {
 	updateAI,
 	addAI,
 	deleteAI,
+	getAIFavicons,
 	reorderAIs,
 	resetAIsToDefaults,
 	checkAiCatalogUpdate,

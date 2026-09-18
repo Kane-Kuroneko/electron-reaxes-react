@@ -168,13 +168,16 @@ export const CatalogUpdateControls = reaxper( () => {
 				</p>
 				{ diff != null && diff.added.length > 0 ? <DiffSection title={ i18n( 'These AI pages will be added' ) }>
 					{ diff.added.map( ai => (
-						<li key={ ai.id }>{ ai.label }{ ai.url !== '' ? ` — ${ ai.url }` : '' }</li>
+						<li key={ ai.id }>
+							<CatalogPreviewIdentity preview={ ai } />
+							{ ai.url !== '' ? ` — ${ ai.url }` : '' }
+						</li>
 					) ) }
 				</DiffSection> : null }
 				{ diff != null && diff.updated.length > 0 ? <DiffSection title={ i18n( 'Name or website will change' ) }>
 					{ diff.updated.map( row => (
 						<li key={ row.id }>
-							{ row.after.label }
+							<CatalogPreviewIdentity preview={ row.after } />
 							{ row.fields.includes( 'url' ) ? ` · ${ row.before.url } → ${ row.after.url }` : '' }
 							{ row.fields.includes( 'label' ) && row.before.label !== row.after.label
 								? ` · ${ row.before.label } → ${ row.after.label }`
@@ -185,7 +188,7 @@ export const CatalogUpdateControls = reaxper( () => {
 				{ hasAvailabilityDiff ? <DiffSection title={ i18n( 'Where you can use these AIs has changed' ) }>
 					{ availability.map( row => (
 						<li key={ row.id }>
-							<div>{ row.label }</div>
+							<div><CatalogPreviewIdentity preview={ { id : row.id , label : row.label , url : '' , AI_family : row.AI_family } } /></div>
 							{ row.forbiddenAdded.length > 0 ? <div>
 								{ i18n( 'Won\'t work in:' ) } { formatCountryList( row.forbiddenAdded , language ) }
 							</div> : null }
@@ -203,12 +206,12 @@ export const CatalogUpdateControls = reaxper( () => {
 				</DiffSection> : null }
 				{ diff != null && diff.skipped.length > 0 ? <DiffSection title={ i18n( 'These pages will keep your current settings' ) }>
 					{ diff.skipped.map( row => (
-						<li key={ row.id }>{ skippedLabel( ais , row.id , row.reason ) }</li>
+						<li key={ row.id }>{ skippedRow( ais , row.id , row.reason ) }</li>
 					) ) }
 				</DiffSection> : null }
 				{ diff != null && diff.catalogDropped.length > 0 ? <DiffSection title={ i18n( 'ChatAIO no longer maintains this listing. Existing local data will be kept.' ) }>
 					{ diff.catalogDropped.map( row => (
-						<li key={ row.id }>{ droppedLabel( ais , row.id ) }</li>
+						<li key={ row.id }>{ droppedRow( ais , row.id ) }</li>
 					) ) }
 				</DiffSection> : null }
 				{ !hasPageDiff && hasAvailabilityDiff ? <p>
@@ -233,22 +236,41 @@ const DiffSection = ( { title , children }:{ title:string; children:React.ReactN
 	</div>;
 };
 
-const skippedLabel = ( ais:AI.AIItem[] , id:string , reason:AICatalog.MergeSkipReason ) => {
-	const ai = ais.find( item => item.id === id );
-	const name = ai?.label || id;
-	if( reason === 'url-override' ) {
-		return `${ name } — ${ i18n( 'Your custom page settings will be kept.' ) }`;
-	}
-	if( reason === 'custom-id' ) {
-		return `${ name } — ${ i18n( 'This page was created by the user.' ) }`;
-	}
-	return `${ name } — ${ i18n( 'Your changes will be kept.' ) }`;
+/** 目录瘦预览 → logo + 名称。见 docs/features/ai-vendor-logo-identity.md */
+const CatalogPreviewIdentity = ( { preview }:{ preview:AICatalog.CatalogPagePreview } ) => {
+	return <AIIdentity
+		ai={ {
+			id : preview.id ,
+			label : preview.label ,
+			AI_family : preview.AI_family ,
+			url : preview.url ,
+			url_override : null,
+		} }
+		size={ 14 }
+	/>;
 };
 
-const droppedLabel = ( ais:AI.AIItem[] , id:string ) => {
+const localIdentity = ( ais:AI.AIItem[] , id:string ) => {
 	const ai = ais.find( item => item.id === id );
-	return ai?.label || id;
+	if( ai ) {
+		return <AIIdentity ai={ ai } size={ 14 } />;
+	}
+	return id;
 };
+
+const skippedRow = ( ais:AI.AIItem[] , id:string , reason:AICatalog.MergeSkipReason ) => {
+	const reasonText = reason === 'url-override'
+		? i18n( 'Your custom page settings will be kept.' )
+		: reason === 'custom-id'
+			? i18n( 'This page was created by the user.' )
+			: i18n( 'Your changes will be kept.' );
+	return <>
+		{ localIdentity( ais , id ) }
+		{ ` — ${ reasonText }` }
+	</>;
+};
+
+const droppedRow = ( ais:AI.AIItem[] , id:string ) => localIdentity( ais , id );
 
 const formatCountryName = ( code:string , locale:string ):string => {
 	try {
@@ -263,6 +285,7 @@ const formatCountryList = ( codes:string[] , locale:string ):string => {
 	return codes.map( code => formatCountryName( code , locale ) ).join( joiner );
 };
 
+import { AIIdentity } from '#SettingsView/components/AIIdentity';
 import { reaxel_I18n } from "#SettingsView/reaxels/i18n";
 import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 import { relaunchApp } from '#SettingsView/services/Settings';

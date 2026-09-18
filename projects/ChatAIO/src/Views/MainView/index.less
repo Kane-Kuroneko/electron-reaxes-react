@@ -263,6 +263,16 @@ html:has(.mac-menu-bar) #react-app-root {
 	);
 }
 
+/* 供应商 logo：与渐变文字并列居中，label 放不下时优先裁文字 */
+.main-view-context-badge__vendor {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	margin-right: 6px;
+	pointer-events: none;
+	color: var(--menu-view-text, rgba(24, 24, 27, 0.9));
+}
+
 .main-view-context-badge__label {
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -369,6 +379,14 @@ html:has(.mac-menu-bar) #react-app-root {
 	display: flex;
 	flex-shrink: 0;
 	align-items: center;
+}
+
+/* Prev / Next 里相邻 AI 的供应商 logo */
+.main-view-bar-item__nav-vendor {
+	display: inline-flex;
+	flex-shrink: 0;
+	align-items: center;
+	color: var(--menu-view-text, rgba(24, 24, 27, 0.9));
 }
 
 .main-view-bar-item__nav-name {

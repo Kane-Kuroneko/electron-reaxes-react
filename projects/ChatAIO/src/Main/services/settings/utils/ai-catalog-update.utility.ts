@@ -135,15 +135,16 @@ export const catalogBytesTooLargeError = ():Error & { code:string } => {
 	return error;
 };
 
-const toPagePreview = ( ai:Pick<AI.AIItem , 'id' | 'label' | 'url'> ):AICatalog.CatalogPagePreview => {
+const toPagePreview = ( ai:Pick<AI.AIItem , 'id' | 'label' | 'url' | 'AI_family'> ):AICatalog.CatalogPagePreview => {
 	return {
 		id : ai.id ,
 		label : ai.label ,
-		url : ai.url,
+		url : ai.url ,
+		AI_family : ai.AI_family,
 	};
 };
 
-/** Modal / IPC 要页 diff + 地区变化，不把 nextAis 写盘计划送给 renderer。added/updated 只带 id/label/url。 */
+/** Modal / IPC 要页 diff + 地区变化，不把 nextAis 写盘计划送给 renderer。added/updated 只带 id/label/url/AI_family。 */
 export const toPublicCatalogDiff = (
 	preview:AICatalog.MergePreview ,
 	baseVendors:AICatalog.Vendor[] ,

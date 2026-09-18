@@ -15,6 +15,8 @@ export namespace MenuView {
 		icon? : string;
 		/** Switch AI 等：是否已在内存中实例化（与 checked 选中态独立） */
 		loadState? : ItemLoadState;
+		/** Switch AI 项：供应商 logo 依据（icon 是 emoji 槽且与 loadState 互斥，不要复用） */
+		vendor? : AI.VendorRef;
 		submenu? : Item[];
 		action? : string;
 		actionPayload? : unknown;
@@ -36,12 +38,16 @@ export namespace MenuView {
 		icon? : string;
 		/** Prev/Next 顶栏按钮：相邻 AI 名称（用于悬浮提示） */
 		adjacentLabel? : string;
+		/** Prev/Next 顶栏按钮：相邻 AI 的供应商 logo 依据 */
+		adjacentVendor? : AI.VendorRef;
 		tooltip? : string;
 	}
 
 	/** 菜单栏 chrome 元数据（当前上下文等） */
 	export interface Chrome {
 		currentContextLabel : string;
+		/** 当前 AI 的供应商 logo 依据；Settings 打开 / 无当前 AI 时为 null */
+		currentContextVendor? : AI.VendorRef | null;
 		settingsViewOpened : boolean;
 	}
 
@@ -99,3 +105,4 @@ export namespace MainView {
 }
 
 import type {} from 'electron';
+import type { AI } from '#src/Types/SettingsTypes/AI';

@@ -158,7 +158,10 @@ test( 'Add AI Page persists immediately without lighting table Save' , async( {
 	const dialog = manageAisDialog( settings , 'Add AI Page' );
 	await expect( dialog ).toBeVisible();
 	const boxes = dialog.getByRole( 'textbox' );
-	await boxes.nth( 0 ).fill( 'E2E Echo' );
+	const nameBox = boxes.nth( 0 );
+	await expect( nameBox ).toHaveValue( '' );
+	await expect( nameBox ).toHaveAttribute( 'placeholder' , /./ );
+	await nameBox.fill( 'E2E Echo' );
 	await boxes.nth( 1 ).fill( 'about:blank' );
 	await watchClick( dialogSave( settings ) );
 	await expect( dialog ).toBeHidden();
@@ -168,6 +171,33 @@ test( 'Add AI Page persists immediately without lighting table Save' , async( {
 	const after = await readUserAisFile( userDataDir );
 	expect( after.ais.length ).toBe( before.ais.length + 1 );
 	expect( after.ais.some( ( ai ) => ai.label === 'E2E Echo' ) ).toBe( true );
+} );
+
+test( 'Add without typing a name saves the placeholder default' , async( {
+	electronApp ,
+	mainWindow ,
+	userDataDir,
+} ) => {
+	const settings = await openSettingsFromApplicationMenu( electronApp , mainWindow );
+	await openManageAIs( settings );
+	const before = await readUserAisFile( userDataDir );
+	await watchClick( settings.getByRole( 'button' , { name : 'Add AI Page' } ) );
+	const dialog = manageAisDialog( settings , 'Add AI Page' );
+	await expect( dialog ).toBeVisible();
+	const boxes = dialog.getByRole( 'textbox' );
+	const nameBox = boxes.nth( 0 );
+	await expect( nameBox ).toHaveValue( '' );
+	const placeholder = await nameBox.getAttribute( 'placeholder' );
+	expect( placeholder ).toBeTruthy();
+	await boxes.nth( 1 ).fill( 'about:blank' );
+	await watchClick( dialogSave( settings ) );
+	await expect( dialog ).toBeHidden();
+	await expectTableIdle( settings );
+	await expectFooterIdle( settings );
+	await expect( settings.getByText( placeholder! ) ).toBeVisible();
+	const after = await readUserAisFile( userDataDir );
+	expect( after.ais.length ).toBe( before.ais.length + 1 );
+	expect( after.ais.some( ( ai ) => ai.label === placeholder ) ).toBe( true );
 } );
 
 test( 'table Save writes Enabled flags and leaves footer idle' , async( {
@@ -202,7 +232,10 @@ test( 'Clone persists a new id immediately without lighting table Save' , async(
 	/* Clone 打开的弹窗是 mode:'add'，标题是 Add AI Page（见 changeCloneAIModalVisible）。 */
 	const dialog = manageAisDialog( settings , 'Add AI Page' );
 	await expect( dialog ).toBeVisible();
-	await dialog.getByRole( 'textbox' ).first().fill( 'E2E Charlie Copy' );
+	const nameBox = dialog.getByRole( 'textbox' ).first();
+	await expect( nameBox ).toHaveValue( '' );
+	await expect( nameBox ).toHaveAttribute( 'placeholder' , /./ );
+	await nameBox.fill( 'E2E Charlie Copy' );
 	await watchClick( dialogSave( settings ) );
 	await expect( dialog ).toBeHidden();
 	await expectTableIdle( settings );
@@ -272,6 +305,36 @@ test( 'Enter does not save when the form is invalid (empty custom URL)' , async(
 	expect( after.ais.length ).toBe( before.ais.length );
 	await watchClick( dialogCancel( settings ) );
 	await expect( dialog ).toBeHidden();
+} );
+
+test( 'Save / Enter do not persist when AI name is empty' , async( {
+	electronApp ,
+	mainWindow ,
+	userDataDir,
+} ) => {
+	/* label 是同 family 多页之间唯一的区分（厂商靠 logo），Edit 清空必须拦。Add/Clone 空着保存走 placeholder，见下一条。 */
+	const settings = await openSettingsFromApplicationMenu( electronApp , mainWindow );
+	await openManageAIs( settings );
+	const before = await readUserAisFile( userDataDir );
+	await watchClick( manageAisRow( settings , E2E_AI_C.id ).getByRole( 'button' , { name : 'Edit' } ) );
+	const dialog = manageAisDialog( settings , 'Edit AI Page' );
+	await expect( dialog ).toBeVisible();
+	/* name 列渲染 logo + label；Edit 清空后的拒绝路径 */
+	const nameBox = dialog.getByRole( 'textbox' ).first();
+	await nameBox.fill( '   ' );
+	await nameBox.press( 'Enter' );
+	await expect( settings.getByText( 'AI name is required' ).first() ).toBeVisible();
+	await expect( dialog ).toBeVisible();
+	await watchClick( dialogSave( settings ) );
+	await expect( dialog ).toBeVisible();
+	const after = await readUserAisFile( userDataDir );
+	expect( after.ais.find( ( ai ) => ai.id === E2E_AI_C.id )?.label ).toBe(
+		before.ais.find( ( ai ) => ai.id === E2E_AI_C.id )?.label,
+	);
+	await watchClick( dialogCancel( settings ) );
+	await expect( dialog ).toBeHidden();
+	/* 表格 name 列带供应商 logo 槽 */
+	await expect( manageAisRow( settings , E2E_AI_C.id ).locator( '[data-vendor]' ).first() ).toBeVisible();
 } );
 
 import { test , expect } from '../fixtures';

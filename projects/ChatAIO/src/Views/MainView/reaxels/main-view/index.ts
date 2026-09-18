@@ -110,6 +110,8 @@ export const reaxel_MainView = reaxel( () => {
 		platform : detectOS() as NodeJS.Platform ,
 		theme : ( bootTheme ?? 'light' ) as 'light' | 'dark' ,
 		currentContextLabel : '' ,
+		/* 中区 Current AI 的供应商 logo 引用；Settings 打开或无 AI 时为 null */
+		currentContextVendor : null as AI.VendorRef | null ,
 		settingsViewOpened : false ,
 		updateAvailable : false ,
 	} );
@@ -334,6 +336,7 @@ export const reaxel_MainView = reaxel( () => {
 		if( command.type === 'menu-view:structure-update' ) {
 			setState( {
 				currentContextLabel : command.payload.chrome.currentContextLabel ,
+				currentContextVendor : command.payload.chrome.currentContextVendor ?? null ,
 				settingsViewOpened : command.payload.chrome.settingsViewOpened ,
 			} );
 			if( command.payload.chrome.settingsViewOpened && store.openMenuId === CURRENT_AI_MENU_ID ) {
@@ -389,6 +392,7 @@ export const reaxel_MainView = reaxel( () => {
 
 import { createReaxable , reaxel } from 'reaxes';
 import type { MenuView } from '#src/Types/MenuView';
+import type { AI } from '#src/Types/SettingsTypes/AI';
 import type { AppUpdater } from '#src/Types/AppUpdater';
 import { cloneForIPC } from '#shared/utils/clone-for-ipc.utility';
 import { getMenuBarHeight } from '#shared/menubar-geometry';

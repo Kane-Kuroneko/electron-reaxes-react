@@ -10,6 +10,9 @@ export namespace FloatingView {
 		id: string;
 		label: string;
 		family: AI.AIFamily;
+		/** custom family 的 favicon / 首字母来源；内置 family 用 family 查打包 logo */
+		faviconUrl?: string | null;
+		url?: string;
 	};
 
 	/**

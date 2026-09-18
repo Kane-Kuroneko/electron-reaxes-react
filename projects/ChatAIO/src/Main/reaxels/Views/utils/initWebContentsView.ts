@@ -152,6 +152,10 @@ const useAIView = (view:WebContentsView,options:WebContentsViewConstructorOption
 		shell.openExternal(url);
 		return { action: 'deny' };
 	});
+	/* custom family 没有打包 logo，抓站点 favicon 兜底；内置 family 内部直接跳过。见 ai-vendor-logo-identity.md */
+	if( options.aiConfig ) {
+		trackAIViewFavicon( view , options.aiConfig );
+	}
 	~async function loadAIView() {
 		try {
 			console.log( '[Views] Loading AI view:' , options.aiConfig?.id , options.domain );
@@ -278,6 +282,7 @@ import { hasUsableBrowserWindowContent } from '#main/services/usable-window-cont
 import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menubar-cold-start-monitor.retexel';
 import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 import { applyAIProxyToView } from "#main/services/settings/proxy-service";
+import { trackAIViewFavicon } from '#main/services/ai-favicon';
 import { handleAISwitchShortcutInput } from '#main/services/shortcuts/ai-switch';
 import { installWebContentsKeyboardGuard } from '#main/services/shortcuts/window-keyboard';
 import { dismissMenubarDropdownIfOpen } from '#main/services/menubar-dropdown-dismiss.utility';

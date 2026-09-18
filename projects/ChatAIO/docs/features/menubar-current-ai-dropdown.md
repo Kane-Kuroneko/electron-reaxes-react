@@ -13,6 +13,7 @@
 7. **下拉 AI name 与 badge 文字左对齐**（`anchorAlign: 'label'`）：
    - badge 文字左缘用 `.main-view-context-badge__label` 的 `getBoundingClientRect()`（随文案长短变）。
    - 面板左移量 = `getSwitchAiLabelInset()`，与 DropdownView CSS 变量同一数据源（`shared/dropdown-geometry.ts`）。禁止在 Main-View 或 less 里再写一套 12/16/8。
+   - 行结构含供应商 logo 槽（`DROPDOWN_VENDOR_SLOT` = 16 logo + 8 gap），inset 与 `estimateDropdownWidth` 都要算它；badge 自己的 logo（14px）与 label 前置，对齐基准仍是 **文字** 左缘。见 [ai-vendor-logo-identity.md](./ai-vendor-logo-identity.md)。
    - 左区菜单仍贴按钮左缘。超出窗口左右则夹紧（此时允许不对齐，优先不画出窗外）。
 
 ## 数据流

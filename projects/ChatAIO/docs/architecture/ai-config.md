@@ -13,6 +13,8 @@
 | id | 供应商 UUID | 实例 id（官方种子页 = 供应商 UUID） |
 | 字段 | `id` + `family` + `label` + `url` + `region` | 完整 `AI.AIItem` |
 
+> **label 语义**：页实例的 `label` 是用户自己的名字（必填），**不再承载厂商名**；厂商辨识统一靠 `AI_family` → 供应商 logo（custom 用 favicon / 首字母）。老数据不迁移。见 [`../features/ai-vendor-logo-identity.md`](../features/ai-vendor-logo-identity.md)。
+
 > **升级陷阱**：从 1.0.5 跳到含 Chrome 身份补丁 + 目录 UUID 的包后，预加载页会对旧分区 `loadURL`，站点 `Set-Cookie` 覆盖登录。无 `user-ais.json` 还会整表切到 UUID 空分区。见 [`../issues/ai-login-session-lost-after-catalog-uuid.md`](../issues/ai-login-session-lost-after-catalog-uuid.md)。
 
 1. **Bundled catalog**（`statics/ai-catalog/default-ais.json`）
