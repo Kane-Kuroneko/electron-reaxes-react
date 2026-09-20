@@ -1,0 +1,63 @@
+/**
+ * ChatAIO View 层 Tailwind 入口。只给 Settings / Prompt / Guiding 引入。
+ * FloatingView 禁止引入（Preflight 会破坏透明 overlay）。见 docs/features/settings-ui-shadcn.md
+ * content 必须相对 projects/ChatAIO（webpack cwd 是仓库根），见 tailwind.config.cjs。
+ *
+ * 主题色只写这一份。组件用 Tailwind（bg-primary / text-foreground）；
+ * Less 用 hsl(var(--primary))，或别名到 --settings-* / --guide-* / --prompt-*。
+ * 不要在 View 里再抄一份 hex 主色。
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--background: 40 14% 97%;
+		--foreground: 30 8% 22%;
+		--card: 40 20% 99%;
+		--card-foreground: 30 8% 22%;
+		--popover: 40 24% 99%;
+		--popover-foreground: 30 8% 22%;
+		--primary: 30 6% 38%;
+		--primary-foreground: 40 20% 99%;
+		--secondary: 36 12% 94%;
+		--secondary-foreground: 30 8% 28%;
+		--muted: 36 12% 94%;
+		--muted-foreground: 30 5% 46%;
+		--accent: 36 12% 93%;
+		--accent-foreground: 30 8% 28%;
+		--destructive: 8 52% 48%;
+		--destructive-foreground: 40 20% 99%;
+		--border: 34 12% 88%;
+		--input: 34 12% 88%;
+		--ring: 30 5% 52%;
+		--radius: 0.75rem;
+	}
+
+	.dark {
+		--background: 30 8% 8%;
+		--foreground: 40 10% 90%;
+		--card: 30 8% 11%;
+		--card-foreground: 40 10% 90%;
+		--popover: 30 8% 12%;
+		--popover-foreground: 40 10% 90%;
+		--primary: 40 8% 74%;
+		--primary-foreground: 30 8% 16%;
+		--secondary: 30 8% 16%;
+		--secondary-foreground: 40 10% 90%;
+		--muted: 30 8% 16%;
+		--muted-foreground: 35 6% 64%;
+		--accent: 30 8% 18%;
+		--accent-foreground: 40 10% 90%;
+		--destructive: 6 46% 52%;
+		--destructive-foreground: 40 20% 98%;
+		--border: 30 8% 18%;
+		--input: 30 8% 18%;
+		--ring: 40 8% 64%;
+	}
+
+	* {
+		@apply border-border;
+	}
+}

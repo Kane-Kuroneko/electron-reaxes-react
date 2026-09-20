@@ -1,5 +1,5 @@
 /**
- * 测量宿主容器高度，算出 antd Table `scroll.y`（扣除表头）。
+ * 测量宿主容器高度，算出表体 `scroll.y`（扣除表头）。
  * 宿主须由 flex 布局获得确定高度（见 `.settings-table-host`）。
  */
 export const useHostScrollY = (
@@ -32,9 +32,8 @@ export const useHostScrollY = (
 			// 表格未挂时没有表头，用 fallback，避免先按「无 scroll.y」把整表 layout 一遍。
 			// 见 docs/features/settings-menu-switch-perf.md
 			const header = host.querySelector(
-				'.ant-table-header' ,
-			) as HTMLElement | null
-				?? host.querySelector( '.ant-table-thead' ) as HTMLElement | null;
+				'.manage-ais-table thead' ,
+			) as HTMLElement | null;
 			const headerH = header?.offsetHeight || fallbackHeaderHeight;
 			const next = Math.max( minY , host.clientHeight - headerH - extra );
 			setScrollY( prev => ( prev === next ? prev : next ) );

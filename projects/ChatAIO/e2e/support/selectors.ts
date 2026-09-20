@@ -11,6 +11,7 @@ export const TEST_IDS = {
 	manageAisDragHandle : 'manage-ais-drag-handle' ,
 	startupAiPageLastUsed : 'startup-ai-page-last-used' ,
 	startupAiPageFirst : 'startup-ai-page-first' ,
+	settingsFooterDone : 'settings-footer-done' ,
 	settingsFooterApply : 'settings-footer-apply',
 } as const;
 

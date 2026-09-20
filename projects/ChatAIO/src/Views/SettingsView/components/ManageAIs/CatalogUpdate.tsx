@@ -3,7 +3,7 @@
  * 业务在 reaxel_SettingsView（checkAiCatalog / applyAiCatalog）；这里只渲染。
  * 见 docs/features/ai-catalog-manual-update.md
  * 检查按钮不用 antd `loading`（会插入 icon 撑宽）。文案占位，spinner 叠在同一格。
- * checking 只转按钮，不锁侧栏/页脚；预览 Modal 打开或 applying 才锁 chrome。
+ * checking 只转按钮，不锁侧栏/页脚；预览 Dialog 打开或 applying 才锁 chrome。
  */
 
 export const CatalogUpdateControls = reaxper( () => {
@@ -14,12 +14,13 @@ export const CatalogUpdateControls = reaxper( () => {
 	} = reaxel_SettingsView();
 	const catalogUpdate = reaxel_SettingsView.store.UIControls.manage_AIs.catalog_update;
 	const preview = catalogUpdate.preview;
-	// 仅给 Modal 关动画留最后一帧内容，不是 in-flight 锁。竞态看 catalog_update store。
+	// 仅给 Dialog 关动画留最后一帧内容，不是 in-flight 锁。竞态看 catalog_update store。
 	const previewRef = useRef( preview );
 	if( preview != null ) {
 		previewRef.current = preview;
 	}
 	const shown = preview != null ? preview : previewRef.current;
+	const [ restartOpen , setRestartOpen ] = useState( false );
 	const ais = reaxel_SettingsView.store.Data.AIs;
 	const language = reaxel_I18n.store.language;
 
@@ -48,7 +49,7 @@ export const CatalogUpdateControls = reaxper( () => {
 				if( result.blocked === 'in-flight' ) {
 					return;
 				}
-				message.warning( i18n(
+				toast.warning( i18n(
 					reaxel_SettingsView().isAIsDirty()
 						? 'Save or discard AI page changes before checking the AI catalog'
 						: 'Save or discard Settings changes before checking the AI catalog',
@@ -56,15 +57,15 @@ export const CatalogUpdateControls = reaxper( () => {
 				return;
 			}
 			if( result.status === 'error' ) {
-				message.error( catalogErrorMessage( result.errorCode ) );
+				toast.error( catalogErrorMessage( result.errorCode ) );
 				return;
 			}
 			if( result.status === 'up-to-date' ) {
-				message.success( i18n( 'AI catalog is up to date' ) );
+				toast.success( i18n( 'AI catalog is up to date' ) );
 			}
 		} catch ( error ) {
 			console.error( '[ManageAIs] check AI catalog failed:' , error );
-			message.error( i18n( 'Failed to check AI catalog' ) );
+			toast.error( i18n( 'Failed to check AI catalog' ) );
 		}
 	};
 
@@ -75,7 +76,7 @@ export const CatalogUpdateControls = reaxper( () => {
 				if( result.blocked === 'in-flight' ) {
 					return;
 				}
-				message.warning( i18n(
+				toast.warning( i18n(
 					reaxel_SettingsView().isAIsDirty()
 						? 'Save or discard AI page changes before applying the AI catalog update'
 						: 'Save or discard Settings changes before applying the AI catalog update',
@@ -83,7 +84,7 @@ export const CatalogUpdateControls = reaxper( () => {
 				return;
 			}
 			if( !result.success ) {
-				message.error(
+				toast.error(
 					result.errorCode
 						? catalogErrorMessage( result.errorCode )
 						: i18n( 'Failed to apply AI catalog' ),
@@ -91,22 +92,13 @@ export const CatalogUpdateControls = reaxper( () => {
 				return;
 			}
 			if( result.restartRequired ) {
-				Modal.warning( {
-					title : <I18n>Catalog saved. Restart required</I18n> ,
-					content : <I18n>The catalog was saved. The app must restart to apply it to AI pages.</I18n> ,
-					okText : i18n( 'Restart now' ) ,
-					keyboard : false ,
-					maskClosable : false ,
-					onOk : () => {
-						void relaunchApp();
-					},
-				} );
+				setRestartOpen( true );
 				return;
 			}
-			message.success( i18n( 'Update applied' ) );
+			toast.success( i18n( 'Update applied' ) );
 		} catch ( error ) {
 			console.error( '[ManageAIs] apply AI catalog failed:' , error );
-			message.error( i18n( 'Failed to apply AI catalog' ) );
+			toast.error( i18n( 'Failed to apply AI catalog' ) );
 		}
 	};
 
@@ -123,6 +115,7 @@ export const CatalogUpdateControls = reaxper( () => {
 
 	return <>
 		<Button
+			variant="outline"
 			onClick={ () => {
 				void onCheck();
 			} }
@@ -139,29 +132,31 @@ export const CatalogUpdateControls = reaxper( () => {
 				</span>
 				{ catalogUpdate.checking ? (
 					<span className="catalog-update-check-label__spinner" aria-hidden="true">
-						<LoadingOutlined />
+						<Loader2 className="h-3.5 w-3.5 animate-spin" />
 					</span>
 				) : null }
 			</span>
 		</Button>
-		<Modal
+		<Dialog
 			open={ preview != null }
-			title={ <I18n>There's an update to the AI list</I18n> }
-			getContainer={ () => document.querySelector( '.settings-root' ) as HTMLElement || document.body }
-			wrapClassName="catalog-update-decision-modal"
-			zIndex={ 1200 }
-			onCancel={ catalogUpdate.applying ? undefined : dismissCatalogUpdate }
-			afterClose={ () => {
-				previewRef.current = null;
+			onOpenChange={ ( open ) => {
+				if( open === false && !catalogUpdate.applying ) {
+					dismissCatalogUpdate();
+				}
 			} }
-			onOk={ () => onApply() }
-			okText={ i18n( 'Apply update' ) }
-			confirmLoading={ catalogUpdate.applying }
-			maskClosable={ !catalogUpdate.applying }
-			keyboard={ !catalogUpdate.applying }
-			cancelButtonProps={ { disabled : catalogUpdate.applying } }
-			width={ 560 }
 		>
+			<DialogContent
+				className="max-w-[560px]"
+				onPointerDownOutside={ ( event ) => {
+					if( catalogUpdate.applying ) event.preventDefault();
+				} }
+				onEscapeKeyDown={ ( event ) => {
+					if( catalogUpdate.applying ) event.preventDefault();
+				} }
+			>
+				<DialogHeader>
+					<DialogTitle><I18n>There's an update to the AI list</I18n></DialogTitle>
+				</DialogHeader>
 			{ hasAnyDiff ? <>
 				<p style={ { marginBottom : 12 } }>
 					<I18n>Here's what changed:</I18n>
@@ -225,7 +220,35 @@ export const CatalogUpdateControls = reaxper( () => {
 					<I18n>Applying this update will only add new AI providers. Existing settings will not be changed.</I18n>
 				</p>
 			</> }
-		</Modal>
+				<DialogFooter>
+					<Button
+						variant="outline"
+						disabled={ catalogUpdate.applying }
+						onClick={ () => dismissCatalogUpdate() }
+					><I18n>Cancel</I18n></Button>
+					<Button
+						loading={ catalogUpdate.applying }
+						onClick={ () => onApply() }
+					><I18n>Apply update</I18n></Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+		<Dialog
+			open={ restartOpen }
+			onOpenChange={ setRestartOpen }
+		>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle><I18n>Catalog saved. Restart required</I18n></DialogTitle>
+				</DialogHeader>
+				<p className="text-sm text-muted-foreground">
+					<I18n>The catalog was saved. The app must restart to apply it to AI pages.</I18n>
+				</p>
+				<DialogFooter>
+					<Button onClick={ () => void relaunchApp() }><I18n>Restart now</I18n></Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	</>;
 } );
 
@@ -291,10 +314,14 @@ import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 import { relaunchApp } from '#SettingsView/services/Settings';
 import type { AICatalog } from "#src/Types/AICatalog";
 import type { AI } from "#src/Types/SettingsTypes/AI";
-import { LoadingOutlined } from '@ant-design/icons';
-import { reaxper } from 'reaxes-react';
+import { Button } from '#Views/shared/ui/button';
 import {
-	Button ,
-	message ,
-	Modal,
-} from 'antd';
+	Dialog ,
+	DialogContent ,
+	DialogFooter ,
+	DialogHeader ,
+	DialogTitle,
+} from '#Views/shared/ui/dialog';
+import { toast } from '#Views/shared/ui/toast';
+import { Loader2 } from 'lucide-react';
+import { reaxper } from 'reaxes-react';

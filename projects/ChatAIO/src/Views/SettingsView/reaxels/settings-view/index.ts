@@ -1,6 +1,6 @@
 /**
- * SettingsView 业务。页脚 dirty 与 Manage AIs 表 dirty 分开；弹窗 Save 当场 persist。
- * 见 docs/features/manage-ais-save-scopes.md
+ * SettingsView 业务。运行设置即时写盘；Manage AIs 表 dirty 仍独立 Save/Undo。
+ * 见 docs/features/settings-ui-shadcn.md 、 docs/features/manage-ais-save-scopes.md
  */
 export const reaxel_SettingsView = reaxel( () => {
 	const { store , setState , mutate } = createReaxable( {
@@ -28,6 +28,10 @@ export const reaxel_SettingsView = reaxel( () => {
 		VersionUI : {
 			activeTab : checkAs<AppUpdater.VersionTab>( 'current' ) ,
 			drawerOpen : false ,
+		} ,
+		RuntimeUI : {
+			restartRequiredOpen : false ,
+			restartReasons : checkAs<string[]>( [] ),
 		} ,
 		UIControls : {
 			networks : {
@@ -125,6 +129,7 @@ export const reaxel_SettingsView = reaxel( () => {
 	/* Manage AIs 置底只看上次表底 Save / 弹窗 persist 的 disabled；未保存 toggle 不跳行。见 docs/features/manage-ais-table-ux.md */
 	let _committedDisabledById = new Map<string , boolean>();
 	let _proxyTestURLSubmitQueue:Promise<unknown> = Promise.resolve();
+	let _runtimePersistQueue:Promise<SettingsApplyResult | null> = Promise.resolve( null );
 	let _aiOrderPersistQueue:Promise<unknown> = Promise.resolve();
 	let _aiOrderPersistGeneration = 0;
 	let _catalogCheckGeneration = 0;
@@ -327,6 +332,7 @@ export const reaxel_SettingsView = reaxel( () => {
 		previewPromptAppearanceFromStore( {
 			theme,
 		} );
+		return persistRuntimeSettings();
 	}
 
 	function setLanguage( language:Appearance.Language ) {
@@ -336,6 +342,7 @@ export const reaxel_SettingsView = reaxel( () => {
 			store.Environment.systemLanguage,
 		) as any);
 		previewPromptAppearanceFromStore( { language } );
+		void persistRuntimeSettings();
 	}
 	
 	function buildSettingsFromStore():Settings {
@@ -434,6 +441,35 @@ export const reaxel_SettingsView = reaxel( () => {
 			} );
 			throw error;
 		}
+	}
+
+	/**
+	 * 运行设置即时写盘。走与旧页脚 Apply 相同的 apply-settings。
+	 * GPU 仍可能返回 restartRequired。见 docs/features/settings-ui-shadcn.md
+	 */
+	async function persistRuntimeSettings():Promise<SettingsApplyResult> {
+		_runtimePersistQueue = _runtimePersistQueue
+			.catch( () => null )
+			.then( async() => {
+				const result = await applySettings();
+				if( result.success === false ) {
+					toast.error( result.error || 'Failed to save settings' );
+				} else if( result.restartRequired ) {
+					setState.RuntimeUI( {
+						restartRequiredOpen : true ,
+						restartReasons : result.restartReasons || [] ,
+					} );
+				}
+				return result;
+			} );
+		return _runtimePersistQueue as Promise<SettingsApplyResult>;
+	}
+
+	function dismissRestartRequired() {
+		setState.RuntimeUI( {
+			restartRequiredOpen : false ,
+			restartReasons : [] ,
+		} );
 	}
 
 	async function applyAIs() {
@@ -596,6 +632,7 @@ export const reaxel_SettingsView = reaxel( () => {
 
 	const setStartupAIPageLoadMode = (aiPageLoadMode:Startup.AIPageLoadMode) => {
 		setState.UIControls.manage_AIs( { startupAIPageLoadMode : aiPageLoadMode } );
+		void persistRuntimeSettings();
 	};
 
 /** Switch AI menubar 拖完后同步表格；只改顺序，保留未提交的 toggle / 待删除。 */
@@ -800,6 +837,8 @@ export const reaxel_SettingsView = reaxel( () => {
 		setLanguage ,
 		buildSettingsFromStore ,
 		applySettings ,
+		persistRuntimeSettings ,
+		dismissRestartRequired ,
 		applyAIs ,
 		persistAIFromModal ,
 		isDirty ,
@@ -918,6 +957,7 @@ function applyThemePreferenceToDocument(
 	const resolvedTheme = resolveThemePreference( theme , systemTheme );
 	document.documentElement.dataset.chataioThemeSource = theme;
 	document.documentElement.dataset.chataioTheme = resolvedTheme;
+	document.documentElement.classList.toggle( 'dark' , resolvedTheme === 'dark' );
 }
 
 function previewPromptAppearance(appearance:PromptView.Appearance) {
@@ -1024,6 +1064,7 @@ import type {
 import type { AppUpdater } from '#src/Types/AppUpdater';
 import type {
 	Settings ,
+	SettingsApplyResult ,
 	SettingsFetchResult,
 } from '#src/Types/SettingsTypes';
 import { AI } from "#src/Types/SettingsTypes/AI";
@@ -1031,3 +1072,8 @@ import type { AICatalog } from "#src/Types/AICatalog";
 import { Appearance } from "#src/Types/SettingsTypes/Appearance";
 import type { Startup } from "#src/Types/SettingsTypes/Startup";
 import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
+import { toast } from '#Views/shared/ui/toast';
+import {
+	createReaxable ,
+	reaxel,
+} from 'reaxes';

@@ -15,7 +15,7 @@ Enabled 列是 `Switch`，Preload on Startup 列是 `Checkbox`（控件对调，
 5. **Enabled 列用 `Switch`，Preload on Startup 列用 `Checkbox`**。列顺序仍是 Enabled 在左、Preload 在右；不要把 Enabled 改回 Checkbox。
 6. **列筛选只改 `dataSource`**，不写盘、不改 `AIs` 顺序。多列 AND。筛选 open/value 在 `reaxel_SettingsView.store.UIControls.manage_AIs.column_filter`，与 `pendingDeleteAIIds` 一样是 UI-only：**不 persist、不计 dirty**。
 7. **筛选面板**点开后不因空白处 / clickOutside / 失焦关闭；多列可同时开。关掉某一列并清空该列条件，不影响其它列。
-8. **空表不能拆掉筛选 Input**。`dataSource=[]` 时 Table 仍挂着（`locale.emptyText` / placeholder 行）；真正的 Input 不进 antd `filterDropdown`，而走 `document.body` portal。
+8. **空表不能拆掉筛选 Input**。空结果时表头仍在；真正的 Input 走 `document.body` portal，不进单元格。
 
 ## 拖拽映射
 
@@ -29,12 +29,12 @@ Enabled 列是 `Switch`，Preload on Startup 列是 `Checkbox`（控件对调，
 
 ## 筛选面板
 
-- 只要一条 input：输入即筛。高度走 antd 默认 `controlHeight` **32px**。面板 padding **4px**（compact popover；不靠加大 padding 给关闭 x 让路）。
+- 只要一条 input：输入即筛。面板 padding **4px**。
 - input 尾 x：清空该列条件，面板保持打开。
 - 面板关闭 x：相对最外层 `.settings-column-text-filter` 定位，按钮中心对齐该盒子 border-box 的 top-right（`translate(50%, -50%)`）。可与 input 右上角轻微重叠。关面板并且清空该列。
 - 不要 Search / Reset 按钮。
-- 不要用 antd 默认「点外面就关 / 同时只开一列」。表头漏斗只负责 `openManageAIsColumnFilter`；`filterDropdownProps.open` 永远 `false`，antd 自己的 overlay 不挂 Input。
-- 浮层与该列 filter icon **右对齐**：portal 面板 `position:fixed` 的 CSS `right` = `clientWidth − icon.getBoundingClientRect().right`（浮层右缘贴齐图标右缘，向左长）。不要 `left = icon.right − 160`。打开、resize、表头/表体滚动都跟 icon。
+- 不要「点外面就关 / 同时只开一列」。表头漏斗只负责 `openManageAIsColumnFilter`。
+- 浮层与该列 filter icon **右对齐**：portal 面板 `position:fixed` 的 CSS `right` = `clientWidth − icon.getBoundingClientRect().right`。打开、resize、表头/表体滚动都跟 icon。
 
 ### 为何筛选态必须进 reaxel
 
@@ -57,19 +57,19 @@ antd Table `dataSource=[]` 时：
 
 ### 删除确认后滚动条弹顶：不要给 Table 挂随状态变的 key
 
-**症状**：滚到表格下方点 Delete → Popover 确认后，`.ant-table-body` 滚动位置弹回顶部，看起来像整表被重新渲染——因为确实是。
+**症状**：滚到表格下方点 Delete → Popover 确认后，滚动容器位置弹回顶部，看起来像整表被重新渲染——因为确实是。
 
-**根因**：`e35835056` 为修「MobX 回调追踪断裂」（标记待删除后行背景 / Edit/Clone 隐藏不刷新），给 `<Table>` 挂了 `key={ais-table-${pendingDeleteAIIds.join(',')}}`。React key 变化 = 卸载重建整个 Table 实例，antd 重建 `.ant-table-body`，滚动位置归零。标记待删、撤销、表底 Save 清空 pending，三个时机都会触发。
+**根因（历史 antd Table）**：`e35835056` 为修「MobX 回调追踪断裂」（标记待删除后行背景 / Edit/Clone 隐藏不刷新），给 `<Table>` 挂了 `key={ais-table-${pendingDeleteAIIds.join(',')}}`。React key 变化 = 卸载重建整个 Table 实例，滚动位置归零。标记待删、撤销、表底 Save 清空 pending，三个时机都会触发。
 
-**正确修法**：Table 不挂 key。响应式契约是——
+现行表是 HTML + dnd-kit，滚动容器是 `.manage-ais-table` 自己。**仍然不要给表挂随 pendingDelete 变的 key。**
+
+**正确修法**：表不挂 key。响应式契约是——
 
 1. `RCManageAIsPanel`（reaxper）render 里**显式读** `pendingDeleteAIIds`（且 `isAIsDirty()` 内部也读它），MobX 追踪到变化即重渲面板。
-2. 面板重渲 → `displayedAIs` / `rowClassName` 都是新引用 → rc-table 的 immutable context 触发整个表体重渲 → `rowClassName`（`ai-row--pending-delete`）与 Operations 列 `render`（Edit/Clone 隐藏）重新求值。
+2. 行 `className`（`ai-row--pending-delete`）与 Operations 列在面板 render 里求值。
 3. 行内控件（`DeleteAICell` / `AIEnabledSwitch` / `PreloadOnStartupCheckbox` / `SortableDataRow`）各自是 reaxper，读 `isAIPendingDeletion` 自行响应。
 
-即：列 `render` / `rowClassName` 这类由 rc-table 在响应式上下文外调用的回调，靠**面板重渲染带动**；per-cell 交互态靠 **reaxper 细粒度组件**。两条腿都在，不需要 remount。
-
-回归用例：[`e2e/tests/manage-ais-delete-scroll.spec.ts`](../../e2e/tests/manage-ais-delete-scroll.spec.ts)——给 `.ant-table-body` 打 dataset sentinel（remount 会重建节点丢 sentinel），断言删除确认 / 撤销 / 表底 Save 后 sentinel 仍在且 scrollTop 不弹顶。seed 用 `patchManyAisForScroll` 追加 20 行使表格可滚动。
+回归用例：[`e2e/tests/manage-ais-delete-scroll.spec.ts`](../../e2e/tests/manage-ais-delete-scroll.spec.ts)——给 `.manage-ais-table` 打 dataset sentinel（remount 会重建节点丢 sentinel），断言删除确认 / 撤销 / 表底 Save 后 sentinel 仍在且 scrollTop 不弹顶。seed 用 `patchManyAisForScroll` 追加 20 行使表格可滚动。
 
 ### 空表表头宽度为什么会跳
 
@@ -104,10 +104,8 @@ antd Table `dataSource=[]` 时：
 - 不要用 `overflow-y: scroll` 在空 `dataSource` 上常显滚动条。
 - 不要为了表格改 FloatingView `forward` 或 menubar drag region。
 - 不要把列筛选 open/value 放进组件 `useState` 或 React Context。
-- 不要把筛选 Input 挂在 antd `filterDropdown` 里：空 `dataSource` 会跟表头单元格一起拆掉它。
-- 不要每次按键重建 Table `columns`。
-- 不要把 `column_filter` 写进 `buildSettingsFromStore` / dirty 快照。
-- **不要给 `<Table>` 挂随状态变化的 React key**（如拼 `pendingDeleteAIIds`）：整表 remount，滚动弹顶。行样式刷新走面板重渲 + reaxper 细粒度组件（见上文「删除确认后滚动条弹顶」）。
+- 不要给表挂随状态变化的 React key（如拼 `pendingDeleteAIIds`）：整表 remount，滚动弹顶。
+- 不要把筛选 Input 挂进表头单元格：空结果会跟表头一起拆掉它；走 `document.body` portal。
 
 ## 与现有文档的关系
 

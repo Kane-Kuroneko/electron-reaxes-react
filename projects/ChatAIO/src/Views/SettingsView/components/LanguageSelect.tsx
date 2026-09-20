@@ -2,33 +2,20 @@ export const RCLanguageSelect = (props:{
 	value: Appearance.Language;
 	systemLanguage: Languages;
 	onChange: (value:Appearance.Language) => void;
-	style?: any;
+	className?: string;
 }) => {
-	const {
-		value ,
-		systemLanguage ,
-		onChange ,
-		style,
-	} = props;
-	
-	return <Select
-		className="settings-language-select"
-		value={ value }
-		onChange={ onChange }
-		options={ createLanguageOptions( systemLanguage ) }
-		optionRender={ option => renderLanguageOption( option as any , systemLanguage ) }
-		labelRender={ item => renderLanguageSelectedLabel( item.value as Appearance.Language , systemLanguage ) }
-		style={ {
-			minWidth : 240 ,
-			...style,
-		} }
+	return <SimpleSelect
+		className={ cn( 'min-w-[240px]' , props.className ) }
+		value={ props.value }
+		onValueChange={ ( value ) => props.onChange( value as Appearance.Language ) }
+		options={ createLanguageOptions( props.systemLanguage ) }
 	/>;
 };
 
 const createLanguageOptions = (systemLanguage:Languages) => [
 	{
 		value : 'follow-system' ,
-		label : `Follow System (${ getLanguageDisplayName( systemLanguage ) })`,
+		label : `${ i18n( 'Follow System' ) } (${ getLanguageDisplayName( systemLanguage ) })`,
 	} ,
 	{ value : 'en-US' , label : 'English' } ,
 	{ value : 'zh-CN' , label : '简体中文' } ,
@@ -37,30 +24,8 @@ const createLanguageOptions = (systemLanguage:Languages) => [
 	{ value : 'ko-KR' , label : '한국어' },
 ];
 
-const renderLanguageOption = (option:any , systemLanguage:Languages) => {
-	if( option.data.value === 'follow-system' ) {
-		return <span>
-			<I18n>Follow System</I18n>
-			<br />
-			<span className="select-option-subtitle">{ getLanguageDisplayName( systemLanguage ) }</span>
-		</span>;
-	}
-	return option.data.label;
-};
-
-const renderLanguageSelectedLabel = (
-	value:Appearance.Language ,
-	systemLanguage:Languages,
-) => {
-	if( value === 'follow-system' ) {
-		return <span className="settings-language-select__selected">
-			<I18n>Follow System</I18n> ({ getLanguageDisplayName( systemLanguage ) })
-		</span>;
-	}
-	return getLanguageDisplayName( value as Languages );
-};
-
 import { getLanguageDisplayName } from '#shared/appearance';
 import type { Languages } from '#src/Types/Languages';
 import type { Appearance } from '#src/Types/SettingsTypes/Appearance';
-import { Select } from 'antd';
+import { cn } from '#Views/shared/ui/cn.utility';
+import { SimpleSelect } from '#Views/shared/ui/select';

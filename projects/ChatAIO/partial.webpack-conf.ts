@@ -49,6 +49,13 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 		outputPath : path.join( subProjectRootPath , 'dist/renderer' ) ,
 		filename : '[name]/main.js',
 	} );
+	const chatAioSrc = path.join(subProjectRootPath, 'src');
+	const tailwindViewRoots = [
+		path.join(chatAioSrc, 'Views/shared'),
+		path.join(chatAioSrc, 'Views/SettingsView'),
+		path.join(chatAioSrc, 'Views/PromptView'),
+		path.join(chatAioSrc, 'Views/GuidingView'),
+	];
 	return {
 		// stats:"verbose",
 		experiments: {
@@ -70,6 +77,30 @@ export const renderer = (repoRootPath: string, subProjectRootPath: string): Conf
 				'#DropdownView' : path.join(subProjectRootPath,'src/Views/DropdownView'),
 				'#Views/shared' : path.join(subProjectRootPath,'src/Views/shared'),
 			},
+		},
+		module : {
+			rules : [
+				/*
+				 * ChatAIO 才走 Tailwind。只 prepend postcss，不复制 style/css 链。
+				 * include 限定迁移 View，避免扫到 FloatingView / swiper 或其它工程。
+				 * 见 docs/features/settings-ui-shadcn.md
+				 */
+				{
+					test : /\.css$/ ,
+					include : tailwindViewRoots ,
+					enforce : 'pre' ,
+					use : [
+						{
+							loader : 'postcss-loader' ,
+							options : {
+								postcssOptions : {
+									config : path.join(subProjectRootPath, 'postcss.config.cjs'),
+								},
+							},
+						},
+					],
+				},
+			],
 		},
 		plugins : [
 			...( rendererEntryConfig.plugins ?? [] ) ,

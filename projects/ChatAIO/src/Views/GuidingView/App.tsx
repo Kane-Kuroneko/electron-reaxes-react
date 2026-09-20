@@ -1,7 +1,6 @@
 export const App = reaxper( () => {
 	const { store } = reaxel_GuidingView;
 	const {
-		getResolvedTheme ,
 		init,
 	} = reaxel_GuidingView();
 	
@@ -22,40 +21,44 @@ export const App = reaxper( () => {
 		1 : RCNetworkPage ,
 		2 : RCAIPagesPage,
 	}[store.Page.current] || RCPreferencesPage;
+
+	const stepTitles = [
+		<I18n>Preferences</I18n> ,
+		<I18n>Network</I18n> ,
+		<I18n>AI Pages</I18n>,
+	];
 	
-	return <ConfigProvider
-		theme={ {
-			algorithm : getResolvedTheme() === 'dark'
-				? antdTheme.darkAlgorithm
-				: antdTheme.defaultAlgorithm,
-		} }
-	>
-		<div className="guiding-root" data-testid="guiding-root">
-			<div className="guiding-shell">
-				<header className="guiding-header">
-					<div>
-						<div className="guiding-kicker">ChatAIO</div>
-						<h1><I18n>Initialize your AI workspace</I18n></h1>
-					</div>
-					<Steps
-						current={ store.Page.current }
-						size="small"
-						items={ [
-							{ title : <I18n>Preferences</I18n> } ,
-							{ title : <I18n>Network</I18n> } ,
-							{ title : <I18n>AI Pages</I18n> },
-						] }
-					/>
-				</header>
-				
-				<main className="guiding-content">
-					<PageComponent/>
-				</main>
-				
-				<RCGuidingFooter/>
-			</div>
+	return <div className="guiding-root" data-testid="guiding-root">
+		<div className="guiding-shell">
+			<header className="guiding-header">
+				<div>
+					<div className="guiding-kicker">ChatAIO</div>
+					<h1><I18n>Initialize your AI workspace</I18n></h1>
+				</div>
+				<ol className="guiding-steps">
+					{ stepTitles.map( ( title , index ) => (
+						<li
+							key={ index }
+							className={ index === store.Page.current
+								? 'is-current'
+								: index < store.Page.current
+									? 'is-done'
+									: '' }
+						>
+							<span className="guiding-steps__index">{ index + 1 }</span>
+							<span>{ title }</span>
+						</li>
+					) ) }
+				</ol>
+			</header>
+			
+			<main className="guiding-content">
+				<PageComponent/>
+			</main>
+			
+			<RCGuidingFooter/>
 		</div>
-	</ConfigProvider>;
+	</div>;
 } );
 
 import { RCAIPagesPage } from '#GuidingView/components/AIPages';
@@ -64,10 +67,6 @@ import { RCNetworkPage } from '#GuidingView/components/Network';
 import { RCPreferencesPage } from '#GuidingView/components/Preferences';
 import { I18n } from '#GuidingView/reaxels/exports';
 import { reaxel_GuidingView } from '#GuidingView/reaxels/guiding-view';
-import {
-	ConfigProvider ,
-	Steps ,
-	theme as antdTheme,
-} from 'antd';
 import { reaxper } from 'reaxes-react';
+import '#Views/shared/ui/globals.css';
 import './index.less';

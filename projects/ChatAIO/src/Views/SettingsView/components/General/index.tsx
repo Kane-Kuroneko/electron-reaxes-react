@@ -5,98 +5,85 @@ export const RCGeneralPanel = reaxper(() => {
 	} = reaxel_SettingsView;
 	const {
 		setLanguage ,
-		setTheme,
+		setTheme ,
+		persistRuntimeSettings,
 	} = reaxel_SettingsView();
 
-	const handleLanguageChange = (value: Appearance.Language) => {
-		setLanguage( value );
+	const persistSystem = ( patch:Partial<typeof systemStore> ) => {
+		setSystem( patch );
+		void persistRuntimeSettings();
 	};
 
-	const handleThemeChange = (value: Appearance.Theme) => {
-		void setTheme( value );
-	};
-	
-	return <div className="settings-section">
-		{/* Language */}
-		<div className="section-title"><I18n>Language</I18n></div>
-		<Form layout="vertical">
-			<Form.Item>
+	return <div className="mx-auto w-full max-w-3xl">
+		<SettingsSection
+			title={ <I18n>Language</I18n> }
+			description={ <I18n>Choose how ChatAIO displays menus and Settings.</I18n> }
+		>
+			<SettingsRow title={ <I18n>Display language</I18n> }>
 				<RCLanguageSelect
 					value={ appearanceStore.language }
-					onChange={ handleLanguageChange }
+					onChange={ setLanguage }
 					systemLanguage={ environmentStore.systemLanguage }
 				/>
-			</Form.Item>
-		</Form>
-		
-		{/* Appearance */}
-		<div className="section-title"><I18n>Appearance</I18n></div>
-		<Form layout="vertical">
-			<Form.Item label={<I18n>Theme</I18n>}>
-				<Radio.Group
+			</SettingsRow>
+		</SettingsSection>
+
+		<SettingsSection
+			title={ <I18n>Appearance</I18n> }
+			description={ <I18n>Light, dark, or follow the system. Changes apply immediately.</I18n> }
+		>
+			<SettingsRow title={ <I18n>Theme</I18n> }>
+				<ThemePicker
 					value={ appearanceStore.theme }
-					onChange={ e => handleThemeChange( e.target.value ) }
-					className="settings-theme-radio-group"
-					style={ { userSelect : 'none' } }
-				>
-					<Radio value="system">
-						<I18n>Follow System</I18n>
-						<br />
-						<span className="select-option-subtitle"><I18n>{ environmentStore.systemTheme === 'dark' ? 'Dark' : 'Light' }</I18n></span>
-					</Radio>
-					<Radio value="light"><I18n>Light</I18n></Radio>
-					<Radio value="dark"><I18n>Dark</I18n></Radio>
-				</Radio.Group>
-			</Form.Item>
-		</Form>
-		
-		{/* System */}
-		<div className="section-title"><I18n>System</I18n></div>
-		<Space direction="vertical" size={ 12 }>
-			<Checkbox
-				checked={systemStore.gpu_acceleration}
-				onChange={e=>setSystem({gpu_acceleration:e.target.checked})}
-				style={{userSelect:'none'}}
+					systemTheme={ environmentStore.systemTheme }
+					onChange={ ( value ) => {
+						void setTheme( value );
+					} }
+				/>
+			</SettingsRow>
+		</SettingsSection>
+
+		<SettingsSection
+			title={ <I18n>System</I18n> }
+			description={ <I18n>Window behavior and hardware. GPU changes need a restart.</I18n> }
+		>
+			<SettingsRow
+				title={ <I18n>GPU Acceleration</I18n> }
+				description={ <I18n>Use the GPU for smoother pages. Requires restarting ChatAIO.</I18n> }
 			>
-				<I18n>GPU Acceleration</I18n>
-			</Checkbox>
-			<div>
-				<Checkbox
-					checked={systemStore.show_tray}
-					onChange={e => {
-						const checked = e.target.checked;
-						setSystem({
-							show_tray : checked ,
-							close_to_tray : checked ? systemStore.close_to_tray : false,
-						});
-					}}
-					style={{userSelect:'none'}}
-				>
-					<I18n>Show Tray</I18n>
-				</Checkbox>
-				{ systemStore.show_tray && (
-					<div style={{ marginLeft: 24, marginTop: 8 }}>
-						<Checkbox
-							checked={systemStore.close_to_tray}
-							onChange={e=>setSystem({close_to_tray:e.target.checked})}
-							style={{userSelect:'none'}}
-						>
-							<I18n>Close to Tray</I18n>
-						</Checkbox>
-					</div>
-				) }
-			</div>
-		</Space>
+				<Switch
+					checked={ systemStore.gpu_acceleration }
+					onCheckedChange={ ( checked ) => persistSystem( { gpu_acceleration : checked } ) }
+				/>
+			</SettingsRow>
+			<SettingsRow
+				title={ <I18n>Show Tray</I18n> }
+				description={ <I18n>Keep ChatAIO in the system tray.</I18n> }
+			>
+				<Switch
+					checked={ systemStore.show_tray }
+					onCheckedChange={ ( checked ) => persistSystem( {
+						show_tray : checked ,
+						close_to_tray : checked ? systemStore.close_to_tray : false,
+					} ) }
+				/>
+			</SettingsRow>
+			{ systemStore.show_tray ? <SettingsRow
+				title={ <I18n>Close to Tray</I18n> }
+				description={ <I18n>Closing the window hides the app instead of quitting.</I18n> }
+			>
+				<Switch
+					checked={ systemStore.close_to_tray }
+					onCheckedChange={ ( checked ) => persistSystem( { close_to_tray : checked } ) }
+				/>
+			</SettingsRow> : null }
+		</SettingsSection>
 	</div>;
 });
 
-import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 import { RCLanguageSelect } from '#SettingsView/components/LanguageSelect';
-import {
-	Checkbox ,
-	Form ,
-	Radio ,
-	Space ,
-} from 'antd';
+import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
+import { SettingsRow , SettingsSection } from '#Views/shared/ui/settings-row';
+import { Switch } from '#Views/shared/ui/switch';
+import { ThemePicker } from '#Views/shared/ui/theme-picker';
 import { reaxper } from 'reaxes-react';
-import { Appearance } from "#src/Types/SettingsTypes/Appearance";

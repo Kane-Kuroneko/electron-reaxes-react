@@ -17,6 +17,13 @@ export const RCAIPagesPage = reaxper( () => {
 	const networkBlocked = getCanDirectConnect() === false;
 	const hasDomestic = domestic.length > 0;
 	const hasInternational = international.length > 0;
+	const selected = store.UIControls.ai.selectedAIIds;
+
+	const toggleAI = ( id:string , checked:boolean ) => {
+		setSelectedAIIds( checked
+			? [ ...selected , id ]
+			: selected.filter( item => item !== id ) );
+	};
 
 	return <section className="guiding-page">
 		<div className="section-heading">
@@ -30,39 +37,33 @@ export const RCAIPagesPage = reaxper( () => {
 
 		{ hasDomestic && <div className="ai-region-group">
 			<h3 className="ai-region-heading"><I18n>Domestic AI Providers</I18n></h3>
-			<Checkbox.Group
-				value={ store.UIControls.ai.selectedAIIds }
-				onChange={ values => setSelectedAIIds( values as string[] ) }
-				className="ai-grid"
-			>
-				{ domestic.map( ai => <Checkbox
+			<div className="ai-grid">
+				{ domestic.map( ai => <CheckboxField
 					key={ ai.id }
-					value={ ai.id }
 					className="ai-option"
+					checked={ selected.includes( ai.id ) }
+					onCheckedChange={ checked => toggleAI( ai.id , checked ) }
 				>
 					<span className="ai-option__name"><AIVendorLogo family={ ai.AI_family } size={ 16 } fallbackText={ ai.label }/>{ ai.label }</span>
 					<small>{ ai.url }</small>
-				</Checkbox> ) }
-			</Checkbox.Group>
+				</CheckboxField> ) }
+			</div>
 		</div> }
 
 		{ hasInternational && <div className="ai-region-group">
 			<h3 className="ai-region-heading"><I18n>International AI Providers</I18n></h3>
 			{ networkBlocked && <p className="ai-region-note"><I18n>Your network may have trouble reaching services outside China. Consider enabling Domestic AI Providers first — they work without a proxy.</I18n></p> }
-			<Checkbox.Group
-				value={ store.UIControls.ai.selectedAIIds }
-				onChange={ values => setSelectedAIIds( values as string[] ) }
-				className="ai-grid"
-			>
-				{ international.map( ai => <Checkbox
+			<div className="ai-grid">
+				{ international.map( ai => <CheckboxField
 					key={ ai.id }
-					value={ ai.id }
 					className="ai-option"
+					checked={ selected.includes( ai.id ) }
+					onCheckedChange={ checked => toggleAI( ai.id , checked ) }
 				>
 					<span className="ai-option__name"><AIVendorLogo family={ ai.AI_family } size={ 16 } fallbackText={ ai.label }/>{ ai.label }</span>
 					<small>{ ai.url }</small>
-				</Checkbox> ) }
-			</Checkbox.Group>
+				</CheckboxField> ) }
+			</div>
 		</div> }
 
 		<div className="custom-ai">
@@ -89,7 +90,8 @@ export const RCAIPagesPage = reaxper( () => {
 					<small>{ ai.url }</small>
 				</div>
 				<Button
-					size="small"
+					size="sm"
+					variant="outline"
 					onClick={ () => removeCustomAI( ai.id ) }
 				><I18n>Remove</I18n></Button>
 			</div> ) }
@@ -101,9 +103,7 @@ import { reaxel_GuidingView } from '#GuidingView/reaxels/guiding-view';
 import { groupAIsByRegion } from '#shared/statics/ai-region';
 import { AIVendorLogo } from '#shared/ai-vendor-logo';
 import { I18n , i18n } from '#GuidingView/reaxels/exports';
-import {
-	Button ,
-	Checkbox ,
-	Input,
-} from 'antd';
+import { Button } from '#Views/shared/ui/button';
+import { CheckboxField } from '#Views/shared/ui/checkbox-field';
+import { Input } from '#Views/shared/ui/input';
 import { reaxper } from 'reaxes-react';

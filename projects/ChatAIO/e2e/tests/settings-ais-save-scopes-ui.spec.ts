@@ -4,7 +4,7 @@
  * 见 docs/features/manage-ais-save-scopes.md
  */
 
-test( 'toggling an AI Enabled switch dirties the table Save but not footer Apply' , async( {
+test( 'toggling an AI Enabled switch dirties the table Save but not the footer' , async( {
 	electronApp ,
 	mainWindow,
 } ) => {
@@ -59,7 +59,7 @@ test( 'modal Cancel leaves store and disk unchanged' , async( {
 	);
 } );
 
-test( 'changing theme dirties footer Apply but not table Save' , async( {
+test( 'changing theme persists immediately and does not dirty table Save' , async( {
 	electronApp ,
 	mainWindow,
 } ) => {
@@ -67,47 +67,48 @@ test( 'changing theme dirties footer Apply but not table Save' , async( {
 	await openManageAIs( settings );
 	await expectTableIdle( settings );
 	await openGeneral( settings );
-	await watchClick( settings.getByRole( 'radio' , { name : 'Dark' } ) );
-	await expectFooterDirty( settings );
+	await watchClick( settings.getByRole( 'radio' , { name : 'Dark' , exact : true } ) );
+	await expect( settings.getByRole( 'radio' , { name : 'Dark' , exact : true } ) ).toHaveAttribute( 'aria-checked' , 'true' );
+	await expect( settings.getByTestId( TEST_IDS.settingsRoot ) ).toHaveAttribute( 'data-theme' , 'dark' );
 	await openManageAIs( settings );
 	await expectTableIdle( settings );
+	await expectFooterIdle( settings );
 } );
 
-test( 'table Undo drops AI drafts while footer dirty stays' , async( {
+test( 'table Undo drops AI drafts while autosaved theme stays' , async( {
 	electronApp ,
 	mainWindow,
 } ) => {
 	const settings = await openSettingsFromApplicationMenu( electronApp , mainWindow );
 	await openGeneral( settings );
-	await watchClick( settings.getByRole( 'radio' , { name : 'Dark' } ) );
+	await watchClick( settings.getByRole( 'radio' , { name : 'Dark' , exact : true } ) );
 	await openManageAIs( settings );
 	await watchClick( enabledSwitchInRow( settings , E2E_AI_A.id ) );
 	await expectTableDirty( settings );
-	await expectFooterDirty( settings );
 	await watchClick( tableUndo( settings ) );
 	await expectTableIdle( settings );
 	await expect( enabledSwitchInRow( settings , E2E_AI_A.id ) ).toBeChecked();
-	await expectFooterDirty( settings );
+	await openGeneral( settings );
+	await expect( settings.getByRole( 'radio' , { name : 'Dark' , exact : true } ) ).toHaveAttribute( 'aria-checked' , 'true' );
 } );
 
-test( 'footer Discard does not drop table AI drafts' , async( {
+test( 'Done does not drop table AI drafts' , async( {
 	electronApp ,
 	mainWindow,
 } ) => {
 	const settings = await openSettingsFromApplicationMenu( electronApp , mainWindow );
 	await openManageAIs( settings );
 	await watchClick( enabledSwitchInRow( settings , E2E_AI_A.id ) );
-	await openGeneral( settings );
-	await watchClick( settings.getByRole( 'radio' , { name : 'Dark' } ) );
-	await watchClick( footerDiscard( settings ) );
-	await expectFooterIdle( settings );
-	await expect( settings.getByRole( 'radio' , { name : 'Light' , exact : true } ) ).toBeChecked();
-	await openManageAIs( settings );
 	await expectTableDirty( settings );
-	await expect( enabledSwitchInRow( settings , E2E_AI_A.id ) ).not.toBeChecked();
+	await exitSettingsWithoutSave( electronApp , settings );
+
+	const again = await openSettingsFromApplicationMenu( electronApp , mainWindow );
+	await openManageAIs( again );
+	await expectTableDirty( again );
+	await expect( enabledSwitchInRow( again , E2E_AI_A.id ) ).not.toBeChecked();
 } );
 
-test( 'Startup AI Page radio dirties footer not table' , async( {
+test( 'Startup AI Page radio persists immediately and does not dirty the table' , async( {
 	electronApp ,
 	mainWindow,
 } ) => {
@@ -122,8 +123,10 @@ test( 'Startup AI Page radio dirties footer not table' , async( {
 		const target = ( node.closest( 'label' ) || node ) as HTMLElement;
 		target.click();
 	} );
-	await expect( settings.getByTestId( TEST_IDS.settingsFooterApply ) ).toHaveAttribute( 'data-dirty' , 'true' );
-	await expectFooterDirty( settings );
+	await expect(
+		settings.getByTestId( TEST_IDS.startupAiPageFirst ).locator( 'xpath=ancestor::label' ).getByRole( 'radio' ),
+	).toHaveAttribute( 'aria-checked' , 'true' );
+	await expectFooterIdle( settings );
 	await expectTableIdle( settings );
 } );
 
@@ -338,7 +341,7 @@ test( 'Save / Enter do not persist when AI name is empty' , async( {
 } );
 
 import { test , expect } from '../fixtures';
-import { openSettingsFromApplicationMenu , waitForE2ESnapshot } from '../support/app-probe';
+import { exitSettingsWithoutSave , openSettingsFromApplicationMenu , waitForE2ESnapshot } from '../support/app-probe';
 import { E2E_AI_A , E2E_AI_B , E2E_AI_C , isSeededE2EAIId } from '../support/e2e-ais';
 import { watchClick } from '../support/observe';
 import { TEST_IDS } from '../support/selectors';
@@ -349,11 +352,9 @@ import {
 	dialogSave ,
 	displayedManageAisIds ,
 	enabledSwitchInRow ,
-	expectFooterDirty ,
 	expectFooterIdle ,
 	expectTableDirty ,
 	expectTableIdle ,
-	footerDiscard ,
 	manageAisDialog ,
 	manageAisRow ,
 	openGeneral ,

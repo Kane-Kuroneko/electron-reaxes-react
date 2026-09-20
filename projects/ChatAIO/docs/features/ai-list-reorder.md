@@ -54,7 +54,7 @@ flowchart TD
 
 ## Settings dirty
 
-`isDirty()`（页脚）对 runtime 配置做 `snapshotRuntimeSettingsForDirty`（无 AIs、无测试 URL）。`isAIsDirty()`（表底）对 `AIs` 做 `snapshotAIsForDirty`（去掉待删除行，顺序不计）。只改顺序不会点亮表底 Save；改名走弹窗即时写盘，也不点亮；启用禁用 / 待删除仍表底 dirty。页脚 Discard / 退出只 reload runtime；表底 Undo 只 reload AIs。详见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)。
+`isDirty()`（reaxel 仍计算 runtime 指纹，供目录挡板）对 runtime 配置做 `snapshotRuntimeSettingsForDirty`。UI 不再用它点亮页脚。`isAIsDirty()`（表底）对 `AIs` 做 `snapshotAIsForDirty`。只改顺序不会点亮表底 Save；改名走弹窗即时写盘，也不点亮；启用禁用 / 待删除仍表底 dirty。关窗不碰 AIs；表底 Undo 只 reload AIs。详见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)、[`settings-ui-shadcn.md`](./settings-ui-shadcn.md)。
 
 ## 测试锁定的契约
 

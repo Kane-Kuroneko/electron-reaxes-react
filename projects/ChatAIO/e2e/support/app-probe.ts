@@ -601,7 +601,7 @@ export const exitSettingsWithoutSave = async(
 	settings : Page ,
 	timeoutMs = 30_000,
 ) => {
-	await watchClick( settings.getByRole( 'button' , { name : 'Exit Without Save' } ) );
+	await watchClick( settings.getByRole( 'button' , { name : 'Done' } ) );
 	await waitForE2ESnapshot(
 		electronApp ,
 		( state ) => state.kind === 'main' && state.settingsViewOpened === false ,

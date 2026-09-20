@@ -1,8 +1,8 @@
 /**
  * 回归：Manage AIs 表格确认删除 / 撤销 / 表底 Save 后不得整表 remount，
- * `.ant-table-body` 的滚动位置必须保持。
+ * 滚动容器 `.manage-ais-table` 的滚动位置必须保持。
  * 曾因 Table 挂了随 pendingDeleteAIIds 变化的 key（e35835056），每次确认删除滚动条弹回顶部。
- * sentinel 写在 `.ant-table-body` 的 dataset 上：remount 会重建该 DOM 节点，sentinel 即丢失。
+ * sentinel 写在滚动容器的 dataset 上：remount 会重建该 DOM 节点，sentinel 即丢失。
  * 见 docs/features/manage-ais-table-ux.md
  */
 
@@ -12,7 +12,7 @@ const testManyAis = test.extend( {
 	},
 } );
 
-const TABLE_BODY_SELECTOR = '.manage-ais-table .ant-table-body';
+const TABLE_BODY_SELECTOR = '.manage-ais-table';
 
 /** 给滚动容器打 sentinel 并滚到底，返回滚动后的 scrollTop。 */
 const armTableBodySentinel = async( settings:Page ) => {

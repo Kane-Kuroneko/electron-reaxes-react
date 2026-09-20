@@ -1,9 +1,9 @@
 /**
- * Exit Without Save 丢掉 runtime 草稿，保留 Manage AIs 表草稿。
+ * Done 关窗：运行设置已即时写盘，Manage AIs 表草稿仍保留。
  * 对应 docs/features/settings-exit-discard-and-prompt-scrollbar.md
  */
 
-test( 'Exit Without Save reverts theme but keeps unsaved Enabled draft' , async( {
+test( 'Done keeps autosaved theme and unsaved Enabled draft' , async( {
 	electronApp ,
 	mainWindow ,
 	userDataDir,
@@ -12,8 +12,8 @@ test( 'Exit Without Save reverts theme but keeps unsaved Enabled draft' , async(
 	await openManageAIs( settings );
 	await expectTableIdle( settings );
 	await openGeneral( settings );
-	await watchClick( settings.getByRole( 'radio' , { name : 'Dark' } ) );
-	await expectFooterDirty( settings );
+	await watchClick( settings.getByRole( 'radio' , { name : 'Dark' , exact : true } ) );
+	await expect( settings.getByRole( 'radio' , { name : 'Dark' , exact : true } ) ).toHaveAttribute( 'aria-checked' , 'true' );
 	await openManageAIs( settings );
 	await watchClick( enabledSwitchInRow( settings , E2E_AI_B.id ) );
 	await expectTableDirty( settings );
@@ -22,7 +22,7 @@ test( 'Exit Without Save reverts theme but keeps unsaved Enabled draft' , async(
 
 	const again = await openSettingsFromApplicationMenu( electronApp , mainWindow );
 	await openGeneral( again );
-	await expect( again.getByRole( 'radio' , { name : 'Light' , exact : true } ) ).toBeChecked();
+	await expect( again.getByRole( 'radio' , { name : 'Dark' , exact : true } ) ).toHaveAttribute( 'aria-checked' , 'true' );
 	await expectFooterIdle( again );
 	await openManageAIs( again );
 	await expect( enabledSwitchInRow( again , E2E_AI_B.id ) ).toBeChecked();
@@ -42,7 +42,6 @@ import { watchClick } from '../support/observe';
 import { readUserAisFile } from '../support/user-ais-file';
 import {
 	enabledSwitchInRow ,
-	expectFooterDirty ,
 	expectFooterIdle ,
 	expectTableDirty ,
 	expectTableIdle ,

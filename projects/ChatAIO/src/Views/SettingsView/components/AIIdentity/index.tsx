@@ -50,13 +50,7 @@ export const AIFamilyIdentity = ( {
 } ) => {
 	const displayName = AIFamilyDisplayName[family as AI.AIFamily] || family;
 	return <span
-		style={ {
-			display : 'inline-flex' ,
-			alignItems : 'center' ,
-			gap : 6 ,
-			minWidth : 0 ,
-			color : muted ? 'var(--ant-color-text-secondary, rgba(0,0,0,0.65))' : undefined,
-		} }
+		className={ cn( 'inline-flex min-w-0 items-center gap-1.5' , muted && 'text-muted-foreground' ) }
 		data-vendor={ family }
 	>
 		<AIVendorLogo family={ family } size={ size } fallbackText={ displayName }/>
@@ -66,6 +60,7 @@ export const AIFamilyIdentity = ( {
 	</span>;
 };
 
+import { cn } from '#Views/shared/ui/cn.utility';
 import { reaxel_AIFavicons } from '#SettingsView/reaxels/ai-favicons';
 import { AIVendorLogo } from '#shared/ai-vendor-logo';
 import { toVendorRef , vendorFallbackText } from '#shared/ai-vendor-logo/vendor-logo.utility';

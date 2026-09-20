@@ -77,12 +77,12 @@
 		transition: border-color 0.15s ease, background 0.15s ease;
 
 		&:hover {
-			border-color: #1677ff;
-			background: rgba(22, 119, 255, 0.04);
+			border-color: hsl(var(--foreground) / 0.28);
+			background: hsl(var(--foreground) / 0.04);
 		}
 
 		&:active {
-			background: rgba(22, 119, 255, 0.08);
+			background: hsl(var(--foreground) / 0.07);
 		}
 	}
 
@@ -90,17 +90,17 @@
 		flex-shrink: 0;
 		font-size: 14px;
 		line-height: 1;
-		color: #1677ff;
+		color: hsl(var(--foreground) / 0.72);
 		margin-right: 8px;
 	}
 
 	/* Version：caption 12 · ver 15 · tag 10 · arrow 11 */
 	.about-hero__version-btn--update {
-		border-color: #1677ff;
-		background: rgba(22, 119, 255, 0.06);
+		border-color: hsl(var(--foreground) / 0.28);
+		background: hsl(var(--foreground) / 0.05);
 
 		&:hover {
-			background: rgba(22, 119, 255, 0.1);
+			background: hsl(var(--foreground) / 0.08);
 		}
 	}
 
@@ -120,7 +120,7 @@
 		font-weight: 700;
 		line-height: 1;
 		letter-spacing: 0.02em;
-		color: #1677ff;
+		color: var(--settings-title);
 		margin-right: 8px;
 	}
 
@@ -132,8 +132,8 @@
 		padding: 0 5px;
 		margin-right: 6px;
 		border-radius: 3px;
-		background: #1677ff;
-		color: #fff;
+		background: hsl(var(--foreground));
+		color: hsl(var(--background));
 		font-size: 10px;
 		font-weight: 700;
 		line-height: 1;
@@ -181,7 +181,7 @@
 	align-items: center;
 	justify-content: center;
 	font-size: 18px;
-	color: #1677ff;
+	color: hsl(var(--foreground) / 0.72);
 	background: var(--settings-panel-bg);
 	border: 1px solid var(--settings-subfield-border);
 }
@@ -323,7 +323,7 @@
 	color: var(--settings-title);
 
 	&--accent {
-		color: #1677ff;
+		color: var(--settings-title);
 		font-weight: 600;
 	}
 }
@@ -351,33 +351,6 @@
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-}
-
-:root[data-chataio-theme="dark"] {
-	.about-hero__action-btn {
-		&:hover {
-			border-color: #69b1ff;
-			background: rgba(105, 177, 255, 0.08);
-		}
-	}
-
-	.about-hero__version-btn--update {
-		border-color: #69b1ff;
-		background: rgba(105, 177, 255, 0.1);
-	}
-
-	.about-hero__action-btn-icon,
-	.about-hero__version-btn-ver {
-		color: #69b1ff;
-	}
-
-	.about-feature-card__icon {
-		color: #69b1ff;
-	}
-
-	.about-version-drawer__summary-value--accent {
-		color: #69b1ff;
-	}
 }
 
 @media (max-width: 720px) {

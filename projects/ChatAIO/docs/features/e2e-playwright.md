@@ -52,13 +52,13 @@ Spectron 已死。本仓不引入打包后的 `findLatestBuild`：E2E 打 unpack
 ### 写 DOM 用例时记住
 
 1. 先 `openSettingsFromApplicationMenu`，不要假定 `firstWindow()` 是 Settings。
-2. seed profile 语言是 **en-US**，用 role + 英文名（`Manage AIs`、`Apply` exact、`Save` exact）。`Save & Exit` 不是表底 Save。
+2. seed profile 语言是 **en-US**，用 role + 英文名（`Manage AIs`、`Done`、表底 `Save` exact）。不要找已删除的 Apply / Discard。
 3. `rehancer_Dev` 仍会把侧栏切到 Networks；进表前要点 **Manage AIs**。不要在 E2E 里为了省事改生产默认 tab。
 4. 返回用户 seed 用 `about:blank`，`windows()` 里不应再出现 `chatgpt.com`。若某条用例没 seed `user-ais.json`，远程 AI 页仍可能进 `windows()`，**禁止**对其做 locator。
 5. 调 `applySettings` / `applyAIs` 探针前等 `runtimeViewsReady`（`kind==='main'` 在 Phase 0 就真了）。**mutating `evaluate` 不要把整份 settings 从 Playwright 克隆进 main**（structured clone 会丢 `startup`）；在 main 里 `getSettings()` 再改字段。Playwright 对返回的 Promise 是弱引用，纯 JS `async` 会被 V8 收成 `Promise was garbage collected`——evaluate 里用 `setTimeout` 钉住 native，**不要对 GC 再 retry apply**（可能已经写完）。见 [electron-playwright-helpers](https://www.npmjs.com/package/electron-playwright-helpers)。`user-settings.json` 的路径必须在 **每次 I/O** 读 `app.getPath('userData')`：主进程单例若在 `setAppProfilePath` 之前构造，会把文件写到 Electron 默认 userData，内存是新值、E2E 隔离盘仍是 seed。
 6. 改了 `src/Main` 必须 `yarn build:webpack`；只改 Settings renderer 同样要重建，否则 E2E 仍跑旧 `dist`。
 7. **返回用户 seed 写小型 `user-ais.json`**：`custom-e2e-a`…`d`（Bravo 默认关），URL `about:blank`，`deletedIds` 钉死 bundled 目录 + `dev-proxy-test`。不要假定菜单里还有 ChatGPT。常量：`e2e/support/e2e-ais.ts`。单独用例要改 seed 用 fixture `userAisPatch`，不要改默认表。
-8. **关下拉再立刻点同一顶级项会不稳**：`closeDropdownView` 可能清不掉 MainView `openMenuId`，再点会被当成 toggle 收起；Switch AI 拖完 `rebuildMenu` 还可能把同一扇 Dropdown 再打开。`waitForVisibleDropdown` 只认窗可见，**会把残留 Switch AI 当成 Application**。开 Settings / Switch AI 用 `openTopMenuUntilItem`：等到**具体 `data-item-id`**，点错则先切到另一个顶级菜单再试。目录脏挡板用例先 `expectTableDirty`，警告文案用短 timeout（不要把 GitHub fetch 等满 20s）。Add / Edit 弹窗用 `getByRole('dialog', { name })`。能点当前已开菜单就别关再开。读 Manage AIs 行序用 `.manage-ais-table .ant-table-body`，避开 antd 的 hidden measure 行。Startup 单选点 `data-testid=startup-ai-page-first` 的 label（DOM `click()`），页脚 Apply 看 `data-testid=settings-footer-apply` 的 `data-dirty`。不要 `locator.check()`。
+8. **关下拉再立刻点同一顶级项会不稳**：`closeDropdownView` 可能清不掉 MainView `openMenuId`，再点会被当成 toggle 收起；Switch AI 拖完 `rebuildMenu` 还可能把同一扇 Dropdown 再打开。`waitForVisibleDropdown` 只认窗可见，**会把残留 Switch AI 当成 Application**。开 Settings / Switch AI 用 `openTopMenuUntilItem`：等到**具体 `data-item-id`**，点错则先切到另一个顶级菜单再试。目录脏挡板用例先 `expectTableDirty`，警告文案用短 timeout（不要把 GitHub fetch 等满 20s）。Add / Edit 弹窗用 `getByRole('dialog', { name })`。能点当前已开菜单就别关再开。读 Manage AIs 行序用 `.manage-ais-table tbody tr[data-row-key]`。Startup 单选点 `data-testid=startup-ai-page-first` 的 label（DOM `click()`）。页脚是 **Done**（`data-testid=settings-footer-done`），运行设置即时落盘，不要再找 Apply/Discard。不要 `locator.check()`。
 9. **「下拉开着」以主进程 `BrowserWindow.isVisible()` 为准，不能只看 DOM**。点菜单项后主进程先 `window.hide()`，渲染端 `hide` 命令清 DOM 要晚 0–60ms（隐藏窗的渲染进程被降优先级，切 AI 期间 CPU 争用更明显）。`openTopMenuUntilItem` 的「已开着就直接用」分支若只看 DOM，会拿到**已隐藏窗里的旧菜单**，随后 DOM 被清、元素脱离，`locator.click()` 在 Playwright 的 stable 检查里等满 30s（症状：`waiting for element to be visible, enabled and stable` → `element is not stable` → 不再有日志）。用 `isDropdownWindowVisible(electronApp)`（`app-probe.ts`）先问主进程；`ensureVisibleSwitchAiMenu` 传 `electronApp`。复现于 `ai-page-walk` / `ai-opened-walk` 连点 3 次后第 4 次点击。
 
 不变量 5 与禁止项与本节一致。后续会话加手势用例时，先对照本节分层和「写 DOM 用例时记住」，不要再探一遍 WCV。
@@ -76,7 +76,7 @@ Spectron 已死。本仓不引入打包后的 `findLatestBuild`：E2E 打 unpack
 | 远程 AI 站点 DOM、白屏、`forward: true` | 禁止 | 见禁止项 |
 | 长按 Advanced 重置全部 AI 页 | 不测 | 破坏性；默认套件不碰 |
 
-i18n / antd 选择器不稳时再给页脚、表底、弹窗加 `data-testid`，不要先改生产默认侧栏 tab。
+i18n 选择器不稳时再给页脚、表底、弹窗加 `data-testid`，不要先改生产默认侧栏 tab。
 
 ## 不变量
 

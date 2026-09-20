@@ -36,6 +36,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 - [拖拽排序、顺序写盘](./docs/features/ai-list-reorder.md)
 - [Manage AIs 表格展示序 / 筛选](./docs/features/manage-ais-table-ux.md)
 - [Manage AIs 与页脚两套提交](./docs/features/manage-ais-save-scopes.md)（弹窗 Enter 即保存、Clone 插母项下方也在此）
+- [Settings shadcn / 运行设置即时写盘](./docs/features/settings-ui-shadcn.md)
 - [中区 Current AI 下拉切换](./docs/features/menubar-current-ai-dropdown.md)
 - [卡片 UX](./docs/features/floating-view-card-ux-optimization.md)、[Swiper 迁移](./docs/features/floating-view-swiper-migration.md)
 - [切换热路径](./docs/features/ai-page-switch-performance-optimization.md)
@@ -67,6 +68,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 
 - [Prompt View](./docs/features/prompt-view.md)、[bugfix 与 UX](./docs/features/prompt-view-bugfix-and-ux.md)、[视觉](./docs/features/prompt-view-visual-refresh.md)
 - [Settings 退出丢弃 / 滚动条](./docs/features/settings-exit-discard-and-prompt-scrollbar.md)
+- [Settings shadcn / 运行设置即时写盘](./docs/features/settings-ui-shadcn.md)
 - [Settings 首次打开延迟（预加载晚于 AI 页）](./docs/features/settings-view-preload.md)
 - [Settings 切 Manage AIs 卡顿埋点](./docs/features/settings-menu-switch-perf.md)
 - [Manage AIs 表格展示序 / 筛选](./docs/features/manage-ais-table-ux.md)
@@ -107,7 +109,8 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [menubar-cold-start-monitor.md](./docs/features/menubar-cold-start-monitor.md) | 冷启动 menubar 白屏 vs 当前 WCV 加载时序 |
 | [ai-list-reorder.md](./docs/features/ai-list-reorder.md) | Switch AI / Manage AIs 立即持久化排序 |
 | [manage-ais-table-ux.md](./docs/features/manage-ais-table-ux.md) | Manage AIs 未启用置底、启用槽位拖拽、列筛选进 reaxel、空表不拆筛选浮层、删除确认不整表 remount（滚动弹顶复盘） |
-| [manage-ais-save-scopes.md](./docs/features/manage-ais-save-scopes.md) | 页脚与表底两套 dirty；弹窗 Save 当场写盘、Enter 即保存；Clone 插母项下方 |
+| [manage-ais-save-scopes.md](./docs/features/manage-ais-save-scopes.md) | 运行设置即时写盘 + 表底 Save/Undo；弹窗 Save 当场写盘、Enter 即保存；Clone 插母项下方 |
+| [settings-ui-shadcn.md](./docs/features/settings-ui-shadcn.md) | ChatAIO scoped Tailwind/shadcn、零 antd、Settings 页脚 Done |
 | [ai-notification-taskbar-flash.md](./docs/features/ai-notification-taskbar-flash.md) | AI 页 HTML5 通知 → Windows 闪任务栏 / macOS dock 弹跳 |
 | [ai-vendor-logo-identity.md](./docs/features/ai-vendor-logo-identity.md) | 供应商 logo 取代 label 里的厂商名；lobe-icons 入库、`VendorRef` 跨 IPC、custom favicon 兜底；含进度清单 |
 | [menubar-current-ai-dropdown.md](./docs/features/menubar-current-ai-dropdown.md) | 中区 Current AI 块点击下拉切 AI |

@@ -10,16 +10,16 @@ export const RCNetworkPage = reaxper( () => {
 			<h2><I18n>Check your network</I18n></h2>
 			<p><I18n>The test reaches Google, X / Twitter, and YouTube. It only selects a suggested default and will not advance automatically.</I18n></p>
 		</div>
-		<Radio.Group
-			value={ store.UIControls.network.status }
-			onChange={ event => setNetworkStatus( event.target.value ) }
-			className="network-choice"
+		<RadioGroup
+			value={ store.UIControls.network.status === 'unknown' ? undefined : store.UIControls.network.status }
+			onValueChange={ value => setNetworkStatus( value as Guiding.NetworkStatus ) }
+			className="network-choice gap-3"
 		>
-			<Radio value="direct"><I18n>I can connect directly</I18n></Radio>
-			<Radio value="blocked"><I18n>I need proxy or system network settings</I18n></Radio>
-		</Radio.Group>
+			<RadioRow value="direct"><I18n>I can connect directly</I18n></RadioRow>
+			<RadioRow value="blocked"><I18n>I need proxy or system network settings</I18n></RadioRow>
+		</RadioGroup>
 		<Button
-			type="primary"
+			className="mt-4"
 			loading={ store.Status.testing }
 			onClick={ runConnectivityTest }
 		><I18n>Test connection</I18n></Button>
@@ -42,8 +42,10 @@ export const RCNetworkPage = reaxper( () => {
 
 import { reaxel_GuidingView } from '#GuidingView/reaxels/guiding-view';
 import { I18n } from '#GuidingView/reaxels/exports';
+import type { Guiding } from '#src/Types/Guiding';
+import { Button } from '#Views/shared/ui/button';
 import {
-	Button ,
-	Radio,
-} from 'antd';
+	RadioGroup ,
+	RadioRow,
+} from '#Views/shared/ui/radio-group';
 import { reaxper } from 'reaxes-react';

@@ -22,7 +22,7 @@
 | Main 进程 `reaxel_FloatingView` | BrowserWindow 管理 + IPC 发送，完全不变 |
 | Renderer `App.tsx` | IPC 监听桥接，不变 |
 | Renderer `reaxel_FloatingView` | UI 状态管理 + 自动隐藏定时器，store 结构简化 |
-| 全局消息 (`GlobalMessage`) | antd message 调用，完全不变 |
+| 全局消息 (`GlobalMessage`) | FloatingView 自绘 OverlayToast（不拉 Tailwind Preflight） |
 
 ### 变化的层
 

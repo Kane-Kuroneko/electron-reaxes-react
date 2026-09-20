@@ -1,6 +1,6 @@
 /**
- * About — 面向 C 端产品介绍；版本/更新收进右侧 Drawer
- * Hero 上的 v* 按钮打开 Drawer；菜单栏「有更新」导航也会打开同一 Drawer
+ * About — 面向 C 端产品介绍；版本/更新收进右侧 Sheet
+ * Hero 上的 v* 按钮打开 Sheet；菜单栏「有更新」导航也会打开同一 Sheet
  */
 export const RCAboutPanel = reaxper( () => {
 	const { store , setState } = reaxel_SettingsView;
@@ -76,16 +76,16 @@ export const RCAboutPanel = reaxper( () => {
 		if( !version || version === '—' ) return;
 		try {
 			await navigator.clipboard.writeText( `v${ version }` );
-			message.success( i18n( 'Version copied' ) );
+			toast.success( i18n( 'Version copied' ) );
 		} catch ( error ) {
-			message.error( error instanceof Error ? error.message : i18n( 'Copy failed' ) );
+			toast.error( error instanceof Error ? error.message : i18n( 'Copy failed' ) );
 		}
 	};
 
 	const onOpenReleases = async() => {
 		const result = await api.openExternalUrl( CHATAIO_RELEASES_URL );
 		if( !result.success ) {
-			message.error( result.error || i18n( 'Failed to open link' ) );
+			toast.error( result.error || i18n( 'Failed to open link' ) );
 		}
 	};
 
@@ -96,14 +96,14 @@ export const RCAboutPanel = reaxper( () => {
 			setUpdateState( state );
 			if( state.updateAvailable ) {
 				setState.VersionUI( { activeTab : 'latest' , drawerOpen : true } );
-				message.info( `${ i18n( 'New version available' ) }: ${ state.availableVersion || '' }` );
+				toast.info( `${ i18n( 'New version available' ) }: ${ state.availableVersion || '' }` );
 			} else if( state.status === 'error' ) {
-				message.error( state.error || i18n( 'Update failed' ) );
+				toast.error( state.error || i18n( 'Update failed' ) );
 			} else {
-				message.success( i18n( 'Up to date' ) );
+				toast.success( i18n( 'Up to date' ) );
 			}
 		} catch ( error ) {
-			message.error( error instanceof Error ? error.message : i18n( 'Update failed' ) );
+			toast.error( error instanceof Error ? error.message : i18n( 'Update failed' ) );
 		} finally {
 			setChecking( false );
 		}
@@ -114,10 +114,10 @@ export const RCAboutPanel = reaxper( () => {
 		try {
 			const result = await api.downloadAndInstallUpdate();
 			if( !result.success ) {
-				message.error( result.error || i18n( 'Update failed' ) );
+				toast.error( result.error || i18n( 'Update failed' ) );
 			}
 		} catch ( error ) {
-			message.error( error instanceof Error ? error.message : i18n( 'Update failed' ) );
+			toast.error( error instanceof Error ? error.message : i18n( 'Update failed' ) );
 		} finally {
 			setUpdating( false );
 		}
@@ -127,36 +127,7 @@ export const RCAboutPanel = reaxper( () => {
 		? `${ i18n( 'New version available' ) }${ updateState?.availableVersion ? `: ${ updateState.availableVersion }` : '' }`
 		: i18n( 'Version & Updates' );
 
-	const tabItems = [
-		{
-			key : 'current' ,
-			label : <I18n>What's new in this version</I18n> ,
-			children : <ChangelogBlock
-				version={ changelogs?.current.version || updateState?.currentVersion || '—' }
-				body={ changelogs?.current.body }
-				translated={ changelogs?.current.translated }
-				error={ changelogs?.current.error || fetchError }
-				loading={ loadingChangelogs }
-				onRefresh={ () => void refreshChangelogs() }
-				emptyHint={ <I18n>No changelog for this version</I18n> }
-			/> ,
-		} ,
-		...( updateAvailable ? [ {
-			key : 'latest' ,
-			label : <I18n>What's new in the latest</I18n> ,
-			children : <div className="about-latest-panel">
-				<ChangelogBlock
-					version={ changelogs?.latest?.version || updateState?.availableVersion || '—' }
-					body={ changelogs?.latest?.body }
-					translated={ changelogs?.latest?.translated }
-					error={ changelogs?.latest?.error || fetchError }
-					loading={ loadingChangelogs }
-					onRefresh={ () => void refreshChangelogs() }
-					emptyHint={ <I18n>No changelog for this version</I18n> }
-				/>
-			</div> ,
-		} ] : [] ),
-	];
+	const tabValue = updateAvailable ? activeTab : 'current';
 
 	return <div className="about-page">
 		<section className="about-hero settings-section">
@@ -178,30 +149,22 @@ export const RCAboutPanel = reaxper( () => {
 				<I18n>The web of nodes stands for the Web — every AI connected in one place</I18n>
 			</p>
 			{ updateAvailable ? (
-				<Alert
-					className="about-hero__update-alert"
-					type="info"
-					showIcon
-					message={ <>
+				<Alert className="about-hero__update-alert mb-3 flex items-center justify-between gap-3">
+					<AlertDescription>
 						<I18n>New version available</I18n>
 						{ updateState?.availableVersion ? `: ${ updateState.availableVersion }` : '' }
-					</> }
-					action={ (
-						<Button
-							size="small"
-							type="primary"
-							onClick={ () => openVersionDrawer( 'latest' ) }
-						>
-							<I18n>View update</I18n>
-						</Button>
-					) }
-				/>
+					</AlertDescription>
+					<Button
+						size="sm"
+						onClick={ () => openVersionDrawer( 'latest' ) }
+					>
+						<I18n>View update</I18n>
+					</Button>
+				</Alert>
 			) : null }
 			<div className="about-hero__actions">
-				<Badge
-					dot={ updateAvailable }
-					offset={ [ -2 , 2 ] }
-				>
+				<span className="relative inline-flex">
+					{ updateAvailable ? <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-destructive" /> : null }
 					<button
 						type="button"
 						className={ `about-hero__action-btn about-hero__version-btn${ updateAvailable ? ' about-hero__version-btn--update' : '' }` }
@@ -209,21 +172,21 @@ export const RCAboutPanel = reaxper( () => {
 						title={ versionButtonTitle }
 						aria-label={ versionButtonTitle }
 					>
-						<HistoryOutlined className="about-hero__action-btn-icon" />
+						<History className="about-hero__action-btn-icon h-4 w-4" />
 						<span className="about-hero__version-btn-caption"><I18n>Version</I18n></span>
 						<span className="about-hero__version-btn-ver">v{ version }</span>
 						{ updateAvailable ? (
 							<span className="about-hero__version-tag">NEW</span>
 						) : null }
-						<RightOutlined className="about-hero__version-btn-arrow" />
+						<ChevronRight className="about-hero__version-btn-arrow h-4 w-4" />
 					</button>
-				</Badge>
+				</span>
 				<button
 					type="button"
 					className="about-hero__action-btn about-hero__github-btn"
 					onClick={ () => void onOpenReleases() }
 				>
-					<GithubOutlined className="about-hero__action-btn-icon" />
+					<Github className="about-hero__action-btn-icon h-4 w-4" />
 					<span className="about-hero__github-btn-label"><I18n>GitHub Releases</I18n></span>
 				</button>
 			</div>
@@ -260,145 +223,162 @@ export const RCAboutPanel = reaxper( () => {
 				</div>
 				<div className="about-meta__row">
 					<span className="about-meta__label"><I18n>Tech Stack</I18n></span>
-					<span className="about-meta__value">Electron · React · Reaxes · Ant Design · TypeScript</span>
+					<span className="about-meta__value">Electron · React · Reaxes · shadcn/ui · TypeScript</span>
 				</div>
 				<div className="about-meta__row about-meta__row--stack">
 					<span className="about-meta__label"><I18n>Thanks</I18n></span>
 					<span className="about-meta__value">
-						<I18n>Built with Electron, React, Reaxes, and Ant Design. Releases published via GitHub.</I18n>
+						<I18n>Built with Electron, React, Reaxes, and shadcn/ui. Releases published via GitHub.</I18n>
 					</span>
 				</div>
 			</div>
 		</section>
 
-		<Drawer
-			rootClassName="about-version-drawer"
-			placement="right"
-			width="60%"
+		<Sheet
 			open={ drawerOpen }
-			onClose={ closeVersionDrawer }
-			destroyOnClose={ false }
-			title={ <I18n>Version & Updates</I18n> }
-			extra={ (
-				<div className="about-version-drawer__extra">
-					<Tooltip title={ i18n( 'Copy version' ) }>
+			onOpenChange={ ( open ) => {
+				if( open === false ) closeVersionDrawer();
+			} }
+		>
+			<SheetContent
+				side="right"
+				className="flex w-[min(60vw,720px)] flex-col overflow-y-auto sm:max-w-none"
+			>
+				<SheetHeader>
+					<SheetTitle><I18n>Version & Updates</I18n></SheetTitle>
+				</SheetHeader>
+				<div className="mb-4 flex items-center gap-2">
+					<SimpleTooltip content={ i18n( 'Copy version' ) }>
 						<Button
-							type="text"
-							size="small"
-							icon={ <CopyOutlined /> }
+							variant="ghost"
+							size="icon"
 							onClick={ () => void onCopyVersion() }
-						/>
-					</Tooltip>
+							aria-label={ i18n( 'Copy version' ) }
+						>
+							<Copy className="h-4 w-4" />
+						</Button>
+					</SimpleTooltip>
 					<Button
-						size="small"
-						icon={ <ReloadOutlined /> }
+						size="sm"
+						variant="outline"
 						loading={ checking || updateState?.status === 'checking' }
 						onClick={ () => void onCheckUpdates() }
 					>
+						<RefreshCw className="h-3.5 w-3.5" />
 						<I18n>Check for Updates</I18n>
 					</Button>
 				</div>
-			) }
-			footer={ updateAvailable ? (
-				<div className="about-version-drawer__footer">
-					{ updateState?.status === 'downloading' ? (
-						<div className="version-download-progress">
-							<Progress
-								percent={ updateState.downloadProgress ?? 0 }
-								size="small"
-							/>
-							<span><I18n>Downloading update</I18n></span>
-						</div>
+				<div className="about-version-drawer__body">
+					<div className="about-version-drawer__summary">
+						<span className="about-version-drawer__summary-label"><I18n>Current</I18n></span>
+						<span className="about-version-drawer__summary-value">v{ version }</span>
+						{ updateAvailable ? (
+							<>
+								<span className="about-version-drawer__summary-label"><I18n>Latest</I18n></span>
+								<span className="about-version-drawer__summary-value about-version-drawer__summary-value--accent">
+									v{ updateState?.availableVersion || '—' }
+								</span>
+							</>
+						) : null }
+					</div>
+
+					{ updateState?.status === 'checking' || checking ? (
+						<Alert className="mb-3">
+							<AlertDescription><I18n>Checking for updates</I18n></AlertDescription>
+						</Alert>
 					) : null }
-					{ updateState?.status === 'downloaded' ? (
-						<Alert
-							type="success"
-							showIcon
-							message={ <I18n>Update downloaded. Restart to install.</I18n> }
-						/>
+					{ !updateAvailable && updateState?.status === 'not-available' ? (
+						<Alert className="mb-3">
+							<AlertDescription><I18n>Up to date</I18n></AlertDescription>
+						</Alert>
 					) : null }
-					{ updateState?.error ? (
-						<Alert
-							type="error"
-							showIcon
-							message={ updateState.error }
-						/>
+					{ !updateAvailable && updateState?.status === 'error' && updateState?.error ? (
+						<Alert variant="destructive" className="mb-3">
+							<AlertDescription>{ updateState.error }</AlertDescription>
+						</Alert>
 					) : null }
-					<Button
-						type="primary"
-						block
-						loading={ updating || updateState?.status === 'downloading' }
-						onClick={ () => void onDownloadUpdate() }
-					>
-						{ updateState?.status === 'downloaded'
-							? <I18n>Restart to Install</I18n>
-							: <I18n>Download Update</I18n> }
-					</Button>
-				</div>
-			) : null }
-		>
-			<div className="about-version-drawer__body">
-				<div className="about-version-drawer__summary">
-					<span className="about-version-drawer__summary-label"><I18n>Current</I18n></span>
-					<span className="about-version-drawer__summary-value">v{ version }</span>
 					{ updateAvailable ? (
-						<>
-							<span className="about-version-drawer__summary-label"><I18n>Latest</I18n></span>
-							<span className="about-version-drawer__summary-value about-version-drawer__summary-value--accent">
-								v{ updateState?.availableVersion || '—' }
-							</span>
-						</>
+						<Alert className="mb-3">
+							<AlertDescription>
+								<I18n>New version available</I18n>
+								{ updateState?.availableVersion ? `: ${ updateState.availableVersion }` : '' }
+							</AlertDescription>
+						</Alert>
 					) : null }
+
+					<Tabs
+						value={ tabValue }
+						onValueChange={ ( key ) => {
+							setState.VersionUI( {
+								activeTab : key === 'latest' ? 'latest' : 'current' ,
+							} );
+						} }
+					>
+						<TabsList>
+							<TabsTrigger value="current"><I18n>What's new in this version</I18n></TabsTrigger>
+							{ updateAvailable ? (
+								<TabsTrigger value="latest"><I18n>What's new in the latest</I18n></TabsTrigger>
+							) : null }
+						</TabsList>
+						<TabsContent value="current">
+							<ChangelogBlock
+								version={ changelogs?.current.version || updateState?.currentVersion || '—' }
+								body={ changelogs?.current.body }
+								translated={ changelogs?.current.translated }
+								error={ changelogs?.current.error || fetchError }
+								loading={ loadingChangelogs }
+								onRefresh={ () => void refreshChangelogs() }
+								emptyHint={ <I18n>No changelog for this version</I18n> }
+							/>
+						</TabsContent>
+						{ updateAvailable ? (
+							<TabsContent value="latest">
+								<div className="about-latest-panel">
+									<ChangelogBlock
+										version={ changelogs?.latest?.version || updateState?.availableVersion || '—' }
+										body={ changelogs?.latest?.body }
+										translated={ changelogs?.latest?.translated }
+										error={ changelogs?.latest?.error || fetchError }
+										loading={ loadingChangelogs }
+										onRefresh={ () => void refreshChangelogs() }
+										emptyHint={ <I18n>No changelog for this version</I18n> }
+									/>
+								</div>
+							</TabsContent>
+						) : null }
+					</Tabs>
 				</div>
-
-				{ updateState?.status === 'checking' || checking ? (
-					<Alert
-						type="info"
-						showIcon
-						style={ { marginBottom : 12 } }
-						message={ <I18n>Checking for updates</I18n> }
-					/>
-				) : null }
-				{ !updateAvailable && updateState?.status === 'not-available' ? (
-					<Alert
-						type="success"
-						showIcon
-						style={ { marginBottom : 12 } }
-						message={ <I18n>Up to date</I18n> }
-					/>
-				) : null }
-				{ !updateAvailable && updateState?.status === 'error' && updateState?.error ? (
-					<Alert
-						type="error"
-						showIcon
-						style={ { marginBottom : 12 } }
-						message={ updateState.error }
-					/>
-				) : null }
 				{ updateAvailable ? (
-					<Alert
-						type="info"
-						showIcon
-						style={ { marginBottom : 12 } }
-						message={ <>
-							<I18n>New version available</I18n>
-							{ updateState?.availableVersion ? `: ${ updateState.availableVersion }` : '' }
-						</> }
-					/>
+					<SheetFooter className="mt-4 flex-col items-stretch gap-3">
+						{ updateState?.status === 'downloading' ? (
+							<div className="version-download-progress space-y-2">
+								<Progress value={ updateState.downloadProgress ?? 0 } />
+								<span><I18n>Downloading update</I18n></span>
+							</div>
+						) : null }
+						{ updateState?.status === 'downloaded' ? (
+							<Alert>
+								<AlertDescription><I18n>Update downloaded. Restart to install.</I18n></AlertDescription>
+							</Alert>
+						) : null }
+						{ updateState?.error ? (
+							<Alert variant="destructive">
+								<AlertDescription>{ updateState.error }</AlertDescription>
+							</Alert>
+						) : null }
+						<Button
+							className="w-full"
+							loading={ updating || updateState?.status === 'downloading' }
+							onClick={ () => void onDownloadUpdate() }
+						>
+							{ updateState?.status === 'downloaded'
+								? <I18n>Restart to Install</I18n>
+								: <I18n>Download Update</I18n> }
+						</Button>
+					</SheetFooter>
 				) : null }
-
-				<Tabs
-					className="about-update-tabs"
-					activeKey={ updateAvailable ? activeTab : 'current' }
-					onChange={ ( key ) => {
-						setState.VersionUI( {
-							activeTab : key === 'latest' ? 'latest' : 'current' ,
-						} );
-					} }
-					items={ tabItems }
-				/>
-			</div>
-		</Drawer>
+			</SheetContent>
+		</Sheet>
 	</div>;
 } );
 
@@ -422,18 +402,18 @@ const ChangelogBlock = reaxper( ( {
 	const refreshButton = (
 		<Button
 			className="version-changelog__refresh"
-			type="text"
-			size="small"
-			icon={ <ReloadOutlined /> }
+			variant="ghost"
+			size="sm"
 			loading={ loading }
 			onClick={ onRefresh }
 		>
+			<RefreshCw className="h-3.5 w-3.5" />
 			<I18n>Refresh</I18n>
 		</Button>
 	);
 
 	if( loading && body == null && !error ) {
-		return <div className="version-changelog-loading"><Spin /></div>;
+		return <div className="version-changelog-loading"><Spinner /></div>;
 	}
 	return <div className="version-changelog">
 		<div className="version-changelog__meta">
@@ -445,22 +425,19 @@ const ChangelogBlock = reaxper( ( {
 			{ refreshButton }
 		</div>
 		{ error ? (
-			<Alert
-				type="warning"
-				showIcon
-				message={ error }
-				style={ { marginBottom : 12 } }
-				action={ (
+			<Alert variant="destructive" className="mb-3">
+				<div className="flex items-center justify-between gap-2">
+					<AlertDescription>{ error }</AlertDescription>
 					<Button
-						size="small"
-						type="link"
+						size="sm"
+						variant="link"
 						loading={ loading }
 						onClick={ onRefresh }
 					>
 						<I18n>Refresh</I18n>
 					</Button>
-				) }
-			/>
+				</div>
+			</Alert>
 		) : null }
 		{ body ? (
 			<div className="version-changelog__body about-changelog__body">
@@ -489,7 +466,7 @@ const changelogMarkdownComponents : Components = {
 				event.preventDefault();
 				void api.openExternalUrl( href ).then( ( result ) => {
 					if( !result.success ) {
-						message.error( result.error || i18n( 'Failed to open link' ) );
+						toast.error( result.error || i18n( 'Failed to open link' ) );
 					}
 				} );
 			} }
@@ -501,27 +478,27 @@ const changelogMarkdownComponents : Components = {
 
 const FEATURES = [
 	{
-		icon : <ApartmentOutlined /> ,
+		icon : <Network /> ,
 		title : 'Run multiple AIs side by side' ,
 		desc : 'Each AI keeps its own login and data — no account mixing' ,
 	} ,
 	{
-		icon : <GlobalOutlined /> ,
+		icon : <Globe /> ,
 		title : 'Built-in providers, or any webpage' ,
 		desc : 'ChatGPT, Claude, Gemini, DeepSeek and more — or paste any AI site URL' ,
 	} ,
 	{
-		icon : <FileTextOutlined /> ,
+		icon : <FileText /> ,
 		title : 'Reusable prompt drawers' ,
 		desc : 'Left and right prompt panels stay with you as you switch AIs' ,
 	} ,
 	{
-		icon : <SafetyCertificateOutlined /> ,
+		icon : <ShieldCheck /> ,
 		title : 'Smart per-AI proxy' ,
 		desc : 'Global proxy plus per-AI exits. Unreachable proxies never silently fall back to direct' ,
 	} ,
 	{
-		icon : <DesktopOutlined /> ,
+		icon : <Monitor /> ,
 		title : 'Desktop-first workflow' ,
 		desc : 'Hotkeys, system tray, light/dark theme, and multi-language UI' ,
 	} ,
@@ -536,35 +513,39 @@ import { I18n , i18n } from '#SettingsView/reaxels/exports';
 import type { AppUpdater } from '#src/Types/AppUpdater';
 import appIconProd from '../../../../../statics/icons/app-icon.png';
 import appIconDev from '../../../../../statics/icons/app-icon-dev.png';
+import { Alert , AlertDescription } from '#Views/shared/ui/alert';
+import { Button } from '#Views/shared/ui/button';
+import { Progress } from '#Views/shared/ui/progress';
 import {
-	Alert ,
-	Badge ,
-	Button ,
-	Drawer ,
-	Progress ,
-	Spin ,
+	Sheet ,
+	SheetContent ,
+	SheetFooter ,
+	SheetHeader ,
+	SheetTitle,
+} from '#Views/shared/ui/sheet';
+import { Spinner } from '#Views/shared/ui/spinner';
+import {
 	Tabs ,
-	Tooltip ,
-	message ,
-} from 'antd';
+	TabsContent ,
+	TabsList ,
+	TabsTrigger,
+} from '#Views/shared/ui/tabs';
+import { toast } from '#Views/shared/ui/toast';
+import { SimpleTooltip } from '#Views/shared/ui/tooltip';
 import {
-	ApartmentOutlined ,
-	CopyOutlined ,
-	DesktopOutlined ,
-	FileTextOutlined ,
-	GithubOutlined ,
-	GlobalOutlined ,
-	HistoryOutlined ,
-	ReloadOutlined ,
-	RightOutlined ,
-	SafetyCertificateOutlined ,
-} from '@ant-design/icons';
+	ChevronRight ,
+	Copy ,
+	FileText ,
+	Github ,
+	Globe ,
+	History ,
+	Monitor ,
+	Network ,
+	RefreshCw ,
+	ShieldCheck,
+} from 'lucide-react';
 import Markdown , { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import {
-	useEffect ,
-	useState ,
-} from 'react';
 import { reaxper } from 'reaxes-react';
 import './index.less';
 

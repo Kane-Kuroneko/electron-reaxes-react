@@ -30,9 +30,11 @@ export const App = reaxper( () => {
 
 	return <main className="floating-view-root">
 		<SwitchAiBar />
+		<OverlayToast />
 	</main>;
 } );
 
+import { OverlayToast } from '#FloatingView/components/OverlayToast';
 import { SwitchAiBar } from '#FloatingView/components/SwitchAiBar';
 import { reaxel_FloatingView } from '#FloatingView/reaxels/floating-view';
 import { reaxper } from 'reaxes-react';

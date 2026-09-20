@@ -1,7 +1,7 @@
 /**
  * Settings WCV 上 Manage AIs / 页脚的稳定 locator。
- * seed 语言是 en-US。Save & Exit 不是表底 Save。
- * 设计：docs/features/manage-ais-save-scopes.md
+ * seed 语言是 en-US。运行设置即时写盘，页脚只剩 Done。
+ * 设计：docs/features/manage-ais-save-scopes.md 、 docs/features/settings-ui-shadcn.md
  */
 
 export const openManageAIs = async( settings:Page ) => {
@@ -16,12 +16,8 @@ export const openGeneral = async( settings:Page ) => {
 	return settings;
 };
 
-export const footerApply = ( settings:Page ) => {
-	return settings.getByTestId( TEST_IDS.settingsFooterApply );
-};
-
-export const footerDiscard = ( settings:Page ) => {
-	return settings.getByRole( 'button' , { name : 'Discard Changes' } );
+export const footerDone = ( settings:Page ) => {
+	return settings.getByTestId( TEST_IDS.settingsFooterDone );
 };
 
 export const tableSave = ( settings:Page ) => {
@@ -41,8 +37,7 @@ export const enabledSwitchInRow = ( settings:Page , aiId:string ) => {
 };
 
 export const manageAisVisibleRows = ( settings:Page ) => {
-	/* scroll.y 的 antd 表会多一行 hidden measure（data-row-key=example），不要用裸 tbody。 */
-	return settings.locator( '.manage-ais-table .ant-table-body tbody tr[data-row-key]' );
+	return settings.locator( '.manage-ais-table tbody tr[data-row-key]' );
 };
 
 export const displayedManageAisIds = async( settings:Page ) => {
@@ -59,8 +54,10 @@ export const displayedManageAisIds = async( settings:Page ) => {
 	return ids;
 };
 
+/** 页脚不再有 Apply dirty；断言 Done 可用且旧 Apply 选择器不存在。 */
 export const expectFooterIdle = async( settings:Page ) => {
-	await expect( footerApply( settings ) ).toBeDisabled();
+	await expect( footerDone( settings ) ).toBeVisible();
+	await expect( settings.getByTestId( TEST_IDS.settingsFooterApply ) ).toHaveCount( 0 );
 };
 
 export const expectTableIdle = async( settings:Page ) => {
@@ -69,10 +66,6 @@ export const expectTableIdle = async( settings:Page ) => {
 
 export const expectTableDirty = async( settings:Page ) => {
 	await expect( tableSave( settings ) ).toBeEnabled();
-};
-
-export const expectFooterDirty = async( settings:Page ) => {
-	await expect( footerApply( settings ) ).toBeEnabled();
 };
 
 export const manageAisDialog = ( settings:Page , title:RegExp | string ) => {
@@ -143,7 +136,7 @@ export const openManageAisColumnFilter = async(
 		AI_family : /AI family/i ,
 		url : /AI URL/i,
 	}[filterKey];
-	/* antd scroll 表会复制一格 measure cell，不能裸用 data-manage-ais-filter-trigger。 */
+	/* 表头漏斗只负责 open；不要裸用 data-manage-ais-filter-trigger（可能有隐藏副本）。 */
 	await watchClick(
 		settings.getByRole( 'columnheader' , { name : headerName } ).locator( `[data-manage-ais-filter-trigger="${ filterKey }"]` ),
 	);

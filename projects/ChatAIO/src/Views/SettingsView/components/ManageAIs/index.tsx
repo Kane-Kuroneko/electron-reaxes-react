@@ -4,11 +4,10 @@
 		const isPendingDelete = isAIPendingDeletion( id );
 
 		return <Switch
-			size="small"
 			checked={ target ? !target.disabled : false }
 			disabled={ !target || isPendingDelete }
-			onChange={ value => {
-				setAIEnabled( id , value );
+			onCheckedChange={ value => {
+				setAIEnabled( id , value === true );
 			} }
 		/>;
 	} );
@@ -29,31 +28,21 @@
 		return <Checkbox
 			checked={ checked }
 			disabled={ isFirstAIForcedPreload || !target || isPendingDelete }
-			onChange={ e => {
+			onCheckedChange={ value => {
 				reaxel_SettingsView.mutate.Data( state => {
 					state.AIs = state.AIs.map( ai => ai.id === id
-						? { ...ai , preloadOnStartup : e.target.checked }
+						? { ...ai , preloadOnStartup : value === true }
 						: ai );
 				} );
 			} }
 		/>;
 	} );
 
-	const compactTableHeader = (label:React.ReactNode) => (
-		<span className="manage-ais-table__header-nowrap">{ label }</span>
-	);
-
-	const compactTableHeaderCell = () => ( {
-		className : 'manage-ais-table__th-compact' ,
-		style : { whiteSpace : 'nowrap' as const },
-	} );
-
-	
-/**
- * 删除确认 Popover 组件 — 替代全局 Modal.confirm
- * - 待删除状态：显示 [撤销删除] 按钮
- * - 正常状态：显示 [删除] 按钮，点击弹出 Popover 二次确认
- */
+	/**
+	 * 删除确认 Popover 组件 — 替代全局 Modal.confirm
+	 * - 待删除状态：显示 [撤销删除] 按钮
+	 * - 正常状态：显示 [删除] 按钮，点击弹出 Popover 二次确认
+	 */
 const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 	const { markAIForDeletion , undoMarkAIForDeletion , isAIPendingDeletion } = reaxel_SettingsView();
 	const [ popoverOpen , setPopoverOpen ] = React.useState( false );
@@ -61,8 +50,8 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 
 	if( isPendingDelete ) {
 		return <Button
-			type="link"
-			size="small"
+			variant="link"
+			size="sm"
 			onClick={ () => {
 				undoMarkAIForDeletion( record.id );
 			} }
@@ -72,134 +61,40 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 	return <Popover
 		open={ popoverOpen }
 		onOpenChange={ setPopoverOpen }
-		trigger="click"
-		placement="top"
-		overlayClassName="delete-ai-popover"
-		content={
-			<div style={ { maxWidth : 220 , textAlign : 'center' } }>
-				<p style={ { margin:'2px 0 8px 0' , fontSize : 13 } }><I18n>Are you sure you want to delete this AI page?</I18n></p>
-				<div style={ { display : "flex" , justifyContent : "center" , gap : 8 } }>
-					<Button size="small" onClick={ () => setPopoverOpen( false ) }><I18n>Cancel</I18n></Button>
-					<Button size="small" danger type="primary" onClick={ () => {
+	>
+		<PopoverTrigger asChild>
+			<Button
+				variant="link"
+				size="sm"
+				className="text-destructive"
+				onClick={ e => {
+					e.stopPropagation();
+					setPopoverOpen( true );
+				} }
+			><I18n>Delete</I18n></Button>
+		</PopoverTrigger>
+		<PopoverContent className="delete-ai-popover w-[220px] text-center">
+			<p className="mb-2 text-[13px]"><I18n>Are you sure you want to delete this AI page?</I18n></p>
+			<div className="flex justify-center gap-2">
+				<Button
+					size="sm"
+					variant="outline"
+					onClick={ () => setPopoverOpen( false ) }
+				><I18n>Cancel</I18n></Button>
+				<Button
+					size="sm"
+					variant="destructive"
+					onClick={ () => {
 						markAIForDeletion( record.id );
 						setPopoverOpen( false );
-					} }><I18n>Delete</I18n></Button>
-				</div>
+					} }
+				><I18n>Delete</I18n></Button>
 			</div>
-		}
-	>
-		<Button
-			type="link"
-			size="small"
-			danger
-			onClick={ e => {
-				e.stopPropagation();
-				setPopoverOpen( true );
-			} }
-		><I18n>Delete</I18n></Button>
+		</PopoverContent>
 	</Popover>;
 } );
 
 	/* family 列原来是彩色 Tag 文本；现改为「供应商 logo + 显示名」（AIFamilyIdentity），厂商辨识统一靠 logo。见 ai-vendor-logo-identity.md */
-
-	const createManageAIsColumns = () : TableColumnType<AI.AIItem>[] => [
-		{
-			title : compactTableHeader( <I18n>Drag</I18n> ) ,
-			width : 48 ,
-			align : 'center' ,
-			onHeaderCell : compactTableHeaderCell ,
-			render() {
-				return <DragHandle/>;
-			},
-		} ,
-		{
-			title : compactTableHeader( <I18n>Enabled</I18n> ) ,
-			width : 68 ,
-			align : 'center' ,
-			onHeaderCell : compactTableHeaderCell ,
-			render( _value , record ) {
-				return <AIEnabledSwitch id={ record.id }/>;
-			},
-		} ,
-		{
-			title : compactTableHeader( <I18n>Preload on Startup</I18n> ) ,
-			width : 64 ,
-			align : 'center' ,
-			onHeaderCell : compactTableHeaderCell ,
-			render( _value , record ) {
-				return <PreloadOnStartupCheckbox id={ record.id }/>;
-			},
-		} ,
-		{
-			title : <I18n>AI name</I18n> ,
-			dataIndex : 'label' ,
-			ellipsis : true,
-			minWidth : 100,
-			...createColumnTextFilter<AI.AIItem>( 'label' ) ,
-			render( _value , record ) {
-				const { isNewAI , isModifiedAI , isAIPendingDeletion } = reaxel_SettingsView();
-				const isNew = isNewAI( record.id );
-				const isModified = isModifiedAI( record.id );
-				return <span style={ { display : 'inline-flex' , alignItems : 'center' , gap : 6 , maxWidth : '100%' } }>
-					<AIIdentity ai={ record }/>
-					{ isNew && <Tag color="green" style={ { marginLeft : 4 , fontSize : 11 , lineHeight : '18px' , padding : '0 5px' } }>
-						<I18n>New</I18n>
-					</Tag> }
-					{ isModified && <Tag color="orange" style={ { marginLeft : 4 , fontSize : 11 , lineHeight : '18px' , padding : '0 5px' } }>
-						<I18n>Modified</I18n>
-					</Tag> }
-				</span>;
-			},
-		} ,
-		{
-			title : <I18n>AI family</I18n> ,
-			dataIndex : 'AI_family',
-			ellipsis : true,
-			minWidth : 72,
-			...createColumnTextFilter<AI.AIItem>( 'AI_family' ) ,
-			render( value: AI.AIFamily ) {
-				return <AIFamilyIdentity family={ value } muted/>;
-			},
-		} ,
-		{
-			title : <I18n>AI URL</I18n> ,
-			dataIndex : 'url' ,
-			ellipsis : true,
-			minWidth : 140,
-			...createColumnTextFilter<AI.AIItem>( 'url' ) ,
-		} ,
-		{
-			title : <I18n>Operations</I18n> ,
-			width : 160 ,
-			render : ( _text , record ) => {
-				const {
-					changeEditAIModalVisible ,
-					changeCloneAIModalVisible,
-					isAIPendingDeletion,
-				} = reaxel_SettingsView();
-				const isPendingDelete = isAIPendingDeletion( record.id );
-				return <Space size={ 2 }>
-					{ !isPendingDelete && <>
-					<Button
-						type="link"
-						size="small"
-						onClick={ () => {
-							changeEditAIModalVisible( true , record.id );
-						} }
-					><I18n>Edit</I18n></Button>
-					<Button
-						type="link"
-						size="small"
-						onClick={ () => {
-							changeCloneAIModalVisible( record.id );
-						} }
-					><I18n>Clone</I18n></Button>
-					</> }
-					<DeleteAICell record={ record } />
-				</Space>;
-			},
-		},
-	];
 
 	/**
 	 * Manage AIs 表：展示按上次表底 Save 的启用态分区（启用在上、未启用置底）；筛选与展示序都不改真实 `AIs`。
@@ -218,7 +113,7 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 		/* 显式读 pendingDeleteAIIds 供 MobX 依赖收集：rowClassName / 列 render 由 rc-table 在响应式
 		 * 上下文外调用，标记/撤销删除的行样式要靠本面板重渲染（新 dataSource / rowClassName 引用）带动
 		 * 表体刷新。禁止把它拼进 Table 的 key（e35835056 曾如此修「MobX 回调追踪断裂」）——key 变化
-		 * 会整表 remount，.ant-table-body 滚动位置弹回顶部。见 docs/features/manage-ais-table-ux.md */
+		 * 会整表 remount，滚动容器位置弹回顶部。见 docs/features/manage-ais-table-ux.md */
 		const pendingDeleteAIIds = reaxel_SettingsView.store.UIControls.manage_AIs.pendingDeleteAIIds;
 		void pendingDeleteAIIds;
 		const catalogUpdate = reaxel_SettingsView.store.UIControls.manage_AIs.catalog_update;
@@ -235,8 +130,6 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 		const disabledDisplayedIdSet = React.useMemo( () => {
 			return new Set( displayedAIs.filter( ai => isCommittedDisabled( ai.id ) ).map( ai => ai.id ) );
 		} , [ displayedAIs , isCommittedDisabled ] );
-		/* columns 不吃筛选 value/open：漏斗图标与面板各自是 reaxper，从 store 读。 */
-		const columns = React.useMemo( () => createManageAIsColumns() , [] );
 		/* 量高在 useLayoutEffect 里 setState，会在 paint 前同步再渲一次。
 		 * 若这里直接按 scrollY 挂 Table，重表会挤进同一次 flush，切页仍卡。
 		 * 用 effect 把挂表推到首帧工具栏画完之后。见 docs/features/settings-menu-switch-perf.md */
@@ -333,7 +226,7 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 			} );
 			void persistCommittedAIOrder( previousAIs ).catch( error => {
 				console.error( '[ManageAIs] Reorder failed:' , error );
-				message.error( i18n( 'Failed to reorder AI pages' ) );
+				toast.error( i18n( 'Failed to reorder AI pages' ) );
 			} );
 		};
 
@@ -341,57 +234,51 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 			try {
 				const result = await resetAIsToDefaults();
 				if( !result.success ) {
-					message.error( result.error || i18n( 'Failed to reset AI pages' ) );
+					toast.error( result.error || i18n( 'Failed to reset AI pages' ) );
 					return;
 				}
 				await reloadAIs();
 				setResetModalVisible( false );
-				message.success( i18n( 'AI pages reset to defaults' ) );
+				toast.success( i18n( 'AI pages reset to defaults' ) );
 			} catch ( err ) {
 				console.error( '[ManageAIs] Reset failed:' , err );
-				message.error( i18n( 'Failed to reset AI pages' ) );
+				toast.error( i18n( 'Failed to reset AI pages' ) );
 			}
 		};
 
 		return <div className="settings-section settings-section--fill">
 			<div className="section-title"><I18n>Manage AIs</I18n></div>
 			<div className="settings-section__toolbar">
-				<Form
-					layout="vertical"
-					style={ { marginBottom : 16 } }
-				>
-					<Form.Item label={<I18n>Startup AI Page</I18n>}>
-						<Radio.Group
-							value={ reaxel_SettingsView.store.UIControls.manage_AIs.startupAIPageLoadMode }
-							onChange={ event => {
-								setStartupAIPageLoadMode( event.target.value as Startup.AIPageLoadMode );
-							} }
-							style={ { userSelect : 'none' , display : 'flex' , flexDirection : 'column' , gap : 4 } }
+				<div className="mb-4">
+					<div className="mb-2 text-sm font-medium"><I18n>Startup AI Page</I18n></div>
+					<RadioGroup
+						value={ reaxel_SettingsView.store.UIControls.manage_AIs.startupAIPageLoadMode }
+						className="gap-1"
+						onValueChange={ value => {
+							setStartupAIPageLoadMode( value as Startup.AIPageLoadMode );
+						} }
+					>
+						<RadioRow
+							value="last-used-ai"
+							className="data-testid-startup-ai-page-last-used"
 						>
-							{ /* E2E 点 wrapper；onClick 兜底 antd Group+label 有时不冒泡 onChange。见 docs/features/e2e-playwright.md */ }
-							<Radio
-								value="last-used-ai"
-								data-testid="startup-ai-page-last-used"
-								onClick={ () => {
-									setStartupAIPageLoadMode( 'last-used-ai' );
-								} }
-							><I18n>Load the AI page used last time before exit</I18n></Radio>
-							<Radio
-								value="first-ai"
-								data-testid="startup-ai-page-first"
-								onClick={ () => {
-									setStartupAIPageLoadMode( 'first-ai' );
-								} }
-							><I18n>Always load the first AI page when app starts</I18n></Radio>
-						</Radio.Group>
-					</Form.Item>
-				</Form>
+							<span data-testid="startup-ai-page-last-used">
+								<I18n>Load the AI page used last time before exit</I18n>
+							</span>
+						</RadioRow>
+						<RadioRow value="first-ai">
+							<span data-testid="startup-ai-page-first">
+								<I18n>Always load the first AI page when app starts</I18n>
+							</span>
+						</RadioRow>
+					</RadioGroup>
+				</div>
 				<Button
-					type="primary"
+					variant="outline"
 					onClick={ () => {
 						changeEditAIModalVisible( true );
 					} }
-					style={ { marginBottom : 16 } }
+					className="mb-4"
 				><I18n>Add AI Page</I18n></Button>
 				<CatalogUpdateControls />
 			</div>
@@ -409,37 +296,98 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 						className="settings-table-host"
 						ref={ tableHostRef }
 					>
-						{ /* 先画出工具栏，下一帧再挂 Table，避免 120ms+ 长任务挡住切页。 */ }
-						{ /* 空 dataSource 仍挂 Table；筛选 Input 在 overlays portal，不进 filterDropdown。 */ }
+						{ /* 先画出工具栏，下一帧再挂表，避免长任务挡住切页。空表仍挂表头，筛选 portal 不进单元格。 */ }
 						{ tableReady && tableScrollY != null ? <>
-							{ /* 不给 Table 挂随状态变化的 key：remount 会重建 .ant-table-body 丢滚动位置。 */ }
-							<Table
-							className={ displayedAIs.length === 0 ? 'manage-ais-table manage-ais-table--empty' : 'manage-ais-table' }
-							style={ { width: '100%' } }
-							/* 空表仍 fixed，配合 less 的 scrollbar-gutter，避免 colgroup 被 noData 丢掉后整表变宽。 */
-							tableLayout="fixed"
-							components={ {
-								body : {
-									row : SortableRow,
-								},
-							} }
-							rowKey="id"
-							columns={ columns }
-							dataSource={ displayedAIs }
-							pagination={ false }
-							size="small"
-							scroll={ {
-								x : 600 ,
-								y : tableScrollY ,
-							} }
-							rowClassName={ record => {
-								const { isNewAI , isModifiedAI , isAIPendingDeletion } = reaxel_SettingsView();
-								if( isAIPendingDeletion( record.id ) ) return 'ai-row--pending-delete';
-								if( isNewAI( record.id ) ) return 'ai-row--new';
-								if( isModifiedAI( record.id ) ) return 'ai-row--modified';
-								return '';
-							} }
-						/>
+							<div
+								className={ displayedAIs.length === 0 ? 'manage-ais-table manage-ais-table--empty' : 'manage-ais-table' }
+								style={ { width : '100%' , maxHeight : tableScrollY + 40 , overflow : 'auto' } }
+							>
+								<table
+									className="w-full caption-bottom text-sm"
+									style={ { tableLayout : 'fixed' , minWidth : 600 } }
+								>
+									<thead>
+										<tr>
+											<th className="manage-ais-table__th-compact w-12 text-center"><span className="manage-ais-table__header-nowrap"><I18n>Drag</I18n></span></th>
+											<th className="manage-ais-table__th-compact w-[68px] text-center"><span className="manage-ais-table__header-nowrap"><I18n>Enabled</I18n></span></th>
+											<th className="manage-ais-table__th-compact w-[108px] text-center leading-tight">
+												<span className="inline-block max-w-full whitespace-normal"><I18n>Preload on Startup</I18n></span>
+											</th>
+											<th>
+												<span className="inline-flex items-center gap-1">
+													<I18n>AI name</I18n>
+													<ColumnTextFilterIcon filterKey="label" />
+												</span>
+											</th>
+											<th>
+												<span className="inline-flex items-center gap-1">
+													<I18n>AI family</I18n>
+													<ColumnTextFilterIcon filterKey="AI_family" />
+												</span>
+											</th>
+											<th>
+												<span className="inline-flex items-center gap-1">
+													<I18n>AI URL</I18n>
+													<ColumnTextFilterIcon filterKey="url" />
+												</span>
+											</th>
+											<th className="w-40"><I18n>Operations</I18n></th>
+										</tr>
+									</thead>
+									<tbody>
+										{ displayedAIs.map( record => {
+											const { isNewAI , isModifiedAI , isAIPendingDeletion , changeEditAIModalVisible , changeCloneAIModalVisible } = reaxel_SettingsView();
+											const isPendingDelete = isAIPendingDeletion( record.id );
+											const rowClass = isPendingDelete
+												? 'ai-row--pending-delete'
+												: isNewAI( record.id )
+													? 'ai-row--new'
+													: isModifiedAI( record.id )
+														? 'ai-row--modified'
+														: '';
+											return <SortableRow
+												key={ record.id }
+												rowId={ record.id }
+												className={ rowClass }
+											>
+												<td className="text-center"><DragHandle/></td>
+												<td className="text-center"><AIEnabledSwitch id={ record.id }/></td>
+												<td className="text-center"><PreloadOnStartupCheckbox id={ record.id }/></td>
+												<td>
+													<span className="inline-flex max-w-full items-center gap-1.5">
+														<AIIdentity ai={ record }/>
+														{ isNewAI( record.id ) ? <Badge variant="success"><I18n>New</I18n></Badge> : null }
+														{ isModifiedAI( record.id ) ? <Badge variant="warning"><I18n>Modified</I18n></Badge> : null }
+													</span>
+												</td>
+												<td><AIFamilyIdentity family={ record.AI_family } muted/></td>
+												<td className="truncate">{ record.url }</td>
+												<td>
+													<div className="flex items-center gap-1">
+														{ !isPendingDelete && <>
+															<Button
+																variant="link"
+																size="sm"
+																onClick={ () => {
+																	changeEditAIModalVisible( true , record.id );
+																} }
+															><I18n>Edit</I18n></Button>
+															<Button
+																variant="link"
+																size="sm"
+																onClick={ () => {
+																	changeCloneAIModalVisible( record.id );
+																} }
+															><I18n>Clone</I18n></Button>
+														</> }
+														<DeleteAICell record={ record } />
+													</div>
+												</td>
+											</SortableRow>;
+										} ) }
+									</tbody>
+								</table>
+							</div>
 							<ManageAIsColumnFilterOverlays />
 						</> : null }
 					</div>
@@ -448,7 +396,7 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 			<div className="settings-section__footer" style={ { marginTop : 16 , display : 'flex' , justifyContent : 'flex-end' , gap : 8 , alignItems : 'center' } }>
 				{ /* antd loading 会拿掉 accessible name；E2E 用 testid。见 docs/features/e2e-playwright.md */ }
 				<Button
-					type="dashed"
+					variant="outline"
 					data-testid="manage-ais-undo"
 					disabled={ !aisDirty || catalogChromeLocked || aisSubmitPending }
 					onClick={ async() => {
@@ -456,12 +404,11 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 							await reloadAIs();
 						} catch ( error ) {
 							console.error( '[ManageAIs] Undo AI changes failed:' , error );
-							message.error( i18n( 'Failed to apply AI pages' ) );
+							toast.error( i18n( 'Failed to apply AI pages' ) );
 						}
 					} }
 				><I18n>Undo Changes</I18n></Button>
 				<Button
-					type="primary"
 					data-testid="manage-ais-save"
 					disabled={ !aisDirty || catalogChromeLocked || aisSubmitPending }
 					loading={ aisSubmitPending }
@@ -469,32 +416,30 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 						try {
 							const result = await applyAIs();
 							if( !result.success ) {
-								message.error( result.error || i18n( 'Failed to apply AI pages' ) );
+								toast.error( result.error || i18n( 'Failed to apply AI pages' ) );
 								return;
 							}
-							message.success( i18n( 'AI pages applied' ) );
+							toast.success( i18n( 'AI pages applied' ) );
 						} catch ( error ) {
 							console.error( '[ManageAIs] Apply AIs failed:' , error );
-							message.error( i18n( 'Failed to apply AI pages' ) );
+							toast.error( i18n( 'Failed to apply AI pages' ) );
 						}
 					} }
 				><I18n>Save</I18n></Button>
-				<Dropdown
-					trigger={ [ 'click' ] }
-					disabled={ catalogChromeLocked }
-					menu={ {
-						items : [
-							{
-								key : 'reset' ,
-								danger : true ,
-								label : <I18n>Reset All AI Pages</I18n> ,
-								onClick : () => setResetModalVisible( true ),
-							},
-						],
-					} }
-				>
-					<Button><I18n>Advanced</I18n></Button>
-				</Dropdown>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="outline"
+							disabled={ catalogChromeLocked }
+						><I18n>Advanced</I18n></Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent>
+						<DropdownMenuItem
+							className="text-destructive"
+							onClick={ () => setResetModalVisible( true ) }
+						><I18n>Reset All AI Pages</I18n></DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 			<ResetConfirmModal
 				visible={ resetModalVisible }
@@ -529,17 +474,23 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 		</span>;
 	};
 
-	const SortableRow:React.FC<Readonly<RowProps>> = reaxper( props => {
-		const rowId = props['data-row-key'];
-		/* 空表 placeholder 没有 data-row-key，不能走 dnd-kit（也不该拆表头）。 */
-		if( !rowId ) {
-			return <tr { ...props } />;
+	const SortableRow:React.FC<{
+		rowId: string;
+		className?: string;
+		children: React.ReactNode;
+	}> = reaxper( props => {
+		if( !props.rowId ) {
+			return <tr>{ props.children }</tr>;
 		}
 		return <SortableDataRow { ...props } />;
 	} );
 
-	const SortableDataRow:React.FC<Readonly<RowProps>> = reaxper( props => {
-		const rowId = props['data-row-key'];
+	const SortableDataRow:React.FC<{
+		rowId: string;
+		className?: string;
+		children: React.ReactNode;
+	}> = reaxper( props => {
+		const rowId = props.rowId;
 		const { isAIPendingDeletion , isCommittedDisabled } = reaxel_SettingsView();
 		const isPendingDelete = isAIPendingDeletion( rowId );
 		const isDisabledAI = isCommittedDisabled( rowId );
@@ -557,7 +508,6 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 		} );
 
 		const style:React.CSSProperties = {
-			...props.style ,
 			transform : CSS.Translate.toString( transform ) ,
 			transition ,
 			...( isDragging ? { position : 'relative' , zIndex : 9999 } : {} ),
@@ -569,10 +519,13 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 
 	return <DragHandleContext.Provider value={ dragContext }>
 			<tr
-				{ ...props }
+				data-row-key={ rowId }
+				className={ props.className }
 				ref={ setNodeRef }
 				style={ style }
-			/>
+			>
+				{ props.children }
+			</tr>
 		</DragHandleContext.Provider>;
 	} );
 
@@ -646,12 +599,12 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 			const effectiveLabel = trimmedLabel
 				|| ( store.mode === 'edit' ? '' : createDefaultAIName( fields.AI_family ) );
 			if( !effectiveLabel ) {
-				message.error( i18n( 'AI name is required' ) );
+				toast.error( i18n( 'AI name is required' ) );
 				return;
 			}
 			const effectiveUrl = ( isCustomFamily ? fields.url : fields.url_override || familyDefaultUrl ).trim();
 			if( !effectiveUrl ) {
-				message.error( i18n( 'URL is required for custom AI' ) );
+				toast.error( i18n( 'URL is required for custom AI' ) );
 				return;
 			}
 			if( saving ) {
@@ -675,10 +628,10 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 			try {
 				const result = await persistAIFromModal( nextAI , store.mode );
 				if( result.success === false ) {
-					message.error( result.error || i18n( 'Failed to save AI page' ) );
+					toast.error( result.error || i18n( 'Failed to save AI page' ) );
 					return;
 				}
-				message.success( i18n( 'AI page saved' ) );
+				toast.success( i18n( 'AI page saved' ) );
 				setState( {
 					visible : false ,
 					editing_id : null,
@@ -701,7 +654,7 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 			if( !( target instanceof HTMLInputElement ) ) {
 				return;
 			}
-			if( target.type === 'radio' || target.type === 'checkbox' || target.closest( '.ant-select' ) ) {
+			if( target.type === 'radio' || target.type === 'checkbox' || target.closest( '[role="combobox"]' ) ) {
 				return;
 			}
 			event.preventDefault();
@@ -713,167 +666,185 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 		const urlSuffix = isCustomFamily
 			? null
 			: urlEditing
-			? <Space size={ 4 }>
+			? <div className="flex gap-1">
 				<Button
-					type="link"
-					size="small"
+					variant="link"
+					size="sm"
 					onClick={ () => {
-						// Save: 将draft保存到url_override
 						commitUrlDraftIfEditing();
 					} }
 				>Save</Button>
 				<Button
-					type="link"
-					size="small"
+					variant="link"
+					size="sm"
 					onClick={ () => {
 						setUrlEditing( false );
 						setUrlDraft( '' );
 					} }
 				>Cancel</Button>
-			</Space>
-			: <Space size={ 4 }>
+			</div>
+			: <div className="flex gap-1">
 				<Button
-					type="link"
-					size="small"
+					variant="link"
+					size="sm"
 					onClick={ () => {
 						setUrlDraft( displayUrl );
 						setUrlEditing( true );
 					} }
 				>Edit</Button>
 				{ fields.url_override ? <Button
-					type="link"
-					size="small"
-					danger
+					variant="link"
+					size="sm"
+					className="text-destructive"
 					onClick={ () => {
-						// Reset: 丢弃override，使用默认URL
 						setState.fields( { url_override : null } );
 					} }
 				>Reset</Button> : null }
-			</Space>;
+			</div>;
 
-		return <Modal
+		return <Dialog
 			open={ store.visible }
-			title={ store.mode === 'add' ? <I18n>Add AI Page</I18n> : <I18n>Edit AI Page</I18n> }
-			onCancel={ () => {
-				if( saving ) {
-					return;
+			onOpenChange={ ( open ) => {
+				if( open === false ) {
+					if( saving ) return;
+					changeEditAIModalVisible( false );
 				}
-				changeEditAIModalVisible( false );
 			} }
-			onOk={ handleSave }
-			okText={i18n('Save')}
-			cancelText={i18n('Cancel')}
-			confirmLoading={ saving }
-			okButtonProps={ { disabled : saving } }
-			width={ 520 }
 		>
-			<Form layout="vertical" style={ { marginTop : 16 } } onKeyDown={ handleFormKeyDown }>
-				<Form.Item
-					label={<I18n>AI name</I18n>}
-					required
-					extra={ <I18n>Your own name for this page; the provider is shown by its logo.</I18n> }
+			<DialogContent
+				className="max-w-[520px]"
+				onPointerDownOutside={ ( event ) => {
+					if( saving ) event.preventDefault();
+				} }
+				onEscapeKeyDown={ ( event ) => {
+					if( saving ) event.preventDefault();
+				} }
+			>
+				<DialogHeader>
+					<DialogTitle>{ store.mode === 'add' ? <I18n>Add AI Page</I18n> : <I18n>Edit AI Page</I18n> }</DialogTitle>
+				</DialogHeader>
+				<form
+					className="space-y-4"
+					onKeyDown={ handleFormKeyDown }
+					onSubmit={ event => {
+						event.preventDefault();
+						void handleSave();
+					} }
 				>
-					<Input
-						value={ fields.label }
-						/* Add / Clone 空名合法（保存时取 placeholder 默认名），只有 Edit 清空才算错 */
-						placeholder={ store.mode === 'add' ? createDefaultAIName( fields.AI_family ) : undefined }
-						status={ store.mode === 'edit' && !( fields.label || '' ).trim() ? 'error' : undefined }
-						prefix={ <AIVendorLogo
-							family={ fields.AI_family }
-							size={ 16 }
-							faviconUrl={ store.editing_id ? reaxel_AIFavicons.store.byId[store.editing_id] ?? null : null }
-							fallbackText={ isCustomFamily ? displayUrl : fields.label }
-						/> }
-						onChange={ event => {
-							setState.fields( { label : event.target.value } );
-						} }
-					/>
-				</Form.Item>
-				<Form.Item label={<I18n>AI family</I18n>}>
-					<Select
-						showSearch
-						filterOption={ ( input , option ) => ( option?.searchText || '' ).includes( input.trim().toLowerCase() ) }
-						value={ fields.AI_family }
-						options={ familySelectOptions }
-						onChange={ value => {
-							const family = value as AI.AIFamily;
-							const defaultUrl = getFamilyDefaultUrl( family , catalogDefaults );
-							setState.fields( {
-								AI_family : family ,
-								url : defaultUrl ,
-								url_override : null,
-							} );
-							setUrlEditing( false );
-						} }
-					/>
-				</Form.Item>
-				<Form.Item label={<I18n>AI URL</I18n>}>
-					<Input
-						value={ urlEditing ? urlDraft : displayUrl }
-						disabled={ !isCustomFamily && !urlEditing }
-						onChange={ event => {
-							if( isCustomFamily ) {
+					<div className="space-y-1.5">
+						<div className="text-sm font-medium"><I18n>AI name</I18n></div>
+						<p className="text-xs text-muted-foreground"><I18n>Your own name for this page; the provider is shown by its logo.</I18n></p>
+						<div className="relative">
+							<span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2">
+								<AIVendorLogo
+									family={ fields.AI_family }
+									size={ 16 }
+									faviconUrl={ store.editing_id ? reaxel_AIFavicons.store.byId[store.editing_id] ?? null : null }
+									fallbackText={ isCustomFamily ? displayUrl : fields.label }
+								/>
+							</span>
+							<Input
+								className={ cn(
+									'pl-8' ,
+									store.mode === 'edit' && !( fields.label || '' ).trim() && 'border-destructive',
+								) }
+								value={ fields.label }
+								placeholder={ store.mode === 'add' ? createDefaultAIName( fields.AI_family ) : undefined }
+								onChange={ event => {
+									setState.fields( { label : event.target.value } );
+								} }
+							/>
+						</div>
+					</div>
+					<div className="space-y-1.5">
+						<div className="text-sm font-medium"><I18n>AI family</I18n></div>
+						<SimpleSelect
+							value={ fields.AI_family }
+							onValueChange={ value => {
+								const family = value as AI.AIFamily;
+								const defaultUrl = getFamilyDefaultUrl( family , catalogDefaults );
 								setState.fields( {
-									url : event.target.value ,
+									AI_family : family ,
+									url : defaultUrl ,
 									url_override : null,
 								} );
-								return;
-							}
-							setUrlDraft( event.target.value );
-						} }
-						suffix={ urlSuffix }
-					/>
-				</Form.Item>
-				<Form.Item label={<I18n>Proxy</I18n>}>
-					<Radio.Group
-						value={ fields.proxy_mode }
-						onChange={ event => {
-							const proxyMode = event.target.value as NetworkProxy.AIProxyMode;
-							const patch:Partial<AI.EditAIItem> = { proxy_mode : proxyMode };
-							if( proxyMode === 'user_fill' && !fields.user_fill_proxy ) {
-								patch.user_fill_proxy = defaultProxyConf();
-							}
-							if( proxyMode === 'from_server_list' && !getEnabledProxyServerId( fields.from_server_list_proxy ) ) {
-								patch.from_server_list_proxy = firstEnabledProxyServerId();
-							}
-							setState.fields( patch );
-						} }
-						style={ { userSelect : 'none' } }
-					>
-						<Space direction="vertical" size={ 4 }>
-							<Radio value="follow_global_setting"><I18n>Follow Global Setting</I18n></Radio>
-							<Radio value="direct"><I18n>Direct</I18n></Radio>
-							<Radio value="from_server_list"><I18n>Select From List</I18n></Radio>
-							<Radio value="user_fill"><I18n>Manual</I18n></Radio>
-						</Space>
-					</Radio.Group>
-					{ ProxyComponent }
-				</Form.Item>
-				<Form.Item
-					label={<I18n>Preload on Startup</I18n>}
-					valuePropName="checked"
-				>
-					<Space
-						size={ 6 }
-						align="center"
-					>
-						<Checkbox
+								setUrlEditing( false );
+							} }
+							options={ familySelectOptions }
+						/>
+					</div>
+					<div className="space-y-1.5">
+						<div className="text-sm font-medium"><I18n>AI URL</I18n></div>
+						<div className="flex items-center gap-2">
+							<Input
+								value={ urlEditing ? urlDraft : displayUrl }
+								disabled={ !isCustomFamily && !urlEditing }
+								onChange={ event => {
+									if( isCustomFamily ) {
+										setState.fields( {
+											url : event.target.value ,
+											url_override : null,
+										} );
+										return;
+									}
+									setUrlDraft( event.target.value );
+								} }
+							/>
+							{ urlSuffix }
+						</div>
+					</div>
+					<div className="space-y-1.5">
+						<div className="text-sm font-medium"><I18n>Proxy</I18n></div>
+						<RadioGroup
+							value={ fields.proxy_mode }
+							className="gap-1"
+							onValueChange={ value => {
+								const proxyMode = value as NetworkProxy.AIProxyMode;
+								const patch:Partial<AI.EditAIItem> = { proxy_mode : proxyMode };
+								if( proxyMode === 'user_fill' && !fields.user_fill_proxy ) {
+									patch.user_fill_proxy = defaultProxyConf();
+								}
+								if( proxyMode === 'from_server_list' && !getEnabledProxyServerId( fields.from_server_list_proxy ) ) {
+									patch.from_server_list_proxy = firstEnabledProxyServerId();
+								}
+								setState.fields( patch );
+							} }
+						>
+							<RadioRow value="follow_global_setting"><I18n>Follow Global Setting</I18n></RadioRow>
+							<RadioRow value="direct"><I18n>Direct</I18n></RadioRow>
+							<RadioRow value="from_server_list"><I18n>Select From List</I18n></RadioRow>
+							<RadioRow value="user_fill"><I18n>Manual</I18n></RadioRow>
+						</RadioGroup>
+						{ ProxyComponent }
+					</div>
+					<div className="flex items-center gap-2">
+						<CheckboxField
 							checked={ isFirstAIForcedPreload || ( fields.preloadOnStartup ?? false ) }
 							disabled={ isFirstAIForcedPreload }
-							onChange={ e => {
-								setState.fields( { preloadOnStartup : e.target.checked } );
+							onCheckedChange={ checked => {
+								setState.fields( { preloadOnStartup : checked } );
 							} }
-							style={ { userSelect : 'none' } }
 						>
 							<I18n>Load this AI immediately when app starts</I18n>
-						</Checkbox>
-						{ isFirstAIForcedPreload ? <Tooltip title={<I18n>When [Always load the first AI page when app starts] is checked, this option is always selected</I18n>}>
-							<InfoCircleOutlined style={ { color : '#8c8c8c' } }/>
-						</Tooltip> : null }
-					</Space>
-				</Form.Item>
-			</Form>
-		</Modal>;
+						</CheckboxField>
+						{ isFirstAIForcedPreload ? <SimpleTooltip content={ <I18n>When [Always load the first AI page when app starts] is checked, this option is always selected</I18n> }>
+							<Info className="h-3.5 w-3.5 text-muted-foreground" />
+						</SimpleTooltip> : null }
+					</div>
+				</form>
+				<DialogFooter>
+					<Button
+						variant="outline"
+						disabled={ saving }
+						onClick={ () => changeEditAIModalVisible( false ) }
+					><I18n>Cancel</I18n></Button>
+					<Button
+						loading={ saving }
+						onClick={ () => void handleSave() }
+					><I18n>Save</I18n></Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>;
 	} );
 
 	export const SelectProxyServer = reaxper( () => {
@@ -882,16 +853,15 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 		const proxyServers = reaxel_SettingsView.store.UIControls.networks.proxy_server_list.filter( server => server.enabled !== false );
 		const selectedProxyServerId = getEnabledProxyServerId( store.fields.from_server_list_proxy );
 
-		return <Select
-			style={ { width : '100%' , marginTop : 12 } }
+		return <SimpleSelect
+			className="mt-3 w-full"
 			value={ selectedProxyServerId || undefined }
-			placeholder={i18n('Select a proxy server')}
-			onChange={ value => {
+			placeholder={ i18n( 'Select a proxy server' ) }
+			onValueChange={ value => {
 				setState.fields( {
 					from_server_list_proxy : value || null,
 				} );
 			} }
-			allowClear
 			options={ proxyServers.map( server => ( {
 				value : server.proxy_server_id ,
 				label : `${ server.server_name } (${ server.proxy_conf.protocol }://${ server.proxy_conf.hostname }:${ server.proxy_conf.port })`,
@@ -904,10 +874,10 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 		const { edit_AI_modal:setState } = reaxel_SettingsView.setState.UIControls.manage_AIs;
 		const userFillProxy = notFalse( store.fields.user_fill_proxy || defaultProxyConf() );
 
-		return <div style={ { marginTop : 12 , padding : '12px 16px' , background : '#fafafa' , borderRadius : 6 } }>
-			<Form.Item label={<I18n>Protocol</I18n>}>
+		return <div className="mt-3 space-y-3 rounded-md bg-muted/40 p-3">
+			<div className="space-y-1.5">
+				<div className="text-sm font-medium"><I18n>Protocol</I18n></div>
 				<Segmented
-					style={ { userSelect : 'none' } }
 					value={ userFillProxy.protocol }
 					onChange={ ( value:NetworkProxy.Protocol ) => {
 						setState.fields( {
@@ -923,8 +893,9 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 						{ label : 'Socks5' , value : 'socks5' },
 					] }
 				/>
-			</Form.Item>
-			<Form.Item label={<I18n>Host name</I18n>}>
+			</div>
+			<div className="space-y-1.5">
+				<div className="text-sm font-medium"><I18n>Host name</I18n></div>
 				<Input
 					value={ userFillProxy.hostname }
 					placeholder="127.0.0.1"
@@ -937,37 +908,38 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 						} );
 					} }
 				/>
-			</Form.Item>
-			<Form.Item label={<I18n>Port number</I18n>}>
-				<InputNumber
+			</div>
+			<div className="space-y-1.5">
+				<div className="text-sm font-medium"><I18n>Port number</I18n></div>
+				<Input
+					type="number"
 					min={ 0 }
 					max={ 65535 }
-					value={ userFillProxy.port }
+					value={ userFillProxy.port ?? '' }
 					placeholder="7890"
-					onChange={ value => {
+					onChange={ e => {
 						setState.fields( {
 							user_fill_proxy : {
 								...userFillProxy ,
-								port : value,
+								port : e.target.value === '' ? null : Number( e.target.value ),
 							},
 						} );
 					} }
 				/>
-			</Form.Item>
-			<Checkbox
+			</div>
+			<CheckboxField
 				checked={ !!userFillProxy.proxy_auth }
-				onChange={ e => {
+				onCheckedChange={ checked => {
 					setState.fields( {
 						user_fill_proxy : {
 							...userFillProxy ,
-							proxy_auth : e.target.checked
+							proxy_auth : checked
 								? { username : '' , password : '' }
 								: false,
 						},
 					} );
 				} }
-				style={ { userSelect : 'none' } }
-			><I18n>Authentication</I18n></Checkbox>
+			><I18n>Authentication</I18n></CheckboxField>
 			{ userFillProxy.proxy_auth ? <ProxyAuthFields proxyConf={ userFillProxy }/> : null }
 		</div>;
 	} );
@@ -977,7 +949,8 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 		const proxyAuth = notFalse( proxyConf.proxy_auth );
 
 		return <>
-			<Form.Item label={<I18n>Username</I18n>} style={ { marginTop : 12 } }>
+			<div className="mt-3 space-y-1.5">
+				<div className="text-sm font-medium"><I18n>Username</I18n></div>
 				<Input
 					value={ proxyAuth.username }
 					onChange={ e => {
@@ -992,9 +965,11 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 						} );
 					} }
 				/>
-			</Form.Item>
-			<Form.Item label={<I18n>Password</I18n>}>
-				<Input.Password
+			</div>
+			<div className="space-y-1.5">
+				<div className="text-sm font-medium"><I18n>Password</I18n></div>
+				<Input
+					type="password"
 					value={ proxyAuth.password }
 					onChange={ e => {
 						setState.fields( {
@@ -1008,7 +983,7 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 						} );
 					} }
 				/>
-			</Form.Item>
+			</div>
 		</>;
 	} );
 
@@ -1029,10 +1004,6 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 	const createAIId = () => {
 		return globalThis.crypto?.randomUUID?.() || `ai-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 , 11 ) }`;
 	};
-
-	interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
-		'data-row-key': string;
-	}
 
 	/**
 	 * 长按确认按钮 - 环形进度条
@@ -1155,26 +1126,33 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 		onCancel:() => void;
 		onConfirm:() => void;
 	}> = ( { visible , onCancel , onConfirm } ) => {
-		return <Modal
+		return <Dialog
 			open={ visible }
-			title={ <span style={ { color : '#ff4d4f' } }><I18n>Reset All AI Pages</I18n></span> }
-			onCancel={ onCancel }
-			footer={ null }
-			width={ 420 }
+			onOpenChange={ ( open ) => {
+				if( open === false ) onCancel();
+			} }
 		>
-			<div style={ { padding : '12px 0' } }>
-				<p style={ { marginBottom : 16 , fontSize : 14 } }>
-					<I18n>This will permanently reset all AI page configurations to factory defaults and clear page data including cookies, login state, localStorage, cache, and auth cache. All your custom AI pages, URL overrides, and proxy settings will be lost.</I18n>
-				</p>
-				<p style={ { marginBottom : 24 , color : '#ff4d4f' , fontWeight : 500 } }>
-					<I18n>Hold the button below to confirm reset.</I18n>
-				</p>
-				<div style={ { display : 'flex' , justifyContent : 'center' , alignItems : 'center' , gap : 16 } }>
-					<LongPressConfirmButton onConfirm={ onConfirm }/>
-					<Button onClick={ onCancel }><I18n>Cancel</I18n></Button>
+			<DialogContent className="max-w-[420px]">
+				<DialogHeader>
+					<DialogTitle className="text-destructive"><I18n>Reset All AI Pages</I18n></DialogTitle>
+				</DialogHeader>
+				<div className="py-3">
+					<p className="mb-4 text-sm">
+						<I18n>This will permanently reset all AI page configurations to factory defaults and clear page data including cookies, login state, localStorage, cache, and auth cache. All your custom AI pages, URL overrides, and proxy settings will be lost.</I18n>
+					</p>
+					<p className="mb-6 font-medium text-destructive">
+						<I18n>Hold the button below to confirm reset.</I18n>
+					</p>
+					<div className="flex items-center justify-center gap-4">
+						<LongPressConfirmButton onConfirm={ onConfirm }/>
+						<Button
+							variant="outline"
+							onClick={ onCancel }
+						><I18n>Cancel</I18n></Button>
+					</div>
 				</div>
-			</div>
-		</Modal>;
+			</DialogContent>
+		</Dialog>;
 	};
 
 	/**
@@ -1208,7 +1186,7 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 	import { reaxel_AIFavicons } from '#SettingsView/reaxels/ai-favicons';
 	import { AIVendorLogo } from '#shared/ai-vendor-logo';
 	import { CatalogUpdateControls } from "./CatalogUpdate";
-	import { createColumnTextFilter , ManageAIsColumnFilterOverlays } from '#SettingsView/layout/column-text-filter';
+	import { ColumnTextFilterIcon , ManageAIsColumnFilterOverlays } from '#SettingsView/layout/column-text-filter';
 	import { useHostScrollY } from '#SettingsView/layout/use-host-scroll-y';
 	import {
 		endSettingsMenuTrace ,
@@ -1229,29 +1207,42 @@ const DeleteAICell = reaxper( ( { record }:{ record:AI.AIItem } ) => {
 	import { AI } from "#src/Types/SettingsTypes/AI";
 	import { NetworkProxy } from "#src/Types/SettingsTypes/NetworkProxy";
 	import type { Startup } from "#src/Types/SettingsTypes/Startup";
-	import { InfoCircleOutlined } from '@ant-design/icons';
+	import { Badge } from '#Views/shared/ui/badge';
+	import { Button } from '#Views/shared/ui/button';
+	import { Checkbox } from '#Views/shared/ui/checkbox';
+	import { CheckboxField } from '#Views/shared/ui/checkbox-field';
+	import { cn } from '#Views/shared/ui/cn.utility';
+	import {
+		Dialog ,
+		DialogContent ,
+		DialogFooter ,
+		DialogHeader ,
+		DialogTitle,
+	} from '#Views/shared/ui/dialog';
+	import {
+		DropdownMenu ,
+		DropdownMenuContent ,
+		DropdownMenuItem ,
+		DropdownMenuTrigger,
+	} from '#Views/shared/ui/dropdown-menu';
+	import { Input } from '#Views/shared/ui/input';
+	import {
+		Popover ,
+		PopoverContent ,
+		PopoverTrigger,
+	} from '#Views/shared/ui/popover';
+	import {
+		RadioGroup ,
+		RadioRow,
+	} from '#Views/shared/ui/radio-group';
+	import { Segmented } from '#Views/shared/ui/segmented';
+	import { SimpleSelect } from '#Views/shared/ui/select';
+	import { Switch } from '#Views/shared/ui/switch';
+	import { toast } from '#Views/shared/ui/toast';
+	import { SimpleTooltip } from '#Views/shared/ui/tooltip';
+	import { Info } from 'lucide-react';
 	import React from 'react';
 	import { reaxper } from 'reaxes-react';
-	import {
-		Button ,
-		Popover ,
-		Checkbox ,
-		Dropdown ,
-		Form ,
-		Input ,
-		InputNumber ,
-		message ,
-		Modal ,
-		Radio ,
-		Segmented ,
-		Select ,
-		Space ,
-		Switch ,
-		Table ,
-		TableColumnType ,
-		Tag,
-		Tooltip,
-	} from 'antd';
 	import {
 		closestCenter ,
 		DndContext ,

@@ -7,15 +7,31 @@ const SETTINGS_MENU_PANELS = {
 
 const SETTINGS_MENU_ORDER = [ 'general' , 'net' , 'mngeai' , 'about' ] as const;
 
+const SETTINGS_MENU_ICONS = {
+	general : SlidersHorizontal ,
+	net : Globe ,
+	mngeai : LayoutGrid ,
+	about : Info ,
+} as const;
+
+/**
+ * Settings 壳：左侧导航 + 面板 keep-alive + 收缩页脚。
+ * 运行设置即时写盘；AI 表草稿只走 Manage AIs 表底。见 docs/features/settings-ui-shadcn.md
+ */
 export const App = reaxper( () => {
 	const store = reaxel_SettingsView.store.RootMenu;
 	const setState = reaxel_SettingsView.setState.RootMenu;
+	const runtimeUI = reaxel_SettingsView.store.RuntimeUI;
 	const resolvedTheme = resolveThemePreference(
 		reaxel_SettingsView.store.UIControls.appearance.theme ,
 		reaxel_SettingsView.store.Environment.systemTheme,
 	);
-	
-	const { applySettings , exitSettings , exitWithoutSave , reloadRuntimeSettings , isDirty } = reaxel_SettingsView();
+
+	const {
+		exitSettings ,
+		dismissRestartRequired ,
+		isAIsDirty,
+	} = reaxel_SettingsView();
 	const catalogUpdate = reaxel_SettingsView.store.UIControls.manage_AIs.catalog_update;
 	/* 只在预览/applying 时锁 chrome；checking 不锁。见 docs/features/ai-catalog-manual-update.md */
 	const catalogChromeLocked = shouldLockSettingsChromeForCatalogUpdate( catalogUpdate );
@@ -29,50 +45,63 @@ export const App = reaxper( () => {
 		visitedMenusRef.current.add( store.current as keyof typeof SETTINGS_MENU_PANELS );
 	}
 
-	const { markMenuSelect , measureDirty } = useSettingsMenuPerf( store.current );
+	const { markMenuSelect } = useSettingsMenuPerf( store.current );
+	const aisDirty = isAIsDirty();
 
-	// 触发响应式依赖收集 - 让按钮状态随 UIControls 变化而更新
-	const dirty = measureDirty( () => isDirty() );
-	
-	return <ConfigProvider
-		theme={ {
-			algorithm : resolvedTheme === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-		} }
-		modal={ SETTINGS_MODAL_CONFIG }
-	>
-		<div className="settings-root" data-testid="settings-root">
-			<div className="settings-body">
-				<div className={ catalogChromeLocked ? 'settings-sider settings-sider--locked' : 'settings-sider' }>
-					<Menu
-						items={ store.menus.map( it => {
-							return {
-								...it ,
-								key : it.value,
-								label: <I18n>{it.label}</I18n>,
-							};
-						} ) }
-						onSelect={ ( { key } ) => {
-							if( catalogChromeLocked ) {
-								return;
-							}
-							const next = key as keyof typeof SETTINGS_MENU_PANELS;
-							if( next in SETTINGS_MENU_PANELS ) {
-								markMenuSelect( {
-									from : store.current ,
-									to : next ,
-									firstVisit : !visitedMenusRef.current.has( next ) ,
-									aiCount : reaxel_SettingsView.store.Data.AIs.length ,
-								} );
-							}
-							setState( { current : key as any } );
-							if( key !== 'about' ) {
-								reaxel_SettingsView.setState.VersionUI( { drawerOpen : false } );
-							}
-						} }
-						selectedKeys={ [ store.current ] }
-					/>
+	return <TooltipProvider delayDuration={ 400 }>
+		<div
+			className="settings-root flex h-screen flex-row overflow-hidden bg-background text-foreground"
+			data-testid="settings-root"
+			data-theme={ resolvedTheme }
+		>
+			<aside className={ cn(
+				'flex w-[220px] shrink-0 flex-col border-r border-border bg-card/80 px-3 py-5' ,
+				catalogChromeLocked && 'pointer-events-none opacity-55',
+			) }>
+				<div className="mb-5 px-2">
+					<div className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">ChatAIO</div>
+					<div className="mt-1 text-base font-semibold"><I18n>Settings</I18n></div>
 				</div>
-				<div className="settings-content">
+				<nav className="flex flex-col gap-1">
+					{ store.menus.map( item => {
+						const key = item.value as keyof typeof SETTINGS_MENU_PANELS;
+						const Icon = SETTINGS_MENU_ICONS[key] || SlidersHorizontal;
+						const active = store.current === item.value;
+						return <button
+							key={ item.value }
+							type="button"
+							role="menuitem"
+							className={ cn(
+								'flex w-full items-center justify-start gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors' ,
+								active
+									? 'bg-foreground/[0.06] text-foreground'
+									: 'text-muted-foreground hover:bg-accent hover:text-foreground',
+							) }
+							onClick={ () => {
+								if( catalogChromeLocked ) return;
+								const next = key;
+								if( next in SETTINGS_MENU_PANELS ) {
+									markMenuSelect( {
+										from : store.current ,
+										to : next ,
+										firstVisit : !visitedMenusRef.current.has( next ) ,
+										aiCount : reaxel_SettingsView.store.Data.AIs.length ,
+									} );
+								}
+								setState( { current : item.value as any } );
+								if( item.value !== 'about' ) {
+									reaxel_SettingsView.setState.VersionUI( { drawerOpen : false } );
+								}
+							} }
+						>
+							<Icon className="h-4 w-4 shrink-0" />
+							<I18n>{ item.label }</I18n>
+						</button>;
+					} ) }
+				</nav>
+			</aside>
+			<div className="flex min-w-0 flex-1 flex-col">
+				<div className="settings-content flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-6">
 					{ SETTINGS_MENU_ORDER.filter( key => visitedMenusRef.current.has( key ) ).map( key => {
 						const Panel = SETTINGS_MENU_PANELS[key];
 						const active = store.current === key;
@@ -89,150 +118,82 @@ export const App = reaxper( () => {
 						</div>;
 					} ) }
 				</div>
+				<footer className="flex shrink-0 items-center justify-end gap-3 border-t border-border bg-card/70 px-8 py-3">
+					{ __DEV__ && <LongPressButton
+						variant="destructive"
+						onConfirm={ async() => {
+							const result = await devCleanStart();
+							if( !result.success ) {
+								toast.error( result.error || 'Clean start failed' );
+							}
+						} }
+					><I18n>Clean Start</I18n></LongPressButton> }
+					{ aisDirty ? <span className="mr-auto text-xs text-muted-foreground">
+						<I18n>Unsaved AI page changes stay until you save them in Manage AIs</I18n>
+					</span> : null }
+					<Button
+						variant="outline"
+						data-testid="settings-footer-done"
+						disabled={ catalogChromeLocked }
+						onClick={ () => exitSettings() }
+					><I18n>Done</I18n></Button>
+				</footer>
 			</div>
-			<div className="settings-footer">
-				{ __DEV__ && <LongPressButton
-					danger
-					onConfirm={ async() => {
-						const result = await devCleanStart();
-						if( !result.success ) {
-							message.error( result.error || 'Clean start failed' );
-						}
-					} }
-				><I18n>Clean Start</I18n></LongPressButton> }
-				<Button
-					type="dashed"
-					disabled={ !dirty || catalogChromeLocked }
-					onClick={ async() => {
-						await reloadRuntimeSettings();
-					} }
-				><I18n>Discard Changes</I18n></Button>
-
-				<Button
-					danger
-					disabled={ catalogChromeLocked }
-					onClick={ async() => {
-						await exitWithoutSave();
-					} }
-				><I18n>Exit Without Save</I18n></Button>
-
-				{ /* E2E：data-dirty 是 isDirty() 的 DOM 镜像，Apply disabled 还可能是目录锁。见 docs/features/e2e-playwright.md */ }
-				<Button
-					data-testid="settings-footer-apply"
-					data-dirty={ dirty ? 'true' : 'false' }
-					disabled={ !dirty || catalogChromeLocked }
-					onClick={ async() => {
-						const result = await applySettings();
-						showApplyResult( result );
-					} }
-				><I18n>Apply</I18n></Button>
-
-				<Button
-					type="primary"
-					disabled={ !dirty || catalogChromeLocked }
-					onClick={ async() => {
-						const result = await applySettings();
-						showApplyResult( result );
-						if( result.success ) {
-							exitSettings();
-						}
-					} }
-				><I18n>Save & Exit</I18n></Button>
-			</div>
+			<Dialog
+				open={ runtimeUI.restartRequiredOpen }
+				onOpenChange={ ( open ) => {
+					if( open === false ) dismissRestartRequired();
+				} }
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle><I18n>Restart required</I18n></DialogTitle>
+						<DialogDescription>
+							<I18n>Settings were saved. These changes require restarting the app:</I18n>
+						</DialogDescription>
+					</DialogHeader>
+					<ul className="list-disc space-y-1 pl-5 text-sm">
+						{ runtimeUI.restartReasons.map( reason => <li key={ reason }>{ reason }</li> ) }
+					</ul>
+					<DialogFooter>
+						<Button onClick={ () => dismissRestartRequired() }><I18n>OK</I18n></Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+			<AppToaster theme={ resolvedTheme } />
 		</div>
-	</ConfigProvider>;
+	</TooltipProvider>;
 } );
 
-const LongPressButton = (props:any) => {
-	const {
-		onConfirm ,
-		...buttonProps
-	} = props;
-	const [ holding , setHolding ] = useState( false );
-	const [ progress , setProgress ] = useState( 0 );
-	const timerRef = useRef<ReturnType<typeof setInterval>>( null );
-	const startedAt = useRef( 0 );
-	const holdMs = 900;
-
-	const stop = () => {
-		if( timerRef.current ) {
-			clearInterval( timerRef.current );
-			timerRef.current = null;
-		}
-		setHolding( false );
-		setProgress( 0 );
-	};
-
-	const start = () => {
-		if( buttonProps.loading || timerRef.current ) return;
-		startedAt.current = Date.now();
-		setHolding( true );
-		timerRef.current = setInterval( () => {
-			const nextProgress = Math.min( 1 , ( Date.now() - startedAt.current ) / holdMs );
-			setProgress( nextProgress );
-			if( nextProgress >= 1 ) {
-				stop();
-				onConfirm?.();
-			}
-		} , 16 );
-	};
-
-	return <Button
-		{ ...buttonProps }
-		onMouseDown={ start }
-		onMouseUp={ stop }
-		onMouseLeave={ stop }
-		onTouchStart={ start }
-		onTouchEnd={ stop }
-		className={ `${ buttonProps.className || '' } long-press-button ${ holding ? 'is-holding' : '' }` }
-		style={ {
-			...buttonProps.style ,
-			'--hold-progress' : progress,
-		} as any }
-	/>;
-};
-
-const showApplyResult = (result:SettingsApplyResult) => {
-	if( !result.success ) {
-		message.error( result.error || 'Failed to apply settings' );
-		return;
-	}
-	if( result.restartRequired ) {
-		Modal.warning( {
-			title : <I18n>Restart required</I18n> ,
-			content : <div>
-				<div><I18n>Settings were saved. These changes require restarting the app:</I18n></div>
-				<ul>
-					{ result.restartReasons.map( reason => <li key={ reason }>{ reason }</li> ) }
-				</ul>
-			</div>,
-		} );
-		return;
-	}
-	message.success( i18n('Settings applied') );
-};
-
-import { RCGeneralPanel } from '#SettingsView/components/General';
 import { RCAboutPanel } from '#SettingsView/components/About';
+import { RCGeneralPanel } from '#SettingsView/components/General';
 import { RCManageAIsPanel } from '#SettingsView/components/ManageAIs';
 import { RCNetworkPanel } from '#SettingsView/components/Network';
-import {
-	SETTINGS_FILL_CONTENT_MENUS ,
-	SETTINGS_MODAL_CONFIG ,
-} from '#SettingsView/layout/constants';
+import { SETTINGS_FILL_CONTENT_MENUS } from '#SettingsView/layout/constants';
 import { useSettingsMenuPerf } from '#SettingsView/layout/use-settings-menu-perf';
-import { shouldLockSettingsChromeForCatalogUpdate } from '#shared/utils/catalog-update-inflight.utility';
+import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
 import { devCleanStart } from '#SettingsView/services/Settings';
 import { resolveThemePreference } from '#shared/appearance';
-import { reaxel_SettingsView } from "#SettingsView/reaxels/settings-view";
-import type { SettingsApplyResult } from "#src/Types/SettingsTypes";
+import { shouldLockSettingsChromeForCatalogUpdate } from '#shared/utils/catalog-update-inflight.utility';
+import { Button } from '#Views/shared/ui/button';
+import { cn } from '#Views/shared/ui/cn.utility';
 import {
-	Button ,
-	ConfigProvider ,
-	Menu ,
-	message ,
-	Modal,
-	theme as antdTheme,
-} from 'antd';
-import { reaxper  } from 'reaxes-react';
+	Dialog ,
+	DialogContent ,
+	DialogDescription ,
+	DialogFooter ,
+	DialogHeader ,
+	DialogTitle,
+} from '#Views/shared/ui/dialog';
+import { LongPressButton } from '#Views/shared/ui/long-press-button';
+import { AppToaster } from '#Views/shared/ui/toast';
+import { TooltipProvider } from '#Views/shared/ui/tooltip';
+import {
+	Globe ,
+	Info ,
+	LayoutGrid ,
+	SlidersHorizontal,
+} from 'lucide-react';
+import { reaxper } from 'reaxes-react';
+import '#Views/shared/ui/globals.css';
 import './index.less';

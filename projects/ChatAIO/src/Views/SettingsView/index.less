@@ -1,12 +1,13 @@
 :root {
-	--settings-bg: #f5f7fa;
-	--settings-panel-bg: #fff;
-	--settings-border: #f0f0f0;
-	--settings-title: #1d2129;
-	--settings-shadow: rgba(0, 0, 0, 0.04);
-	--settings-subfield-bg: #fafafa;
-	--settings-subfield-border: #f0f0f0;
-	--settings-subfield-divider: #e8e8e8;
+	/* 结构色别名共享 token，改 globals.css 即可。行状态仍是语义色。 */
+	--settings-bg: hsl(var(--background));
+	--settings-panel-bg: hsl(var(--card));
+	--settings-border: hsl(var(--border));
+	--settings-title: hsl(var(--foreground));
+	--settings-shadow: hsl(var(--foreground) / 0.05);
+	--settings-subfield-bg: hsl(var(--muted));
+	--settings-subfield-border: hsl(var(--border));
+	--settings-subfield-divider: hsl(var(--border));
 	--settings-row-new: #f6ffed;
 	--settings-row-new-hover: #d9f7be;
 	--settings-row-modified: #fff7e6;
@@ -17,14 +18,7 @@
 }
 
 :root[data-chataio-theme="dark"] {
-	--settings-bg: #111417;
-	--settings-panel-bg: #1b2026;
-	--settings-border: #303843;
-	--settings-title: #e7edf5;
-	--settings-shadow: rgba(0, 0, 0, 0.22);
-	--settings-subfield-bg: #222832;
-	--settings-subfield-border: #303843;
-	--settings-subfield-divider: #3b4552;
+	--settings-shadow: hsl(var(--foreground) / 0.22);
 	--settings-row-new: #1f3322;
 	--settings-row-new-hover: #29452d;
 	--settings-row-modified: #392d1a;
@@ -50,7 +44,8 @@ html, body {
 .settings-root {
 	position: relative;
 	display: flex;
-	flex-direction: column;
+	/* 新壳：侧栏 | 主列（内容 + 页脚）。旧版是 column（顶栏导航）。 */
+	flex-direction: row;
 	height: 100vh;
 	overflow: hidden;
 }
@@ -68,11 +63,6 @@ html, body {
 	border-right: 1px solid var(--settings-border);
 	padding: 16px 0;
 	overflow-y: auto;
-
-	.ant-menu {
-		border-inline-end: none !important;
-		user-select: none;
-	}
 
 	&.settings-sider--locked {
 		pointer-events: none;
@@ -166,29 +156,12 @@ html, body {
 	overflow: hidden;
 }
 
-/**
- * compact 筛选浮层：antd 官方自定义 filterDropdown 内层 padding 8（还带 Search/Reset）；
- * 仅一条 input 时按 Linear picker 的 p-1（4px）。关闭 x 压在最外层右上角，不靠加大 padding 让路。
- * antd `.ant-table-filter-dropdown` 经 resetComponent 已是 padding:0，这里显式清掉以免双重边距。
- * 见 docs/features/manage-ais-table-ux.md
- */
-.settings-column-text-filter-dropdown .ant-table-filter-dropdown {
-	overflow: visible;
-	min-width: 0;
-	padding: 0;
-}
-
 .settings-column-text-filter {
 	position: relative;
 	box-sizing: border-box;
 	min-width: 160px;
 	padding: 4px;
 	overflow: visible;
-
-	.ant-input-affix-wrapper {
-		width: 100%;
-		min-width: 0;
-	}
 }
 
 /* portal 到 body：位置由 inline `right`/`top` 贴齐该列 icon 右缘，见 column-text-filter.tsx。 */
@@ -234,24 +207,6 @@ html, body {
 	opacity: 0.68;
 }
 
-.settings-theme-radio-group {
-	.ant-radio-wrapper {
-		align-items: flex-start;
-	}
-
-	.ant-radio {
-		margin-top: 2px;
-	}
-}
-
-.settings-language-select {
-	.ant-select-selection-item {
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-}
-
 .long-press-button {
 	position: relative;
 	overflow: hidden;
@@ -289,47 +244,30 @@ html, body {
 	}
 }
 
-/* 目录预览盖住整个 Settings（侧栏+页脚），未决前不能切 tab */
-.catalog-update-decision-modal.ant-modal-wrap {
-	position: absolute;
-}
+/* 目录预览 Dialog 由 Radix overlay 覆盖 Settings，未决前侧栏/页脚已锁 chrome */
 
 .manage-ais-table {
+	overflow-y: auto;
+	scrollbar-gutter: stable;
+
 	.manage-ais-table__header-nowrap {
 		white-space: nowrap;
 	}
 
-	.ant-table-thead > tr > th.manage-ais-table__th-compact {
-		white-space: nowrap;
+	th.manage-ais-table__th-compact {
 		padding-inline: 8px;
 	}
 
-	/*
-	 * 空表表头宽度：rc-table 有数据时 body 常 overflow-y:scroll，空表改 auto，
-	 * 再叠加 FixedHolder noData 丢掉算宽 colgroup，滚动条槽 ~15px 和弹性列一起跳。
-	 * 只压这一张表。见 docs/features/manage-ais-table-ux.md
-	 * https://github.com/ant-design/ant-design/issues/56713
-	 * 槽位用 scrollbar-gutter 留着，空筛选结果不要画出滚动条（overflow:hidden）。
-	 */
-	.ant-table-body {
-		overflow-y: auto !important;
-		scrollbar-gutter: stable;
+	th, td {
+		padding: 8px 10px;
+		border-bottom: 1px solid var(--settings-border);
+		text-align: left;
+		vertical-align: middle;
 	}
 
-	&.manage-ais-table--empty .ant-table-body {
-		overflow-y: hidden !important;
+	&.manage-ais-table--empty {
+		overflow-y: hidden;
 		scrollbar-gutter: stable;
-	}
-
-	.ant-table-empty {
-		th.ant-table-cell-scrollbar {
-			box-sizing: border-box;
-			width: 15px !important;
-			min-width: 15px !important;
-			max-width: 15px !important;
-			padding: 0 !important;
-			overflow: hidden;
-		}
 	}
 }
 
@@ -358,8 +296,7 @@ html, body {
 	}
 }
 // ManageAIs Table 待删除状态行 — 浅红色整行背景
-.ai-row--pending-delete,
-.ant-table-row.ant-table-row-level-0.ai-row--pending-delete {
+.ai-row--pending-delete {
 	background-color: var(--settings-row-pending-delete) !important;
 
 	&:hover > td {
@@ -371,11 +308,8 @@ html, body {
 	}
 }
 
-// 删除确认 Popover — 紧凑内边距
 .delete-ai-popover {
-	.ant-popover-inner {
-		padding: 8px 4px;
-	}
+	padding: 4px;
 }
 
 @media (max-width: 768px) {
@@ -407,16 +341,6 @@ html, body {
 		border-bottom: 1px solid var(--settings-border);
 		padding: 8px 0;
 		overflow-y: visible;
-
-		.ant-menu {
-			display: flex;
-			flex-wrap: wrap;
-
-			.ant-menu-item {
-				flex: 1;
-				text-align: center;
-			}
-		}
 	}
 }
 
@@ -506,11 +430,13 @@ html, body {
 	}
 
 	a {
-		color: #1677ff;
-		text-decoration: none;
+		color: inherit;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+		opacity: 0.82;
 
 		&:hover {
-			text-decoration: underline;
+			opacity: 1;
 		}
 	}
 
@@ -583,10 +509,6 @@ html, body {
 	input[type="checkbox"] {
 		margin-right: 0.4em;
 	}
-}
-
-:root[data-chataio-theme="dark"] .version-changelog__body a {
-	color: #69b1ff;
 }
 
 .version-changelog__empty,

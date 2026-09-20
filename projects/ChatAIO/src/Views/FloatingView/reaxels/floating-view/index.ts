@@ -14,11 +14,18 @@ export const reaxel_FloatingView = reaxel( () => {
 			activeIndex : 0 ,
 			/* 用户切换方向；Swiper 据此调用 slideNext()/slidePrev() */
 			direction : checkAs<FloatingView.SwitchAiBarDirection>( 'next' ) ,
+		} ,
+		/* overlay 自绘 toast，不拉 antd / Tailwind Preflight。见 docs/features/settings-ui-shadcn.md */
+		overlayToast : {
+			visible : false ,
+			type : checkAs<FloatingView.GlobalMessagePayload['type']>( 'info' ) ,
+			content : '',
 		},
 	} );
 
 	const AUTO_HIDE_MS = 2000;
 	let hideTimer = checkAs<ReturnType<typeof setTimeout>>( null );
+	let toastTimer = checkAs<ReturnType<typeof setTimeout>>( null );
 
 	const clearHideTimer = () => {
 		if( hideTimer ) {
@@ -83,8 +90,20 @@ export const reaxel_FloatingView = reaxel( () => {
 	};
 
 	const showGlobalMessage = (payload:FloatingView.GlobalMessagePayload) => {
-		message.destroy();
-		message[payload.type]( payload.content , payload.duration );
+		if( toastTimer ) {
+			clearTimeout( toastTimer );
+			toastTimer = null;
+		}
+		setState.overlayToast( {
+			visible : true ,
+			type : payload.type ,
+			content : payload.content,
+		} );
+		const durationMs = ( payload.duration ?? 3 ) * 1000;
+		toastTimer = setTimeout( () => {
+			setState.overlayToast( { visible : false } );
+			toastTimer = null;
+		} , durationMs );
 	};
 
 	const handleCommand = (command:FloatingView.Command) => {
@@ -129,7 +148,6 @@ export const reaxel_FloatingView = reaxel( () => {
 } );
 
 import type { FloatingView } from '#src/Types/FloatingView';
-import { message } from 'antd';
 import {
 	perf ,
 	PerfPhase ,

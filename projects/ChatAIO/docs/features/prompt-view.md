@@ -76,7 +76,7 @@ MVP 目标是提供稳定的暂存、编辑、复制和排序能力。自动把 
 
 新增 `src/Views/PromptView`：
 
-- `App.tsx`：页面壳和 antd theme provider。
+- `App.tsx`：页面壳；shadcn 原语 + TooltipProvider，见 [`settings-ui-shadcn.md`](./settings-ui-shadcn.md)。
 - `reaxels/prompt-view/index.ts`：加载、编辑、复制、删除、重复、排序和自动保存。
 - `index.less`：侧栏专用布局；Card 圆角不超过 8px。
 - 使用 `@dnd-kit/sortable` 复用项目已有拖拽排序依赖。

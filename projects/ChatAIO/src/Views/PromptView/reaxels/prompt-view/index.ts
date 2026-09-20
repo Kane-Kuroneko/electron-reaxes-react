@@ -162,9 +162,9 @@ export const reaxel_PromptView = reaxel( () => {
 		const item = store.items.find( prompt => prompt.id === id );
 		const result = await api.copyPromptViewText( item?.content || '' );
 		if( result.success ) {
-			message.success( i18n( 'Copied' ) );
+			toast.success( i18n( 'Copied' ) );
 		} else {
-			message.error( result.error || i18n( 'Copy failed' ) );
+			toast.error( result.error || i18n( 'Copy failed' ) );
 		}
 		return result;
 	};
@@ -213,6 +213,7 @@ const applyThemePreferenceToDocument = (
 	const resolvedTheme = resolveThemePreference( theme , systemTheme );
 	document.documentElement.dataset.chataioThemeSource = theme;
 	document.documentElement.dataset.chataioTheme = resolvedTheme;
+	document.documentElement.classList.toggle( 'dark' , resolvedTheme === 'dark' );
 };
 
 import { reaxel_I18n } from '#PromptView/reaxels/i18n';
@@ -225,8 +226,8 @@ import {
 import type { PromptView } from '#src/Types/PromptView';
 import type { Appearance } from '#src/Types/SettingsTypes/Appearance';
 import type { Languages } from '#src/Types/Languages';
+import { toast } from '#Views/shared/ui/toast';
 import { arrayMove } from '@dnd-kit/sortable';
-import { message } from 'antd';
 import {
 	createReaxable ,
 	reaxel,

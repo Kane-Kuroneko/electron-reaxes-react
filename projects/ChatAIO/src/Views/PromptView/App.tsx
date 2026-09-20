@@ -1,5 +1,3 @@
-const { TextArea } = Input;
-
 export const App = reaxper( () => {
 	const {
 		init ,
@@ -38,13 +36,7 @@ export const App = reaxper( () => {
 
 	const hasItems = store.items.length > 0;
 
-	return <ConfigProvider
-		theme={ {
-			algorithm : resolvedTheme === 'dark'
-				? antdTheme.darkAlgorithm
-				: antdTheme.defaultAlgorithm ,
-		} }
-	>
+	return <TooltipProvider delayDuration={ 400 }>
 		<main className="prompt-view-root" data-testid="prompt-view-root" data-prompt-side={ store.side }>
 			{/* ═══ Header：左侧模块名 + 侧标识，右侧仅关闭按钮 ═══ */}
 			<header className="prompt-view-header">
@@ -55,16 +47,17 @@ export const App = reaxper( () => {
 						<I18n>{ store.side === 'left' ? 'Left' : 'Right' }</I18n>
 					</span>
 				</div>
-				<Tooltip title={ <I18n>Close</I18n> }>
+				<SimpleTooltip content={ <I18n>Close</I18n> }>
 					<Button
-						type="text"
+						variant="ghost"
+						size="icon"
 						className="prompt-view-close-button"
-						shape="circle"
-						icon={ <X size={ 16 } /> }
 						aria-label={ i18n( 'Close' ) }
 						onClick={ closePromptView }
-					/>
-				</Tooltip>
+					>
+						<X size={ 16 } />
+					</Button>
+				</SimpleTooltip>
 			</header>
 
 			{/* ═══ Toolbar：状态信息 + 新建按钮（从 header 移至此）═══ */}
@@ -82,35 +75,33 @@ export const App = reaxper( () => {
 						<I18n>{ store.status.saving ? 'Saving' : 'Saved' }</I18n>
 					</span>
 				</div>
-				<Tooltip title={ <I18n>New Prompt</I18n> }>
+				<SimpleTooltip content={ <I18n>New Prompt</I18n> }>
 					<Button
-						type="primary"
+						size="icon"
 						className="prompt-view-add-button"
-						shape="circle"
-						icon={ <Plus size={ 18 } /> }
 						aria-label={ i18n( 'New Prompt' ) }
 						onClick={ addPrompt }
-					/>
-				</Tooltip>
+					>
+						<Plus size={ 18 } />
+					</Button>
+				</SimpleTooltip>
 			</div>
 
 			{/* ═══ Body：卡片列表（SortableContext 结构不变）═══ */}
 			<section className="prompt-view-body">
-				{ store.status.error ? <Alert
-					className="prompt-view-error"
-					type="error"
-					showIcon
-					message={ store.status.error }
-				/> : null }
-				{ store.status.loading ? <div className="prompt-view-loading"><Spin /></div> : null }
+				{ store.status.error ? <Alert variant="destructive" className="prompt-view-error">
+					<AlertDescription>{ store.status.error }</AlertDescription>
+				</Alert> : null }
+				{ store.status.loading ? <div className="prompt-view-loading"><Spinner /></div> : null }
 				{ !store.status.loading && !hasItems ? <div className="prompt-view-empty">
 					<div className="prompt-view-empty-mark"><FileText size={ 24 } /></div>
 					<div className="prompt-view-empty-title"><I18n>No prompts</I18n></div>
 					<Button
-						type="primary"
-						icon={ <Plus size={ 16 } /> }
 						onClick={ addPrompt }
-					><I18n>New Prompt</I18n></Button>
+					>
+						<Plus size={ 16 } />
+						<I18n>New Prompt</I18n>
+					</Button>
 				</div> : null }
 				{ !store.status.loading && hasItems ? <DndContext
 					sensors={ sensors }
@@ -142,7 +133,8 @@ export const App = reaxper( () => {
 				</DndContext> : null }
 			</section>
 		</main>
-	</ConfigProvider>;
+		<AppToaster theme={ resolvedTheme } />
+	</TooltipProvider>;
 } );
 
 /* 卡片进入/退出动画包裹器 — 统一管理卡片的进场展开与退场折叠动画 */
@@ -234,49 +226,50 @@ const PromptCard = reaxper( ( props: {
 	>
 		<div className="prompt-card-topbar">
 			<div className="prompt-card-identity">
-				<Tooltip title={ <I18n>Drag to sort</I18n> }>
+				<SimpleTooltip content={ <I18n>Drag to sort</I18n> }>
 					<Button
-						size="small"
-						type="text"
-						className="prompt-card-icon-button prompt-card-drag-handle"
-						icon={ <Grip size={ 15 } /> }
+						size="icon"
+						variant="ghost"
+						className="prompt-card-icon-button prompt-card-drag-handle h-8 w-8"
 						aria-label={ i18n( 'Drag to sort' ) }
 						{ ...attributes }
 						{ ...listeners }
-					/>
-				</Tooltip>
+					>
+						<Grip size={ 15 } />
+					</Button>
+				</SimpleTooltip>
 				<span className="prompt-card-title">{ i18n( 'Prompt' ) } { String( props.index + 1 ).padStart( 2 , '0' ) }</span>
 			</div>
 			<div className="prompt-card-actions">
-				<Tooltip title={ <I18n>Duplicate</I18n> }>
+				<SimpleTooltip content={ <I18n>Duplicate</I18n> }>
 					<Button
-						size="small"
-						type="text"
-						className="prompt-card-icon-button"
-						icon={ <CopyPlus size={ 15 } /> }
+						size="icon"
+						variant="ghost"
+						className="prompt-card-icon-button h-8 w-8"
 						aria-label={ i18n( 'Duplicate' ) }
 						onClick={ () => duplicatePrompt( props.item.id ) }
-					/>
-				</Tooltip>
-				<Tooltip title={ <I18n>Copy</I18n> }>
+					>
+						<CopyPlus size={ 15 } />
+					</Button>
+				</SimpleTooltip>
+				<SimpleTooltip content={ <I18n>Copy</I18n> }>
 					<Button
-						size="small"
-						type="text"
-						className="prompt-card-icon-button"
-						icon={ <ClipboardCopy size={ 15 } /> }
+						size="icon"
+						variant="ghost"
+						className="prompt-card-icon-button h-8 w-8"
 						aria-label={ i18n( 'Copy' ) }
 						onClick={ () => {
 							void copyPrompt( props.item.id );
 						} }
-					/>
-				</Tooltip>
-				<Tooltip title={ <I18n>Delete</I18n> }>
+					>
+						<ClipboardCopy size={ 15 } />
+					</Button>
+				</SimpleTooltip>
+				<SimpleTooltip content={ <I18n>Delete</I18n> }>
 					<Button
-						size="small"
-						type="text"
-						danger
-						className="prompt-card-icon-button"
-						icon={ <Trash2 size={ 15 } /> }
+						size="icon"
+						variant="ghost"
+						className="prompt-card-icon-button h-8 w-8 text-destructive"
 						aria-label={ i18n( 'Delete' ) }
 						onClick={ () => {
 							/* 若外层包裹器提供了退场回调，委托其播放动画后再移除 */
@@ -286,18 +279,17 @@ const PromptCard = reaxper( ( props: {
 								deletePrompt( props.item.id );
 							}
 						} }
-					/>
-				</Tooltip>
+					>
+						<Trash2 size={ 15 } />
+					</Button>
+				</SimpleTooltip>
 			</div>
 		</div>
 		<div className="prompt-composer">
-			<TextArea
-				className="prompt-card-textarea"
+			<Textarea
+				className="prompt-card-textarea min-h-[120px]"
 				value={ props.item.content }
-				autoSize={ {
-					minRows : 5 ,
-					maxRows : 14,
-				} }
+				rows={ 5 }
 				placeholder={ i18n( 'Prompt text' ) }
 				onChange={ event => {
 					setPromptText( props.item.id , event.target.value );
@@ -324,6 +316,15 @@ import {
 } from '#PromptView/reaxels/exports';
 import { resolveThemePreference } from '#shared/appearance';
 import type { PromptView } from '#src/Types/PromptView';
+import { Alert , AlertDescription } from '#Views/shared/ui/alert';
+import { Button } from '#Views/shared/ui/button';
+import { Spinner } from '#Views/shared/ui/spinner';
+import { Textarea } from '#Views/shared/ui/textarea';
+import { AppToaster } from '#Views/shared/ui/toast';
+import {
+	SimpleTooltip ,
+	TooltipProvider,
+} from '#Views/shared/ui/tooltip';
 import {
 	CircleCheck ,
 	ClipboardCopy ,
@@ -351,13 +352,5 @@ import { CSS } from '@dnd-kit/utilities';
 import type { DragEndEvent } from '@dnd-kit/core';
 import React from 'react';
 import { reaxper } from 'reaxes-react';
-import {
-	Alert ,
-	Button ,
-	ConfigProvider ,
-	Input ,
-	Spin ,
-	Tooltip ,
-	theme as antdTheme ,
-} from 'antd';
+import '#Views/shared/ui/globals.css';
 import './index.less';

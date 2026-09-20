@@ -1,61 +1,20 @@
-# SettingsView 退出丢弃与 PromptView 滚动条优化
+# SettingsView 退出与 PromptView 滚动条
 
-## 结论
+两项相互独立。**运行设置即时写盘之后，关窗不再丢主题 / 代理**；AI 表草稿仍不随关窗丢弃。换皮见 [`settings-ui-shadcn.md`](./settings-ui-shadcn.md)。
 
-两项改动相互独立：
+## 需求 1: 关 Settings 保留已写盘的 runtime，以及未保存的 AI 表草稿
 
-1. **SettingsView「Exit Without Save」** 应在关闭前丢弃内存中的未保存编辑，与「Discard Changes」语义一致并额外退出。
-2. **PromptView 纵向滚动条** 仅改 CSS，使滚动条更细、更淡，并尽量浮于内容区而非挤占列表宽度。
+### 现行行为
 
-## 需求 1: Exit Without Save 应重置未保存配置
+页脚是 **Done**（或关窗），调用 `exitSettings()`：
 
-### 现象
+1. **Runtime（主题、语言、代理、GPU、Startup AI Page）已经在控件变更时 `persistRuntimeSettings`。** Done 不再 Discard，再次进入应看到刚改的值。
+2. **Manage AIs 表内未保存的 Enabled / 删除草稿会保留**（页脚不碰表 dirty）。要丢掉表草稿用表底 **Undo Changes**。见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)。
+3. GPU 等 `restartRequired` 在写盘当时 Dialog 提示，不拖到退出。
 
-用户在 SettingsView 中修改设置后点击 **Exit Without Save** 退出，再次进入时仍看到上次未保存的修改；退出什么样进来还是什么样。
+历史上 **Exit Without Save / Discard Changes** 会 `reloadRuntimeSettings` 再关窗，用来丢掉未 Apply 的 runtime 草稿。那套页脚已去掉。`exitWithoutSave()` 仍留在 reaxel 里，UI 不再绑。
 
-### 期望行为
-
-点击 **Exit Without Save** 时：
-
-1. 丢弃当前会话内所有未 Apply/Save 的 UI 编辑（与 **Discard Changes** 相同的数据源：磁盘上的 `user-settings.json`）。
-2. 恢复主题/语言等对 PromptView 的预览副作用（`setSettings` 会重新 `previewPromptViewAppearance`）。
-3. 关闭 SettingsView。
-
-### 根因
-
-`App.tsx` 中 **Exit Without Save** 仅调用 `exitSettings()` IPC，未调用 `reloadSettings()`。SettingsView 的 reaxel 状态在窗口隐藏后仍驻留内存，再次打开时直接复用脏状态。
-
-**Discard Changes** 已正确调用 `reloadSettings()`，但 **Exit Without Save** 遗漏了这一步。
-
-### 修复方案
-
-在 `reaxel_SettingsView` 中新增 `exitWithoutSave()`：
-
-```ts
-async function exitWithoutSave() {
-   await reloadSettings();
-   exitSettings();
-}
-```
-
-`App.tsx` 将 **Exit Without Save** 的 `onClick` 改为 `await exitWithoutSave()`。
-
-不新增 IPC；复用现有 `fetch-settings` + `exit-settings`。
-
-### 修改文件
-
-- `src/Views/SettingsView/reaxels/settings-view/index.ts`
-- `src/Views/SettingsView/App.tsx`
-
-### 验收标准
-
-- 修改任意设置项（如主题、语言、代理模式）后不 Apply/Save，点 **Exit Without Save**，再次进入应显示磁盘持久化值。
-- **Manage AIs 表内未保存的 Enabled / 删除草稿会保留**（页脚不讨表 dirty）。要丢掉表草稿用表底 **Undo Changes**。见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)。
-- 修改主题/语言后 **Exit Without Save**，PromptView 外观应恢复为已保存配置，而非预览值。
-- **Discard Changes**、**Apply**、**Save & Exit** 行为不变。
-- `reloadSettings` 失败时记录错误；仍执行 `exitSettings()`（用户意图是离开，与脏数据滞留相比更可接受）。
-
-E2E：[`e2e/tests/settings-exit-without-save.spec.ts`](../../e2e/tests/settings-exit-without-save.spec.ts)。
+E2E：[`e2e/tests/settings-exit-without-save.spec.ts`](../../e2e/tests/settings-exit-without-save.spec.ts)（点 Done：主题已落盘，Enabled 草稿仍在）。
 
 ---
 

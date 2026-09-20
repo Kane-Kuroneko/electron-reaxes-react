@@ -66,7 +66,7 @@ PromptView 分为三层：
 - 编辑 textarea 后沿用 220ms debounce 自动保存。
 - blur 时立即持久化。
 - 拖拽排序仍限制为纵向。
-- 复制成功/失败仍使用 antd message。
+- 复制成功/失败使用 `#Views/shared/ui/toast`（sonner）。
 - 出错时在列表顶部显示错误提示。
 - 空列表显示最小空状态和新建入口。
 
@@ -76,7 +76,7 @@ PromptView 分为三层：
 
 - React 18 renderer。
 - Reaxes `reaxper` 组件和 `reaxel_PromptView` 状态模块。
-- antd 5 的 `ConfigProvider`、`Button`、`Input.TextArea`、`Tooltip`、`Spin`、`Alert`。
+- shadcn `Button` / `Textarea` / `Tooltip` / `Spinner` / `Alert`。见 [`settings-ui-shadcn.md`](./settings-ui-shadcn.md)。
 - `@dnd-kit` 的 `DndContext`、`SortableContext`、`useSortable`。
 - CSS 变量承接 light/dark theme，同步逻辑继续由 `applyThemePreferenceToDocument()` 设置 `data-chataio-theme`。
 

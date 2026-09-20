@@ -341,6 +341,7 @@ export const reaxel_GuidingView = reaxel( () => {
 function applyThemeToDocument( theme:'light' | 'dark' ) {
 	document.documentElement.dataset.chataioTheme = theme;
 	document.documentElement.style.colorScheme = theme;
+	document.documentElement.classList.toggle( 'dark' , theme === 'dark' );
 }
 
 function normalizeGuidingProgress(progress:Guiding.Progress):Guiding.Progress {
