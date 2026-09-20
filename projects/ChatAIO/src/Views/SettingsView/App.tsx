@@ -118,25 +118,31 @@ export const App = reaxper( () => {
 						</div>;
 					} ) }
 				</div>
-				<footer className="flex shrink-0 items-center justify-end gap-3 border-t border-border bg-card/70 px-8 py-3">
-					{ __DEV__ && <LongPressButton
-						variant="destructive"
-						onConfirm={ async() => {
-							const result = await devCleanStart();
-							if( !result.success ) {
-								toast.error( result.error || 'Clean start failed' );
-							}
-						} }
-					><I18n>Clean Start</I18n></LongPressButton> }
-					{ aisDirty ? <span className="mr-auto text-xs text-muted-foreground">
+				{/*
+				 * 提示走左侧剩余空间；按钮组 ml-auto 钉在右边。
+				 * 不要把 mr-auto 插在 Clean Start 和 Done 中间——表一 dirty 会把干净启动顶到左边。
+				 */}
+				<footer className="flex shrink-0 items-center gap-3 border-t border-border bg-card/70 px-8 py-3">
+					{ aisDirty ? <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
 						<I18n>Unsaved AI page changes stay until you save them in Manage AIs</I18n>
 					</span> : null }
-					<Button
-						variant="outline"
-						data-testid="settings-footer-done"
-						disabled={ catalogChromeLocked }
-						onClick={ () => exitSettings() }
-					><I18n>Done</I18n></Button>
+					<div className="ml-auto flex shrink-0 items-center gap-3">
+						{ __DEV__ && <LongPressButton
+							variant="destructive"
+							onConfirm={ async() => {
+								const result = await devCleanStart();
+								if( !result.success ) {
+									toast.error( result.error || 'Clean start failed' );
+								}
+							} }
+						><I18n>Clean Start</I18n></LongPressButton> }
+						<Button
+							variant="outline"
+							data-testid="settings-footer-done"
+							disabled={ catalogChromeLocked }
+							onClick={ () => exitSettings() }
+						><I18n>Done</I18n></Button>
+					</div>
 				</footer>
 			</div>
 			<Dialog

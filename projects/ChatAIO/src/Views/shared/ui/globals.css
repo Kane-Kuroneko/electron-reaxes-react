@@ -5,7 +5,7 @@
  *
  * 主题色只写这一份。组件用 Tailwind（bg-primary / text-foreground）；
  * Less 用 hsl(var(--primary))，或别名到 --settings-* / --guide-* / --prompt-*。
- * 不要在 View 里再抄一份 hex 主色。
+ * Overlay 进出场也只写这里（--overlay-in / overlay-*）。不要在 View 里再抄一份 hex 主色。
  */
 @tailwind base;
 @tailwind components;
@@ -33,6 +33,11 @@
 		--input: 34 12% 88%;
 		--ring: 30 5% 52%;
 		--radius: 0.75rem;
+		/* Overlay 进出场。短、无回弹；不跟系统动画开关走。见 settings-ui-shadcn.md */
+		--overlay-in: 110ms;
+		--overlay-out: 80ms;
+		--overlay-ease-out: cubic-bezier(0.2, 0, 0, 1);
+		--overlay-ease-in: cubic-bezier(0.4, 0, 1, 1);
 	}
 
 	.dark {
@@ -60,4 +65,195 @@
 	* {
 		@apply border-border;
 	}
+}
+
+/*
+ * Overlay 开关动画。进/出场必须用不同 animation-name，且不要写 fill-mode：
+ * Radix Presence 靠 animationend 卸节点，自己会在出场时设 forwards。
+ * 居中 Dialog 的 pop 把 translate(-50%,-50%) 写进 keyframes，不要再用 Tailwind transform。
+ * 见 docs/features/settings-ui-shadcn.md
+ */
+@keyframes chataio-overlay-fade-in {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+@keyframes chataio-overlay-fade-out {
+	from { opacity: 1; }
+	to { opacity: 0; }
+}
+@keyframes chataio-overlay-pop-in {
+	from {
+		opacity: 0;
+		transform: translate(-50%, calc(-50% + 6px)) scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+}
+@keyframes chataio-overlay-pop-out {
+	from {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: translate(-50%, calc(-50% + 4px)) scale(0.98);
+	}
+}
+@keyframes chataio-overlay-float-in {
+	from {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+@keyframes chataio-overlay-float-out {
+	from {
+		opacity: 1;
+		transform: scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+}
+@keyframes chataio-sheet-in-right {
+	from {
+		opacity: 0;
+		transform: translateX(16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+@keyframes chataio-sheet-out-right {
+	from {
+		opacity: 1;
+		transform: translateX(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateX(12px);
+	}
+}
+@keyframes chataio-sheet-in-left {
+	from {
+		opacity: 0;
+		transform: translateX(-16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+@keyframes chataio-sheet-out-left {
+	from {
+		opacity: 1;
+		transform: translateX(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateX(-12px);
+	}
+}
+@keyframes chataio-sheet-in-top {
+	from {
+		opacity: 0;
+		transform: translateY(-16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+@keyframes chataio-sheet-out-top {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-12px);
+	}
+}
+@keyframes chataio-sheet-in-bottom {
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+@keyframes chataio-sheet-out-bottom {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+}
+
+.overlay-fade[data-state='open'] {
+	animation: chataio-overlay-fade-in var(--overlay-in) var(--overlay-ease-out);
+}
+.overlay-fade[data-state='closed'] {
+	animation: chataio-overlay-fade-out var(--overlay-out) var(--overlay-ease-in);
+	pointer-events: none;
+}
+
+.overlay-pop {
+	transform: translate(-50%, -50%);
+}
+.overlay-pop[data-state='open'] {
+	animation: chataio-overlay-pop-in var(--overlay-in) var(--overlay-ease-out);
+}
+.overlay-pop[data-state='closed'] {
+	animation: chataio-overlay-pop-out var(--overlay-out) var(--overlay-ease-in);
+	pointer-events: none;
+}
+
+.overlay-float[data-state='open'] {
+	animation: chataio-overlay-float-in var(--overlay-in) var(--overlay-ease-out);
+}
+.overlay-float[data-state='closed'] {
+	animation: chataio-overlay-float-out var(--overlay-out) var(--overlay-ease-in);
+	pointer-events: none;
+}
+
+.overlay-sheet-right[data-state='open'] {
+	animation: chataio-sheet-in-right var(--overlay-in) var(--overlay-ease-out);
+}
+.overlay-sheet-right[data-state='closed'] {
+	animation: chataio-sheet-out-right var(--overlay-out) var(--overlay-ease-in);
+	pointer-events: none;
+}
+.overlay-sheet-left[data-state='open'] {
+	animation: chataio-sheet-in-left var(--overlay-in) var(--overlay-ease-out);
+}
+.overlay-sheet-left[data-state='closed'] {
+	animation: chataio-sheet-out-left var(--overlay-out) var(--overlay-ease-in);
+	pointer-events: none;
+}
+.overlay-sheet-top[data-state='open'] {
+	animation: chataio-sheet-in-top var(--overlay-in) var(--overlay-ease-out);
+}
+.overlay-sheet-top[data-state='closed'] {
+	animation: chataio-sheet-out-top var(--overlay-out) var(--overlay-ease-in);
+	pointer-events: none;
+}
+.overlay-sheet-bottom[data-state='open'] {
+	animation: chataio-sheet-in-bottom var(--overlay-in) var(--overlay-ease-out);
+}
+.overlay-sheet-bottom[data-state='closed'] {
+	animation: chataio-sheet-out-bottom var(--overlay-out) var(--overlay-ease-in);
+	pointer-events: none;
 }

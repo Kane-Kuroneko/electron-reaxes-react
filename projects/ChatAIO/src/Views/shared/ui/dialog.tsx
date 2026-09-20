@@ -1,3 +1,9 @@
+/**
+ * Settings / Prompt / Guiding 共用 Dialog。遮罩 fade + 面板 pop 写在 globals.css，
+ * 进 110ms / 出 80ms。不要 fill-mode（Presence 靠 animationend 卸节点）。
+ * CSS 动画，不跟 Windows DWM；系统关动画时这里仍要动。
+ * 见 docs/features/settings-ui-shadcn.md
+ */
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogPortal = DialogPrimitive.Portal;
@@ -9,7 +15,7 @@ export const DialogOverlay = React.forwardRef<
 >( ( { className , ...props } , ref ) => (
 	<DialogPrimitive.Overlay
 		ref={ ref }
-		className={ cn( 'fixed inset-0 z-50 bg-black/50' , className ) }
+		className={ cn( 'overlay-fade fixed inset-0 z-50 bg-black/50' , className ) }
 		{ ...props }
 	/>
 ) );
@@ -24,7 +30,7 @@ export const DialogContent = React.forwardRef<
 		<DialogPrimitive.Content
 			ref={ ref }
 			className={ cn(
-				'fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg max-h-[calc(100vh-5rem)] overflow-y-auto' ,
+				'overlay-pop fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg max-h-[calc(100vh-5rem)] overflow-y-auto' ,
 				className,
 			) }
 			{ ...props }

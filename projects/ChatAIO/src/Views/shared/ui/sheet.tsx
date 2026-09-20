@@ -1,3 +1,7 @@
+/**
+ * 右侧/边缘抽屉。位移幅度只 12–16px + fade，不从屏外滑入。
+ * 动画 class 见 globals.css `overlay-sheet-*`。docs/features/settings-ui-shadcn.md
+ */
 export const Sheet = SheetPrimitive.Root;
 export const SheetTrigger = SheetPrimitive.Trigger;
 export const SheetClose = SheetPrimitive.Close;
@@ -8,7 +12,7 @@ export const SheetOverlay = React.forwardRef<
 	React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
 >( ( { className , ...props } , ref ) => (
 	<SheetPrimitive.Overlay
-		className={ cn( 'fixed inset-0 z-50 bg-black/50' , className ) }
+		className={ cn( 'overlay-fade fixed inset-0 z-50 bg-black/50' , className ) }
 		{ ...props }
 		ref={ ref }
 	/>
@@ -16,14 +20,14 @@ export const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
 const sheetVariants = cva(
-	'fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out' ,
+	'fixed z-50 gap-4 bg-background p-6 shadow-lg' ,
 	{
 		variants : {
 			side : {
-				top : 'inset-x-0 top-0 border-b' ,
-				bottom : 'inset-x-0 bottom-0 border-t' ,
-				left : 'inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm' ,
-				right : 'inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg' ,
+				top : 'overlay-sheet-top inset-x-0 top-0 border-b' ,
+				bottom : 'overlay-sheet-bottom inset-x-0 bottom-0 border-t' ,
+				left : 'overlay-sheet-left inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm' ,
+				right : 'overlay-sheet-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg' ,
 			} ,
 		} ,
 		defaultVariants : {
@@ -39,13 +43,21 @@ interface SheetContentProps
 export const SheetContent = React.forwardRef<
 	React.ElementRef<typeof SheetPrimitive.Content>,
 	SheetContentProps
->( ( { side = 'right' , className , children , ...props } , ref ) => (
+>( ( { side = 'right' , className , children , onOpenAutoFocus , ...props } , ref ) => (
 	<SheetPortal>
 		<SheetOverlay />
 		<SheetPrimitive.Content
 			ref={ ref }
 			className={ cn( sheetVariants( { side } ) , className ) }
 			{ ...props }
+			onOpenAutoFocus={ ( event ) => {
+				onOpenAutoFocus?.( event );
+				if( event.defaultPrevented ) return;
+				// 默认会聚焦第一颗按钮。复制版本号包了 Tooltip，一打开侧栏提示就常驻。
+				// 焦点落到面板本身；键盘仍可 Tab 到控件。见 docs/features/settings-ui-shadcn.md
+				event.preventDefault();
+				( event.currentTarget as HTMLElement | null )?.focus( { preventScroll : true } );
+			} }
 		>
 			{ children }
 			<SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
