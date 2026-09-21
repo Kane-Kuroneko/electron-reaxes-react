@@ -75,14 +75,46 @@ try {
 	process.exit( 1 );
 }
 
+/* WDS 真实口只信本树 dist/.webpack-build-state.json，不要用 hash 首选口。
+ * inspect / CDP 从 JSON hint 或 WDS 口 +1 起找空闲，被占继续顺延。
+ * 设计：projects/ChatAIO/docs/architecture/worktree-dev-server.md
+ */
+let devServer;
+try {
+	devServer = assertDevServerRendezvous( buildStatePath );
+} catch ( error ) {
+	console.error( error?.message || error );
+	process.exit( 1 );
+}
+
+const inspectPreferred = parsePortNumber( process.env.ELECTRON_INSPECT_PORT )
+	?? devServer.inspectPort
+	?? PRIMARY_INSPECT_PORT;
+const inspectPort = await getPort( Math.max( inspectPreferred , devServer.port + 1 ) );
+const cdpPreferred = parsePortNumber( process.env.ELECTRON_CDP_PORT )
+	?? devServer.cdpPort
+	?? PRIMARY_CDP_PORT;
+const cdpPort = await getPort( Math.max( cdpPreferred , inspectPort + 1 ) );
+
+console.log(
+	`[dev-scope] electron renderer ${ devServer.origin }`
+	+ ` inspect :${ inspectPort }`
+	+ ` cdp-hint :${ cdpPort }`
+	+ ( devServer.worktree ? ' (worktree)' : '' ),
+);
+
 // 使用 spawn 来启动 Electron
-const electronProcess = spawn(absolutelyElectronExe, ['.','--inspect=9229','--experimental-network-inspection'], {
+const electronProcess = spawn(absolutelyElectronExe, ['.',`--inspect=${ inspectPort }`,'--experimental-network-inspection'], {
 	cwd: absolutelyPath_subproject, // 设置当前工作目录为 subproject 路径
 	stdio: 'inherit', // 忽略 stdin, 监听 stdout 和 stderr
 	env :{
 		...process.env,
 		NODE_OPTIONS: '--enable-source-maps',
-		NODE_TLS_REJECT_UNAUTHORIZED : '0'
+		NODE_TLS_REJECT_UNAUTHORIZED : '0',
+		ELECTRON_RENDERER_URL : devServer.origin,
+		DEV_SERVER_PORT : String( devServer.port ),
+		ELECTRON_INSPECT_PORT : String( inspectPort ),
+		ELECTRON_CDP_PORT : String( cdpPort ),
 	}
 });
 
@@ -108,7 +140,9 @@ electronProcess.on('error', (err) => {
 	console.error(`Electron process error: ${err}`);
 });
 
-import { assertFreshElectronStartupArtifacts , getBuildStatePath } from '../utils/build-artifacts';
+import { assertDevServerRendezvous , assertFreshElectronStartupArtifacts , getBuildStatePath } from '../utils/build-artifacts';
+import { PRIMARY_CDP_PORT , PRIMARY_INSPECT_PORT , parsePortNumber } from '../../engine/toolkit/worktree-dev-scope';
+import { getPort } from '../../engine/utils';
 import { absolutelyPath_RepositoryRoot } from '../../engine/toolkit/repo-paths';
 import { getProjectPaths } from '../../engine/toolkit/project-paths';
 import { spawn } from 'node:child_process';

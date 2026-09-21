@@ -83,7 +83,7 @@ i18n 选择器不稳时再给页脚、表底、弹窗加 `data-testid`，不要�
 1. **隔离 userData**：`CHATAIO_E2E=1` + `CHATAIO_E2E_USER_DATA_DIR` 覆盖 `setAppProfilePath`。禁止写本机 `%APPDATA%/ChatAIO-dev`。单实例锁跟 userData 走，因此 E2E 临时目录不会和本机生产/开发包抢实例（见 [single-instance.md](./single-instance.md)）。
 2. **不改操作系统全局状态**：不 `npx playwright install` Chromium、不改系统代理、不 `taskkill /im electron.exe`（只杀本次 pid）。
 3. **workers = 1**：Electron GPU / 单用户数据模型；并行要另开隔离端口与 userData，本阶段不做。
-4. **E2E 加载 `dist/renderer/*/index.html`**：`shouldUseDevRendererServer()` 在 `CHATAIO_E2E=1` 时为 false。日常 `yarn start:electron` 仍走 localhost:4444。
+4. **E2E 加载 `dist/renderer/*/index.html`**：`shouldUseDevRendererServer()` 在 `CHATAIO_E2E=1` 时为 false。日常 `yarn start:electron` 走本树 WDS（口见 [worktree-dev-server.md](../architecture/worktree-dev-server.md)），不要写成写死的 localhost:4444。
 5. **Playwright `windows()` 能发现 WebContentsView**（本机 1.62 已验证：打开 Settings 后有 `SettingsView/index.html`，`data-testid=settings-root` 可点）。官方回归见 [playwright#39427](https://github.com/microsoft/playwright/issues/39427) / 1.60。不要为了点 Settings 把生产 WCV 改成 BrowserWindow。远程 AI 页也会出现在 `windows()` 里，仍然不测站点 DOM。主进程探针继续覆盖写盘契约；`kind === 'main'` 在 runtime Phase 0 就为真，调 `apply-settings` / `apply-ais` 前要等 `runtimeViewsReady`。
 6. **首启**：测试 mkdtemp 会先建目录，不能再用 `existsSync(userData)`。只有 `CHATAIO_E2E_FIRST_LAUNCH=1` 才走 GuidingView。
 7. **Windows FloatingView 仍禁止 `forward: true`**。E2E 不改鼠标穿透。

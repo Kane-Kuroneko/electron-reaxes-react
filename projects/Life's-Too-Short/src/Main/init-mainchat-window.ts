@@ -42,7 +42,9 @@ export const initMainchatWindow = async (
 	// console.log('screen.getPrimaryDisplay().scaleFactor:',screen.getPrimaryDisplay().scaleFactor);
 	// 加载 index.html
 	if( __NODE_ENV__ === 'development' && !runInExcutable ) {
-		mainWindow.loadURL( `https://127.0.0.1:${ __DEV_PORT__ }/main-chat/` );
+		// 优先 electron.start 注入的实际 WDS 口，见 ChatAIO docs/architecture/worktree-dev-server.md
+		const origin = ( process.env.ELECTRON_RENDERER_URL || `https://127.0.0.1:${ __DEV_PORT__ }` ).replace( /\/$/ , '' );
+		mainWindow.loadURL( `${ origin }/main-chat/` );
 	} else {
 		mainWindow.loadFile( "dist/renderer/main-chat/index.html" );
 	}

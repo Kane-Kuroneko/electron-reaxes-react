@@ -68,7 +68,7 @@ MainView: 'src/Views/MainView/index.tsx'
 
 修改 `src/Main/mainWindow.ts` / `src/Main/runtime.ts`，使 mainWindow 在创建后加载 MainView：
 
-- **Development**: `mainWindow.webContents.loadURL('https://localhost:4444/MainView/')`
+- **Development**: `mainWindow.webContents.loadURL` 走当前 worktree 的 webpack HTTPS（口见 [worktree-dev-server.md](./worktree-dev-server.md)，不是写死的 4444）
 - **Production**: `mainWindow.webContents.loadFile(path.join(absAppRunningPath, 'renderer', 'MainView', 'index.html'))`
 
 mainWindow 的 `webPreferences.preload` 已配置为 `preload.js`，MainView 可直接使用 `window.api` 调用主进程 IPC。

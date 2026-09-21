@@ -80,7 +80,7 @@ ChatAIO 同时使用：
 ### 合理部分
 
 - 公共脚本按 main / preload / renderer 分离构建，方向合理。
-- `scripts/webpack.start/index.ts` 已有构建状态文件，用于 `electron.start` 前校验 main/preload artifact 是否新鲜。
+- `scripts/webpack.start/index.ts` 已有构建状态文件：校验 main/preload 是否新鲜，并在 WDS listen 后写入 `devServer` 真实端口供 `electron.start` 读取（多 worktree 见 [worktree-dev-server.md](./worktree-dev-server.md)）。
 - ChatAIO 把 Main、Views、Settings services 分层，整体仍能沿 Reaxes/Electron 边界扩展。
 
 ### 脆弱部分

@@ -99,10 +99,32 @@ purdy({
 	experimental,
 },{indent:2})
 
+/* linked worktree：package.json 写死的 4444 只是主 checkout 默认，hash 才是本树起点；被占则 portfinder +1。
+ * 生产 build 不探测端口，避免无意义占用。真实 bind 口以 WDS listen 后写入的 build-state.devServer 为准。
+ * 设计：projects/ChatAIO/docs/architecture/worktree-dev-server.md
+ */
+const preferredRenderer = resolvePreferredRendererPort( {
+	cliPort : inputPort,
+} );
+export const worktreeDevScope = preferredRenderer.scope;
+export const preferredDevServerPort = preferredRenderer.preferredPort;
+export const port = method === 'server'
+	? await getPort( preferredRenderer.preferredPort )
+	: preferredRenderer.preferredPort;
 
-export const port = await getPort(inputPort);
+if( method === 'server' ) {
+	const scopeLabel = preferredRenderer.scope.isLinkedWorktree ? 'linked-worktree' : 'primary';
+	console.log(
+		`[dev-scope] ${ scopeLabel } source=${ preferredRenderer.source }`
+		+ ` preferred :${ preferredRenderer.preferredPort }`
+		+ ` inspect-hint :${ preferredRenderer.scope.inspectPort }`
+		+ ` cdp-hint :${ preferredRenderer.scope.cdpPort }`
+		+ ( port === preferredRenderer.preferredPort ? '' : ` → renderer :${ port }` ),
+	);
+}
 
 
+import { resolvePreferredRendererPort } from './worktree-dev-scope';
 import { getPort , reflect } from "../utils";
 import { absolutelyPath_Projects } from './repo-paths';
 import fs from 'fs';

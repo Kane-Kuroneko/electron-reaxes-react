@@ -5,3 +5,4 @@ export * from "./entrance";
 export * from "./webpack-logger-plugins";
 export * from "./repo-paths";
 export * from './project-paths'
+export * from './worktree-dev-scope'

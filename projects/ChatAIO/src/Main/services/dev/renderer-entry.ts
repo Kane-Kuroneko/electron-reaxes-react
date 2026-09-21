@@ -1,8 +1,38 @@
+/**
+ * Dev renderer origin：优先 electron.start 注入的实际 bind 口，回落编译期 __DEV_PORT__。
+ * 设计：docs/architecture/worktree-dev-server.md
+ */
+export const getDevRendererOrigin = () => {
+	const fromEnv = process.env.ELECTRON_RENDERER_URL?.trim();
+	if( fromEnv ) {
+		return fromEnv.replace( /\/$/ , '' );
+	}
+	const port = process.env.DEV_SERVER_PORT?.trim() || String( __DEV_PORT__ );
+	return `https://localhost:${ port }`;
+};
+
+export const getDevRendererPort = () => {
+	const fromEnv = process.env.ELECTRON_RENDERER_URL?.trim();
+	if( fromEnv ) {
+		try {
+			const parsed = Number( new URL( fromEnv ).port );
+			if( Number.isFinite( parsed ) && parsed > 0 ) {
+				return parsed;
+			}
+		} catch ( _error ) {}
+	}
+	const envPort = Number( process.env.DEV_SERVER_PORT );
+	if( Number.isFinite( envPort ) && envPort > 0 ) {
+		return envPort;
+	}
+	return Number( __DEV_PORT__ );
+};
+
 export const createDevRendererEntryURL = (
 	entry:AIWebAppRendererEntryName ,
 	query:RendererEntryQuery = {},
 ) => {
-	const url = new URL( `https://localhost:${ __DEV_PORT__ }/${ entry }/` );
+	const url = new URL( `${ getDevRendererOrigin() }/${ entry }/` );
 	url.searchParams.set( 't' , Date.now().toString() );
 	Object.entries( query ).forEach( ( [ key , value ] ) => {
 		if( value === null || typeof value === 'undefined' ) {
@@ -32,7 +62,7 @@ export const toLoadFileQuery = (query:RendererEntryQuery = {}) => {
 };
 
 export const getFreshRendererLoadURLOptions = (url:string) => {
-	if( shouldUseDevRendererServer() === false || !url.startsWith( `https://localhost:${ __DEV_PORT__ }/` ) ) {
+	if( shouldUseDevRendererServer() === false || url.startsWith( `${ getDevRendererOrigin() }/` ) === false ) {
 		return undefined;
 	}
 	return {
@@ -119,7 +149,7 @@ export const loadDevRendererEntryWithRetry = async(
 			} );
 			if( attempt === 1 || attempt % 5 === 0 ) {
 				console.warn(
-					`[DevRenderer] ${ context } waiting for webpack (:${ __DEV_PORT__ })`
+					`[DevRenderer] ${ context } waiting for webpack (:${ getDevRendererPort() })`
 					+ ` retry ${ attempt }/${ maxAttempts }` ,
 				);
 			}

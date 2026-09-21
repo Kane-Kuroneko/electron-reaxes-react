@@ -4,7 +4,7 @@
 
 `CLAUDE.md`、`DOCS.md` 指向本文件。issue / 设计 / 复盘都在 `docs/`；**本文只做索引**。新文档加到下面对应条目，不要写进根 `AGENTS.md`。
 
-新增功能先读 [设计文档与关键注释](./docs/agent/feature-design-and-comments.md)。架构摘要：[ChatAIO 架构](../../.agents/rules/chat-aio-architecture.md)。
+新增功能先读 [设计文档与关键注释](./docs/agent/feature-design-and-comments.md)。在 index / bugfix / 功能 worktree 上 merge 或修集成 bug 前先读 [index / bugfix 工作流](./docs/agent/worktree-bugfix-workflow.md)。多 worktree 同时起 webpack 时读 [开发服务器端口](./docs/architecture/worktree-dev-server.md)。架构摘要：[ChatAIO 架构](../../.agents/rules/chat-aio-architecture.md)。
 
 路径别名：`#shared/*` → `src/shared/*`（共享数据/类型层）。跨目录不要写 `../../../shared/...`，也不要新增 `#src/shared/...`。
 
@@ -13,6 +13,11 @@
 npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scripts.md)。
 
 ## 按任务 / 症状
+
+### Worktree / 集成
+
+- [index / bugfix 工作流](./docs/agent/worktree-bugfix-workflow.md)（功能线测通后合进 index；index 再合进 bugfix；集成 bug 只在 bugfix 修并合回 index。本 wt 章程。）
+- [多 worktree 开发服务器端口](./docs/architecture/worktree-dev-server.md)（hash 起点 + portfinder 顺延；Electron 读本树 `dist/.webpack-build-state.json`）
 
 ### 开发 / 打包 / 测试
 
@@ -97,6 +102,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [app-icons.md](./docs/architecture/app-icons.md) | `statics/icons/` 应用/托盘/母图；打包排除母图 |
 | [appearance-theme-environment.md](./docs/architecture/appearance-theme-environment.md) | 外观 / 主题注入 AI 页 |
 | [build-pipeline-and-dev-refresh.md](./docs/architecture/build-pipeline-and-dev-refresh.md) | 构建与 dev 热更新 |
+| [worktree-dev-server.md](./docs/architecture/worktree-dev-server.md) | 多 worktree WDS 端口：hash 起点、listen 后写入 build-state、Electron 读 JSON |
 | [i18n.md](./docs/architecture/i18n.md) | 国际化 |
 | [main-view.md](./docs/architecture/main-view.md) | 主壳 / Main View |
 | [menubar-platform-paths.md](./docs/architecture/menubar-platform-paths.md) | 平台 menubar 路径 |
@@ -155,6 +161,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 |------|------|
 | [scripts.md](./scripts.md) | 本工程 npm 脚本：常用入口、参数、已从 package.json 拿掉的完整命令 |
 | [feature-design-and-comments.md](./docs/agent/feature-design-and-comments.md) | 新增功能：设计文档 + 关键注释 |
+| [worktree-bugfix-workflow.md](./docs/agent/worktree-bugfix-workflow.md) | index / bugfix worktree 工作流（本 wt 章程；功能线 → index → bugfix → index） |
 | [menu-label-width.md](./docs/modules/menu-label-width.md) | 菜单标签宽度 |
 | [feature-proposal--ai-catalog-source.md](./docs/feature-proposal--ai-catalog-source.md) | 目录单一事实源分批记录（已落地；现行见 ai-config.md） |
 | [feature-proposal--cross-instance-session-migration.md](./docs/feature-proposal--cross-instance-session-migration.md) | 跨实例会话迁移提案 |

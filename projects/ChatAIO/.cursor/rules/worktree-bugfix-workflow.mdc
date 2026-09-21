@@ -1,0 +1,23 @@
+---
+description: ChatAIO index/bugfix worktree 工作流：功能线合进 index，集成 bug 只在 bugfix 修
+alwaysApply: true
+trigger: always_on
+---
+
+# ChatAIO index / bugfix 工作流
+
+全文与检查清单：[`docs/agent/worktree-bugfix-workflow.md`](../../docs/agent/worktree-bugfix-workflow.md)。在本仓库做 merge、修集成 bug、或判断该改哪棵树之前，先读并按清单勾。
+
+流向：**功能 wt（测通）→ index → bugfix → 合回 index**。`main` 是发布线，不在这条环里。
+
+先看 `git rev-parse --abbrev-ref HEAD`，再按角色动手：
+
+- **`ChatAIO/feat/bugfix`**：只修合进 index 之后的集成 / 回归 / 无主缺陷。动手前和合回前，若 index 已移动，先在本树 `git merge ChatAIO/feat/index`。合回必须在 **index 树**执行 `git merge ChatAIO/feat/bugfix`。
+- **`ChatAIO/feat/index`**：只收已测通功能线，以及 bugfix 的合回。禁止在这棵树上写功能或热修。
+- **`ChatAIO/feat/<feature>`**：单线开发与测试；测通后合进 index。禁止直合 bugfix。本线还活着时，本线的 bug 在本线修。
+
+硬禁止：功能线直进 bugfix；index / main 上修本环的 bug；bugfix 上开新功能；过期快照硬合回；rebase；跨树共用 `node_modules`；同时跑两棵树的 unpackaged Electron。
+
+开发服务器端口（多树可同时起 WDS）：[`docs/architecture/worktree-dev-server.md`](../../docs/architecture/worktree-dev-server.md)。Electron 读本树 `dist/.webpack-build-state.json`，不要假设 4444 / 9229。
+
+git 在 worktree 的 monorepo 根执行，不要把 `projects/ChatAIO` 当仓库根。未经用户明确要求不得 commit / push。

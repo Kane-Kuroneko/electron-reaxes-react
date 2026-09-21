@@ -17,7 +17,7 @@
 - 不要和 ChatAIO 自己的 [敏感地区访问阻断](../features/sensitive-region-access-blocking.md) 混淆：后者加载的是本地 `data:text/html` 阻断页，URL 不会变成 `ai.google.dev/.../available-regions`。
 - `CHATAIO_REMOTE_DEBUG=1` / `remote-debugging-port=9222` **本身就是 BotGuard 信号**。用 CDP 查问题时必须在记录里标明「CDP 开着」；根因对照仍以「无 CDP 的日常使用」为准。
 - Agent 不得用 Cursor 自带的 `cursor-ide-browser` MCP 代替 Electron 调试：那是 Cursor 自己的浏览器标签，进不去 ChatAIO 的 `WebContentsView`。
-- **9222 ≠ 9229**。`remote-debugging-port=9222` 是 Chromium CDP（所有 renderer）；`--inspect=9229` 是 Node V8 inspector（main）。Playwright `connectOverCDP` 只能吃 9222。Dev 下 `yarn start:electron` **已经**带 `--inspect=9229`（见 `scripts/electron.start/index.ts`）；9222 仍要 `CHATAIO_REMOTE_DEBUG=1`。
+- **9222 ≠ 9229**。`remote-debugging-port` 是 Chromium CDP（所有 renderer）；`--inspect` 是 Node V8 inspector（main）。Playwright `connectOverCDP` 只能吃 CDP 口。主 checkout 默认从 **9222 / 9229** 起找空闲；linked worktree 的口以 `yarn start:electron` 日志里的 `inspect :` / `ELECTRON_CDP_PORT` 为准，见 [worktree-dev-server.md](../architecture/worktree-dev-server.md)。CDP 仍要 `CHATAIO_REMOTE_DEBUG=1`。
 
 ---
 

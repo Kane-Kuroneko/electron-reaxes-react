@@ -166,8 +166,8 @@ yarn start:electron
 
 | 命令 | 作用 |
 |------|------|
-| `yarn start:webpack` | 开发态 webpack（默认 **ChatAIO**，端口从 **4444** 起找空闲） |
-| `yarn start:electron` | 开发态启动 Electron（默认 ChatAIO） |
+| `yarn start:webpack` | 开发态 webpack（默认 **ChatAIO**；主 checkout 从 **4444** 起找空闲，linked worktree 用路径 hash 起点。实际口写入 `dist/.webpack-build-state.json`） |
+| `yarn start:electron` | 开发态启动 Electron（默认 ChatAIO；从本树 build-state 读 WDS 口） |
 | `yarn build` / `yarn build:webpack` / `yarn build:electron` | 生产 webpack；electron-builder 打当前宿主平台。跨平台参数见 scripts.md |
 | `yarn test` | ChatAIO 单元测试（`projects/ChatAIO/tests`） |
 | `yarn test:e2e` | ChatAIO Playwright E2E |

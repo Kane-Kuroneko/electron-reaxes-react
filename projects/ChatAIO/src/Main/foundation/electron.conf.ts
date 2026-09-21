@@ -6,11 +6,13 @@ if(dev()){
 	 * unpackaged runs; set CHATAIO_REMOTE_DEBUG=1 when you explicitly need DevTools attach.
 	 */
 	if( process.env.CHATAIO_REMOTE_DEBUG === '1' ) {
-		app.commandLine.appendSwitch('remote-debugging-port', '9222');
+		const cdpPort = process.env.ELECTRON_CDP_PORT || '9222';
+		app.commandLine.appendSwitch('remote-debugging-port', cdpPort);
 		app.commandLine.appendSwitch('remote-allow-origins', '*');
 	}
-	// Dev webpack HTTPS (localhost:4444) uses mkcert certs; Chromium rejects them unless
+	// Dev webpack HTTPS uses mkcert certs; Chromium rejects them unless
 	// the local CA is trusted. NODE_TLS_REJECT_UNAUTHORIZED only covers Node, not webContents.
+	// 端口以 dist/.webpack-build-state.json 为准，见 docs/architecture/worktree-dev-server.md
 	app.commandLine.appendSwitch('ignore-certificate-errors');
 }
 

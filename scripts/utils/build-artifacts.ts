@@ -4,6 +4,8 @@
  * 架构职责分层：
  *   - BuildStateWebpackPlugin   : webpack watch 运行时写入编译状态（诊断用，非 gating）
  *   - assertFreshElectronStartupArtifacts : Electron 启动前的产物完整性校验（dev 模式仅校验存在性）
+ *   - devServer 字段 : WDS listen 成功后写入的真实端口会合点；electron.start 只信这里，不信 hash 首选口
+ *     设计：projects/ChatAIO/docs/architecture/worktree-dev-server.md
  *
  * Dev 模式设计决策：
  *   产物缺失 → 致命错误（未跑过 webpack:start）
@@ -45,6 +47,60 @@ export const resetBuildState = (statePath:string , reason = 'webpack') => {
 		updatedAt : new Date().toISOString() ,
 		targets : {},
 	} );
+};
+
+export const readBuildState = (statePath:string) => {
+	return readBuildStateFile( statePath );
+};
+
+/**
+ * WDS 真正 listen 之后写入本树真实端口。Electron 启动只读这一段，不要用 worktree hash 去猜。
+ */
+export const writeBuildStateDevServer = (statePath:string , devServer:BuildStateDevServer) => {
+	const previous = readBuildStateFile( statePath ) ?? createEmptyBuildState();
+	writeBuildState( statePath , {
+		...previous ,
+		version : BUILD_STATE_VERSION ,
+		pid : process.pid ,
+		updatedAt : new Date().toISOString() ,
+		devServer : {
+			...devServer ,
+			pid : devServer.pid || process.pid,
+		},
+	} );
+};
+
+export const isPidAlive = (pid:number) => {
+	if( !Number.isInteger( pid ) || pid <= 0 ) {
+		return false;
+	}
+	try {
+		process.kill( pid , 0 );
+		return true;
+	} catch ( error ) {
+		const err = error as NodeJS.ErrnoException;
+		return err.code === 'EPERM';
+	}
+};
+
+/**
+ * electron.start 在 spawn 前校验：本树 webpack-start 仍活着，且 JSON 里有 listen 后的真实口。
+ */
+export const assertDevServerRendezvous = (statePath:string):BuildStateDevServer => {
+	const state = readBuildStateFile( statePath );
+	const devServer = state?.devServer;
+	if( !devServer || !Number.isInteger( devServer.port ) || devServer.port < 1 ) {
+		throw new Error(
+			'[BuildArtifacts] dist/.webpack-build-state.json 没有 devServer 端口。请先在本 worktree 运行 yarn start:webpack。',
+		);
+	}
+	const pid = devServer.pid || state.pid;
+	if( pid && isPidAlive( pid ) === false ) {
+		throw new Error(
+			`[BuildArtifacts] webpack-dev-server 进程 ${ pid } 已退出（记录端口 :${ devServer.port }）。请重新 yarn start:webpack。`,
+		);
+	}
+	return devServer;
 };
 
 export const createBuildStateWebpackPlugin = (options:BuildStateWebpackPluginOptions) => {
@@ -367,6 +423,18 @@ export type BuildStateWebpackPluginOptions = {
 	artifacts?: string[];
 };
 
+export type BuildStateDevServer = {
+	port: number;
+	origin: string;
+	host: string;
+	protocol: 'https';
+	pid: number;
+	boundAt: string;
+	inspectPort?: number;
+	cdpPort?: number;
+	worktree?: boolean;
+};
+
 export type BuildState = {
 	version: number;
 	reason: string;
@@ -374,6 +442,7 @@ export type BuildState = {
 	createdAt: string;
 	updatedAt: string;
 	targets: Record<string , BuildStateTarget>;
+	devServer?: BuildStateDevServer;
 };
 
 export type BuildStateTarget = {

@@ -56,8 +56,27 @@ const startRendererServer = async( conf: Configuration ) => {
 		return webpackServer.
 		start().
 		then( () => {
+			/* listen 成功后的真实口写入本树 dist/.webpack-build-state.json；electron.start 只信这里。
+			 * 设计：projects/ChatAIO/docs/architecture/worktree-dev-server.md
+			 */
+			const boundPort = readBoundDevServerPort( webpackServer , port );
+			const origin = createDevRendererOrigin( boundPort );
+			writeBuildStateDevServer( buildStatePath , {
+				port : boundPort ,
+				origin ,
+				host : 'localhost' ,
+				protocol : 'https' ,
+				pid : process.pid ,
+				boundAt : new Date().toISOString() ,
+				inspectPort : worktreeDevScope.inspectPort ,
+				cdpPort : worktreeDevScope.cdpPort ,
+				worktree : worktreeDevScope.isLinkedWorktree,
+			} );
 			console.log( chalk.yellow( `Electron-Renderer打包成功` ) );
-			console.log( chalk.yellow( `WDS已启动在https://${ getIPV4address() }:${ port }` ) );
+			console.log( chalk.yellow( `WDS已启动在https://${ getIPV4address() }:${ boundPort }` ) );
+			if( boundPort !== port ) {
+				console.warn( `[dev-scope] WDS 实际口 :${ boundPort } 与配置口 :${ port } 不一致，已把实际口写入 build-state.devServer` );
+			}
 		} ).
 		catch( ( e ) => {
 			console.error(e);
@@ -68,6 +87,14 @@ const startRendererServer = async( conf: Configuration ) => {
 		// console.warn( "WDS可能意外退出了!" );
 		throw e;
 	}
+};
+
+const readBoundDevServerPort = (webpackServer:WebpackDevServer , fallbackPort:number) => {
+	const address = webpackServer.server?.address?.();
+	if( address && typeof address === 'object' && Number.isInteger( address.port ) ) {
+		return address.port;
+	}
+	return fallbackPort;
 };
 
 
@@ -145,13 +172,12 @@ then( () => {
 
 import purdy from 'purdy';
 import { webpack_conf_for_electron_main , webpack_conf_for_electron_renderer ,webpack_conf_for_electron_preload } from "../utils/mixedRepoWebpackConf";
-import { createBuildStateWebpackPlugin , getBuildStatePath , resetBuildDist , resetBuildState } from '../utils/build-artifacts';
+import { createBuildStateWebpackPlugin , getBuildStatePath , resetBuildDist , resetBuildState , writeBuildStateDevServer } from '../utils/build-artifacts';
 
-import { port , project , mock , env , node_env , method , analyze , experimental , getProjectPaths } from "../../engine/toolkit";
-import { getPort , getIPV4address , webpack_promise , webpack_watch } from "../../engine/utils";
-import { merge } from "webpack-merge";
+import { port , worktreeDevScope , getProjectPaths } from "../../engine/toolkit";
+import { createDevRendererOrigin } from "../../engine/toolkit/worktree-dev-scope";
+import { getIPV4address , webpack_promise , webpack_watch } from "../../engine/utils";
 import WebpackDevServer from "webpack-dev-server";
 import chalk from "chalk";
-import webpack , { Configuration } from "webpack";
+import { Configuration } from "webpack";
 import path from "node:path";
-import { exec } from 'child_process';
