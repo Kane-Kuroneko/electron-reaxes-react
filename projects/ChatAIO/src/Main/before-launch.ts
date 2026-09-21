@@ -10,6 +10,7 @@ setAppProfilePath();
 /* 单实例锁必须跟 userData：生产 / ChatAIO-dev / E2E 临时目录互不抢。
    设计：docs/features/single-instance.md */
 if( acquireChatAIOSingleInstanceLock() === false ) {
+	console.error( '[SingleInstance] 已有 ChatAIO 占用同一 userData，本进程退出。unpackaged 各 worktree 仍共用 ChatAIO-dev。' );
 	app.exit( 0 );
 } else {
 	installE2EFaultCollector();

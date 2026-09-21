@@ -116,27 +116,22 @@ const electronProcess = spawn(absolutelyElectronExe, ['.',`--inspect=${ inspectP
 	}
 });
 
-// 实时获取 stdout 和 stderr
-// electronProcess.stdout.on('data', (data) => {
-// 	console.log(`stdout1111: ${data.toString()}`);
-// });
-
-// electronProcess.stderr.on('data', (data) => {
-// 	console.error(`stderr: ${data.toString()}`);
-// });
-
-// 监听进程关闭
-electronProcess.on('close', (code) => {
-	console.log(`Electron process closed with code: ${code}`);
-});
-
-electronProcess.on('exit', (code) => {
-	console.log(`Electron process exited with code: ${code}`);
-});
-
-electronProcess.on('error', (err) => {
-	console.error(`Electron process error: ${err}`);
-});
+/* 本文件有顶层 await（getPort）。tsx 在模块 evaluation 结束后会结束 Node；
+ * Windows 作业对象会把还在跑的 Electron 一起杀掉，表现为 CLI 立刻 Done / exit 0。
+ * 必须一直等到子进程 close，行为才和改端口前一致。
+ * 设计：projects/ChatAIO/docs/architecture/worktree-dev-server.md
+ */
+const exitCode = await new Promise<number>( ( resolve ) => {
+	electronProcess.once( 'error' , ( err ) => {
+		console.error( `Electron process error: ${ err }` );
+		resolve( 1 );
+	} );
+	electronProcess.once( 'close' , ( code ) => {
+		console.log( `Electron process closed with code: ${ code }` );
+		resolve( code ?? 1 );
+	} );
+} );
+process.exit( exitCode );
 
 import { assertDevServerRendezvous , assertFreshElectronStartupArtifacts , getBuildStatePath } from '../utils/build-artifacts';
 import { PRIMARY_CDP_PORT , PRIMARY_INSPECT_PORT , parsePortNumber } from '../../engine/toolkit/worktree-dev-scope';

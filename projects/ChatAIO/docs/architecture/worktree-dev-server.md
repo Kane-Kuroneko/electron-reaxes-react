@@ -31,7 +31,7 @@ flowchart LR
 1. `yarn start:webpack`（cwd = 该 worktree monorepo 根）。
 2. `engine/toolkit/entrance.ts` 解析首选口（env > CLI `4444`），`getPort` 找到空闲口，编进 webpack `devServer.port` 和 `__DEV_PORT__`。
 3. WDS `start()` 成功后读取 `server.address().port`，写入 `devServer`。
-4. `yarn start:electron` 校验 webpack pid 仍活着，读 `devServer.origin`，注入 env；`--inspect` 从 9229 起 portfinder。
+4. `yarn start:electron` 校验 webpack pid 仍活着，读 `devServer.origin`，注入 env；`--inspect` 从 9229 起 portfinder。脚本必须 **await 子进程 close**（本文件有顶层 await，tsx 否则会把 Electron 一起结束）。`entrance.ts` 的 portfinder 只在 `webpack.start` 跑，不要在 electron.start 里探测出 `preferred :3333`。
 5. ChatAIO Main `getDevRendererOrigin()` 用 env 拼 `https://localhost:<actual>/<entry>/`。
 
 覆盖 env：
@@ -71,7 +71,8 @@ flowchart LR
 - 不要把首选口被占当成致命错误。
 - 不要跨树读另一份 `dist/.webpack-build-state.json`。
 - 不要把 `port: 'auto'` 当唯一来源（HMR / 文档 / 附着需要可复述的起点）。
-- 不要假设 unpackaged 的 inspect 永远是 9229（被占会变）。探活前看 electron.start 日志里的 `inspect :`。
+- 不要让 `electron.start` 在 spawn 之后就结束 Node（tsx 顶层 await 结束会杀掉 Electron）。必须等到子进程 `close`。
+- 不要在 `electron.start` 里跑 `entrance.ts` 的 portfinder（argv 没有 4444 会打出 `preferred :3333`）。
 
 ## 与现有文档的关系
 

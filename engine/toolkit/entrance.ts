@@ -99,20 +99,24 @@ purdy({
 	experimental,
 },{indent:2})
 
-/* 所有树都从 CLI / 默认 4444 起，被占则 portfinder +1。生产 build 不探测端口。
- * 真实 bind 口以 WDS listen 后写入的 build-state.devServer 为准。
+/* electron.start 也会 import project-paths → 本文件。不要在那边跑 portfinder / 打 WDS 日志，
+ * 否则 argv 没有 4444 会被当成 preferred :3333，而且顶层 await 会让 tsx 提前结束。
+ * 只有 webpack.start 才探测并占用开发口。
  * 设计：projects/ChatAIO/docs/architecture/worktree-dev-server.md
  */
+const isWebpackStartCli = process.argv.some( ( arg ) => {
+	return arg.replace( /\\/g , '/' ).includes( 'webpack.start' );
+} );
 const preferredRenderer = resolvePreferredRendererPort( {
 	cliPort : inputPort,
 } );
 export const worktreeDevScope = preferredRenderer.scope;
 export const preferredDevServerPort = preferredRenderer.preferredPort;
-export const port = method === 'server'
+export const port = ( method === 'server' && isWebpackStartCli )
 	? await getPort( preferredRenderer.preferredPort )
 	: preferredRenderer.preferredPort;
 
-if( method === 'server' ) {
+if( method === 'server' && isWebpackStartCli ) {
 	const scopeLabel = preferredRenderer.scope.isLinkedWorktree ? 'linked-worktree' : 'primary';
 	console.log(
 		`[dev-scope] ${ scopeLabel } source=${ preferredRenderer.source }`
