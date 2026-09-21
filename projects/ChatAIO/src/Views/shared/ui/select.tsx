@@ -22,25 +22,30 @@ export const SelectTrigger = React.forwardRef<
 ) );
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
+/* 间距用 sideOffset，不要 Tailwind data-[side=bottom]:translate-y-1。
+ * overlay-float 若动画 transform，会盖掉这条位移，110ms 后才落到 4px，菜单往下弹。
+ * Viewport 不要 h-[--radix-select-trigger-height]（那是 trigger 高，不是列表高）。
+ * 设计：docs/features/settings-ui-shadcn.md
+ */
 export const SelectContent = React.forwardRef<
 	React.ElementRef<typeof SelectPrimitive.Content>,
 	React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->( ( { className , children , position = 'popper' , ...props } , ref ) => (
+>( ( { className , children , position = 'popper' , sideOffset = 4 , ...props } , ref ) => (
 	<SelectPrimitive.Portal>
 		<SelectPrimitive.Content
 			ref={ ref }
 			className={ cn(
 				'overlay-float relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md' ,
-				position === 'popper' && 'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1' ,
 				className,
 			) }
 			position={ position }
+			sideOffset={ sideOffset }
 			{ ...props }
 		>
 			<SelectPrimitive.Viewport
 				className={ cn(
 					'p-1' ,
-					position === 'popper' && 'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]',
+					position === 'popper' && 'w-full min-w-[var(--radix-select-trigger-width)]',
 				) }
 			>
 				{ children }

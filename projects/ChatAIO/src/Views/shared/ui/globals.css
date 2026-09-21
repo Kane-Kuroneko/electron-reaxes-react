@@ -71,6 +71,8 @@
  * Overlay 开关动画。进/出场必须用不同 animation-name，且不要写 fill-mode：
  * Radix Presence 靠 animationend 卸节点，自己会在出场时设 forwards。
  * 居中 Dialog 的 pop 把 translate(-50%,-50%) 写进 keyframes，不要再用 Tailwind transform。
+ * overlay-float（Select / Popover / Dropdown）只动 opacity + 独立属性 scale，不要写 transform：
+ * 动画的 transform 会盖掉 popper / Tailwind 位移，结束后菜单往下弹。
  * 见 docs/features/settings-ui-shadcn.md
  */
 @keyframes chataio-overlay-fade-in {
@@ -104,21 +106,21 @@
 @keyframes chataio-overlay-float-in {
 	from {
 		opacity: 0;
-		transform: scale(0.98);
+		scale: 0.98;
 	}
 	to {
 		opacity: 1;
-		transform: scale(1);
+		scale: 1;
 	}
 }
 @keyframes chataio-overlay-float-out {
 	from {
 		opacity: 1;
-		transform: scale(1);
+		scale: 1;
 	}
 	to {
 		opacity: 0;
-		transform: scale(0.98);
+		scale: 0.98;
 	}
 }
 @keyframes chataio-sheet-in-right {

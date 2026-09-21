@@ -13,7 +13,7 @@ ChatAIO renderer 不再使用 antd。Settings / Prompt / Guiding 走 **本子工
 7. 主题解析同时写 `data-chataio-theme` 与 html/class `.dark`（shadcn `darkMode: ['selector', '.dark']`）。
 8. IPC / park / 目录检查不 `await` 内存 session `clearCache` —— 这些不因换皮而改变。
 9. **色盘只写 `globals.css`。** 暖纸色 + 浅墨 primary（`--primary`），不用饱和蓝。Tailwind 走 `bg-primary` / `text-foreground`；Less 走 `hsl(var(--primary))` 或 `--settings-*` / `--guide-*` / `--prompt-*` 别名。Prompt 的琥珀强调可以单独留。实心按钮只留给提交类动作。
-10. **Overlay 动画只写 `globals.css`。** Dialog 遮罩 fade、面板 pop、Sheet 短位移、Popover/Select/Dropdown 轻 pop，一律 `--overlay-in: 110ms` / `--overlay-out: 80ms`。这是 renderer CSS，**不**跟 Windows DWM /「视觉效果 → 动画效果」走；关掉系统动画时弹窗仍要有反馈。进/出场必须用**不同** `animation-name`。**不要**写 `animation-fill-mode`（Presence 1.1 出场自己设 `forwards`；`both`/`backwards` 会让 `animationend` 对不上、节点卸不掉）。居中 Dialog 的 pop 把 `translate(-50%,-50%)` 写进 keyframes，不要再给 Content 加 Tailwind `-translate-*`。
+10. **Overlay 动画只写 `globals.css`。** Dialog 遮罩 fade、面板 pop、Sheet 短位移、Popover/Select/Dropdown 轻 pop，一律 `--overlay-in: 110ms` / `--overlay-out: 80ms`。这是 renderer CSS，**不**跟 Windows DWM /「视觉效果 → 动画效果」走；关掉系统动画时弹窗仍要有反馈。进/出场必须用**不同** `animation-name`。**不要**写 `animation-fill-mode`（Presence 1.1 出场自己设 `forwards`；`both`/`backwards` 会让 `animationend` 对不上、节点卸不掉）。居中 Dialog 的 pop 把 `translate(-50%,-50%)` 写进 keyframes，不要再给 Content 加 Tailwind `-translate-*`。`overlay-float` 只动 opacity + 独立属性 `scale`，不要动画 `transform`。Select 间距用 `sideOffset`，不要 `data-[side=bottom]:translate-y-1`。
 
 ## 入口与数据流
 
@@ -74,6 +74,8 @@ flowchart LR
 - 不要用 `prefers-reduced-motion` 把弹窗动画整段掐掉：Windows 关掉「动画效果」会命中该媒体查询，用户仍应看到 110ms 的遮罩/弹出。
 - 不要给 overlay 写 `animation-fill-mode`（含 `both` / `backwards` / `forwards`），也不要用 `transition` 做出场（Presence 1.1 只等 `animationend`）。
 - 不要给 `overlay-pop` 再加 Tailwind `-translate-x/y-1/2`：会和 pop 的 `transform` keyframes 抢居中。
+- 不要给 `overlay-float` 写 `transform` keyframes，也不要给 SelectContent 加 `data-[side=bottom]:translate-y-1`：动画会盖掉位移，结束后菜单往下弹。间距用 `sideOffset`。
+- Select Viewport 不要 `h-[var(--radix-select-trigger-height)]`（那是 trigger 高度，列表会被压成一行）。
 - Sheet 打开不要让带 Tooltip 的按钮吃到 Radix autofocus。默认会聚焦第一颗可聚焦控件，「复制版本号」会一直挂着。SheetContent 已把 autofocus 收到面板上。
 
 ## 与现有文档的关系
