@@ -48,7 +48,7 @@ flowchart LR
 5. **index 不做热修**：发现 bug 不要在 index 上顺手改。先同步到 bugfix，修完再合回。否则两边会各修各的。
 6. **只 merge、禁止 rebase**（含 `pull --rebase`）。保留合并提交。短 hash 用 9 位。见仓库根 git 提交策略。
 7. **各 wt 独立 `node_modules`**，禁止跨树 junction / 软链共用。新树先 `yarn setup:git-symlinks` 再 `yarn`。
-8. **本机同一时间只跑一个 unpackaged Electron**（单实例 / 同一 userData）。不要一边在 index 起应用、一边在 bugfix 起应用。各树的 **webpack-dev-server 可以同时开**：端口按 [worktree-dev-server.md](../architecture/worktree-dev-server.md) 从 hash 起点顺延，Electron 读本树 `dist/.webpack-build-state.json`。
+8. **本机同一时间只跑一个 unpackaged Electron**（单实例 / 同一 userData）。不要一边在 index 起应用、一边在 bugfix 起应用。各树的 **webpack-dev-server 可以同时开**：端口按 [worktree-dev-server.md](../architecture/worktree-dev-server.md) 从 4444 起被占则 +1，Electron 读本树 `dist/.webpack-build-state.json`。
 
 ## 按当前分支做什么
 

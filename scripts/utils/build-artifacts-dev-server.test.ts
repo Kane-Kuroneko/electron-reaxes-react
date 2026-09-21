@@ -17,22 +17,22 @@ describe( 'build-state devServer rendezvous' , () => {
 		const statePath = path.join( tmpRoot , '.webpack-build-state.json' );
 		resetBuildState( statePath , 'test' );
 		writeBuildStateDevServer( statePath , {
-			port : 20140 ,
-			origin : 'https://localhost:20140' ,
+			port : 4445 ,
+			origin : 'https://localhost:4445' ,
 			host : 'localhost' ,
 			protocol : 'https' ,
 			pid : process.pid ,
 			boundAt : '2026-09-21T00:00:00.000Z' ,
-			inspectPort : 20141 ,
-			cdpPort : 20142 ,
+			inspectPort : 9229 ,
+			cdpPort : 9222 ,
 			worktree : true,
 		} );
 		const state = readBuildState( statePath );
-		assert.equal( state?.devServer?.port , 20140 );
-		assert.equal( state?.devServer?.origin , 'https://localhost:20140' );
+		assert.equal( state?.devServer?.port , 4445 );
+		assert.equal( state?.devServer?.origin , 'https://localhost:4445' );
 		assert.equal( state?.devServer?.worktree , true );
 		const rendezvous = assertDevServerRendezvous( statePath );
-		assert.equal( rendezvous.port , 20140 );
+		assert.equal( rendezvous.port , 4445 );
 	} );
 
 	it( '缺少 devServer 时 electron 启动应失败' , () => {

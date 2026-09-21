@@ -18,6 +18,6 @@ trigger: always_on
 
 硬禁止：功能线直进 bugfix；index / main 上修本环的 bug；bugfix 上开新功能；过期快照硬合回；rebase；跨树共用 `node_modules`；同时跑两棵树的 unpackaged Electron。
 
-开发服务器端口（多树可同时起 WDS）：[`docs/architecture/worktree-dev-server.md`](../../docs/architecture/worktree-dev-server.md)。Electron 读本树 `dist/.webpack-build-state.json`，不要假设 4444 / 9229。
+开发服务器端口（多树可同时起 WDS）：[`docs/architecture/worktree-dev-server.md`](../../docs/architecture/worktree-dev-server.md)。从 4444 起被占则 +1；Electron 读本树 `dist/.webpack-build-state.json`，不要假设一定是 4444 / 9229。
 
 git 在 worktree 的 monorepo 根执行，不要把 `projects/ChatAIO` 当仓库根。未经用户明确要求不得 commit / push。

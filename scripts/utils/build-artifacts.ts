@@ -4,7 +4,7 @@
  * 架构职责分层：
  *   - BuildStateWebpackPlugin   : webpack watch 运行时写入编译状态（诊断用，非 gating）
  *   - assertFreshElectronStartupArtifacts : Electron 启动前的产物完整性校验（dev 模式仅校验存在性）
- *   - devServer 字段 : WDS listen 成功后写入的真实端口会合点；electron.start 只信这里，不信 hash 首选口
+ *   - devServer 字段 : WDS listen 成功后写入的真实端口会合点；electron.start 只信这里
  *     设计：projects/ChatAIO/docs/architecture/worktree-dev-server.md
  *
  * Dev 模式设计决策：
@@ -54,7 +54,7 @@ export const readBuildState = (statePath:string) => {
 };
 
 /**
- * WDS 真正 listen 之后写入本树真实端口。Electron 启动只读这一段，不要用 worktree hash 去猜。
+ * WDS 真正 listen 之后写入本树真实端口。Electron 启动只读这一段。
  */
 export const writeBuildStateDevServer = (statePath:string , devServer:BuildStateDevServer) => {
 	const previous = readBuildStateFile( statePath ) ?? createEmptyBuildState();

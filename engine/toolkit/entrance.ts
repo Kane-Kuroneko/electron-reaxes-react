@@ -99,8 +99,8 @@ purdy({
 	experimental,
 },{indent:2})
 
-/* linked worktree：package.json 写死的 4444 只是主 checkout 默认，hash 才是本树起点；被占则 portfinder +1。
- * 生产 build 不探测端口，避免无意义占用。真实 bind 口以 WDS listen 后写入的 build-state.devServer 为准。
+/* 所有树都从 CLI / 默认 4444 起，被占则 portfinder +1。生产 build 不探测端口。
+ * 真实 bind 口以 WDS listen 后写入的 build-state.devServer 为准。
  * 设计：projects/ChatAIO/docs/architecture/worktree-dev-server.md
  */
 const preferredRenderer = resolvePreferredRendererPort( {

@@ -17,7 +17,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 ### Worktree / 集成
 
 - [index / bugfix 工作流](./docs/agent/worktree-bugfix-workflow.md)（功能线测通后合进 index；index 再合进 bugfix；集成 bug 只在 bugfix 修并合回 index。本 wt 章程。）
-- [多 worktree 开发服务器端口](./docs/architecture/worktree-dev-server.md)（hash 起点 + portfinder 顺延；Electron 读本树 `dist/.webpack-build-state.json`）
+- [多 worktree 开发服务器端口](./docs/architecture/worktree-dev-server.md)（从 4444 起 portfinder 顺延；Electron 读本树 `dist/.webpack-build-state.json`）
 
 ### 开发 / 打包 / 测试
 
@@ -102,7 +102,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [app-icons.md](./docs/architecture/app-icons.md) | `statics/icons/` 应用/托盘/母图；打包排除母图 |
 | [appearance-theme-environment.md](./docs/architecture/appearance-theme-environment.md) | 外观 / 主题注入 AI 页 |
 | [build-pipeline-and-dev-refresh.md](./docs/architecture/build-pipeline-and-dev-refresh.md) | 构建与 dev 热更新 |
-| [worktree-dev-server.md](./docs/architecture/worktree-dev-server.md) | 多 worktree WDS 端口：hash 起点、listen 后写入 build-state、Electron 读 JSON |
+| [worktree-dev-server.md](./docs/architecture/worktree-dev-server.md) | 多 worktree WDS 端口：从 4444 起顺延、listen 后写入 build-state、Electron 读 JSON |
 | [i18n.md](./docs/architecture/i18n.md) | 国际化 |
 | [main-view.md](./docs/architecture/main-view.md) | 主壳 / Main View |
 | [menubar-platform-paths.md](./docs/architecture/menubar-platform-paths.md) | 平台 menubar 路径 |

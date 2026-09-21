@@ -1,7 +1,6 @@
 /**
- * 按 git worktree 路径派生开发端口「起点」。
- * linked worktree 用路径 hash 得到稳定的 renderer / inspect / CDP 首选口；
- * 主 checkout 沿用 4444 / 9229 / 9222。首选口被占则 portfinder 顺延，不报错。
+ * 开发端口起点：所有 worktree（含主 checkout）都从 CLI / 默认 4444、inspect 9229、CDP 9222 起；
+ * 被占则 portfinder +1。不要按路径 hash 跳到两万档。
  * Electron 不得用这里的首选口去连 WDS，必须以 dist/.webpack-build-state.json 的
  * `devServer`（listen 成功后的真实口）为准。
  * 设计：projects/ChatAIO/docs/architecture/worktree-dev-server.md
@@ -11,21 +10,12 @@ export const PRIMARY_RENDERER_PORT = 4444;
 export const PRIMARY_INSPECT_PORT = 9229;
 export const PRIMARY_CDP_PORT = 9222;
 
-const WORKTREE_BLOCK_BASE = 20000;
-const WORKTREE_BLOCK_COUNT = 500;
-const WORKTREE_BLOCK_SIZE = 10;
-
 export type WorktreeDevScope = {
 	isLinkedWorktree : boolean;
 	repoRoot : string;
 	rendererPort : number;
 	inspectPort : number;
 	cdpPort : number;
-};
-
-export const normalizeWorktreePath = (root:string) => {
-	const resolved = path.resolve( root ).replace( /\\/g , '/' );
-	return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
 };
 
 export const isLinkedWorktree = (root:string) => {
@@ -36,36 +26,21 @@ export const isLinkedWorktree = (root:string) => {
 	return fs.statSync( gitPath ).isFile();
 };
 
-export const worktreePortOffset = (root:string) => {
-	const digest = crypto.createHash( 'sha256' ).update( normalizeWorktreePath( root ) ).digest();
-	return digest.readUInt32BE( 0 ) % WORKTREE_BLOCK_COUNT;
-};
-
 export const resolveWorktreeDevScope = (
 	repoRoot:string = absolutelyPath_RepositoryRoot,
 ):WorktreeDevScope => {
-	if( isLinkedWorktree( repoRoot ) === false ) {
-		return {
-			isLinkedWorktree : false ,
-			repoRoot ,
-			rendererPort : PRIMARY_RENDERER_PORT ,
-			inspectPort : PRIMARY_INSPECT_PORT ,
-			cdpPort : PRIMARY_CDP_PORT,
-		};
-	}
-	const block = WORKTREE_BLOCK_BASE + worktreePortOffset( repoRoot ) * WORKTREE_BLOCK_SIZE;
 	return {
-		isLinkedWorktree : true ,
+		isLinkedWorktree : isLinkedWorktree( repoRoot ) ,
 		repoRoot ,
-		rendererPort : block ,
-		inspectPort : block + 1 ,
-		cdpPort : block + 2,
+		rendererPort : PRIMARY_RENDERER_PORT ,
+		inspectPort : PRIMARY_INSPECT_PORT ,
+		cdpPort : PRIMARY_CDP_PORT,
 	};
 };
 
 /**
- * 解析 WDS 首选口：DEV_SERVER_PORT env 最高；linked worktree 忽略 package.json 里写死的 4444，
- * 改用 hash 起点；主 checkout 用 CLI / 默认 4444。
+ * 解析 WDS 首选口：DEV_SERVER_PORT env 最高，否则 CLI / 默认 4444。
+ * linked worktree 与主 checkout 同一套起点，隔离靠各树自己的 dist JSON。
  */
 export const resolvePreferredRendererPort = (options:{
 	cliPort?: number | string | null;
@@ -79,13 +54,6 @@ export const resolvePreferredRendererPort = (options:{
 			preferredPort : envPort ,
 			scope ,
 			source : 'env' as const,
-		};
-	}
-	if( scope.isLinkedWorktree ) {
-		return {
-			preferredPort : scope.rendererPort ,
-			scope ,
-			source : 'worktree' as const,
 		};
 	}
 	const cliPort = parsePortNumber( options.cliPort );
@@ -112,6 +80,5 @@ export const parsePortNumber = (value:unknown):number | null => {
 };
 
 import { absolutelyPath_RepositoryRoot } from './repo-paths';
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';

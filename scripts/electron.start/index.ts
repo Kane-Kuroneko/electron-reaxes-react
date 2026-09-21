@@ -75,8 +75,8 @@ try {
 	process.exit( 1 );
 }
 
-/* WDS 真实口只信本树 dist/.webpack-build-state.json，不要用 hash 首选口。
- * inspect / CDP 从 JSON hint 或 WDS 口 +1 起找空闲，被占继续顺延。
+/* WDS 真实口只信本树 dist/.webpack-build-state.json。
+ * inspect / CDP 仍从 9229 / 9222 起找空闲，不要跟 WDS 口绑成两万档。
  * 设计：projects/ChatAIO/docs/architecture/worktree-dev-server.md
  */
 let devServer;
@@ -88,13 +88,11 @@ try {
 }
 
 const inspectPreferred = parsePortNumber( process.env.ELECTRON_INSPECT_PORT )
-	?? devServer.inspectPort
 	?? PRIMARY_INSPECT_PORT;
-const inspectPort = await getPort( Math.max( inspectPreferred , devServer.port + 1 ) );
+const inspectPort = await getPort( inspectPreferred );
 const cdpPreferred = parsePortNumber( process.env.ELECTRON_CDP_PORT )
-	?? devServer.cdpPort
 	?? PRIMARY_CDP_PORT;
-const cdpPort = await getPort( Math.max( cdpPreferred , inspectPort + 1 ) );
+const cdpPort = await getPort( cdpPreferred );
 
 console.log(
 	`[dev-scope] electron renderer ${ devServer.origin }`
