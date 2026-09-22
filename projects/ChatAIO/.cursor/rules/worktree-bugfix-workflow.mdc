@@ -1,5 +1,5 @@
 ---
-description: ChatAIO index/bugfix worktree 工作流：功能线合进 index，集成 bug 只在 bugfix 修
+description: ChatAIO index/bugfix worktree 工作流：功能线合进 index，集成 bug 只在 bugfix 修；口令同步 index 到其它 wt
 alwaysApply: true
 trigger: always_on
 ---
@@ -8,7 +8,7 @@ trigger: always_on
 
 全文与检查清单：[`docs/agent/worktree-bugfix-workflow.md`](../../docs/agent/worktree-bugfix-workflow.md)。在本仓库做 merge、修集成 bug、或判断该改哪棵树之前，先读并按清单勾。
 
-流向：**功能 wt（测通）→ index → bugfix → 合回 index**。`main` 是发布线，不在这条环里。
+流向：**功能 wt（测通）→ index → bugfix → 合回 index**。`main` 是发布线，不在这条环里。合回 index **不会**自动更新其它功能 wt。
 
 先看 `git rev-parse --abbrev-ref HEAD`，再按角色动手：
 
@@ -16,7 +16,18 @@ trigger: always_on
 - **`ChatAIO/feat/index`**：只收已测通功能线，以及 bugfix 的合回。禁止在这棵树上写功能或热修。
 - **`ChatAIO/feat/<feature>`**：单线开发与测试；测通后合进 index。禁止直合 bugfix。本线还活着时，本线的 bug 在本线修。
 
-硬禁止：功能线直进 bugfix；index / main 上修本环的 bug；bugfix 上开新功能；过期快照硬合回；rebase；跨树共用 `node_modules`；同时跑两棵树的 unpackaged Electron。
+## 口令：同步 index 和其他 wt
+
+用户说「同步 index 和其他 wt 分支」「同步index和其他wt分支」或同义句时，**自动做完整这套**（详见上文文档），不要再确认：
+
+1. `git worktree list` 盘点；跳过 `main`。git 在各树 monorepo 根执行。
+2. 工作区不干净（含未跟踪）：该树先 `git stash push --include-untracked -m "wt-sync: before merge ChatAIO/feat/index"`。
+3. 在 **index 树** `git merge ChatAIO/feat/bugfix`。若 index 也超前，先在 bugfix 树 merge index。能快进就快进。
+4. 其它每棵 `ChatAIO/feat/*` 树（含需要对齐的 bugfix）`git merge ChatAIO/feat/index`。已包含 index 则跳过。
+5. 曾 stash 的树 `git stash pop`。merge / pop 冲突都解；解不了就按树汇报，禁止 `reset --hard`、禁止丢 stash。
+6. 只 merge、禁止 rebase。不要同步进 `main`。不要把功能线 WIP commit 进 index。未经用户再说一遍 push 不要 push。
+
+硬禁止：功能线直进 bugfix；index / main 上修本环的 bug；bugfix 上开新功能；过期快照硬合回；rebase；跨树共用 `node_modules`；同时跑两棵树的 unpackaged Electron；脏树上硬 merge。
 
 开发服务器端口（多树可同时起 WDS）：[`docs/architecture/worktree-dev-server.md`](../../docs/architecture/worktree-dev-server.md)。从 4444 起被占则 +1；Electron 读本树 `dist/.webpack-build-state.json`，不要假设一定是 4444 / 9229。
 

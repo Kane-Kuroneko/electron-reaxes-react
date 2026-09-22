@@ -16,7 +16,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 
 ### Worktree / 集成
 
-- [index / bugfix 工作流](./docs/agent/worktree-bugfix-workflow.md)（功能线测通后合进 index；index 再合进 bugfix；集成 bug 只在 bugfix 修并合回 index。本 wt 章程。）
+- [index / bugfix 工作流](./docs/agent/worktree-bugfix-workflow.md)（功能线测通后合进 index；index 再合进 bugfix；集成 bug 只在 bugfix 修并合回 index。口令「同步 index 和其他 wt」：bugfix→index，再 index→其它 feat wt；脏树 stash -u 再 pop。本 wt 章程。）
 - [多 worktree 开发服务器端口](./docs/architecture/worktree-dev-server.md)（从 4444 起 portfinder 顺延；Electron 读本树 `dist/.webpack-build-state.json`）
 
 ### 开发 / 打包 / 测试
@@ -161,7 +161,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 |------|------|
 | [scripts.md](./scripts.md) | 本工程 npm 脚本：常用入口、参数、已从 package.json 拿掉的完整命令 |
 | [feature-design-and-comments.md](./docs/agent/feature-design-and-comments.md) | 新增功能：设计文档 + 关键注释 |
-| [worktree-bugfix-workflow.md](./docs/agent/worktree-bugfix-workflow.md) | index / bugfix worktree 工作流（本 wt 章程；功能线 → index → bugfix → index） |
+| [worktree-bugfix-workflow.md](./docs/agent/worktree-bugfix-workflow.md) | index / bugfix worktree 工作流（本 wt 章程；功能线 → index → bugfix → index；口令扇出 index → 其它 feat wt） |
 | [menu-label-width.md](./docs/modules/menu-label-width.md) | 菜单标签宽度 |
 | [feature-proposal--ai-catalog-source.md](./docs/feature-proposal--ai-catalog-source.md) | 目录单一事实源分批记录（已落地；现行见 ai-config.md） |
 | [feature-proposal--cross-instance-session-migration.md](./docs/feature-proposal--cross-instance-session-migration.md) | 跨实例会话迁移提案 |

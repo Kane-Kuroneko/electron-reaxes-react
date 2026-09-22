@@ -29,6 +29,7 @@ flowchart LR
   index --> sync["index merge 进 bugfix"]
   sync --> fix["在 bugfix 修集成 bug"]
   fix --> back["bugfix merge 回 index"]
+  back --> fanout["index merge 进其它 feat wt"]
 ```
 
 1. 功能 wt 开发完成并测试通过。
@@ -36,8 +37,69 @@ flowchart LR
 3. 在 **bugfix** worktree 里 `git merge ChatAIO/feat/index`。
 4. 在集成结果上发现 bug，在 **bugfix** 修复（用户明确要求才 commit）。
 5. 在 **index** worktree 里 `git merge ChatAIO/feat/bugfix`。
+6. 用户要求把 index 同步给其它 worktree 时：按下面「口令」把 index **merge 进**各功能 wt（以及若需要则合回后的 bugfix）。**不是**把功能线半成品合进 index。
 
 合回前若 index 又往前走了：先在 bugfix 再 merge 一次 index，解决冲突、确认修复仍成立，再合回。不要拿过期快照硬合。
+
+## 口令：同步 index 和其他 wt
+
+用户说「同步 index 和其他 wt 分支」「同步index和其他wt分支」或同义句时，**自动做完整这套**，不要再问要不要 stash / 要不要合 bugfix。全文步骤如下。git 一律在各树 **monorepo 根**执行；只 merge、禁止 rebase；不要碰 `main`；未经用户再说一遍 push 不要 push。
+
+目标：让 `ChatAIO/feat/index` 含有最新 `ChatAIO/feat/bugfix`，再让其它 `ChatAIO/feat/*` worktree 都 merge 进这份 index。功能线未提交的 WIP 留在本树，用 stash 躲开 merge，再 apply 回来。
+
+### 0. 盘点
+
+```text
+git worktree list
+# 每个 ChatAIO feat 树：
+git status --porcelain
+git rev-parse --abbrev-ref HEAD
+```
+
+以 `git worktree list` 为准。跳过 `main` 所在树。不要在占用中的分支上 `checkout` 另一条已绑定 worktree 的分支。
+
+### 1. 脏树先 stash
+
+某树 `git status --porcelain` 非空（含未跟踪文件）时，**先 stash 再 merge**，不要在脏树上硬 merge：
+
+```text
+git stash push --include-untracked -m "wt-sync: before merge ChatAIO/feat/index"
+```
+
+忽略文件（`node_modules` 等）不要进 stash。记下该树是否 stash 了，merge 结束后务必 `git stash pop`。
+
+### 2. 先把 bugfix 合进 index
+
+在 **index 树**（`Z:\electron-reaxes-react-worktrees\index`）：
+
+1. 若 index 相对 bugfix 也有独有提交：先到 **bugfix 树** `git merge ChatAIO/feat/index`，冲突解完再回来。
+2. `git merge ChatAIO/feat/bugfix`。
+3. 若刚才 stash 了 index：`git stash pop`，冲突解完。
+
+能快进就快进。不要把功能线 WIP commit 进 index。
+
+### 3. 把 index 扇出到其它 feat wt
+
+对 `git worktree list` 里每棵 `ChatAIO/feat/*` 树，**跳过 index 自己和 `main`**：
+
+1. 若该树 HEAD 已经包含 index（`git merge-base --is-ancestor ChatAIO/feat/index HEAD` 成功）且工作区已 pop 干净：跳过 merge。
+2. 否则在该树根：`git merge ChatAIO/feat/index`。
+3. 若第 1 步 stash 过：`git stash pop`。
+
+包括 **bugfix**：合回 index 若产生了 merge commit，再把 index merge 回 bugfix，避免只差一个合并提交。快进则两边已重合，跳过。
+
+包括活着的功能线：这是让它们吃到最新集成母线，**不是**把它们合进 index，也不是把 bugfix 直合进功能线。
+
+### 4. 冲突
+
+- **merge 冲突**：两边意图都留。index 带来的集成修复 / 文档要进来；功能线已提交的本线改动也要留。解完 `git add` 后 `git commit` 完成这次 merge（不要 rebase、不要 `--abort` 了事除非用户要求停）。
+- **stash pop 冲突**：同样两边留。这是 WIP，**不要**为了清干净而去 commit 功能线半成品。
+- stash pop 报 untracked 已存在：对比后决定保留工作区还是 stash 里那份，不要丢用户 WIP。
+- 解不了就停在冲突状态，按树汇报路径和原因，不要 `reset --hard`、不要丢掉 stash。
+
+### 5. 回报
+
+按树列出：干净 / 曾 stash / merge 快进或产生合并提交 / stash pop 是否有冲突 / 9 位短 hash。不要擅自 push、不要在功能线上把 WIP 做成提交。
 
 ## 不变量
 
@@ -49,6 +111,7 @@ flowchart LR
 6. **只 merge、禁止 rebase**（含 `pull --rebase`）。保留合并提交。短 hash 用 9 位。见仓库根 git 提交策略。
 7. **各 wt 独立 `node_modules`**，禁止跨树 junction / 软链共用。新树先 `yarn setup:git-symlinks` 再 `yarn`。
 8. **本机同一时间只跑一个 unpackaged Electron**（单实例 / 同一 userData）。不要一边在 index 起应用、一边在 bugfix 起应用。各树的 **webpack-dev-server 可以同时开**：端口按 [worktree-dev-server.md](../architecture/worktree-dev-server.md) 从 4444 起被占则 +1，Electron 读本树 `dist/.webpack-build-state.json`。
+9. **index 合回 ≠ 其它功能 wt 已更新。** 活着的功能线要吃到最新 index，必须在各功能树 `git merge ChatAIO/feat/index`（口令见上）。禁止为此 rebase，禁止把未测通功能线 merge 进 index。
 
 ## 按当前分支做什么
 
@@ -80,7 +143,7 @@ git merge ChatAIO/feat/bugfix
 
 ### `ChatAIO/feat/<feature>`
 
-做：开发、单线测试；测通后请 index 树 merge 本分支。  
+做：开发、单线测试；测通后请 index 树 merge 本分支。用户要求同步 index 时，在本树 `git merge ChatAIO/feat/index`（脏则 stash → merge → stash pop）。  
 不做：merge 进 bugfix；把本线未完成的半成品合进 index。
 
 本线还活着时，属于本线的 bug 在本线修，再重新合进 index（index 再同步到 bugfix）。
@@ -104,6 +167,13 @@ git merge ChatAIO/feat/bugfix
 - [ ] 只含修复，不含功能线半成品
 - [ ] 在 **index** 树执行 `git merge ChatAIO/feat/bugfix`，不要试图在 bugfix 树 checkout index
 
+口令「同步 index 和其他 wt」：
+
+- [ ] 脏树已 `stash push --include-untracked`，merge 后已 `stash pop`
+- [ ] 已在 index 树 merge `ChatAIO/feat/bugfix`（若 index 超前则先反向 merge）
+- [ ] 已对每棵其它 `ChatAIO/feat/*` wt merge `ChatAIO/feat/index`；跳过 `main`
+- [ ] 冲突已解或按树汇报；未 push；未把功能线 WIP commit 进 index
+
 ## 禁止项
 
 - 功能线直合 `ChatAIO/feat/bugfix`
@@ -113,6 +183,9 @@ git merge ChatAIO/feat/bugfix
 - `git rebase` / `pull --rebase` / 在占用中的分支上 `checkout` 另一条已绑定 worktree 的分支
 - 跨 worktree 共用 `node_modules`
 - 同时启动两棵树的 unpackaged Electron
+- 在脏工作区上硬 merge（会拒合并或把 WIP 搅进 merge）。先 stash `-u`，结束后 pop
+- 把「同步 index → 功能 wt」做成「把功能线合进 index」
+- 同步进 `main`，或为这套口令擅自 push
 
 ## 与现有文档的关系
 
