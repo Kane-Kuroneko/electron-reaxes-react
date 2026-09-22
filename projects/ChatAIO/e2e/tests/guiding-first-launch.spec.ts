@@ -6,7 +6,8 @@
 testFirstLaunch( 'first launch shows GuidingView setup' , async( { mainWindow } ) => {
 	await expect( mainWindow.getByTestId( TEST_IDS.guidingRoot ) ).toBeVisible();
 	await expect( mainWindow.locator( '.guiding-kicker' ) ).toHaveText( 'ChatAIO' );
-	await expect( mainWindow.locator( '.ant-steps' ) ).toBeVisible();
+	await expect( mainWindow.locator( '.guiding-steps' ) ).toBeVisible();
+	await expect( mainWindow.locator( '.guiding-steps li' ) ).toHaveCount( 3 );
 	await expect( mainWindow.locator( '.guiding-footer button' ).first() ).toBeVisible();
 } );
 

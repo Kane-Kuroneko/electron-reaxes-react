@@ -44,6 +44,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 - [Settings shadcn / 运行设置即时写盘](./docs/features/settings-ui-shadcn.md)
 - [中区 Current AI 下拉切换](./docs/features/menubar-current-ai-dropdown.md)
 - [卡片 UX](./docs/features/floating-view-card-ux-optimization.md)、[Swiper 迁移](./docs/features/floating-view-swiper-migration.md)
+- [菜单点远距 AI 后轮播从旧卡片连滑](./docs/issues/floating-view-carousel-absolute-select.md)
 - [切换热路径](./docs/features/ai-page-switch-performance-optimization.md)
 - [AI 页通知闪任务栏 / dock](./docs/features/ai-notification-taskbar-flash.md)
 - [供应商 logo 辨识重构（label 去厂商名）](./docs/features/ai-vendor-logo-identity.md)（分支 `refactor/ai-vendor-logo-identity`；含进度清单，接续工作先读它）
@@ -146,6 +147,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [ai-view-first-present-warmup-postmortem.md](./docs/issues/ai-view-first-present-warmup-postmortem.md) | 预加载暖不了可见态 |
 | [ai-view-preload-first-switch-flash.md](./docs/issues/ai-view-preload-first-switch-flash.md) | 预加载 v1–v8 与 park |
 | [floating-view-missing-after-background.md](./docs/issues/floating-view-missing-after-background.md) | overlay 冷 reveal |
+| [floating-view-carousel-absolute-select.md](./docs/issues/floating-view-carousel-absolute-select.md) | 菜单绝对选择与轮播视觉游标脱节 |
 | [menubar-drag-investigation.md](./docs/issues/menubar-drag-investigation.md) | Windows `forward: true` |
 | [menubar-drag-region-leak-below-content.md](./docs/issues/menubar-drag-region-leak-below-content.md) | 拖拽区漏到内容下方 |
 | [close-without-tray-process-lingers.md](./docs/issues/close-without-tray-process-lingers.md) | 禁用托盘后点 X 进程不退 |

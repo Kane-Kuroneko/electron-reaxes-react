@@ -88,7 +88,7 @@ i18n 选择器不稳时再给页脚、表底、弹窗加 `data-testid`，不要�
 6. **首启**：测试 mkdtemp 会先建目录，不能再用 `existsSync(userData)`。只有 `CHATAIO_E2E_FIRST_LAUNCH=1` 才走 GuidingView。
 7. **Windows FloatingView 仍禁止 `forward: true`**。E2E 不改鼠标穿透。
 8. **Electron 故障必须让测试失败**，不能只断言 UI。捕获矩阵见下一节。禁止只靠 Playwright `page` 断言当绿。
-9. **改了 `src/Main` 必须先 `yarn build:webpack` 再跑 E2E**。`globalSetup` 只在 `dist/` 缺文件时构建，**不**按 mtime 增量编译；跑到旧 `dist/main.js` 会假绿。
+9. **改了 `src/Main` 必须先 `yarn build:webpack` 再跑 E2E**。`globalSetup` 只在 `dist/` 缺文件时构建，**不**按 mtime 增量编译；跑到旧 `dist/main.js` 会假绿。`yarn start:webpack` 和 `build:webpack` 共用 `dist/`。开发产物的 `index.html` 把脚本写成 `/MainView/main.js`（`publicPath: '/'`）。E2E 用 `loadFile`，这个地址不会落到 `dist/renderer/` 旁边，React 不启动，窗口停在 `#f5f6f8`，`main-view-menubar` 等到 45s 超时，于是整套都像白屏。`globalSetup` 发现这份开发 dist 会直接失败，不会自动 `build:webpack` 去覆盖正在跑的 dev server。先停 `start:webpack`，再 `yarn build:webpack`。
 
 ## Electron 故障捕获矩阵
 
@@ -184,6 +184,7 @@ CI / 日常全量保持 `yarn test:e2e`，WATCH 为 0。不要在观测时用鼠
 | `projects/ChatAIO/e2e/support/app-probe.ts` | 快照 / `waitForSettingsPage` / `openTopMenuUntilItem` / `openSettingsFromApplicationMenu` |
 | `projects/ChatAIO/e2e/support/e2e-ais.ts` | 返回用户 fixture 表（4 页 + deletedIds）；`patchCharliePreloadOnStartup` |
 | `projects/ChatAIO/e2e/support/switch-ai.ts` | 打开 Switch AI / Current AI、读序、Prev/Next、右键拖 |
+| `projects/ChatAIO/e2e/support/carousel.ts` | FloatingView 轮播采样：可见性、视口中心卡、启用顺序、过渡时长。`__CHATAIO_CAROUSEL_TRACE__` 只作附件 |
 | `projects/ChatAIO/e2e/support/settings-ui.ts` | Manage AIs / 页脚 locator |
 | `projects/ChatAIO/e2e/support/user-ais-file.ts` | 读隔离 userData 的 `user-ais.json` |
 | `projects/ChatAIO/e2e/support/observe.ts` | WATCH / slowMo / highlight / 关窗前停住 |
@@ -204,6 +205,7 @@ CI / 日常全量保持 `yarn test:e2e`，WATCH 为 0。不要在观测时用鼠
 | `menubar-current-ai.spec.ts` | 中区 badge 下拉切 AI | menubar-current-ai-dropdown |
 | `ai-order-surfaces.spec.ts` | Switch AI / Current AI 下拉序 = 磁盘 enabled；disabled 不出现 | ai-list-reorder |
 | `ai-page-walk.spec.ts` | Next/Previous AI Page 按 enabled 序环切 | ai-list-reorder |
+| `carousel-absolute-select.spec.ts` | 菜单点远处不弹出并停住卡片序；再 Next 只滑一格。顺序切完再点上一个：隐藏停靠、不跳空卡 | floating-view-carousel-absolute-select |
 | `ai-opened-walk.spec.ts` | Next Opened 只走已打开页，不会落到未实例化页 | ai-list-reorder |
 | `ai-preload-opened-walk.spec.ts` | 单独覆盖写 Charlie preload：冷启动 instantiated 含 C | ai-list-reorder |
 | `ai-enable-draft-no-jump.spec.ts` | 只拨 Enabled 不 Save：行不跳分区，菜单仍无 Bravo | manage-ais-table-ux |

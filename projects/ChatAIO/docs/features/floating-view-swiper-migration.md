@@ -1,6 +1,8 @@
 # FloatingView SwitchAiBar — Swiper 迁移
 
 > 日期：2026-06-16 | 状态：规划中
+>
+> 相邻一格仍只用一次 `slideNext` / `slidePrev`。菜单选中不弹出轮播，只在隐藏时停靠。见 [轮播绝对选择](../issues/floating-view-carousel-absolute-select.md)。
 
 ## 背景
 

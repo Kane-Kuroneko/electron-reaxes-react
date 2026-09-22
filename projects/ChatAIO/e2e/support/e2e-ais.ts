@@ -78,6 +78,36 @@ export const patchCharliePreloadOnStartup:E2EUserAisPatch = ( file ) => {
 	charlie.preloadOnStartup = true;
 };
 
+/** 轮播远距 / 上一个：6 个都启用，A→E 不是相邻格。不要改返回用户默认 seed。 */
+export const E2E_AI_E = {
+	id : 'custom-e2e-e' ,
+	label : 'E2E Echo',
+} as const;
+
+export const E2E_AI_F = {
+	id : 'custom-e2e-f' ,
+	label : 'E2E Foxtrot',
+} as const;
+
+export const E2E_CAROUSEL_IDS = [
+	E2E_AI_A.id ,
+	E2E_AI_B.id ,
+	E2E_AI_C.id ,
+	E2E_AI_D.id ,
+	E2E_AI_E.id ,
+	E2E_AI_F.id ,
+] as const;
+
+export const patchCarouselRing:E2EUserAisPatch = ( file ) => {
+	const bravo = file.ais.find( ( ai ) => ai.id === E2E_AI_B.id );
+	if( !bravo ) {
+		throw new Error( 'E2E seed missing Bravo' );
+	}
+	bravo.disabled = false;
+	file.ais.push( e2eAIItem( E2E_AI_E.id , E2E_AI_E.label , false ) );
+	file.ais.push( e2eAIItem( E2E_AI_F.id , E2E_AI_F.label , false ) );
+};
+
 export const isSeededE2EAIId = ( id:string ) => {
 	return ( E2E_PERSIST_IDS as readonly string[] ).includes( id );
 };
