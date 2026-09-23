@@ -1,7 +1,7 @@
 /**
  * 两个轮播 case 的需求判定。只看用户能观察到的采样，不读实现里的 park/step/日志字段。
  * 需求：docs/issues/floating-view-carousel-absolute-select.md
- * - 菜单点名：轮播不出现，中心卡是点中的那张，顺序是启用列表。
+ * - 菜单点名：轮播不出现，中心卡是点中的那张。隐藏列表是已打开页即可，不必等于全部启用项。
  * - 顺序下一格：轮播出现，并且从刚才那张滑到相邻一张；中途不能换成另一份列表。
  * - 顺序切到下一张后 select 上一个，再按 Next：条不透明时从刚选中的卡滑到相邻一张，不能淡入时目标已经在正中。
  */
@@ -62,7 +62,8 @@ const settledMatch = (
 };
 
 /**
- * @description 菜单点名之后。轮播必须停在隐藏的选中项上，顺序等于启用列表。
+ * @description 菜单点名之后。轮播保持隐藏，中心停在点中的 AI。
+ * 隐藏列表是当前已打开的页，不必等于全部启用项；把全部启用项挂进隐藏条会让之后每次 Next 重建 Swiper。
  * 上一个手势若已经把条留在屏幕上，只忽略开头那些还停在别的卡上的可见采样；
  * 一旦中心变成选中项，再保持可见或播过渡，就是菜单把轮播叫出来或跳出。
  */
@@ -93,7 +94,15 @@ export const judgeMenuSelect = (
 	if( relevant.some( ( sample ) => sample.visible ) ) {
 		faults.push( 'carousel-shown' );
 	}
-	if( !settledMatch( relevant , selectedId , enabledIds , false ) ) {
+	const parked = [ ...relevant ].reverse().find( ( sample ) => {
+		return sample.visible === false
+			&& sample.centerId === selectedId
+			&& sample.orderIds.includes( selectedId );
+	} );
+	if( !parked ) {
+		faults.push( 'not-parked-on-selection' );
+	}
+	if( enabledIds.length > 0 && parked && parked.orderIds.some( ( id ) => enabledIds.includes( id ) === false ) ) {
 		faults.push( 'not-parked-on-selection' );
 	}
 	if( relevant.some( ( sample ) => sample.visible && sample.transitionMs > 0 ) ) {

@@ -7,13 +7,13 @@
 1. **两种手势，两种呈现。**
    - `step`：可见。`direction` 来自 Prev/Next。只调用一次 `slideNext` 或 `slidePrev`。
    - `park`：不可见。下标或列表变了就换 Swiper 的 key，用 `initialSlide` 停在目标上。不播动画，不把 overlay 打开。
-2. **菜单 `switch-ai` 禁止 `showSwitchAiBar`。** 它会把轮播叫出来。正确顺序是 `showAIView` → `hideSwitchAiBar` → `prepare`（configured 列表上的当前下标）。
+2. **菜单 `switch-ai` 禁止 `showSwitchAiBar`。** 它会把轮播叫出来。正确顺序是 `showAIView` → `hideSwitchAiBar` → `prepare`。目标已在 runtime 时停在已打开列表（和中区 Next 同源）；还不在 runtime 时才用 configured。
 3. **禁止 `slideTo` / `slideToLoop`。** loop 克隆节点没有 React 卡片内容。滑到克隆上，卡片是空的，随后的 `slideNext` 也接不上。
 4. **禁止按环路距离连滑。** 6 张卡、视觉在 0、目标在 5 时旧公式是 5 格，卡片会从远处划过来。绝对选中先 park 到 4，顺序 next 才是从 4 到 5 的一格。
-5. **park 用 configured 列表**（全部未禁用 AI），和 Prev/Next Page、菜单顺序同一套下标。已打开列表只留给 Prev/Next Opened 的 show。菜单选中期间抑制 `AIViews.length` 的静默 prepare，避免它用另一套下标把刚停好的位置盖掉。
+5. **菜单 park 优先用已打开列表。** 中区 Prev/Next 也走这份列表，隐藏停靠之后不必为了切一格拆掉 Swiper。Prev/Next Page 仍用 configured。不要用已打开列表的下标去对 configured 列表。菜单选中期间抑制 `AIViews.length` 的静默 prepare，避免它把刚停好的位置盖掉。
 6. 向前卡片向左，向后卡片向右。两张卡时方向听 Prev/Next 的 `direction`。
 
-呈现判断在 `src/shared/switch-ai-bar-motion.utility.ts`。卡片顺序和动画步数在 `src/shared/carousel-op.utility.ts`，那是实现自己的规划，不能当作用例是否通过的依据。两个用户 case 的通过条件在 `src/shared/carousel-requirement.utility.ts`：只看条是否出现、中心卡是哪一张、顺序是不是启用列表、相邻一格有没有真正滑过去。单测 `tests/carousel-absolute-select.test.ts` 喂的是这些采样，不调用 `planCarouselFrame`。端到端 `e2e/tests/carousel-absolute-select.spec.ts` 在 FloatingView 里按同样的字段采样 DOM。`__CHATAIO_CAROUSEL_TRACE__` 只作失败附件。
+呈现判断在 `src/shared/switch-ai-bar-motion.utility.ts`。卡片顺序和动画步数在 `src/shared/carousel-op.utility.ts`，那是实现自己的规划，不能当作用例是否通过的依据。两个用户 case 的通过条件在 `src/shared/carousel-requirement.utility.ts`：只看条是否出现、中心卡是哪一张、隐藏停靠是否落在点中的那张（已打开页即可）、相邻一格有没有真正滑过去。单测 `tests/carousel-absolute-select.test.ts` 喂的是这些采样，不调用 `planCarouselFrame`。端到端 `e2e/tests/carousel-absolute-select.spec.ts` 在 FloatingView 里按同样的字段采样 DOM。`__CHATAIO_CAROUSEL_TRACE__` 只作失败附件。
 
 ## 平时日志
 
@@ -44,14 +44,16 @@
 - 启动、关闭后和已打开页数量变化时，隐藏轮播停在 configured 列表（全部未禁用 AI），不再预热已打开短列表。
 - `turnToAiPageByOffset` 在 `showAIView` 到 `show` 之间抑制这次静默 prepare，避免游标提前挪到目标。
 
-修完后菜单点远处再 Next，列表长度不变。select 上一个之后的 Next：条先不透明停在刚选中的卡上，再滑到相邻下一张。容器淡入不再盖住这次滑动。
+修完后菜单点远处再 Next AI Page，列表长度不变。后来中区 Next 仍会卡：隐藏停靠若还挂着启用列表，中区 Next 的已打开列表会拆掉 Swiper，条一亮已经停在终点。
+
+2026-09-23：菜单 park 改挂已打开页，中区 Next 列表不变时不再重建。E2E 若仍要求隐藏顺序等于全部启用项，会误报 `not-parked-on-selection`；判定已改成中心是点中的那张即可。select 上一个之后的 Next：条先不透明停在刚选中的卡上，再滑到相邻下一张。容器淡入不再盖住这次滑动。
 
 ## 用户看到的两条
 
 | 操作 | 要求 | 修复后 |
 |------|------|--------|
-| 菜单点很远的 AI，再顺序切下一格 | 菜单不弹出，隐藏列表停在选中项；下一格从这张卡滑到相邻一张 | 静默 prepare 不再插入已打开短列表，`show` 时列表长度不变，会 `slideNext` 一格 |
-| 点 badge 选一个临近 AI，再点中区 Next | 卡片整条突然出现，没有横向滚动 | 中区 Next 用的是已打开列表，下标和隐藏停靠的启用列表不是同一套。先按当前卡的 id 在新列表里亮出这张卡，50ms 后再滑到下一张。实测透明度保持 1，正中从刚选中的卡移到下一张 |
+| 菜单点很远的 AI，再顺序切下一格 | 菜单不弹出，中心停在点中的那张；下一格从这张卡滑到相邻一张 | 菜单 hide + prepare。隐藏列表可以是已打开页。Next AI Page 仍用启用列表滑一格 |
+| 点 badge 选一个临近 AI，再点中区 Next | 条不透明时从刚选中的卡滑到相邻一张，不能整条跳出 | 隐藏停靠与中区 Next 共用已打开列表，不再重建。先亮出当前卡，再 `slideNext` 一格 |
 
 ## 为什么上次的改法会空卡
 
@@ -96,6 +98,7 @@ flowchart TD
 - 不要 `slideTo`、`slideToLoop`，也不要在一次 effect 里循环 `slideNext` / `slidePrev`。
 - 不要在隐藏窗口里播 speed > 0 的过渡（合成器会直接跳到终态）。
 - 不要用已打开列表的下标去对 configured 列表。
+- 不要把「隐藏顺序必须等于全部启用项」写成用例通过条件；中区 Next 需要隐藏条挂已打开页。
 
 ## 与现有文档
 

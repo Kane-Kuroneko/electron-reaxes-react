@@ -22,12 +22,19 @@ const sample = (
 };
 
 describe( '菜单点远处的 AI' , () => {
-	it( '轮播不出现，中心是点中的那张，顺序是启用列表' , () => {
+	it( '轮播不出现，中心是点中的那张' , () => {
 		const faults = judgeMenuSelect( [
 			sample( { visible : false , centerId : 'a' , orderIds : ring } ) ,
-			sample( { visible : false , centerId : 'e' , orderIds : ring } ) ,
+			sample( { visible : false , centerId : 'e' , orderIds : [ 'a' , 'e' ] } ) ,
 		] , 'e' , ring );
 		assert.deepEqual( faults , [] );
+	} );
+
+	it( '隐藏列表出现启用项以外的 id，不算停好' , () => {
+		const faults = judgeMenuSelect( [
+			sample( { visible : false , centerId : 'e' , orderIds : [ 'a' , 'e' , 'ghost' ] } ) ,
+		] , 'e' , ring );
+		assert.ok( faults.includes( 'not-parked-on-selection' ) );
 	} );
 
 	it( '条出现或播了动画，就不算菜单选中' , () => {
