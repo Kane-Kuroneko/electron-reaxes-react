@@ -54,7 +54,10 @@ export const clickSwitchAiMenuItem = async(
 	itemId : string,
 ) => {
 	const dropdown = await openSwitchAiMenu( electronApp , mainWindow );
-	await watchClick( dropdown.locator( `[data-item-id="${ itemId }"]` ) );
+	await clickClosingDropdownItem(
+		electronApp ,
+		dropdown.locator( `[data-item-id="${ itemId }"]` ),
+	);
 };
 
 export const switchToAiById = async(
@@ -63,7 +66,10 @@ export const switchToAiById = async(
 	aiId : string,
 ) => {
 	const dropdown = await openSwitchAiMenu( electronApp , mainWindow );
-	await watchClick( dropdown.locator( `[data-item-payload="${ aiId }"]` ) );
+	await clickClosingDropdownItem(
+		electronApp ,
+		dropdown.locator( `[data-item-payload="${ aiId }"]` ),
+	);
 	await waitForE2ESnapshot(
 		electronApp ,
 		( state ) => state.kind === 'main' && state.currentAIViewKey === aiId,
@@ -81,8 +87,15 @@ export const openCurrentAiMenu = async(
 	return dropdown;
 };
 
-export const clickOpenMenuItem = async( dropdown:Page , itemId:string ) => {
-	await watchClick( dropdown.locator( `[data-item-id="${ itemId }"]` ) );
+export const clickOpenMenuItem = async(
+	electronApp : ElectronApplication ,
+	dropdown : Page ,
+	itemId : string,
+) => {
+	await clickClosingDropdownItem(
+		electronApp ,
+		dropdown.locator( `[data-item-id="${ itemId }"]` ),
+	);
 };
 
 export const clickNextAiPage = (
@@ -121,7 +134,10 @@ export const closeCurrentAiPage = async(
 	await watchClick( mainWindow.locator( `[data-menu-id="${ MENU_IDS.view }"] button` ) );
 	const dropdown = await waitForVisibleDropdown( electronApp );
 	await enableActionOverlays( dropdown );
-	await watchClick( dropdown.locator( `[data-item-id="${ MENU_IDS.closeCurrentAi }"]` ) );
+	await clickClosingDropdownItem(
+		electronApp ,
+		dropdown.locator( `[data-item-id="${ MENU_IDS.closeCurrentAi }"]` ),
+	);
 };
 
 export const readSwitchAiLoadStates = async( dropdown:Page ) => {
@@ -199,6 +215,7 @@ export const rightClickDragMenuItem = async(
 };
 
 import {
+	clickClosingDropdownItem ,
 	isDropdownWindowVisible ,
 	openTopMenuUntilItem ,
 	waitForE2ESnapshot ,

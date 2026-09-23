@@ -16,7 +16,10 @@ test( 'Next Opened AI only walks instantiated pages in persist order' , async( {
 	await expect(
 		dropdown.locator( `[data-item-id="${ MENU_IDS.nextInstantiated }"] button` ),
 	).toBeDisabled();
-	await watchClick( dropdown.locator( `[data-item-payload="${ E2E_AI_C.id }"]` ) );
+	await clickClosingDropdownItem(
+		electronApp ,
+		dropdown.locator( `[data-item-payload="${ E2E_AI_C.id }"]` ),
+	);
 	const opened = await waitForE2ESnapshot(
 		electronApp ,
 		( state ) => {
@@ -50,12 +53,11 @@ test( 'Next Opened AI only walks instantiated pages in persist order' , async( {
 } );
 
 import { test , expect } from '../fixtures';
-import { waitForE2ESnapshot , waitForMainRuntime } from '../support/app-probe';
+import { clickClosingDropdownItem , waitForE2ESnapshot , waitForMainRuntime } from '../support/app-probe';
 import { E2E_AI_A , E2E_AI_C , E2E_AI_D } from '../support/e2e-ais';
 import {
 	clickNextAiPage ,
 	clickNextOpenedAi ,
 	openSwitchAiMenu,
 } from '../support/switch-ai';
-import { watchClick } from '../support/observe';
 import { MENU_IDS } from '../support/selectors';

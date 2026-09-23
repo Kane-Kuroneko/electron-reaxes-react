@@ -80,7 +80,7 @@ test( 'Next AI Page after Switch AI reorder follows the new enabled ring' , asyn
 	] );
 
 	const nextMenu = await reopenSwitchAiMenu( electronApp , mainWindow );
-	await clickOpenMenuItem( nextMenu , MENU_IDS.nextPage );
+	await clickOpenMenuItem( electronApp , nextMenu , MENU_IDS.nextPage );
 	await waitForE2ESnapshot(
 		electronApp ,
 		( state ) => state.currentAIViewKey === E2E_AI_D.id,

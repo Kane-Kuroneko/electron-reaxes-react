@@ -31,7 +31,10 @@ test( 'current AI badge opens dropdown and switches AI' , async( {
 		( id ) => id !== snapshotBefore.currentAIViewKey,
 	);
 	expect( nextId ).toBeTruthy();
-	await dropdown.locator( `[data-item-payload="${ nextId }"]` ).click();
+	await clickClosingDropdownItem(
+		electronApp ,
+		dropdown.locator( `[data-item-payload="${ nextId }"]` ),
+	);
 
 	const snapshotAfter = await waitForE2ESnapshot(
 		electronApp ,
@@ -42,5 +45,5 @@ test( 'current AI badge opens dropdown and switches AI' , async( {
 } );
 
 import { test , expect } from '../fixtures';
-import { waitForE2ESnapshot , waitForVisibleDropdown } from '../support/app-probe';
+import { clickClosingDropdownItem , waitForE2ESnapshot , waitForVisibleDropdown } from '../support/app-probe';
 import { TEST_IDS } from '../support/selectors';

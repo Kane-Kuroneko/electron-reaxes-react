@@ -517,6 +517,56 @@ export const isDropdownWindowVisible = async( electronApp:ElectronApplication ) 
 	}
 };
 
+/**
+ * 点会关掉下拉的菜单项。
+ * `triggerAction` 立刻 `closeDropdownView()`，根组件 `return null`。
+ * Playwright 的 `locator.click` 把成功后的 detach 当成失败，重试直到 timeout
+ * （call log: `element was detached from the DOM, retrying`）。
+ * `HTMLElement.click()` 发出去就结束，不再重试。见 docs/features/e2e-playwright.md
+ */
+export const clickClosingDropdownItem = async(
+	electronApp : ElectronApplication ,
+	locator : Locator ,
+	timeoutMs = 15_000,
+) => {
+	await observeHighlight( locator );
+	const deadline = Date.now() + timeoutMs;
+	let lastError : unknown;
+	while( Date.now() < deadline ) {
+		try {
+			const button = locator.locator( 'button' );
+			if( await button.count() > 0 ) {
+				await expect( button ).toBeEnabled( {
+					timeout : Math.min( 2_000 , Math.max( 0 , deadline - Date.now() ) ),
+				} );
+			}
+			await locator.evaluate( ( el:HTMLElement ) => {
+				el.click();
+			} );
+			lastError = undefined;
+			break;
+		} catch ( error ) {
+			lastError = error;
+			if( await isDropdownWindowVisible( electronApp ) === false ) {
+				await observePause();
+				return;
+			}
+			await sleep( 40 );
+		}
+	}
+	if( lastError ) {
+		throw lastError;
+	}
+	const hideUntil = Date.now() + 2_000;
+	while( Date.now() < hideUntil ) {
+		if( await isDropdownWindowVisible( electronApp ) === false ) {
+			break;
+		}
+		await sleep( 40 );
+	}
+	await observePause();
+};
+
 const isDropdownItemVisible = async( electronApp:ElectronApplication , itemId:string ) => {
 	const dropdown = findWindowByUrl( electronApp , 'DropdownView' );
 	if( !dropdown ) {
@@ -655,7 +705,7 @@ export const openSettingsFromApplicationMenu = async(
 		MENU_IDS.settings ,
 		timeoutMs,
 	);
-	await watchClick( dropdownItem( dropdown , MENU_IDS.settings ) );
+	await clickClosingDropdownItem( electronApp , dropdownItem( dropdown , MENU_IDS.settings ) );
 	await waitForE2ESnapshot(
 		electronApp ,
 		( state ) => state.kind === 'main' && state.settingsViewOpened === true ,
@@ -688,11 +738,12 @@ export const exitSettingsWithoutSave = async(
 	await expect( badge ).not.toHaveAttribute( 'aria-disabled' , 'true' );
 };
 
-import { expect , type ElectronApplication , type Page } from '@playwright/test';
+import { expect , type ElectronApplication , type Locator , type Page } from '@playwright/test';
 import { MENU_IDS , TEST_IDS } from './selectors';
 import {
 	enableActionOverlays ,
 	focusHostWindowForObserve ,
+	observeHighlight ,
 	observePause ,
 	watchClick,
 } from './observe';

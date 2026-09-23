@@ -100,7 +100,10 @@ testCarousel( 'badge select of a neighbor then Next scrolls instead of popping t
 	const currentIndex = menuIds.indexOf( E2E_AI_A.id );
 	const neighborId = menuIds[currentIndex + 1];
 	expect( neighborId ).toBe( E2E_AI_B.id );
-	await watchClick( dropdown.locator( `[data-item-payload="${ neighborId }"]` ) );
+	await clickClosingDropdownItem(
+		electronApp ,
+		dropdown.locator( `[data-item-payload="${ neighborId }"]` ),
+	);
 	const parked = await waitForE2ESnapshot(
 		electronApp ,
 		( state ) => state.currentAIViewKey === neighborId && state.instantiatedAIIds.includes( neighborId ) ,
@@ -124,7 +127,7 @@ testCarousel( 'badge select of a neighbor then Next scrolls instead of popping t
 } );
 
 import { test , expect } from '../fixtures';
-import { waitForE2ESnapshot , waitForMainRuntime , waitForWindowByUrl } from '../support/app-probe';
+import { clickClosingDropdownItem , waitForE2ESnapshot , waitForMainRuntime , waitForWindowByUrl } from '../support/app-probe';
 import { clickNextAiPage , openCurrentAiMenu , readSwitchAiItemIds , switchToAiById } from '../support/switch-ai';
 import { watchClick } from '../support/observe';
 import {

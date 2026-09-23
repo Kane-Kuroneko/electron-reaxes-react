@@ -89,7 +89,7 @@ test( 'wipe current AI partition clears parent-domain cookies and leaves the oth
 		MENU_IDS.view ,
 		MENU_IDS.wipeReload,
 	);
-	await watchClick( dropdownItem( dropdown , MENU_IDS.wipeReload ) );
+	await clickClosingDropdownItem( electronApp , dropdownItem( dropdown , MENU_IDS.wipeReload ) );
 
 	await expect.poll( async() => {
 		return e2eMarkerValues( await e2eListAIPartitionCookies( electronApp , E2E_AI_A.id ) );
@@ -116,6 +116,7 @@ const e2eMarkerValues = ( cookies:{ name:string; value:string }[] ) => {
 
 import { test , expect } from '../fixtures';
 import {
+	clickClosingDropdownItem ,
 	dropdownItem ,
 	e2eListAIPartitionCookies ,
 	e2ePlantAIPartitionCookies ,
@@ -125,5 +126,4 @@ import {
 } from '../support/app-probe';
 import { E2E_AI_A , E2E_AI_C } from '../support/e2e-ais';
 import { switchToAiById } from '../support/switch-ai';
-import { watchClick } from '../support/observe';
 import { MENU_IDS } from '../support/selectors';

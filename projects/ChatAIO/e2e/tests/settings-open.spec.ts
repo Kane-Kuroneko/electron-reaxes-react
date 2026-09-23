@@ -28,7 +28,10 @@ test( 'closing Settings restores an interactive Current AI badge' , async( {
 	await expect( badge ).not.toHaveText( /settings/i );
 	await watchClick( badge );
 	const dropdown = await waitForVisibleDropdown( electronApp );
-	await watchClick( dropdown.locator( `[data-item-payload="${ E2E_AI_C.id }"]` ) );
+	await clickClosingDropdownItem(
+		electronApp ,
+		dropdown.locator( `[data-item-payload="${ E2E_AI_C.id }"]` ),
+	);
 	await waitForE2ESnapshot(
 		electronApp ,
 		( state ) => state.kind === 'main' && state.currentAIViewKey === E2E_AI_C.id,
@@ -37,6 +40,7 @@ test( 'closing Settings restores an interactive Current AI badge' , async( {
 
 import { test , expect } from '../fixtures';
 import {
+	clickClosingDropdownItem ,
 	exitSettingsWithoutSave ,
 	openSettingsFromApplicationMenu ,
 	waitForE2ESnapshot ,

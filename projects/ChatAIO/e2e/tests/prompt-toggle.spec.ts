@@ -16,7 +16,10 @@ test( 'View menu toggles left Prompt Showcase' , async( {
 
 	await mainWindow.locator( `[data-menu-id="${ MENU_IDS.view }"] button` ).click();
 	const dropdown = await waitForVisibleDropdown( electronApp );
-	await dropdown.locator( `[data-item-id="${ MENU_IDS.promptLeft }"]` ).click();
+	await clickClosingDropdownItem(
+		electronApp ,
+		dropdown.locator( `[data-item-id="${ MENU_IDS.promptLeft }"]` ),
+	);
 
 	const after = await waitForE2ESnapshot(
 		electronApp ,
@@ -28,5 +31,5 @@ test( 'View menu toggles left Prompt Showcase' , async( {
 } );
 
 import { test , expect } from '../fixtures';
-import { waitForE2ESnapshot , waitForVisibleDropdown } from '../support/app-probe';
+import { clickClosingDropdownItem , waitForE2ESnapshot , waitForVisibleDropdown } from '../support/app-probe';
 import { MENU_IDS } from '../support/selectors';

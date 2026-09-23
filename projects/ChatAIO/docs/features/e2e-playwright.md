@@ -60,6 +60,7 @@ Spectron 已死。本仓不引入打包后的 `findLatestBuild`：E2E 打 unpack
 7. **返回用户 seed 写小型 `user-ais.json`**：`custom-e2e-a`…`d`（Bravo 默认关），URL `about:blank`，`deletedIds` 钉死 bundled 目录 + `dev-proxy-test`。不要假定菜单里还有 ChatGPT。常量：`e2e/support/e2e-ais.ts`。单独用例要改 seed 用 fixture `userAisPatch`，不要改默认表。
 8. **关下拉再立刻点同一顶级项会不稳**：`closeDropdownView` 可能清不掉 MainView `openMenuId`，再点会被当成 toggle 收起；Switch AI 拖完 `rebuildMenu` 还可能把同一扇 Dropdown 再打开。`waitForVisibleDropdown` 只认窗可见，**会把残留 Switch AI 当成 Application**。开 Settings / Switch AI 用 `openTopMenuUntilItem`：等到**具体 `data-item-id`**，点错则先切到另一个顶级菜单再试。目录脏挡板用例先 `expectTableDirty`，警告文案用短 timeout（不要把 GitHub fetch 等满 20s）。Add / Edit 弹窗用 `getByRole('dialog', { name })`。能点当前已开菜单就别关再开。读 Manage AIs 行序用 `.manage-ais-table tbody tr[data-row-key]`。Startup 单选点 `data-testid=startup-ai-page-first` 的 label（DOM `click()`）。页脚是 **Done**（`data-testid=settings-footer-done`），运行设置即时落盘，不要再找 Apply/Discard。不要 `locator.check()`。
 9. **「下拉开着」以主进程 `BrowserWindow.isVisible()` 为准，不能只看 DOM**。点菜单项后主进程先 `window.hide()`，渲染端 `hide` 命令清 DOM 要晚 0–60ms（隐藏窗的渲染进程被降优先级，切 AI 期间 CPU 争用更明显）。`openTopMenuUntilItem` 的「已开着就直接用」分支若只看 DOM，会拿到**已隐藏窗里的旧菜单**，随后 DOM 被清、元素脱离，`locator.click()` 在 Playwright 的 stable 检查里等满 30s（症状：`waiting for element to be visible, enabled and stable` → `element is not stable` → 不再有日志）。用 `isDropdownWindowVisible(electronApp)`（`app-probe.ts`）先问主进程；`ensureVisibleSwitchAiMenu` 传 `electronApp`。复现于 `ai-page-walk` / `ai-opened-walk` 连点 3 次后第 4 次点击。
+10. **点会关掉 Dropdown 的菜单项不要用 `locator.click()` / `watchClick`。** `triggerAction` 立刻 `closeDropdownView()`，根组件 `return null`。Playwright 把「点成功后节点被卸」当成失败并重试，直到 timeout（症状：`element was detached from the DOM, retrying`；prod 包更慢、更容易踩中，失败会落在不同菜单用例上）。用 `clickClosingDropdownItem`（`HTMLElement.click()`，发出去就结束）。开顶级菜单、点 Settings 表内按钮仍用 `watchClick`。每条用例已经 `mkdtemp` userData 并按 pid 关掉 Electron，两轮失败位置不同通常不是上一轮 profile 没清干净。
 
 不变量 5 与禁止项与本节一致。后续会话加手势用例时，先对照本节分层和「写 DOM 用例时记住」，不要再探一遍 WCV。
 
@@ -181,7 +182,7 @@ CI / 日常全量保持 `yarn test:e2e`，WATCH 为 0。不要在观测时用鼠
 | `projects/ChatAIO/e2e/reporters/console.ts` | 终端报告：按 spec 分组、结尾 N/N 通过 |
 | `projects/ChatAIO/e2e/global-setup.ts` | 检查 / 补齐 webpack 产物 |
 | `projects/ChatAIO/e2e/fixtures.ts` | `electronApp` / `mainWindow`；`userAisPatch` 只给单独用例覆盖写 seed |
-| `projects/ChatAIO/e2e/support/app-probe.ts` | 快照 / `waitForSettingsPage` / `openTopMenuUntilItem` / `openSettingsFromApplicationMenu` |
+| `projects/ChatAIO/e2e/support/app-probe.ts` | 快照 / `waitForSettingsPage` / `openTopMenuUntilItem` / `clickClosingDropdownItem` / `openSettingsFromApplicationMenu` |
 | `projects/ChatAIO/e2e/support/e2e-ais.ts` | 返回用户 fixture 表（4 页 + deletedIds）；`patchCharliePreloadOnStartup` |
 | `projects/ChatAIO/e2e/support/switch-ai.ts` | 打开 Switch AI / Current AI、读序、Prev/Next、右键拖 |
 | `projects/ChatAIO/e2e/support/carousel.ts` | FloatingView 轮播采样：可见性、视口中心卡、启用顺序、过渡时长。`__CHATAIO_CAROUSEL_TRACE__` 只作附件 |

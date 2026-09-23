@@ -25,7 +25,7 @@ test( 'enabling Bravo then table Save inserts it into Switch AI and Next AI Page
 		E2E_AI_C.id ,
 		E2E_AI_D.id,
 	] );
-	await clickOpenMenuItem( dropdown , MENU_IDS.nextPage );
+	await clickOpenMenuItem( electronApp , dropdown , MENU_IDS.nextPage );
 	await waitForE2ESnapshot(
 		electronApp ,
 		( state ) => state.currentAIViewKey === E2E_AI_B.id,
