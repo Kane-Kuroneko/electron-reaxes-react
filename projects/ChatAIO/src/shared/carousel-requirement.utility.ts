@@ -3,7 +3,7 @@
  * 需求：docs/issues/floating-view-carousel-absolute-select.md
  * - 菜单点名：轮播不出现，中心卡是点中的那张，顺序是启用列表。
  * - 顺序下一格：轮播出现，并且从刚才那张滑到相邻一张；中途不能换成另一份列表。
- * - 菜单点上一个：轮播收起，不滑、不保持可见。
+ * - 顺序切到下一张后 select 上一个，再按 Next：条不透明时从刚选中的卡滑到相邻一张，不能淡入时目标已经在正中。
  */
 
 export type CarouselSightSample = {
@@ -12,6 +12,9 @@ export type CarouselSightSample = {
 	centerId : string;
 	orderIds : string[];
 	transitionMs : number;
+	opacity : number;
+	highlightedId : string;
+	highlightedX : number;
 };
 
 const sameIds = ( left : readonly string[] , right : readonly string[] ) => {
@@ -119,7 +122,9 @@ export const judgeAdjacentStep = (
 	}
 	const enabledKey = enabledIds.join( '|' );
 	const sawOtherList = samples.some( ( sample ) => {
-		return sample.orderIds.length > 0 && sample.orderIds.join( '|' ) !== enabledKey;
+		return sample.opacity >= 0.9
+			&& sample.orderIds.length > 0
+			&& sample.orderIds.join( '|' ) !== enabledKey;
 	} );
 	if( sawOtherList ) {
 		faults.push( 'list-swapped' );
@@ -140,10 +145,51 @@ export const judgeAdjacentStep = (
 	return faults;
 };
 
+/**
+ * @description 条已经不透明时，高亮卡必须先停在 fromId，再滑到相邻一张。
+ * 淡入结束时高亮已经是目标，就是整条跳出，不是滚动。
+ */
+export const judgeVisibleScroll = (
+	samples : readonly CarouselSightSample[] ,
+	fromId : string ,
+	enabledIds : readonly string[] ,
+	direction : 'next' | 'previous' ,
+) => {
+	const faults = judgeAdjacentStep( samples , fromId , enabledIds , direction );
+	const targetId = neighborId( fromId , enabledIds , direction );
+	const highlighted = ( sample : CarouselSightSample ) => sample.highlightedId || sample.centerId;
+	const opaqueFrom = samples.some( ( sample ) => {
+		return sample.opacity >= 0.9 && highlighted( sample ) === fromId;
+	} );
+	if( !opaqueFrom ) {
+		faults.push( 'pop-in' );
+	}
+	let moved = false;
+	let previousX : number | null = null;
+	for( const sample of samples ) {
+		if( sample.opacity < 0.9 ) {
+			previousX = null;
+			continue;
+		}
+		const id = highlighted( sample );
+		if( id !== fromId && id !== targetId ) {
+			continue;
+		}
+		if( previousX !== null && Math.abs( sample.highlightedX - previousX ) >= 40 ) {
+			moved = true;
+		}
+		previousX = sample.highlightedX;
+	}
+	if( !moved ) {
+		faults.push( 'no-visible-travel' );
+	}
+	return faults.filter( ( fault , index ) => faults.indexOf( fault ) === index );
+};
+
 export const summarizeCarouselSight = ( samples : readonly CarouselSightSample[] ) => {
 	const lines : string[] = [];
 	for( const sample of samples ) {
-		const line = `vis=${ sample.visible } center=${ sample.centerId || '-' } n=${ sample.orderIds.length } ms=${ sample.transitionMs }`;
+		const line = `op=${ sample.opacity } hi=${ sample.highlightedId || '-' }@${ sample.highlightedX } vis=${ sample.visible } center=${ sample.centerId || '-' } n=${ sample.orderIds.length } ms=${ sample.transitionMs }`;
 		if( lines[lines.length - 1] !== line ) {
 			lines.push( line );
 		}

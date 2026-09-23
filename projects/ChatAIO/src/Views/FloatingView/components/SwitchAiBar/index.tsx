@@ -16,9 +16,10 @@
      重新开始向新目标动画——浏览器原生 transition 中断重定向，零排队零丢帧
    - 彻底消除 pending 队列——不需要排队，每次切换直接执行
 
-   方向保证：
-   始终使用 slideNext() / slidePrev() 而非 slideToLoop()，
-   这两个方法在 loop 模式下永远沿指定方向滑动，到边界通过 clone 无缝循环。
+   两种呈现（docs/issues/floating-view-carousel-absolute-select.md）：
+   - 顺序切换：可见，只调用一次 slideNext() / slidePrev()
+   - 菜单绝对选中：不弹出。隐藏时换 key，用 initialSlide 停到当前 AI
+   禁止 slideTo / slideToLoop：loop 克隆没有 React 卡片内容，滑过去就是空项。
 
    loop 缓冲翻倍（loopAdditionalSlides）：
    centeredSlides 下 Swiper 默认 loopedSlides = ceil(slidesPerView/2)；追加等量
@@ -63,11 +64,38 @@ export const SwitchAiBar = reaxper( () => {
 	const visibilityClassName = visible ? 'switch-ai-bar--visible' : 'switch-ai-bar--hidden';
 
 	const swiperRef = useRef<SwiperClass>( null );
+	/* 隐藏停靠点。epoch 只在 park 时 +1，用来换 Swiper key，而不是去 slideTo。 */
+	const cursorRef = useRef( {
+		index : activeIndex ,
+		ids : items.map( item => item.id ) ,
+		epoch : 0 ,
+	} );
+	/* 最近一次 park/step。transitionEnd 时游标可能已经对齐，不能被随后的 idle 渲染清掉。 */
+	const motionRef = useRef<CarouselFramePlan>( {
+		presentation : 'idle' ,
+		animation : 'none' ,
+		steps : 0 ,
+		remount : false ,
+		fromIndex : activeIndex ,
+		toIndex : activeIndex ,
+		ringDistance : 0 ,
+		nextCursor : {
+			index : activeIndex ,
+			ids : items.map( item => item.id ) ,
+			epoch : 0 ,
+		} ,
+	} );
+	const itemsRef = useRef( items );
+	itemsRef.current = items;
 	/* activeIndexRef 始终跟随最新 activeIndex —— 供 handleSwiper 等稳定回调中读取 */
 	const activeIndexRef = useRef( activeIndex );
 	activeIndexRef.current = activeIndex;
 	const visibleRef = useRef( visible );
 	visibleRef.current = visible;
+	/* 本帧开始前条是否还藏着。从隐藏进入 step 时先无过渡亮出上一张，再滑。 */
+	const barWasHiddenRef = useRef( true );
+	const directionRef = useRef( direction );
+	directionRef.current = direction;
 	const hadSwiperBeginRef = useRef( false );
 	const firstShowMonitorRef = useRef<ReturnType<typeof startFirstShowMonitor>>( null );
 
@@ -84,32 +112,23 @@ export const SwitchAiBar = reaxper( () => {
 	   slidesPerView — 与旧实现一致
 	   ═════════════════════════════════════════════════════════ */
 	const total = items.length;
-	const slidesPerView = total >= 4 ? 5 : total === 1 ? 1 : 3;
-
-	/* ═════════════════════════════════════════════════════════
-	   补齐 loop + centeredSlides 的最小 slide 数
-	   ═════════════════════════════════════════════════════════ */
-	const minSlidesForLoop = slidesPerView + Math.ceil( slidesPerView / 2 ) * 2;
-	let displayItems : (FloatingView.SwitchAiBarItem & { _key : string })[] = [];
-	if( total > 0 ) {
-		const repeatTimes = Math.max( 1 , Math.ceil( minSlidesForLoop / total ) );
-		for( let r = 0 ; r < repeatTimes ; r++ ) {
-			for( let i = 0 ; i < total ; i++ ) {
-				displayItems.push( {
-					...items[i] ,
-					_key : `${ items[i].id }--dup${ r }`,
-				} );
-			}
-		}
-	}
+	/* 第一份 dup0 的顺序就是 items。重复份数见 buildCarouselDisplayItems。 */
+	const { slidesPerView , displayItems } = buildCarouselDisplayItems( items );
 
 	/* key 随 total 变化递增，强制 Swiper 重建（AI 增删时） */
 	const swiperKeyRef = useRef( 0 );
 	const prevTotalRef = useRef( total );
 	if( prevTotalRef.current !== total ) {
 		const prevTotal = prevTotalRef.current;
+		const prevIndex = cursorRef.current.index;
 		prevTotalRef.current = total;
 		swiperKeyRef.current++;
+		const nextIds = items.map( item => item.id );
+		cursorRef.current = {
+			index : activeIndex ,
+			ids : nextIds ,
+			epoch : cursorRef.current.epoch ,
+		};
 		/* 可见期重建是首次卡顿的核心嫌疑；立即落盘便于分析器检出 */
 		perf.mark( PerfPhase.SwitchSwiperRemount , 'renderer' , getCurrentPerfCtxId() || 'boot' , {
 			prevTotal ,
@@ -117,8 +136,108 @@ export const SwitchAiBar = reaxper( () => {
 			visible ,
 		} );
 		perf.flush();
+		/* 隐藏时列表变长（菜单从已打开页换成 configured）也是停靠，不播动画。 */
+		if( visible !== true && total > 0 ) {
+			const remountFrame : CarouselFramePlan = {
+				presentation : 'park' ,
+				animation : 'none' ,
+				steps : 0 ,
+				remount : true ,
+				fromIndex : prevIndex ,
+				toIndex : activeIndex ,
+				ringDistance : ringSteps( prevIndex , activeIndex , total , direction ) ,
+				nextCursor : {
+					index : activeIndex ,
+					ids : nextIds.slice() ,
+					epoch : cursorRef.current.epoch ,
+				} ,
+			};
+			motionRef.current = remountFrame;
+			const centerId = nextIds[activeIndex] || '';
+			traceCarouselOp( {
+				kind : 'frame' ,
+				gesture : 'park' ,
+				reason : 'list-length' ,
+				ctxId : getCurrentPerfCtxId() || '' ,
+				presentation : 'park' ,
+				animation : 'none' ,
+				steps : 0 ,
+				visible ,
+				direction ,
+				fromIndex : prevIndex ,
+				toIndex : activeIndex ,
+				ringDistance : remountFrame.ringDistance ,
+				activeIndex ,
+				itemIds : nextIds ,
+				itemLabels : items.map( item => item.label ) ,
+				expectedCenterId : centerId ,
+				swiperKey : `${ swiperKeyRef.current }-${ cursorRef.current.epoch }` ,
+				faults : detectCarouselOpFaults( {
+					gesture : 'park' ,
+					visible ,
+					animation : 'none' ,
+					steps : 0 ,
+					direction ,
+					ringDistance : remountFrame.ringDistance ,
+					itemIds : nextIds ,
+					expectedCenterId : centerId ,
+				} ) ,
+			} );
+		}
 	}
-	const swiperKey = swiperKeyRef.current;
+	const targetIds = items.map( item => item.id );
+	const itemLabels = items.map( item => item.label );
+	/* 菜单 / prepare 都是隐藏更新：重建到 initialSlide，不滑、不弹出。 */
+	const frame = planCarouselFrame( {
+		visible ,
+		cursor : cursorRef.current ,
+		targetIndex : activeIndex ,
+		targetIds ,
+		direction ,
+	} );
+	if( frame.presentation !== 'idle' ) {
+		motionRef.current = frame;
+	}
+	if( frame.presentation === 'park' ) {
+		cursorRef.current = {
+			index : frame.nextCursor.index ,
+			ids : frame.nextCursor.ids.slice() ,
+			epoch : frame.nextCursor.epoch ,
+		};
+		const centerId = targetIds[activeIndex] || '';
+		traceCarouselOp( {
+			kind : 'frame' ,
+			gesture : 'park' ,
+			ctxId : getCurrentPerfCtxId() || '' ,
+			presentation : frame.presentation ,
+			animation : frame.animation ,
+			steps : frame.steps ,
+			visible ,
+			direction ,
+			fromIndex : frame.fromIndex ,
+			toIndex : frame.toIndex ,
+			ringDistance : frame.ringDistance ,
+			activeIndex ,
+			itemIds : targetIds ,
+			itemLabels ,
+			expectedCenterId : centerId ,
+			swiperKey : `${ swiperKeyRef.current }-${ cursorRef.current.epoch }` ,
+			faults : detectCarouselOpFaults( {
+				gesture : 'park' ,
+				visible ,
+				animation : frame.animation ,
+				steps : frame.steps ,
+				direction ,
+				ringDistance : frame.ringDistance ,
+				itemIds : targetIds ,
+				expectedCenterId : centerId ,
+			} ) ,
+		} );
+	}
+	const swiperKey = `${ swiperKeyRef.current }-${ cursorRef.current.epoch }`;
+	/* 从隐藏亮出时不要播容器淡入，否则 slide 发生在看不见的时候，条一出现已经停在终点。 */
+	const revealFromHidden = visible === true && barWasHiddenRef.current;
+	barWasHiddenRef.current = visible !== true;
 
 	/* ═════════════════════════════════════════════════════════
 	   data-position 驱动 CSS 缩放 / 透明度 / 渐变色
@@ -191,14 +310,29 @@ export const SwitchAiBar = reaxper( () => {
 			msFromVisible : monitorMeta?.msFromVisible ,
 		} );
 		perf.flush();
+		const motion = motionRef.current;
+		const latestItems = itemsRef.current;
+		const latestIds = latestItems.map( item => item.id );
+		traceCarouselDom( {
+			ctxId : ctxId || '' ,
+			reason : 'transition-end' ,
+			gesture : motion.presentation === 'step' ? 'step' : motion.presentation === 'park' ? 'park' : 'idle' ,
+			activeIndex : expectedActiveIndex ,
+			direction : directionRef.current ,
+			itemIds : latestIds ,
+			itemLabels : latestItems.map( item => item.label ) ,
+			expectedCenterId : latestIds[expectedActiveIndex] || '' ,
+			animation : motion.animation ,
+			steps : motion.steps ,
+			ringDistance : motion.ringDistance ,
+		} );
 	} , [] );
 
 	/* ── Swiper 实例就绪 ──
-	   同步 prevActiveIndexRef 到当前 activeIndex，避免 useEffect
-	   误把 initialSlide 定位当作「activeIndex 变化」而追加额外 slide。 */
+	   initialSlide 已停在 store 目标上；视觉游标在渲染期和这份下标对齐，
+	   这里不再补滑。运动只由下面的 effect 按规划执行。 */
 	const handleSwiper = useCallback( ( swiper : SwiperClass ) => {
 		swiperRef.current = swiper;
-		prevActiveIndexRef.current = activeIndexRef.current;
 		updateSlidePositions( swiper );
 		const ctxId = getCurrentPerfCtxId() || 'boot';
 		perf.mark( PerfPhase.FvSwiperMounted , 'renderer' , ctxId , {
@@ -211,93 +345,138 @@ export const SwitchAiBar = reaxper( () => {
 		perf.flush();
 	} , [] );
 
-	/* ═════════════════════════════════════════════════════════
-	   检测 activeIndex 变化 → 执行 slideNext/slidePrev
-	   Interrupt & Redirect：每次切换直接执行，CSS transition 自动中断重定向
-
-	   契约（不可破坏）：
-	   - 只用 slideNext/slidePrev，禁止 slideTo/slideToLoop（loop + 重复 slide 下会与 store 错位）
-	   - 隐藏时只同步 prev 索引、不播动画（避免隐藏窗口 transition 被合成器跳到终态）
-	   - prepare 预热把 Swiper 停在当前卡；首次 show 时靠 prev→active 的 delta 播入场滑动
-	   ═════════════════════════════════════════════════════════ */
-	const prevActiveIndexRef = useRef( activeIndex );
+	/* 可见时的下标变化 = 顺序一格。隐藏停靠已在渲染期换 key，这里不再滑。
+	   见 docs/issues/floating-view-carousel-absolute-select.md */
 	useEffect( () => {
-		if( prevActiveIndexRef.current === activeIndex ) return;
-
-		/* 隐藏期：只跟踪索引，不动 Swiper。
-		   prepare 会在 visible=false 时写入 activeIndex；此时若 slideNext，
-		   动画在隐藏窗口里跑完，首次真正显示时就会「无动画且可能错位」。 */
 		if( !visible || total < 1 ) {
-			prevActiveIndexRef.current = activeIndex;
 			return;
 		}
+		const stepIds = items.map( item => item.id );
+		const stepLabels = items.map( item => item.label );
+		const stepFrame = planCarouselFrame( {
+			visible ,
+			cursor : cursorRef.current ,
+			targetIndex : activeIndex ,
+			targetIds : stepIds ,
+			direction ,
+		} );
+		if( stepFrame.presentation !== 'step' ) {
+			return;
+		}
+		motionRef.current = stepFrame;
 
-		const prevIndex = prevActiveIndexRef.current;
-		prevActiveIndexRef.current = activeIndex;
+		const prevIndex = cursorRef.current.index;
+		const prevIds = cursorRef.current.ids;
+		cursorRef.current = {
+			index : stepFrame.nextCursor.index ,
+			ids : stepFrame.nextCursor.ids.slice() ,
+			epoch : stepFrame.nextCursor.epoch ,
+		};
 
 		const now = performance.now();
 		const elapsed = now - lastSwitchTimeRef.current;
 		lastSwitchTimeRef.current = now;
-
-		/* 启动性能采样会话（首次切换时触发） */
+		const isRapid = elapsed <= ANIM.RAPID_THRESHOLD && elapsed > 0;
+		const speed = isRapid ? ANIM.RAPID_SPEED : ANIM.SWIPER_SPEED;
 		if( !switchProfiler.isActive ) {
 			switchProfiler.startSession();
-		}
-
-		/* 判定是否为快速切换 */
-		const isRapid = elapsed <= ANIM.RAPID_THRESHOLD && elapsed > 0;
-		/* 选择动画速度：快速模式 120ms，普通模式 300ms */
-		const speed = isRapid ? ANIM.RAPID_SPEED : ANIM.SWIPER_SPEED;
-
-		/* 基于实际索引差计算步数（带 wrap-around） */
-		let steps : number;
-		if( direction === 'next' ) {
-			steps = ( activeIndex - prevIndex + total ) % total;
-		} else {
-			steps = ( prevIndex - activeIndex + total ) % total;
-		}
-		/* 同方向绕回一整圈：delta % total === 0 但索引确实发生了变化 */
-		if( steps === 0 && activeIndex !== prevIndex ) {
-			steps = total;
 		}
 
 		perf.mark( PerfPhase.SwitchActiveIndex , 'renderer' , getCurrentPerfCtxId() , {
 			prevIndex ,
 			activeIndex ,
 			direction ,
+			kind : 'step' ,
 			isRapid ,
 			speed ,
 			elapsed : Math.round( elapsed ) ,
-			steps ,
+			steps : 1 ,
+			ringDistance : stepFrame.ringDistance ,
 		} );
 
 		const swiper = swiperRef.current;
-		if( !swiper || swiper.destroyed ) return;
-
-		/* ═══ 统一执行：slideNext/slidePrev 保证方向 ═══
-		   loopPreventsSliding: false 允许动画中继续调用。
-		   CSS transition 天然中断重定向：新调用设置新 translate，
-		   浏览器从当前视觉位置开始向新目标动画——无排队、无丢帧。 */
-		for( let i = 0 ; i < steps ; i++ ) {
-			if( direction === 'next' ) {
-				swiper.slideNext( speed );
-			} else {
-				swiper.slidePrev( speed );
-			}
+		const centerId = stepIds[activeIndex] || '';
+		if( !swiper || swiper.destroyed ) {
+			cursorRef.current = {
+				index : prevIndex ,
+				ids : prevIds ,
+				epoch : cursorRef.current.epoch ,
+			};
+			traceCarouselOp( {
+				kind : 'frame' ,
+				gesture : 'step' ,
+				ctxId : getCurrentPerfCtxId() || '' ,
+				presentation : stepFrame.presentation ,
+				animation : 'aborted' ,
+				steps : 0 ,
+				visible ,
+				direction ,
+				fromIndex : stepFrame.fromIndex ,
+				toIndex : stepFrame.toIndex ,
+				ringDistance : stepFrame.ringDistance ,
+				activeIndex ,
+				itemIds : stepIds ,
+				itemLabels : stepLabels ,
+				expectedCenterId : centerId ,
+				speed ,
+				faults : detectCarouselOpFaults( {
+					gesture : 'step' ,
+					visible ,
+					animation : 'aborted' ,
+					steps : 0 ,
+					direction ,
+					ringDistance : stepFrame.ringDistance ,
+					itemIds : stepIds ,
+					expectedCenterId : centerId ,
+				} ) ,
+			} );
+			return;
 		}
+
 		hadSwiperBeginRef.current = true;
+		if( stepFrame.animation === 'slideNext' ) {
+			swiper.slideNext( speed );
+		} else {
+			swiper.slidePrev( speed );
+		}
+		traceCarouselOp( {
+			kind : 'frame' ,
+			gesture : 'step' ,
+			ctxId : getCurrentPerfCtxId() || '' ,
+			presentation : stepFrame.presentation ,
+			animation : stepFrame.animation ,
+			steps : stepFrame.steps ,
+			visible ,
+			direction ,
+			fromIndex : stepFrame.fromIndex ,
+			toIndex : stepFrame.toIndex ,
+			ringDistance : stepFrame.ringDistance ,
+			activeIndex ,
+			itemIds : stepIds ,
+			itemLabels : stepLabels ,
+			expectedCenterId : centerId ,
+			speed ,
+			faults : detectCarouselOpFaults( {
+				gesture : 'step' ,
+				visible ,
+				animation : stepFrame.animation ,
+				steps : stepFrame.steps ,
+				direction ,
+				ringDistance : stepFrame.ringDistance ,
+				itemIds : stepIds ,
+				expectedCenterId : centerId ,
+			} ) ,
+		} );
 		firstShowMonitorRef.current?.noteCssTransitionStart( {
 			direction ,
 			speed ,
-			steps ,
+			steps : 1 ,
 		} );
 
-		/* rapid 模式 CSS class 管理 */
 		if( isRapid ) {
 			if( !isRapidMode ) {
 				setIsRapidMode( true );
 			}
-			/* 重置退出定时器：最后一次快速切换后等待退出 */
 			if( rapidExitTimerRef.current ) {
 				clearTimeout( rapidExitTimerRef.current );
 			}
@@ -305,27 +484,56 @@ export const SwitchAiBar = reaxper( () => {
 				setIsRapidMode( false );
 				rapidExitTimerRef.current = null;
 			} , ANIM.SWIPER_SPEED );
-
-			/* profiler 统计 */
 			switchProfiler.recordRapidJump();
-		} else {
-			/* 退出 rapid 模式 */
-			if( isRapidMode ) {
-				setIsRapidMode( false );
-				if( rapidExitTimerRef.current ) {
-					clearTimeout( rapidExitTimerRef.current );
-					rapidExitTimerRef.current = null;
-				}
+		} else if( isRapidMode ) {
+			setIsRapidMode( false );
+			if( rapidExitTimerRef.current ) {
+				clearTimeout( rapidExitTimerRef.current );
+				rapidExitTimerRef.current = null;
 			}
 		}
 
 		perf.mark( PerfPhase.SwitchSwiperBegin , 'renderer' , getCurrentPerfCtxId() , {
 			direction ,
 			speed ,
-			steps ,
+			steps : 1 ,
+			kind : 'step' ,
 			isRapid ,
 		} );
-	} , [ activeIndex , direction , visible , total ] );
+	} , [ activeIndex , direction , visible , items , total ] );
+
+	/* 提交后记一帧 DOM：卡片顺序、data-position、中心卡是否为空。平时操作也落盘。 */
+	useEffect( () => {
+		let cancelled = false;
+		const raf = requestAnimationFrame( () => {
+			if( cancelled ) {
+				return;
+			}
+			const motion = motionRef.current;
+			const gesture = frame.presentation === 'step'
+				? 'step'
+				: frame.presentation === 'park'
+					? 'park'
+					: 'idle';
+			traceCarouselDom( {
+				ctxId : getCurrentPerfCtxId() || '' ,
+				reason : 'commit' ,
+				gesture ,
+				activeIndex ,
+				direction ,
+				itemIds : targetIds ,
+				itemLabels ,
+				expectedCenterId : targetIds[activeIndex] || '' ,
+				animation : frame.presentation === 'idle' ? 'none' : motion.animation ,
+				steps : frame.presentation === 'idle' ? 0 : motion.steps ,
+				ringDistance : frame.ringDistance ,
+			} );
+		} );
+		return () => {
+			cancelled = true;
+			cancelAnimationFrame( raf );
+		};
+	} , [ swiperKey , activeIndex , visible , direction , items , frame.presentation , frame.fromIndex , frame.toIndex , frame.ringDistance ] );
 
 	/* ── 可见后：首帧 + LoAF + 冷启动首次调出专项采样 ── */
 	useEffect( () => {
@@ -387,7 +595,7 @@ export const SwitchAiBar = reaxper( () => {
 	const rapidClassName = isRapidMode ? 'switch-ai-bar--rapid' : '';
 
 	return <section
-		className={ `switch-ai-bar ${ visibilityClassName } ${ rapidClassName }` }
+		className={ `switch-ai-bar ${ visibilityClassName } ${ rapidClassName } ${ revealFromHidden ? 'switch-ai-bar--instant' : '' }` }
 		aria-hidden={ !visible }
 	>
 		<div className="switch-ai-bar__viewport">
@@ -419,7 +627,13 @@ export const SwitchAiBar = reaxper( () => {
 				{ displayItems.map( item => (
 					<SwiperSlide key={ item._key }>
 						{/* 卡片 = 供应商 logo + 用户 label；厂商辨识靠 logo，不再单独显示 family 文字。见 ai-vendor-logo-identity.md */}
-						<div className="switch-ai-bar__item" data-vendor={ item.family }>
+						<div
+							className="switch-ai-bar__item"
+							data-ai-id={ item.id }
+							data-carousel-key={ item._key }
+							data-source-index={ item.sourceIndex }
+							data-vendor={ item.family }
+						>
 							<span className="switch-ai-bar__vendor" aria-hidden="true">
 								<AIVendorLogo
 									family={ item.family }
@@ -441,9 +655,16 @@ import { reaxel_FloatingView } from '#FloatingView/reaxels/floating-view';
 import { getCurrentPerfCtxId } from '#FloatingView/reaxels/floating-view';
 import { startLoafObserver } from '#FloatingView/utils/loaf-observer.utility';
 import { startFirstShowMonitor } from '#FloatingView/utils/first-show-monitor.utility';
-import type { FloatingView } from '#src/Types/FloatingView';
+import { traceCarouselDom , traceCarouselOp } from '#FloatingView/utils/carousel-trace.utility';
 import { AIVendorLogo } from '#shared/ai-vendor-logo';
 import { vendorFallbackText } from '#shared/ai-vendor-logo/vendor-logo.utility';
+import {
+	buildCarouselDisplayItems ,
+	detectCarouselOpFaults ,
+	planCarouselFrame ,
+	ringSteps ,
+	type CarouselFramePlan ,
+} from '#shared/carousel-op.utility';
 import { perf , PerfPhase , switchProfiler } from '#shared/utils/switch-perf-recorder.utility';
 import { useState , useCallback , useEffect , useRef } from 'react';
 import { Swiper , SwiperSlide } from 'swiper/react';

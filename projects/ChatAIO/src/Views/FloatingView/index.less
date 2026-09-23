@@ -77,6 +77,11 @@ body {
 	transform: translateX(-50%) translateY(-10px) scale(0.98);
 }
 
+/* 从隐藏进入一格滑动时不要播容器淡入，否则卡片滑完用户才看见条，像直接跳出。 */
+.switch-ai-bar--instant {
+	transition: none;
+}
+
 /* ── 视口（毛玻璃背景） ──
    Swiper 容器位于视口内部，视口提供固定的毛玻璃背景，
    Swiper 的 translate3d 滑动在视口范围内被 overflow: hidden 裁剪。 */

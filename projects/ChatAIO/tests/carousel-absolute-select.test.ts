@@ -15,6 +15,9 @@ const sample = (
 		centerId : partial.centerId ,
 		orderIds : partial.orderIds ,
 		transitionMs : partial.transitionMs ?? 0 ,
+		opacity : partial.opacity ?? ( partial.visible ? 1 : 0 ) ,
+		highlightedId : partial.highlightedId ?? partial.centerId ,
+		highlightedX : partial.highlightedX ?? 0 ,
 	};
 };
 
@@ -49,8 +52,8 @@ describe( '菜单点远处之后再顺序下一格' , () => {
 
 	it( '中途换成更短的列表再跳到目标，不算滑到相邻一张' , () => {
 		const faults = judgeAdjacentStep( [
-			sample( { visible : false , centerId : 'f' , orderIds : [ 'a' , 'e' , 'f' ] } ) ,
-			sample( { visible : true , centerId : 'f' , orderIds : ring , transitionMs : 0 } ) ,
+			sample( { visible : true , opacity : 1 , centerId : 'f' , orderIds : [ 'a' , 'e' , 'f' ] } ) ,
+			sample( { visible : true , opacity : 1 , centerId : 'f' , orderIds : ring , transitionMs : 0 } ) ,
 		] , 'e' , ring , 'next' );
 		assert.ok( faults.includes( 'list-swapped' ) );
 		assert.ok( faults.includes( 'no-slide' ) );
@@ -58,6 +61,23 @@ describe( '菜单点远处之后再顺序下一格' , () => {
 } );
 
 describe( '顺序切到下一张后再菜单点上一个' , () => {
+	it( '条不透明时从上一张滑到相邻下一张' , () => {
+		const faults = judgeVisibleScroll( [
+			sample( { t : 1 , visible : true , opacity : 1 , centerId : 'a' , highlightedId : 'a' , highlightedX : 400 , orderIds : ring , transitionMs : 300 } ) ,
+			sample( { t : 2 , visible : true , opacity : 1 , centerId : 'a' , highlightedId : 'a' , highlightedX : 280 , orderIds : ring , transitionMs : 300 } ) ,
+			sample( { t : 3 , visible : true , opacity : 1 , centerId : 'b' , highlightedId : 'b' , highlightedX : 400 , orderIds : ring , transitionMs : 300 } ) ,
+		] , 'a' , ring , 'next' );
+		assert.deepEqual( faults , [] );
+	} );
+
+	it( '淡入时高亮已经是目标，算跳出' , () => {
+		const faults = judgeVisibleScroll( [
+			sample( { t : 1 , visible : true , opacity : 0.2 , centerId : 'a' , highlightedId : 'b' , highlightedX : 400 , orderIds : ring , transitionMs : 300 } ) ,
+			sample( { t : 2 , visible : true , opacity : 1 , centerId : 'b' , highlightedId : 'b' , highlightedX : 400 , orderIds : ring , transitionMs : 0 } ) ,
+		] , 'a' , ring , 'next' );
+		assert.ok( faults.includes( 'pop-in' ) );
+	} );
+
 	it( '顺序步从 a 滑到 b；菜单之后条隐藏并停在 a' , () => {
 		const step = judgeAdjacentStep( [
 			sample( { visible : true , centerId : 'a' , orderIds : ring , transitionMs : 300 } ) ,
@@ -100,6 +120,7 @@ describe( '顺序切到下一张后再菜单点上一个' , () => {
 import {
 	judgeAdjacentStep ,
 	judgeMenuSelect ,
+	judgeVisibleScroll ,
 	neighborId ,
 	type CarouselSightSample ,
 } from '#shared/carousel-requirement.utility';

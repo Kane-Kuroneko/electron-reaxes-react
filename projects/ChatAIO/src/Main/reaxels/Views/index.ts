@@ -1039,10 +1039,14 @@ export const Reaxel_View = reaxel( () => {
 		return ( index + length ) % length;
 	};
 
-	/* 构造 SwitchAiBar 显示载荷。
-	   items 为全部活跃 AI（保持用户顺序），activeIndex 为当前 AI 的索引，
-	   direction 告知组件滑动方向以保证"向前=卡片永远向左"的契约。
-	   Swiper 以 items 为稳定 slide 列表，通过 slideNext/slidePrev 驱动方向正确的过渡。 */
+	/* 菜单选中和顺序翻页期间，AIViews.length 的静默 prepare 不能先把游标挪到目标。
+	   顺序翻页的 show 必须从当前 configured 列表滑一格；中途换成已打开列表会把这一格吃掉。
+	   设计：docs/issues/floating-view-carousel-absolute-select.md */
+	let suppressCarouselPrepare = false;
+
+	/* 构造 SwitchAiBar 载荷。
+	   show 只配合顺序一格；菜单停靠走 prepare，不把 direction 当成连滑步数。
+	   faviconUrl / url 留给 custom 卡片画 logo。 */
 	const createSwitchAiBarPayload = (
 		items:SwitchAiBarPayloadItem[] ,
 		activeIndex:number ,
@@ -1051,7 +1055,13 @@ export const Reaxel_View = reaxel( () => {
 		source:FloatingView.SwitchAiBarPayload['source'] = 'unknown',
 	):FloatingView.SwitchAiBarPayload => {
 		return {
-			items : items.map( ( { id , label , family } ) => ( { id , label , family } ) ) ,
+			items : items.map( ( item ) => ( {
+				id : item.id ,
+				label : item.label ,
+				family : item.family ,
+				faviconUrl : item.faviconUrl ,
+				url : item.url ,
+			} ) ) ,
 			activeIndex ,
 			direction ,
 			ctxId ,
@@ -1059,7 +1069,51 @@ export const Reaxel_View = reaxel( () => {
 		};
 	};
 
-	const showSwitchAiBarAfterSwitch = (payload:FloatingView.SwitchAiBarPayload) => {
+	const showSwitchAiBarAfterSwitch = (
+		payload:FloatingView.SwitchAiBarPayload ,
+		meta?:{
+			fromIndex : number;
+			aiId : string;
+			gesture? : 'step' | 'close';
+		} ,
+	) => {
+		const itemIds = payload.items.map( ( item ) => item.id );
+		const fromIndex = meta && meta.fromIndex >= 0 ? meta.fromIndex : payload.activeIndex;
+		const gesture = meta?.gesture || 'step';
+		const animation = payload.direction === 'next' ? 'slideNext' : 'slidePrev';
+		const ringDistance = ringSteps( fromIndex , payload.activeIndex , itemIds.length , payload.direction );
+		const expectedCenterId = itemIds[payload.activeIndex] || '';
+		emitCarouselOp( 'main' , {
+			kind : 'intent' ,
+			gesture ,
+			command : 'show' ,
+			ctxId : payload.ctxId || '' ,
+			aiId : meta?.aiId || expectedCenterId ,
+			activeIndex : payload.activeIndex ,
+			direction : payload.direction ,
+			visible : true ,
+			animation : gesture === 'step' ? animation : 'none' ,
+			steps : gesture === 'step' ? 1 : 0 ,
+			fromIndex ,
+			toIndex : payload.activeIndex ,
+			ringDistance ,
+			source : payload.source || 'unknown' ,
+			itemIds ,
+			itemLabels : payload.items.map( ( item ) => item.label ) ,
+			expectedCenterId ,
+			faults : gesture === 'step'
+				? detectCarouselOpFaults( {
+					gesture : 'step' ,
+					visible : true ,
+					animation ,
+					steps : 1 ,
+					direction : payload.direction ,
+					ringDistance ,
+					itemIds ,
+					expectedCenterId ,
+				} )
+				: [] ,
+		} );
 		const show = () => {
 			reaxel_FloatingView().api.showSwitchAiBar( payload );
 		};
@@ -1071,7 +1125,34 @@ export const Reaxel_View = reaxel( () => {
 		show();
 	};
 
-	/** 与 menubar Prev/Next（instantiated）同源预热，避免首次 show 时 items.length 变化触发 Swiper 重建。 */
+	/**
+	 * 页序轮播的隐藏列表：全部未禁用 AI，和菜单 / Next AI Page 同一套下标。
+	 * 已打开列表只留给 Prev/Next Opened 的 show。静默 prepare 若改用那份短列表，
+	 * 下一次顺序翻页会先换列表再重建，slideNext 不会发生。
+	 * 设计：docs/issues/floating-view-carousel-absolute-select.md
+	 */
+	const prepareConfiguredSwitchAiBar = ( opts?:{ silent?: boolean } ) => {
+		const settings = getRuntimeSettings();
+		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
+		if( activeAIs.length === 0 ) {
+			return;
+		}
+		const currentIndex = activeAIs.findIndex( ai => ai.id === store.currentAIViewKey );
+		const payload = createSwitchAiBarPayload(
+			activeAIs.map( createPayloadItemFromAI ) ,
+			currentIndex >= 0 ? currentIndex : 0 ,
+			'next' ,
+			undefined ,
+			'configured',
+		);
+		if( opts?.silent ) {
+			reaxel_FloatingView().api.prepareSwitchAiBarIfHidden( payload );
+			return;
+		}
+		reaxel_FloatingView().api.prepareSwitchAiBar( payload );
+	};
+
+	/** 与 Prev/Next Opened 同源预热。页序轮播不要走这里，否则会盖掉 configured 列表。 */
 	const prepareInstantiatedSwitchAiBar = (opts?:{ silent?: boolean }) => {
 		const settings = getRuntimeSettings();
 		const runtimeViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
@@ -1091,6 +1172,80 @@ export const Reaxel_View = reaxel( () => {
 			return;
 		}
 		reaxel_FloatingView().api.prepareSwitchAiBar( payload );
+	};
+
+	/**
+	 * 菜单点名。只换页，并在隐藏时把轮播停到这张卡上。
+	 * 停在已打开列表：中区 Next 也用这份列表，下一次切换不必拆掉 Swiper 重建。
+	 * 不 show：弹出轮播会把绝对选中画成一次滑动。
+	 * 设计：docs/issues/floating-view-carousel-absolute-select.md
+	 */
+	const parkCarouselAtAI = ( aiId:string , settings:Settings , fromIndex = -1 ) => {
+		const runtimeViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
+		const runtimeIndex = runtimeViews.findIndex( ( view ) => view.id === aiId );
+		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
+		const configuredIndex = activeAIs.findIndex( ai => ai.id === aiId );
+		if( runtimeIndex < 0 && configuredIndex < 0 ) {
+			return;
+		}
+		const useRuntime = runtimeIndex >= 0;
+		const index = useRuntime ? runtimeIndex : configuredIndex;
+		const ctxId = perf.newCtx();
+		const payload = createSwitchAiBarPayload(
+			useRuntime
+				? runtimeViews.map( createPayloadItemFromRuntimeView )
+				: activeAIs.map( createPayloadItemFromAI ) ,
+			index ,
+			'next' ,
+			ctxId ,
+			useRuntime ? 'instantiated' : 'configured',
+		);
+		const itemIds = payload.items.map( ( item ) => item.id );
+		const resolvedFrom = fromIndex >= 0 ? fromIndex : index;
+		emitCarouselOp( 'main' , {
+			kind : 'intent' ,
+			gesture : 'menu-select' ,
+			command : 'hide+prepare' ,
+			ctxId ,
+			aiId ,
+			activeIndex : index ,
+			direction : 'next' ,
+			visible : false ,
+			animation : 'none' ,
+			steps : 0 ,
+			fromIndex : resolvedFrom ,
+			toIndex : index ,
+			ringDistance : ringSteps( resolvedFrom , index , itemIds.length , 'next' ) ,
+			source : useRuntime ? 'instantiated' : 'configured' ,
+			itemIds ,
+			itemLabels : payload.items.map( ( item ) => item.label ) ,
+			expectedCenterId : aiId ,
+			faults : detectCarouselOpFaults( {
+				gesture : 'menu-select' ,
+				visible : false ,
+				animation : 'none' ,
+				steps : 0 ,
+				direction : 'next' ,
+				ringDistance : ringSteps( resolvedFrom , index , itemIds.length , 'next' ) ,
+				itemIds ,
+				expectedCenterId : aiId ,
+			} ) ,
+		} );
+		reaxel_FloatingView().api.hideSwitchAiBar();
+		reaxel_FloatingView().api.prepareSwitchAiBar( payload );
+	};
+
+	const selectAIFromMenu = ( aiId:string ) => {
+		suppressCarouselPrepare = true;
+		try {
+			const settings = getRuntimeSettings();
+			const activeAIs = settings.AIs.filter( ai => !ai.disabled );
+			const fromIndex = activeAIs.findIndex( ai => ai.id === store.currentAIViewKey );
+			reaxel_AIViews().showAIView( aiId , settings );
+			parkCarouselAtAI( aiId , settings , fromIndex );
+		} finally {
+			suppressCarouselPrepare = false;
+		}
 	};
 
 	const turnToAiPageByOffset = (
@@ -1129,20 +1284,30 @@ export const Reaxel_View = reaxel( () => {
 			aiId : nextAI.id ,
 			isFirstSwitchInSession ,
 		} );
-		const view = reaxel_AIViews().showAIView( nextAI.id , settings );
-		perf.mark( PerfPhase.SwitchAiViewEnd , 'main' , ctxId , {
-			aiId : nextAI.id ,
-		} );
+		suppressCarouselPrepare = true;
+		let view;
+		try {
+			view = reaxel_AIViews().showAIView( nextAI.id , settings );
+			perf.mark( PerfPhase.SwitchAiViewEnd , 'main' , ctxId , {
+				aiId : nextAI.id ,
+			} );
 
-		showSwitchAiBarAfterSwitch(
-			createSwitchAiBarPayload(
-				activeAIs.map( createPayloadItemFromAI ) ,
-				nextIndex ,
-				direction ,
-				ctxId ,
-				'configured',
-			),
-		);
+			showSwitchAiBarAfterSwitch(
+				createSwitchAiBarPayload(
+					activeAIs.map( createPayloadItemFromAI ) ,
+					nextIndex ,
+					direction ,
+					ctxId ,
+					'configured',
+				) ,
+				{
+					fromIndex : currentIndex >= 0 ? currentIndex : nextIndex ,
+					aiId : nextAI.id ,
+				} ,
+			);
+		} finally {
+			suppressCarouselPrepare = false;
+		}
 
 		perf.mark( PerfPhase.SwitchIpcSent , 'main' , ctxId , {
 			action : 'switch-configured' ,
@@ -1207,7 +1372,11 @@ export const Reaxel_View = reaxel( () => {
 				direction ,
 				ctxId ,
 				'instantiated',
-			),
+			) ,
+			{
+				fromIndex : currentIndex >= 0 ? currentIndex : nextIndex ,
+				aiId : nextRuntimeView.id ,
+			} ,
 		);
 
 		perf.mark( PerfPhase.SwitchIpcSent , 'main' , ctxId , {
@@ -1270,16 +1439,35 @@ export const Reaxel_View = reaxel( () => {
 				const nextIndex = updatedRuntimeViews.findIndex(
 					rv => rv.id === store.currentAIViewKey,
 				);
-
-				reaxel_FloatingView().api.showSwitchAiBar(
-					createSwitchAiBarPayload(
-						updatedRuntimeViews.map( createPayloadItemFromRuntimeView ) ,
-						nextIndex >= 0 ? nextIndex : 0 ,
-						'next' ,
-						ctxId ,
-						'instantiated',
-					),
+				const closePayload = createSwitchAiBarPayload(
+					updatedRuntimeViews.map( createPayloadItemFromRuntimeView ) ,
+					nextIndex >= 0 ? nextIndex : 0 ,
+					'next' ,
+					ctxId ,
+					'instantiated',
 				);
+				const closeIds = closePayload.items.map( ( item ) => item.id );
+				emitCarouselOp( 'main' , {
+					kind : 'intent' ,
+					gesture : 'close' ,
+					command : 'show' ,
+					ctxId ,
+					aiId : closeIds[closePayload.activeIndex] || '' ,
+					activeIndex : closePayload.activeIndex ,
+					direction : 'next' ,
+					visible : true ,
+					animation : 'none' ,
+					steps : 0 ,
+					fromIndex : closePayload.activeIndex ,
+					toIndex : closePayload.activeIndex ,
+					ringDistance : 0 ,
+					source : 'instantiated' ,
+					itemIds : closeIds ,
+					itemLabels : closePayload.items.map( ( item ) => item.label ) ,
+					expectedCenterId : closeIds[closePayload.activeIndex] || '' ,
+					faults : [] ,
+				} );
+				reaxel_FloatingView().api.showSwitchAiBar( closePayload );
 
 				perf.mark( PerfPhase.SwitchIpcSent , 'main' , ctxId , {
 					action : 'close' ,
@@ -1288,6 +1476,21 @@ export const Reaxel_View = reaxel( () => {
 					isFirstSwitchInSession ,
 				} );
 			} else {
+				emitCarouselOp( 'main' , {
+					kind : 'intent' ,
+					gesture : 'close' ,
+					command : 'hide' ,
+					ctxId ,
+					aiId : '' ,
+					activeIndex : -1 ,
+					direction : 'next' ,
+					visible : false ,
+					animation : 'none' ,
+					steps : 0 ,
+					itemIds : [] ,
+					itemLabels : [] ,
+					faults : [] ,
+				} );
 				reaxel_FloatingView().api.hideSwitchAiBar();
 
 				perf.mark( PerfPhase.SwitchIpcSent , 'main' , ctxId , {
@@ -1396,7 +1599,7 @@ export const Reaxel_View = reaxel( () => {
 		presentActiveCenterView( 'switch' );
 		getMenubarColdStartMonitor().note( 'phase-3-overlay-warm' );
 		reaxel_FloatingView().initFloatingView();
-		/* AI 列表就绪后预热 SwitchAiBar：与 menubar Prev/Next 同源（instantiated），避免首次显示重建。 */
+		/* 中区 Next 用已打开列表。启动时就停在这份列表上，避免第一次切换拆 Swiper。 */
 		prepareInstantiatedSwitchAiBar();
 		/* 不 await：Settings 必须晚于启动 AI 页，但不能挡住 FloatingView / 窗口事件绑定。 */
 		void scheduleSettingsViewPreloadAfterAIPages();
@@ -1494,9 +1697,14 @@ export const Reaxel_View = reaxel( () => {
 		}
 	} , () => [ store.currentAIViewKey ] );
 
-	/* runtime AI 列表变化时静默对齐 SwitchAiBar（仅 overlay 隐藏时），避免下次显示时重建。 */
+	/* 新开一页时，隐藏轮播对齐已打开列表。不要在这里换成全部启用项，否则中区 Next 每次都要重建 Swiper。
+	   菜单选中和翻页自己会发 prepare/show；这里若先 prepare，游标会被提前挪到目标。
+	   见 floating-view-carousel-absolute-select.md */
 	obsReaction( ( first ) => {
 		if( first ) return;
+		if( suppressCarouselPrepare ) {
+			return;
+		}
 		prepareInstantiatedSwitchAiBar( { silent : true } );
 	} , () => [ reaxel_AIViews.store.AIViews.length ] );
 
@@ -1546,6 +1754,7 @@ export const Reaxel_View = reaxel( () => {
 		turnToPreviousAiPage ,
 		turnToNextInstantiatedAiPage ,
 		turnToPreviousInstantiatedAiPage ,
+		selectAIFromMenu ,
 		closeCurrentAIView,
 	};
 
@@ -1667,6 +1876,11 @@ import type { AI } from "#src/Types/SettingsTypes/AI";
 import type { Settings } from "#src/Types/SettingsTypes";
 import type { RuntimeAIView } from "#main/reaxels/Views/AI-Views";
 import { perf , PerfPhase } from '#shared/utils/switch-perf-recorder.utility';
+import {
+	detectCarouselOpFaults ,
+	emitCarouselOp ,
+	ringSteps ,
+} from '#shared/carousel-op.utility';
 import {
 	createReaxable ,
 	obsReaction ,

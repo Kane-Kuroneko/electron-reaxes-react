@@ -4,6 +4,7 @@
  * 接收来自渲染进程（通过 IPC）和主进程自身的 PerfEvent，写入
  * projects/ChatAIO/performance-logs/perf-<timestamp>.jsonl
  * Settings 侧栏切页另写 settings-menu-perf.jsonl（见 docs/features/settings-menu-switch-perf.md）
+ * 轮播菜单选中 / 顺序切换另写 carousel-ops.jsonl（见 docs/issues/floating-view-carousel-absolute-select.md）
  */
 
 import { perf } from '#shared/utils/switch-perf-recorder.utility';
@@ -14,12 +15,15 @@ import { app } from 'electron';
 
 const PERF_LOG_DIR_NAME = 'performance-logs';
 const SETTINGS_MENU_LOG_NAME = 'settings-menu-perf.jsonl';
+const CAROUSEL_OP_LOG_NAME = 'carousel-ops.jsonl';
 const FLUSH_INTERVAL_MS = 5000;
 
 let logStream: fs.WriteStream | null = null;
 let logPath: string | null = null;
 let settingsMenuLogStream: fs.WriteStream | null = null;
 let settingsMenuLogPath: string | null = null;
+let carouselOpLogStream: fs.WriteStream | null = null;
+let carouselOpLogPath: string | null = null;
 let flushTimer: ReturnType<typeof setInterval> | null = null;
 
 /** 初始化性能日志系统：创建日志文件并注册 flush 处理器 */
@@ -36,9 +40,12 @@ export function initSwitchPerformanceLogging(): void {
 	logStream = fs.createWriteStream( logPath , { flags : 'a' } );
 	settingsMenuLogPath = path.join( logDir , SETTINGS_MENU_LOG_NAME );
 	settingsMenuLogStream = fs.createWriteStream( settingsMenuLogPath , { flags : 'a' } );
+	carouselOpLogPath = path.join( logDir , CAROUSEL_OP_LOG_NAME );
+	carouselOpLogStream = fs.createWriteStream( carouselOpLogPath , { flags : 'a' } );
 
 	console.log( `[SwitchPerf] Logging to: ${ logPath }` );
 	console.log( `[SwitchPerf] Settings menu log: ${ settingsMenuLogPath }` );
+	console.log( `[SwitchPerf] Carousel ops log: ${ carouselOpLogPath }` );
 
 	/* 主进程自身事件的 flush：直接写文件 */
 	perf.onFlush( ( events ) => {
@@ -89,6 +96,11 @@ export function shutdownPerformanceLogging(): void {
 		settingsMenuLogStream = null;
 		console.log( `[SwitchPerf] Settings menu log closed: ${ settingsMenuLogPath }` );
 	}
+	if( carouselOpLogStream ) {
+		carouselOpLogStream.end();
+		carouselOpLogStream = null;
+		console.log( `[SwitchPerf] Carousel ops log closed: ${ carouselOpLogPath }` );
+	}
 }
 
 function writeEvents( events: PerfEvent[] ): void {
@@ -98,6 +110,9 @@ function writeEvents( events: PerfEvent[] ): void {
 		logStream.write( line );
 		if( settingsMenuLogStream && typeof event.phase === 'string' && event.phase.startsWith( 'settings-menu:' ) ) {
 			settingsMenuLogStream.write( line );
+		}
+		if( carouselOpLogStream && event.phase === CAROUSEL_OP_PHASE ) {
+			carouselOpLogStream.write( line );
 		}
 	}
 }
@@ -113,4 +128,5 @@ function getProjectRoot(): string {
 	return appPath;
 }
 
+import { CAROUSEL_OP_PHASE } from '#shared/carousel-op.utility';
 import { useIpcRendererToMain } from '#main/services/ipc';

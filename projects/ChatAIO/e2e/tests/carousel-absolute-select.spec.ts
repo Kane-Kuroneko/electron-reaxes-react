@@ -71,10 +71,10 @@ testCarousel( 'menu select of a distant AI parks hidden, then Next AI Page steps
 		( state ) => state.currentAIViewKey === E2E_AI_F.id ,
 	);
 	const stepSamples = await collectSight( floating , sinceStep , ( samples ) => {
-		const faults = judgeAdjacentStep( samples , E2E_AI_E.id , RING , 'next' );
-		return faults.length === 0 || samples.some( ( sample ) => sample.visible && sample.centerId === E2E_AI_F.id );
+		const faults = judgeVisibleScroll( samples , E2E_AI_E.id , RING , 'next' );
+		return faults.length === 0 || samples.some( ( sample ) => sample.opacity >= 0.9 && sample.highlightedId === E2E_AI_F.id );
 	} );
-	expect( judgeAdjacentStep( stepSamples , E2E_AI_E.id , RING , 'next' ) , summarizeCarouselSight( stepSamples ) ).toEqual( [] );
+	expect( judgeVisibleScroll( stepSamples , E2E_AI_E.id , RING , 'next' ) , summarizeCarouselSight( stepSamples ) ).toEqual( [] );
 	const trace = await readCarouselTrace( floating );
 	await test.info().attach( 'carousel-after-menu-step' , {
 		body : JSON.stringify( trace , null , 2 ) ,
@@ -82,47 +82,51 @@ testCarousel( 'menu select of a distant AI parks hidden, then Next AI Page steps
 	} );
 } );
 
-testCarousel( 'after a sequential step, menu select of the previous AI parks hidden without a jump' , async( {
+testCarousel( 'badge select of a neighbor then Next scrolls instead of popping the cards in' , async( {
 	electronApp ,
 	mainWindow,
 } ) => {
 	await waitForMainRuntime( electronApp );
 	const floating = await waitForWindowByUrl( electronApp , 'FloatingView' );
 	await armCarouselSight( floating );
-	await waitForE2ESnapshot(
+	const start = await waitForE2ESnapshot(
 		electronApp ,
 		( state ) => state.currentAIViewKey === E2E_AI_A.id && state.enabledAIIds.length === RING.length ,
 	);
+	expect( start.enabledAIIds ).toEqual( RING );
 
-	const sinceStep = await markCarouselSight( floating );
-	await clickNextAiPage( electronApp , mainWindow );
+	const dropdown = await openCurrentAiMenu( electronApp , mainWindow );
+	const menuIds = await readSwitchAiItemIds( dropdown );
+	const currentIndex = menuIds.indexOf( E2E_AI_A.id );
+	const neighborId = menuIds[currentIndex + 1];
+	expect( neighborId ).toBe( E2E_AI_B.id );
+	await watchClick( dropdown.locator( `[data-item-payload="${ neighborId }"]` ) );
+	const parked = await waitForE2ESnapshot(
+		electronApp ,
+		( state ) => state.currentAIViewKey === neighborId && state.instantiatedAIIds.includes( neighborId ) ,
+	);
+	const opened = parked.instantiatedAIIds;
+	const nextOpened = opened[( opened.indexOf( neighborId ) + 1 ) % opened.length];
+	expect( nextOpened ).toBeTruthy();
+
+	const sinceNext = await markCarouselSight( floating );
+	await watchClick( mainWindow.locator( '[data-menu-id="next-instantiated"] button' ) );
 	await waitForE2ESnapshot(
 		electronApp ,
-		( state ) => state.currentAIViewKey === E2E_AI_B.id ,
+		( state ) => state.currentAIViewKey === nextOpened ,
 	);
-	const stepSamples = await collectSight( floating , sinceStep , ( samples ) => {
-		const faults = judgeAdjacentStep( samples , E2E_AI_A.id , RING , 'next' );
-		return faults.length === 0 || samples.some( ( sample ) => sample.visible && sample.centerId === E2E_AI_B.id );
+	const stepSamples = await collectSight( floating , sinceNext , ( samples ) => {
+		const faults = judgeVisibleScroll( samples , neighborId , opened , 'next' );
+		return faults.length === 0
+			|| samples.some( ( sample ) => sample.opacity >= 0.9 && sample.highlightedId === nextOpened );
 	} );
-	const stepFaults = judgeAdjacentStep( stepSamples , E2E_AI_A.id , RING , 'next' );
-
-	const sinceMenu = await markCarouselSight( floating );
-	await switchToAiById( electronApp , mainWindow , E2E_AI_A.id );
-	await waitForE2ESnapshot(
-		electronApp ,
-		( state ) => state.currentAIViewKey === E2E_AI_A.id ,
-	);
-	const menuSamples = await collectSight( floating , sinceMenu , ( samples ) => {
-		return judgeMenuSelect( samples , E2E_AI_A.id , RING ).length === 0
-			|| samples.some( ( sample ) => sample.centerId === E2E_AI_A.id && sample.visible === false );
-	} );
-	expect( judgeMenuSelect( menuSamples , E2E_AI_A.id , RING ) , summarizeCarouselSight( menuSamples ) ).toEqual( [] );
-	expect( stepFaults , summarizeCarouselSight( stepSamples ) ).toEqual( [] );
+	expect( judgeVisibleScroll( stepSamples , neighborId , opened , 'next' ) , summarizeCarouselSight( stepSamples ) ).toEqual( [] );
 } );
 
 import { test , expect } from '../fixtures';
 import { waitForE2ESnapshot , waitForMainRuntime , waitForWindowByUrl } from '../support/app-probe';
-import { clickNextAiPage , switchToAiById } from '../support/switch-ai';
+import { clickNextAiPage , openCurrentAiMenu , readSwitchAiItemIds , switchToAiById } from '../support/switch-ai';
+import { watchClick } from '../support/observe';
 import {
 	armCarouselSight ,
 	markCarouselSight ,
@@ -138,8 +142,8 @@ import {
 	patchCarouselRing ,
 } from '../support/e2e-ais';
 import {
-	judgeAdjacentStep ,
 	judgeMenuSelect ,
+	judgeVisibleScroll ,
 	summarizeCarouselSight ,
 	type CarouselSightSample ,
 } from '../../src/shared/carousel-requirement.utility';

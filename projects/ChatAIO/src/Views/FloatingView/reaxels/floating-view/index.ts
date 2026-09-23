@@ -26,6 +26,8 @@ export const reaxel_FloatingView = reaxel( () => {
 	const AUTO_HIDE_MS = 2000;
 	let hideTimer = checkAs<ReturnType<typeof setTimeout>>( null );
 	let toastTimer = checkAs<ReturnType<typeof setTimeout>>( null );
+	/* 隐藏条上的 Next 要先亮出当前卡，再改下标。后一次 show 作废上一次尚未播出的滑动。 */
+	let revealThenSlideGeneration = 0;
 
 	const clearHideTimer = () => {
 		if( hideTimer ) {
@@ -39,9 +41,19 @@ export const reaxel_FloatingView = reaxel( () => {
 		setState.switchAiBar( {
 			visible : false,
 		} );
+		traceCarouselOp( {
+			kind : 'command' ,
+			command : 'hide' ,
+			ctxId : currentPerfCtxId || '' ,
+			activeIndex : store.switchAiBar.activeIndex ,
+			direction : store.switchAiBar.direction ,
+			visible : false ,
+			itemIds : store.switchAiBar.items.map( ( item ) => item.id ) ,
+			itemLabels : store.switchAiBar.items.map( ( item ) => item.label ) ,
+		} );
 	};
 
-	/** 仅写入卡片数据以挂载 Swiper，保持 hidden——用于启动预热。 */
+	/** 仅写入卡片数据以挂载 Swiper，保持 hidden——用于启动预热。菜单停靠也走这里，不弹出。 */
 	const prepareSwitchAiBar = (payload:FloatingView.SwitchAiBarPayload) => {
 		const fingerprint = switchAiBarItemsFingerprint(
 			payload.items ,
@@ -58,6 +70,17 @@ export const reaxel_FloatingView = reaxel( () => {
 			activeIndex : payload.activeIndex ,
 			direction : payload.direction,
 		} );
+		traceCarouselOp( {
+			kind : 'command' ,
+			command : 'prepare' ,
+			ctxId : payload.ctxId || currentPerfCtxId || '' ,
+			activeIndex : payload.activeIndex ,
+			direction : payload.direction ,
+			source : payload.source || 'unknown' ,
+			visible : false ,
+			itemIds : payload.items.map( ( item ) => item.id ) ,
+			itemLabels : payload.items.map( ( item ) => item.label ) ,
+		} );
 		perf.flush();
 	};
 
@@ -66,6 +89,21 @@ export const reaxel_FloatingView = reaxel( () => {
 		currentPerfCtxId = payload.ctxId || '';
 		const prevItems = store.switchAiBar.items;
 		const prevItemCount = prevItems.length;
+		const fromIndex = store.switchAiBar.activeIndex;
+		const hidden = store.switchAiBar.visible !== true;
+		const currentId = fromIndex >= 0 && fromIndex < prevItemCount
+			? prevItems[fromIndex]?.id
+			: '';
+		/* 中区 Next 走已打开列表，下标和隐藏时停靠的启用列表不是同一套。
+		   必须按当前卡的 id 在新列表里找位置，先亮出这张卡，再滑到下一张。
+		   若直接用目标下标重建，整条会突然出现在终点，没有滚动。
+		   见 docs/issues/floating-view-carousel-absolute-select.md */
+		const holdIndex = currentId
+			? payload.items.findIndex( ( item ) => item.id === currentId )
+			: -1;
+		const holdFromCard = hidden
+			&& holdIndex >= 0
+			&& holdIndex !== payload.activeIndex;
 		const fingerprint = switchAiBarItemsFingerprint(
 			payload.items ,
 			payload.source ?? 'unknown',
@@ -73,18 +111,80 @@ export const reaxel_FloatingView = reaxel( () => {
 		const prevFingerprint = switchAiBarItemsFingerprint( prevItems );
 		const itemsChanged = prevFingerprint.idsHash !== fingerprint.idsHash
 			|| prevItemCount !== fingerprint.itemCount;
-
-		setState.switchAiBar( {
-			visible : true ,
-			items : payload.items ,
+		const sameList = prevItemCount === payload.items.length
+			&& prevItems.every( ( item , index ) => item.id === payload.items[index]?.id );
+		const applyShow = ( activeIndex:number , replaceItems:boolean ) => {
+			if( replaceItems ) {
+				setState.switchAiBar( {
+					visible : true ,
+					items : payload.items ,
+					activeIndex ,
+					direction : payload.direction,
+				} );
+				return;
+			}
+			setState.switchAiBar( {
+				visible : true ,
+				activeIndex ,
+				direction : payload.direction,
+			} );
+		};
+		if( holdFromCard && sameList ) {
+			const generation = ++revealThenSlideGeneration;
+			applyShow( holdIndex , false );
+			setTimeout( () => {
+				if( generation !== revealThenSlideGeneration ) {
+					return;
+				}
+				applyShow( payload.activeIndex , false );
+			} , 50 );
+		} else if( holdFromCard ) {
+			const generation = ++revealThenSlideGeneration;
+			/* 换列表才重建 Swiper。让出当前栈，中心页先画出来；重建时条仍隐藏。 */
+			setTimeout( () => {
+				if( generation !== revealThenSlideGeneration ) {
+					return;
+				}
+				setState.switchAiBar( {
+					visible : false ,
+					items : payload.items ,
+					activeIndex : holdIndex ,
+					direction : payload.direction,
+				} );
+				setTimeout( () => {
+					if( generation !== revealThenSlideGeneration ) {
+						return;
+					}
+					applyShow( holdIndex , false );
+					setTimeout( () => {
+						if( generation !== revealThenSlideGeneration ) {
+							return;
+						}
+						applyShow( payload.activeIndex , false );
+					} , 50 );
+				} , 0 );
+			} , 0 );
+		} else {
+			revealThenSlideGeneration++;
+			applyShow( payload.activeIndex , sameList === false );
+		}
+		traceCarouselOp( {
+			kind : 'command' ,
+			command : 'show' ,
+			ctxId : currentPerfCtxId ,
 			activeIndex : payload.activeIndex ,
-			direction : payload.direction,
+			direction : payload.direction ,
+			source : payload.source || 'unknown' ,
+			visible : true ,
+			itemIds : payload.items.map( ( item ) => item.id ) ,
+			itemLabels : payload.items.map( ( item ) => item.label ) ,
 		} );
 		perf.mark( PerfPhase.SwitchUiUpdated , 'renderer' , currentPerfCtxId , {
 			...fingerprint ,
 			activeIndex : payload.activeIndex ,
 			itemsChanged ,
 			prevItemCount ,
+			holdFromCard ,
 		} );
 		hideTimer = setTimeout( hideSwitchAiBar , AUTO_HIDE_MS );
 	};
@@ -148,6 +248,7 @@ export const reaxel_FloatingView = reaxel( () => {
 } );
 
 import type { FloatingView } from '#src/Types/FloatingView';
+import { traceCarouselOp } from '#FloatingView/utils/carousel-trace.utility';
 import {
 	perf ,
 	PerfPhase ,

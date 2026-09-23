@@ -35,23 +35,23 @@
 
 `faults` 非空就是这条操作偏离契约。常见码：`menu-or-park-visible`（菜单把轮播叫出来）、`park-animated` / `park-steps`、`step-not-adjacent`（从旧卡连滑）、`step-count`、`render-order`、`current-card-empty`、`current-only-duplicate`。
 
-## 2026-09-22 实测
+## 2026-09-22 实测与修复
 
-`e2e/tests/carousel-absolute-select.spec.ts` 两条都卡在顺序切换，不是菜单停靠：
+失败采样是：顺序翻页时 `AIViews.length` 的静默 prepare 先把隐藏轮播换成已打开的短列表，并把游标写成目标下标。随后 configured 的 `show` 再因长度变化重建，`slideNext` 不会发生。
 
-- 菜单点 Echo：主进程 `hide+prepare`，configured 6 张，下标 4，渲染进程没有 `show`。DOM 隐藏且第一份顺序就是这 6 张。
-- 紧接着 Next AI Page：主进程 intent 是从 4 到 5 的 `slideNext`。渲染进程却先收到已打开列表的 `prepare`（3 张，下标 2），把 Swiper 按列表长度重建停过去。随后的 `show`（6 张，下标 5）再次因长度变化重建，游标被写成目标，**没有 `gesture: step` 帧，也没有 `slideNext`**。
-- 从 Alpha 直接 Next 到 Bravo 是同一条：先 `prepare` 2 张，再 `show` 6 张，动画帧缺失。
-- 这次顺序切换之后再菜单点回 Alpha：`hide` + `prepare`，6 张不变，停靠帧是 1→0、`animation: none`，没有 `show`。菜单点上一个这条本身没有把轮播叫出来。
+修复：
 
-所以「菜单后再顺序切」看起来像从别的列表跳到目标，而不是从刚停住的那张滑到相邻一张。需求判定看采样：可见时中心必须先是刚选中的那张，再滑到相邻一张，顺序不能中途换成更短的列表。实现规划函数回放这条竞态时仍会返回 step，不能拿来当通过条件。
+- 启动、关闭后和已打开页数量变化时，隐藏轮播停在 configured 列表（全部未禁用 AI），不再预热已打开短列表。
+- `turnToAiPageByOffset` 在 `showAIView` 到 `show` 之间抑制这次静默 prepare，避免游标提前挪到目标。
+
+修完后菜单点远处再 Next，列表长度不变。select 上一个之后的 Next：条先不透明停在刚选中的卡上，再滑到相邻下一张。容器淡入不再盖住这次滑动。
 
 ## 用户看到的两条
 
-| 操作 | 错误呈现 | 2026-09-22 实测 |
-|------|----------|----------------|
-| 菜单点很远的 AI，再顺序切下一格 | 视觉还在旧卡，下一格按环路连滑 | 菜单不弹出，隐藏列表停在选中项。下一格被已打开列表的 prepare 插队，show 时按长度重建，没有 slideNext |
-| 菜单再点上一个 | 轮播被叫出来，或按 `next` 绕远路跳走 | 菜单是 hide + prepare，列表仍是 6 张，停靠 1→0，不 show、不滑。前面的顺序切换仍然没有 step 帧 |
+| 操作 | 要求 | 修复后 |
+|------|------|--------|
+| 菜单点很远的 AI，再顺序切下一格 | 菜单不弹出，隐藏列表停在选中项；下一格从这张卡滑到相邻一张 | 静默 prepare 不再插入已打开短列表，`show` 时列表长度不变，会 `slideNext` 一格 |
+| 点 badge 选一个临近 AI，再点中区 Next | 卡片整条突然出现，没有横向滚动 | 中区 Next 用的是已打开列表，下标和隐藏停靠的启用列表不是同一套。先按当前卡的 id 在新列表里亮出这张卡，50ms 后再滑到下一张。实测透明度保持 1，正中从刚选中的卡移到下一张 |
 
 ## 为什么上次的改法会空卡
 

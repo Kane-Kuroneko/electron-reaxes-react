@@ -17,9 +17,10 @@ export namespace FloatingView {
 
 	/**
 	 * SwitchAiBar 显示载荷。
-	 * items 为全部活跃 AI（按用户顺序），activeIndex 指示当前活跃 AI 在 items 中的索引。
-	 * direction 告知组件滑动方向，Swiper 据此调用 slideNext() 或 slidePrev()，
-	 * 保证"向前 = 卡片永远向左移动、永不跳卡"的 UX 契约。
+	 * items 为当前这份卡片列表，activeIndex 是目标下标。
+	 * show 只用于顺序一格：direction 决定 slideNext / slidePrev 一次。
+	 * 菜单绝对选中走 prepare（隐藏停靠），不发 show。
+	 * 见 docs/issues/floating-view-carousel-absolute-select.md。
 	 */
 	export type SwitchAiBarPayload = {
 		/** 全部活跃 AI（已按用户顺序排列） */

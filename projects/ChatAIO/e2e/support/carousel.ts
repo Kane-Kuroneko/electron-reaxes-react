@@ -13,6 +13,9 @@ export const armCarouselSight = async( floating:Page ) => {
 				centerId : string;
 				orderIds : string[];
 				transitionMs : number;
+				opacity : number;
+				highlightedId : string;
+				highlightedX : number;
 			}>;
 			__carouselSightTimer? : number;
 		};
@@ -55,6 +58,7 @@ export const armCarouselSight = async( floating:Page ) => {
 			const barRect = bar?.getBoundingClientRect();
 			const midpoint = barRect ? barRect.left + barRect.width / 2 : 0;
 			let visualId = '';
+			let visualX = 0;
 			let visualDistance = Number.POSITIVE_INFINITY;
 			for( const node of Array.from( document.querySelectorAll( '.switch-ai-bar .swiper-slide' ) ) ) {
 				const slide = node as HTMLElement;
@@ -68,16 +72,24 @@ export const armCarouselSight = async( floating:Page ) => {
 				if( distance < visualDistance ) {
 					visualDistance = distance;
 					visualId = aiId;
+					visualX = Math.round( rect.left + rect.width / 2 );
 				}
 			}
+			const markedSlide = document.querySelector( '.switch-ai-bar .swiper-slide[data-position="current"]' ) as HTMLElement | null;
+			const markedCard = markedSlide?.querySelector( '.switch-ai-bar__item' );
 			const marked = slides.find( ( slide ) => slide.position === 'current' && slide.duplicate !== true && slide.aiId )
 				|| slides.find( ( slide ) => slide.position === 'current' && slide.aiId );
+			const highlightedId = visualId || markedCard?.getAttribute( 'data-ai-id' ) || marked?.aiId || '';
+			const highlightedRect = markedSlide?.getBoundingClientRect();
 			samples.push( {
 				t : performance.now() ,
 				visible : bar?.classList.contains( 'switch-ai-bar--visible' ) === true ,
-				centerId : visualId || marked?.aiId || '' ,
+				centerId : highlightedId ,
 				orderIds ,
 				transitionMs ,
+				opacity : Number.parseFloat( bar ? getComputedStyle( bar ).opacity : '0' ) || 0 ,
+				highlightedId ,
+				highlightedX : visualId ? visualX : ( highlightedRect ? Math.round( highlightedRect.left + highlightedRect.width / 2 ) : 0 ) ,
 			} );
 			if( samples.length > 500 ) {
 				samples.splice( 0 , samples.length - 500 );
@@ -102,6 +114,9 @@ export const readCarouselSight = async( floating:Page , since:number ) => {
 				centerId : string;
 				orderIds : string[];
 				transitionMs : number;
+				opacity : number;
+				highlightedId : string;
+				highlightedX : number;
 			}>;
 		};
 		return ( host.__carouselSight || [] ).filter( ( sample ) => sample.t >= mark );
@@ -159,6 +174,7 @@ export const carouselCycleIds = ( entry:CarouselTraceEntry ) => {
 		.sort( ( left , right ) => ( left.sourceIndex ?? 0 ) - ( right.sourceIndex ?? 0 ) )
 		.map( ( slide ) => slide.aiId );
 };
+
 
 export type CarouselTraceEntry = {
 	ts? : number;

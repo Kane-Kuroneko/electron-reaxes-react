@@ -691,7 +691,8 @@ export const reaxel_MainView = reaxel( () => {
 				break;
 			case 'switch-ai':
 				if( typeof action.payload === 'string' ) {
-					reaxel_AIViews().showAIView( action.payload , getRuntimeSettings() );
+					/* 绝对选中不弹出轮播，只在隐藏时停靠。见 floating-view-carousel-absolute-select.md */
+					Reaxel_View().selectAIFromMenu( action.payload );
 				}
 				break;
 			case 'prev-instantiated':
