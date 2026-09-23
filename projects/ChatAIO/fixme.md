@@ -687,18 +687,15 @@ SettingsView 的 per-AI proxy auth 在 `projects/ChatAIO/src/Views/SettingsView/
 
 `projects/ChatAIO/src/Main/reaxels/Menu/index.ts` 内部定义了 `getRuntimeSettings`，`projects/ChatAIO/src/Main/reaxels/Views/index.ts` 也有类似逻辑。菜单重建时从 settings service 读取当前配置。
 
-同文件的 “Wipe and Reload This Page” 会对 `currentAIView.view.webContents.getURL()` 直接 `new URL(...)`，未看到 try/catch。
+同文件的 “Wipe and Reload This Page” 曾对 `currentAIView.view.webContents.getURL()` 直接 `new URL(...)`，未看到 try/catch。现已改为整 partition 清理，不再解析当前 URL（见 `docs/issues/wipe-reload-cross-origin-session.md`）。
 
 ### 为什么有问题以及后果
 
 Menu 和 Views 都依赖同一份 runtime settings。如果各自读取和组装，后续设置 schema 变化容易出现一边更新、一边遗漏。
 
-`new URL` 对 `about:blank`、空 URL、特殊协议可能抛错。菜单操作是用户可直接触发的功能，不应因当前页面状态异常导致 main 侧未捕获错误。
-
 可能后果：
 
 - 菜单 AI 列表与实际 view 同步策略出现轻微偏差。
-- Wipe 当前页在尚未加载或加载失败状态下报错。
 - console debug 日志长期留在生产路径中。
 
 ### 修复步骤与修改范围
@@ -713,14 +710,12 @@ Menu 和 Views 都依赖同一份 runtime settings。如果各自读取和组装
 
 1. 抽出统一的 `getRuntimeSettings` 或 `settingsRuntime.getCurrentSettings()`。
 2. Menu 和 Views 都使用同一入口。
-3. `Wipe and Reload This Page` 对当前 URL 做 try/catch。
-4. 对非 http/https URL 或无 origin 的 URL，给用户提示或只执行 reload，不执行 origin storage clear。
-5. 清理或降级 debug console log。
+3. Wipe 已不再按当前 URL origin 清 storage（整 partition）；URL 解析异常不再挡这条路径。
+4. 清理或降级 debug console log。
 
 验证方式：
 
 - 设置 AI 启用/禁用/排序后，菜单和 view 切换顺序一致。
-- 当前页为 about:blank 或加载失败时，Wipe 菜单项不会让 main 抛异常。
 
 ## P2-11 安全配置未显式启用 sandbox，开发调试开关需要发布隔离
 

@@ -27,5 +27,6 @@ export const MENU_IDS = {
 	nextInstantiated : 'next-instantiated' ,
 	prevPage : 'prev-page' ,
 	nextPage : 'next-page' ,
-	closeCurrentAi : 'close-current-ai',
+	closeCurrentAi : 'close-current-ai' ,
+	wipeReload : 'wipe-reload',
 } as const;

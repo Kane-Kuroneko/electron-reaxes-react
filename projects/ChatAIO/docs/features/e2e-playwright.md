@@ -194,7 +194,7 @@ CI / 日常全量保持 `yarn test:e2e`，WATCH 为 0。不要在观测时用鼠
 | `src/Main/foundation/e2e-bootstrap.ts` | **index.ts 第一个 import**，赶在 before-launch 依赖图之前挂收集器 |
 | `src/Main/foundation/e2e-mode.ts` | `CHATAIO_E2E` 闸门 |
 | `src/Main/foundation/e2e-faults.ts` | uncaught / dialog.showErrorBox / process-gone / preload-error → 内存 + jsonl |
-| `src/Main/foundation/e2e-probe.ts` | 主进程快照；`enabledAIIds` / `persistedAIIds` / `instantiatedAIIds`；`getSettings` / `applySettings` / `applyAIs` / `updateAI` |
+| `src/Main/foundation/e2e-probe.ts` | 主进程快照；`enabledAIIds` / `persistedAIIds` / `instantiatedAIIds`；`getSettings` / `applySettings` / `applyAIs` / `updateAI`；Wipe cookie 探针 |
 
 ## 当前用例（按工程文档选的）
 
@@ -223,6 +223,7 @@ CI / 日常全量保持 `yarn test:e2e`，WATCH 为 0。不要在观测时用鼠
 | `settings-ais-save-scopes-ui.spec.ts` | 页脚 vs 表底 dirty、弹窗 Save/Cancel、Undo/Discard、Startup、目录挡板、Add、Clone、Add 空名用 placeholder、表底 Save | manage-ais-save-scopes |
 | `settings-ais-pending-delete.spec.ts` | 待删除表底 Save 去掉页；Undo 不写盘 | manage-ais-save-scopes |
 | `prompt-toggle.spec.ts` | View → Left Prompt Showcase | prompt-view |
+| `wipe-reload-partition.spec.ts` | 点 View → Wipe：清当前 partition 全部 cookie（含 `.google.com` SSO），另一 AI 页仍在；确认框 E2E 自动 Yes | wipe-reload-cross-origin-session |
 | `app-lifecycle.spec.ts` | 关主窗后进程树必须退；同一 userData 第二次启动立刻退出并唤起第一扇 | close-without-tray / single-instance |
 
 不把远程 ChatGPT/Gemini 登录、白屏监控、Windows `forward: true` 放进默认套件。目录远程 check/apply 要 stub GitHub，尚未写。
@@ -238,4 +239,4 @@ CI / 日常全量保持 `yarn test:e2e`，WATCH 为 0。不要在观测时用鼠
 - 不要为了看清动作默认打开 `video`（Windows ffmpeg 易卡死收尾）。
 - 不要把 `mainWindow.getContentBounds()` 写进函数默认参数：`closed` 会把 `mainWindow` 置 `null`，Prompt 动画 tick 会炸（`Cannot read properties of null (reading 'getContentBounds')`），窗口弹错而测试仍绿。
 - 不要只靠 `uncaughtException` 内存数组：进程死了或主线程被原生对话框卡住时，`evaluate` 读不到。必须写 jsonl。
-- 不要在 E2E 里真弹 `showErrorBox`：Playwright 点不掉，后续探针也会挂死。
+- 不要在 E2E 里真弹 `showErrorBox`：Playwright 点不掉，后续探针也会挂死。Wipe 确认框同样点不到，只对「clear all authentication data」那段 `showMessageBox` 自动 Yes，其它对话框不要一律放行。

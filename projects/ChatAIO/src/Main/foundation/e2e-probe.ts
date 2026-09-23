@@ -1,7 +1,8 @@
 /**
  * 主进程 E2E 探针。只在 CHATAIO_E2E=1 时挂到 globalThis。
  * Settings WCV 已能作为 Playwright Page 点 DOM（waitForSettingsPage）。
- * 本探针继续覆盖写盘契约与壳层快照：getSnapshot（含 persistedAIIds / instantiatedAIIds）/ getSettings / applySettings / applyAIs / updateAI。
+ * 本探针继续覆盖写盘契约、壳层快照，以及 Wipe 用例的 Electron cookie 读写
+ * （plantAIPartitionCookies / listAIPartitionCookies）。Wipe 动作本身走 View 菜单。
  * 设计：docs/features/e2e-playwright.md 、docs/features/manage-ais-save-scopes.md
  */
 
@@ -38,7 +39,9 @@ export const installE2EMainProbe = () => {
 		getSettings : readE2ESettings ,
 		applySettings : applyE2ESettings ,
 		applyAIs : applyE2EAIs ,
-		updateAI : updateE2EAI,
+		updateAI : updateE2EAI ,
+		plantAIPartitionCookies ,
+		listAIPartitionCookies,
 	};
 };
 
@@ -139,6 +142,62 @@ const updateE2EAI = async( payload : {
 	return updated ? clonePlain( updated ) : null;
 };
 
+export type ChatAioE2ECookieSeed = {
+	url : string;
+	name : string;
+	value : string;
+	domain? : string;
+	path? : string;
+};
+
+export type ChatAioE2ECookieRow = {
+	name : string;
+	domain : string;
+	value : string;
+};
+
+const sessionForInstantiatedAI = (aiId:string) => {
+	assertMainRuntimeStarted();
+	const runtimeView = reaxel_AIViews.store.AIViews.find( ( item ) => item.id === aiId );
+	const webContents = getAliveWebContents( runtimeView?.view );
+	if( !webContents ) {
+		throw new Error( `E2E AI view not instantiated: ${ aiId }` );
+	}
+	/* 读该页 Electron session 的 cookie 罐，不是 ChatAIO wipe 实现。 */
+	return webContents.session;
+};
+
+const plantAIPartitionCookies = async(aiId:string , cookies:ChatAioE2ECookieSeed[]) => {
+	const ses = sessionForInstantiatedAI( aiId );
+	for( const cookie of cookies ) {
+		await ses.cookies.set( {
+			url : cookie.url ,
+			name : cookie.name ,
+			value : cookie.value ,
+			domain : cookie.domain ,
+			path : cookie.path || '/' ,
+			expirationDate : Math.floor( Date.now() / 1000 ) + 3600,
+		} );
+	}
+	await ses.cookies.flushStore();
+	return {
+		success : true as const ,
+		count : cookies.length,
+	};
+};
+
+const listAIPartitionCookies = async(aiId:string):Promise<ChatAioE2ECookieRow[]> => {
+	const ses = sessionForInstantiatedAI( aiId );
+	const cookies = await ses.cookies.get( {} );
+	return cookies.map( ( cookie ) => {
+		return {
+			name : cookie.name ,
+			domain : cookie.domain ,
+			value : cookie.value,
+		};
+	} );
+};
+
 type ChatAioE2EGlobal = typeof globalThis & {
 	__CHATAIO_E2E__? : {
 		getSnapshot : () => ChatAioE2ESnapshot;
@@ -150,6 +209,11 @@ type ChatAioE2EGlobal = typeof globalThis & {
 			id : string;
 			updates : Partial<Settings['AIs'][number]>;
 		} ) => Promise<Settings['AIs'][number] | null>;
+		plantAIPartitionCookies : (
+			aiId : string ,
+			cookies : ChatAioE2ECookieSeed[],
+		) => Promise<{ success : true; count : number }>;
+		listAIPartitionCookies : ( aiId : string ) => Promise<ChatAioE2ECookieRow[]>;
 	};
 };
 
@@ -161,4 +225,5 @@ import { reaxel_PromptViews } from '#main/reaxels/Views/Prompt-Views';
 import { reaxel_AIViews } from '#main/reaxels/Views/AI-Views';
 import { reaxel_Settings } from '#main/reaxels/Settings';
 import { getAIConfigService } from '#main/services/settings/ai-config-service';
+import { getAliveWebContents } from '#main/services/web-contents-view-alive.utility';
 import type { Settings } from '#src/Types/SettingsTypes';

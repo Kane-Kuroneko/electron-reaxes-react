@@ -25,6 +25,7 @@ export const installE2EFaultCollector = () => {
 		recordE2EFault( 'unhandledRejection' , reason );
 	} );
 	patchElectronErrorDialog();
+	patchWipeConfirmMessageBox();
 	listenElectronProcessGone();
 	listenWebContentsCreated();
 };
@@ -98,6 +99,28 @@ const patchElectronErrorDialog = () => {
 		}
 		originalShowErrorBox( title , content );
 	};
+};
+
+/**
+ * Wipe 确认框 Playwright 点不到。E2E 只对这段文案自动 Yes，其它 showMessageBox 不碰。
+ * 这样用例可以点 View → Wipe and Reload，而不是调用 wipeAndReloadCurrentAIView。
+ */
+const patchWipeConfirmMessageBox = () => {
+	if( isChatAioE2E() === false ) {
+		return;
+	}
+	const originalShowMessageBox = dialog.showMessageBox.bind( dialog );
+	dialog.showMessageBox = ( ( ...args:Parameters<typeof dialog.showMessageBox> ) => {
+		const options = args[args.length - 1] as { message?:string };
+		const message = typeof options?.message === 'string' ? options.message : '';
+		if( /clear all authentication data/i.test( message ) ) {
+			return Promise.resolve( {
+				response : 0 ,
+				checkboxChecked : false,
+			} );
+		}
+		return originalShowMessageBox( ...args );
+	} ) as typeof dialog.showMessageBox;
 };
 
 const listenElectronProcessGone = () => {

@@ -197,7 +197,7 @@ Windows 上输入邮箱后弹出的「插入安全密钥」来自 Google 登录�
 ### 生产环境（推荐）
 
 1. `yarn build:webpack` 后启动打包产物（非 dev server + electron dev）
-2. Settings → Manage AIs → **Reset** 目标 AI Page（清旧 session）
+2. Settings → Manage AIs → **Reset** 目标 AI Page（清旧 session）；或 View → **Wipe and Reload This Page**（清该页整个 persist partition，不只当前 origin，见 [wipe-reload-cross-origin-session.md](./wipe-reload-cross-origin-session.md)）
 3. 打开 `https://aistudio.google.com` 自定义页面或新建 AI 项
 4. 完成 Google 登录（若出现安全密钥弹窗，可取消后选「使用密码」等备用方式）
 5. 发送测试消息（如 `hi`）

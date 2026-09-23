@@ -790,16 +790,8 @@ export const reaxel_MainView = reaxel( () => {
 		} );
 		if( result.response !== 0 ) return;
 
-		const { currentAIView } = reaxel_AIViews();
-		if( !currentAIView ) return;
-		const { origin } = new URL( currentAIView.view.webContents.getURL() );
-
-		await currentAIView.view.webContents.clearHistory();
-		await currentAIView.view.webContents.session.clearStorageData( { origin } );
-		await currentAIView.view.webContents.session.clearCache();
-		await currentAIView.view.webContents.session.clearData( { origins : [ origin ] } );
-		await currentAIView.view.webContents.session.clearAuthCache();
-		currentAIView.view.webContents.reloadIgnoringCache();
+		/* 清整个 AI partition，不要只按当前 origin。见 wipe-reload-cross-origin-session.md */
+		await reaxel_AIViews().wipeAndReloadCurrentAIView();
 	};
 
 	const closeCurrentAIViewMenuAction = () => {

@@ -68,6 +68,35 @@ export const reaxel_AIViews = reaxel( () => {
 		return await clearSessionPartitions( collectResult.partitions );
 	};
 
+	/**
+	 * View > Wipe and Reload This Page。
+	 * 清当前 AI 页的整个 persist partition，不要只按当前 HTTP origin。
+	 * Google SSO 落在 accounts.google.com / .google.com，按 aistudio.google.com origin 清会自动登回去。
+	 * 见 docs/issues/wipe-reload-cross-origin-session.md
+	 */
+	const wipeAndReloadCurrentAIView = async() => {
+		const currentAIView = store.AIViews.find( item => item.id === Reaxel_View.store.currentAIViewKey ) || null;
+		if( !currentAIView ) {
+			return;
+		}
+		const webContents = getAliveWebContents( currentAIView.view );
+		if( !webContents ) {
+			return;
+		}
+		try {
+			await webContents.clearHistory();
+		} catch ( error ) {
+			console.warn( '[AIViews] wipe clearHistory failed:' , currentAIView.id , error );
+		}
+		try {
+			await clearPersistentAISession( webContents.session );
+		} catch ( error ) {
+			console.warn( '[AIViews] wipe session clear failed:' , currentAIView.partition , error );
+		}
+		currentAIView.ready = false;
+		void safeLoadAIURL( currentAIView.view , currentAIView.domain , `wipe-reload:${ currentAIView.id }` );
+	};
+
 	const syncAIViewsWithConfig = async( settings:Settings ) => {
 		if( Reaxel_View().areRuntimeViewsInitialized() === false ) {
 			console.log( '[AIViews] skip syncAIViewsWithConfig until initRuntimeViews (menubar visual-ready gate)' );
@@ -307,6 +336,7 @@ export const reaxel_AIViews = reaxel( () => {
 		initAIView ,
 		destroyAIView ,
 		destroyAllAndClearData ,
+		wipeAndReloadCurrentAIView ,
 		syncAIViewsWithConfig ,
 		showAIView ,
 		getRuntimeAIViewsInSettingsOrder ,
@@ -579,15 +609,29 @@ const getPersistedAIPartitionsFromUserData = ():PersistedAIPartitionDiscoveryRes
 	}
 };
 
+/**
+ * 清空单个 persist AI partition 的全部站点数据（不按 origin / origins 过滤）。
+ * Wipe 与 Reset All 共用。禁止只清当前页 origin：SSO cookie 往往在登录域，不在 AI 页 origin。
+ * 见 docs/issues/wipe-reload-cross-origin-session.md
+ */
+const clearPersistentAISession = async(ses:Session) => {
+	await ses.clearStorageData();
+	await ses.clearCache();
+	await ses.clearData();
+	await ses.clearAuthCache();
+	try {
+		await ses.cookies.flushStore();
+	} catch ( error ) {
+		console.warn( '[AIViews] flushStore after session clear failed:' , error );
+	}
+};
+
 const clearSessionPartitions = async(partitions:string[]):Promise<ResetAISessionDataResult> => {
 	const errors:ResetAISessionDataError[] = [];
 
 	for( const partition of partitions ) {
 		try {
-			const ses = session.fromPartition( partition );
-			await ses.clearStorageData();
-			await ses.clearCache();
-			await ses.clearAuthCache();
+			await clearPersistentAISession( session.fromPartition( partition ) );
 		} catch ( error ) {
 			errors.push( {
 				target : partition ,
@@ -904,6 +948,7 @@ import {
 import {
 	session ,
 	app ,
+	type Session ,
 	type WebContents ,
 	type WebContentsView,
 } from 'electron';

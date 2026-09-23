@@ -62,6 +62,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 ### 登录 / 身份 / 代理
 
 - [升级后登录全丢](./docs/issues/ai-login-session-lost-after-catalog-uuid.md)（站点 `Set-Cookie` 覆盖旧分区；不是安装器清空）
+- [Wipe 后 Google 仍自动登录](./docs/issues/wipe-reload-cross-origin-session.md)（按 origin 清漏了 accounts.google.com / `.google.com` SSO；现清整个 AI partition）
 - [提案：升级前备份 / 升级后还原 session](./docs/feature-proposal--update-session-backup.md)
 - [Google AI Studio / Chrome 身份](./docs/issues/google-ai-studio-electron-browser-identity.md)
 - [AI Studio 跳 available-regions（补丁失效；CDP renderer + inspect main）](./docs/issues/google-ai-studio-available-regions-redirect.md)
@@ -153,6 +154,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [close-without-tray-process-lingers.md](./docs/issues/close-without-tray-process-lingers.md) | 禁用托盘后点 X 进程不退 |
 | [ai-login-session-lost-after-catalog-uuid.md](./docs/issues/ai-login-session-lost-after-catalog-uuid.md) | 升级后登录丢失：旧分区被 `Set-Cookie` 覆盖 |
 | [google-ai-studio-electron-browser-identity.md](./docs/issues/google-ai-studio-electron-browser-identity.md) | AI Studio / Chrome 身份 |
+| [wipe-reload-cross-origin-session.md](./docs/issues/wipe-reload-cross-origin-session.md) | Wipe 只清当前 origin，Google SSO 仍在 |
 | [google-ai-studio-available-regions-redirect.md](./docs/issues/google-ai-studio-available-regions-redirect.md) | AI Studio 跳地区页；9222 CDP + 9229 main inspect |
 | [i18n-architecture-issues.md](./docs/issues/i18n-architecture-issues.md) | i18n 架构问题 |
 | [i18n-fixes.md](./docs/issues/i18n-fixes.md) | i18n 修复记录 |

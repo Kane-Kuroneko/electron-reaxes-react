@@ -130,6 +130,25 @@ type ChatAioE2EProbe = {
 		id : string;
 		updates : Partial<ChatAioE2EAIItem>;
 	} ) => Promise<ChatAioE2EAIItem | null>;
+	plantAIPartitionCookies : (
+		aiId : string ,
+		cookies : ChatAioE2ECookieSeed[],
+	) => Promise<{ success : true; count : number }>;
+	listAIPartitionCookies : ( aiId : string ) => Promise<ChatAioE2ECookieRow[]>;
+};
+
+export type ChatAioE2ECookieSeed = {
+	url : string;
+	name : string;
+	value : string;
+	domain? : string;
+	path? : string;
+};
+
+export type ChatAioE2ECookieRow = {
+	name : string;
+	domain : string;
+	value : string;
 };
 
 export const e2eGetSettings = async( electronApp:ElectronApplication ) => {
@@ -309,6 +328,55 @@ export const e2eUpdateAI = async(
 		const settings = await e2eGetSettings( electronApp );
 		return settings.AIs.find( ( ai ) => ai.id === id ) || null;
 	}
+};
+
+export const e2ePlantAIPartitionCookies = async(
+	electronApp : ElectronApplication ,
+	aiId : string ,
+	cookies : ChatAioE2ECookieSeed[],
+) => {
+	return retryOnContextError( () => electronApp.evaluate( ( _electron , payload ) => {
+		const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
+		if( !probe ) {
+			throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
+		}
+		return new Promise( ( resolve , reject ) => {
+			const timer = setTimeout( () => {
+				reject( new Error( 'e2e plantAIPartitionCookies timed out' ) );
+			} , 30_000 );
+			probe.plantAIPartitionCookies( payload.aiId , payload.cookies ).then( ( result ) => {
+				clearTimeout( timer );
+				resolve( result );
+			} , ( error ) => {
+				clearTimeout( timer );
+				reject( error );
+			} );
+		} );
+	} , { aiId , cookies } ) , 4 , 150 , MUTATE_RETRY_RE );
+};
+
+export const e2eListAIPartitionCookies = async(
+	electronApp : ElectronApplication ,
+	aiId : string,
+) => {
+	return retryOnContextError( () => electronApp.evaluate( ( _electron , id ) => {
+		const probe = ( globalThis as { __CHATAIO_E2E__? : ChatAioE2EProbe } ).__CHATAIO_E2E__;
+		if( !probe ) {
+			throw new Error( 'E2E probe missing; expected CHATAIO_E2E=1' );
+		}
+		return new Promise( ( resolve , reject ) => {
+			const timer = setTimeout( () => {
+				reject( new Error( 'e2e listAIPartitionCookies timed out' ) );
+			} , 30_000 );
+			probe.listAIPartitionCookies( id ).then( ( result ) => {
+				clearTimeout( timer );
+				resolve( result );
+			} , ( error ) => {
+				clearTimeout( timer );
+				reject( error );
+			} );
+		} );
+	} , aiId ) , 4 , 150 , MUTATE_RETRY_RE );
 };
 
 export const waitForE2ESnapshot = async(
