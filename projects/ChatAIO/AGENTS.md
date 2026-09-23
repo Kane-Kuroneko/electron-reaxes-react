@@ -16,7 +16,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 
 ### Worktree / 集成
 
-- [index / bugfix 工作流](./docs/agent/worktree-bugfix-workflow.md)（功能线测通后合进 index；index 再合进 bugfix；集成 bug 只在 bugfix 修并合回 index。口令「同步 index 和其他 wt」：bugfix→index，再 index→其它 feat wt；脏树 stash -u 再 pop。本 wt 章程。）
+- [index / bugfix 工作流](./docs/agent/worktree-bugfix-workflow.md)（功能线测通后合进 index；index 再合进 bugfix；集成 bug 只在 bugfix 修并合回 index。口令「同步 index 和其他 wt」：先按树串行 stash，再 bugfix→index 并扇出，最后 apply 本树那条；禁止并行 stash，禁止 `stash pop`。本 wt 章程。）
 - [多 worktree 开发服务器端口](./docs/architecture/worktree-dev-server.md)（从 4444 起 portfinder 顺延；Electron 读本树 `dist/.webpack-build-state.json`）
 
 ### 开发 / 打包 / 测试

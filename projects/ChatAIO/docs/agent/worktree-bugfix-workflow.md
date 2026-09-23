@@ -45,7 +45,7 @@ flowchart LR
 
 用户说「同步 index 和其他 wt 分支」「同步index和其他wt分支」或同义句时，**自动做完整这套**，不要再问要不要 stash / 要不要合 bugfix。全文步骤如下。git 一律在各树 **monorepo 根**执行；只 merge、禁止 rebase；不要碰 `main`；未经用户再说一遍 push 不要 push。
 
-目标：让 `ChatAIO/feat/index` 含有最新 `ChatAIO/feat/bugfix`，再让其它 `ChatAIO/feat/*` worktree 都 merge 进这份 index。功能线未提交的 WIP 留在本树，用 stash 躲开 merge，再 apply 回来。
+目标：让 `ChatAIO/feat/index` 含有最新 `ChatAIO/feat/bugfix`，再让其它 `ChatAIO/feat/*` worktree 都 merge 进这份 index。功能线未提交的 WIP 留在本树：先 stash 躲开 merge，merge 完再 apply 回**同一棵树**。本口令禁止 `git stash pop`。
 
 ### 0. 盘点
 
@@ -58,15 +58,35 @@ git rev-parse --abbrev-ref HEAD
 
 以 `git worktree list` 为准。跳过 `main` 所在树。不要在占用中的分支上 `checkout` 另一条已绑定 worktree 的分支。
 
-### 1. 脏树先 stash
+### 1. 脏树先 stash（stash 命令必须按树串行）
 
-某树 `git status --porcelain` 非空（含未跟踪文件）时，**先 stash 再 merge**，不要在脏树上硬 merge：
+某树 `git status --porcelain` 非空（含未跟踪文件）时，**先 stash 再 merge**，不要在脏树上硬 merge。忽略文件（`node_modules` 等）不要进 stash。
+
+各 worktree 共用同一个 `.git`，**stash 栈也只有一份**（`refs/stash`）。`stash@{0}` 永远是整仓最新一条，不是「我正站着的这棵树自己的 stash」。`stash@{n}` 的序号在每次 push / drop 之后都会变。
+
+2026-09-23：对多棵树同时 `stash push` / `stash pop`。各树的 `pop` 都去取当时的全局 `stash@{0}`，playwright 的 WIP 被套进 `custom_ui_refactor` 和 `local_agent_mcp`。
+
+本口令分三段，顺序固定。不要理解成「一棵树 stash+merge+还原做完再做下一棵」——那样其它脏树还没躲开，index 也还没合完。
+
+**A. 所有脏树先 stash。** `stash push` **一次只做一棵树**。禁止在同一次同步里对多棵树并行跑任何 `git stash`（不要并行开多条终端，也不要一次回复里同时对多树发 stash 调用）。
 
 ```text
-git stash push --include-untracked -m "wt-sync: before merge ChatAIO/feat/index"
+# cwd = 这一棵树的 monorepo 根。做完再去下一棵脏树。
+git stash push --include-untracked -m "wt-sync: ChatAIO/feat/<本树分支名> before merge ChatAIO/feat/index"
+git stash list -1
+git log -1 --format='%h' 'stash@{0}'
 ```
 
-忽略文件（`node_modules` 等）不要进 stash。记下该树是否 stash 了，merge 结束后务必 `git stash pop`。
+message 必须含**本树分支全名**（例如 `ChatAIO/feat/local_agent_mcp`）。`git stash list` 默认不打印 hash，所以再记一条 9 位短 hash。PowerShell 里 `'stash@{0}'` 必须加引号，否则 `{}` 会被拆开。
+
+**B. stash 全部结束后才 merge。** 见第 2、3 步。不同树的 `git merge` 不碰 stash 栈，**可以**并行；但必须发生在 A 完成之后、C 开始之前。
+
+**C. merge 全部结束后才还原。** `stash apply` / `drop` 同样 **一次只做一棵树**，禁止并行。对本树：
+
+1. 在**这棵树**的根执行 `git stash list`。用 A 记下的分支名和 hash 认人，找到**这一刻** list 上对得上的 `'stash@{n}'`（不要沿用几分钟前的 n）。
+2. `git stash apply 'stash@{n}'`。看工作区是不是这棵树的 WIP。
+3. 对上了才 `git stash drop 'stash@{n}'`。drop 前再 `git stash list` 一次，确认 n 仍指向同一 hash。
+4. **禁止 `git stash pop`。** `pop` = apply 全局栈顶再删除那条。多树、冲突、序号变化时会套错或删错。即使只脏一棵树，本口令也用 apply + drop，不要 pop。
 
 ### 2. 先把 bugfix 合进 index
 
@@ -74,7 +94,7 @@ git stash push --include-untracked -m "wt-sync: before merge ChatAIO/feat/index"
 
 1. 若 index 相对 bugfix 也有独有提交：先到 **bugfix 树** `git merge ChatAIO/feat/index`，冲突解完再回来。
 2. `git merge ChatAIO/feat/bugfix`。
-3. 若刚才 stash 了 index：`git stash pop`，冲突解完。
+3. 若刚才 stash 了 index：**不要在这一步还原。** 等第 3 步所有 merge 结束后，和第 1 步 C 一起还原。提前 apply 会把 WIP 搅进随后的 merge。
 
 能快进就快进。不要把功能线 WIP commit 进 index。
 
@@ -82,9 +102,9 @@ git stash push --include-untracked -m "wt-sync: before merge ChatAIO/feat/index"
 
 对 `git worktree list` 里每棵 `ChatAIO/feat/*` 树，**跳过 index 自己和 `main`**：
 
-1. 若该树 HEAD 已经包含 index（`git merge-base --is-ancestor ChatAIO/feat/index HEAD` 成功）且工作区已 pop 干净：跳过 merge。
+1. 若该树 HEAD 已经包含 index（`git merge-base --is-ancestor ChatAIO/feat/index HEAD` 成功）：跳过 **merge**。跳过 merge 不等于跳过还原：第 1 步 A 若 stash 过，仍要走下面第 3 条。
 2. 否则在该树根：`git merge ChatAIO/feat/index`。
-3. 若第 1 步 stash 过：`git stash pop`。
+3. **所有树的 merge 都结束后**，若第 1 步 A 曾 stash：按第 1 步 C，一次一棵树 apply 分支名 / hash 对得上的那条。禁止 `stash pop`，禁止对多棵树同时 apply / drop。
 
 包括 **bugfix**：合回 index 若产生了 merge commit，再把 index merge 回 bugfix，避免只差一个合并提交。快进则两边已重合，跳过。
 
@@ -93,13 +113,14 @@ git stash push --include-untracked -m "wt-sync: before merge ChatAIO/feat/index"
 ### 4. 冲突
 
 - **merge 冲突**：两边意图都留。index 带来的集成修复 / 文档要进来；功能线已提交的本线改动也要留。解完 `git add` 后 `git commit` 完成这次 merge（不要 rebase、不要 `--abort` 了事除非用户要求停）。
-- **stash pop 冲突**：同样两边留。这是 WIP，**不要**为了清干净而去 commit 功能线半成品。
-- stash pop 报 untracked 已存在：对比后决定保留工作区还是 stash 里那份，不要丢用户 WIP。
-- 解不了就停在冲突状态，按树汇报路径和原因，不要 `reset --hard`、不要丢掉 stash。
+- **stash apply 冲突**：同样两边留。这是 WIP，**不要**为了清干净而去 commit 功能线半成品。
+- stash apply 报 untracked 已存在：对比后决定保留工作区还是 stash 里那份，不要丢用户 WIP。
+- 工作区出现**另一条功能线**的文件（例如 playwright 的 `demo/` 出现在 `local_agent_mcp`）：立刻停。这是套错了 stash。不要 `stash drop`，不要把错套的改动提交进任何分支。各树的 WIP 仍在 stash 里。把该树已跟踪文件恢复成 HEAD（`git restore --source=HEAD --staged --worktree -- .`），再删掉不该出现的未跟踪文件，然后按第 1 步 C apply 本树那条。不要用 `reset --hard` 当默认手段（它不区分「这是不是本树的 WIP」）。
+- 解不了就停在冲突状态，按树汇报路径和原因，不要丢掉任何 stash。
 
 ### 5. 回报
 
-按树列出：干净 / 曾 stash / merge 快进或产生合并提交 / stash pop 是否有冲突 / 9 位短 hash。不要擅自 push、不要在功能线上把 WIP 做成提交。
+按树列出：干净 / 曾 stash（写下 hash 与分支） / merge 快进或产生合并提交 / stash apply 是否有冲突 / 9 位短 hash。不要擅自 push、不要在功能线上把 WIP 做成提交。
 
 ## 不变量
 
@@ -112,6 +133,7 @@ git stash push --include-untracked -m "wt-sync: before merge ChatAIO/feat/index"
 7. **各 wt 独立 `node_modules`**，禁止跨树 junction / 软链共用。新树先 `yarn setup:git-symlinks` 再 `yarn`。
 8. **本机同一时间只跑一个 unpackaged Electron**（单实例 / 同一 userData）。不要一边在 index 起应用、一边在 bugfix 起应用。各树的 **webpack-dev-server 可以同时开**：端口按 [worktree-dev-server.md](../architecture/worktree-dev-server.md) 从 4444 起被占则 +1，Electron 读本树 `dist/.webpack-build-state.json`。
 9. **index 合回 ≠ 其它功能 wt 已更新。** 活着的功能线要吃到最新 index，必须在各功能树 `git merge ChatAIO/feat/index`（口令见上）。禁止为此 rebase，禁止把未测通功能线 merge 进 index。
+10. **stash 栈是整仓一份。** 跨 worktree 的任何 `git stash` 必须按树串行。禁止并行。本口令禁止 `stash pop`；还原只用 apply + drop，且必须用这一刻 list 上对得上的分支名 / hash。
 
 ## 按当前分支做什么
 
@@ -143,7 +165,7 @@ git merge ChatAIO/feat/bugfix
 
 ### `ChatAIO/feat/<feature>`
 
-做：开发、单线测试；测通后请 index 树 merge 本分支。用户要求同步 index 时，在本树 `git merge ChatAIO/feat/index`（脏则 stash → merge → stash pop）。  
+做：开发、单线测试；测通后请 index 树 merge 本分支。用户要求同步 index 时走上面口令（脏则本树 stash → 等各树 merge 完 → apply 本树那条 stash；禁止 pop）。  
 不做：merge 进 bugfix；把本线未完成的半成品合进 index。
 
 本线还活着时，属于本线的 bug 在本线修，再重新合进 index（index 再同步到 bugfix）。
@@ -169,7 +191,8 @@ git merge ChatAIO/feat/bugfix
 
 口令「同步 index 和其他 wt」：
 
-- [ ] 脏树已 `stash push --include-untracked`，merge 后已 `stash pop`
+- [ ] 脏树已按树**串行** `stash push --include-untracked`（message 含本树分支全名，已记下 9 位 hash）；未对多树并行跑 `git stash`
+- [ ] 各树 merge 都结束后，才按分支名 / hash apply **该树自己**那条；未使用 `stash pop`；未对多树同时 apply / drop
 - [ ] 已在 index 树 merge `ChatAIO/feat/bugfix`（若 index 超前则先反向 merge）
 - [ ] 已对每棵其它 `ChatAIO/feat/*` wt merge `ChatAIO/feat/index`；跳过 `main`
 - [ ] 冲突已解或按树汇报；未 push；未把功能线 WIP commit 进 index
@@ -183,7 +206,10 @@ git merge ChatAIO/feat/bugfix
 - `git rebase` / `pull --rebase` / 在占用中的分支上 `checkout` 另一条已绑定 worktree 的分支
 - 跨 worktree 共用 `node_modules`
 - 同时启动两棵树的 unpackaged Electron
-- 在脏工作区上硬 merge（会拒合并或把 WIP 搅进 merge）。先 stash `-u`，结束后 pop
+- 在脏工作区上硬 merge（会拒合并或把 WIP 搅进 merge）。先按第 1 步 A 串行 stash `-u`，各树 merge 完再按 C apply
+- 对两棵及以上 worktree 并行执行任何 `git stash` 子命令（共用一个 stash 栈，A 树的 WIP 会被套到 B 树）
+- 在本口令里执行 `git stash pop`（`pop` 永远动全局栈顶再删除；即使只脏一棵树也改用 apply + drop）
+- 不看这一刻的 `git stash list`、不对分支名 / hash，就 apply 或 drop `stash@{0}` / 过期的 `stash@{n}`
 - 把「同步 index → 功能 wt」做成「把功能线合进 index」
 - 同步进 `main`，或为这套口令擅自 push
 
