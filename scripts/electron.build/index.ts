@@ -4,13 +4,28 @@ const {
 } = getProjectPaths.default;
 
 const electronBuilderCliPath = createRequire( import.meta.url ).resolve( 'electron-builder/cli.js' );
-const electronBuilderArgs = getElectronBuilderArgs();
+let electronBuilderArgs = getElectronBuilderArgs();
+let electronBuilderEnv : NodeJS.ProcessEnv = process.env;
 
 try {
 	await resetElectronBuildOutput();
 } catch( error ) {
 	console.error( '[ElectronBuild] failed to reset __Bin:' , error instanceof Error ? error.message : error );
 	process.exitCode = 1;
+}
+
+if( !process.exitCode ) {
+	try {
+		const stamped = stampChatAioBuildIdentity( electronBuilderArgs );
+		electronBuilderArgs = stamped.args;
+		electronBuilderEnv = stamped.env;
+	} catch ( error ) {
+		console.error(
+			'[ElectronBuild] ChatAIO build identity failed:' ,
+			error instanceof Error ? error.message : error ,
+		);
+		process.exitCode = 1;
+	}
 }
 
 if( !process.exitCode ) {
@@ -27,6 +42,40 @@ if( !process.exitCode ) {
 		console.error( '[ElectronBuild] electron-builder failed to start:' , error );
 		process.exitCode = 1;
 	}
+}
+
+function stampChatAioBuildIdentity( args : string[] ) : { args : string[]; env : NodeJS.ProcessEnv } {
+	/* ChatAIO 两层身份：不改 git 里的 version。采集必须走仓根 ESM scripts/utils，
+	 * 不能 named import projects/ChatAIO（该包是 CommonJS）。
+	 * 设计：projects/ChatAIO/docs/architecture/app-version-identity.md */
+	if( name_subproject !== 'ChatAIO' ) {
+		return {
+			args ,
+			env : process.env ,
+		};
+	}
+	const identity = collectGitBuildIdentity( absolutelyPath_RepositoryRoot );
+	const isRelease = isChatAioReleaseBuild( process.env );
+	if( isRelease && identity.dirty ) {
+		console.warn( '[ElectronBuild] CHATAIO_RELEASE=1 but working tree is dirty; identity still stamped' );
+	}
+	if( identity.count > WINDOWS_FILEVERSION_MAX_BUILD ) {
+		console.warn(
+			`[ElectronBuild] git commit count ${ identity.count } exceeds Windows FileVersion max ${ WINDOWS_FILEVERSION_MAX_BUILD }; FileVersion will clamp` ,
+		);
+	}
+	const stamped = decorateElectronBuilderForChatAioIdentity( {
+		args ,
+		env : process.env ,
+		identity ,
+		isRelease ,
+	} );
+	console.log(
+		`[ElectronBuild] ChatAIO identity: build ${ identity.count } · ${ identity.commit }`
+		+ ( identity.dirty ? ' · dirty' : '' )
+		+ ( isRelease ? ' (release artifact name)' : ' (local artifact name)' ) ,
+	);
+	return stamped;
 }
 
 function getElectronBuilderArgs() {
@@ -169,7 +218,7 @@ function spawnElectronBuilder() {
 		] , {
 			cwd : absolutelyPath_subproject ,
 			stdio : 'inherit' ,
-			env : process.env,
+			env : electronBuilderEnv,
 		} );
 
 		electronBuilderProcess.on( 'close' , ( code , signal ) => {
@@ -207,6 +256,13 @@ function refreshWindowsIconCacheAfterBuild() {
 }
 
 import { resolveLockHunterExe , unlockPathForBuild } from '../utils/windows-path-unlock';
+import {
+	collectGitBuildIdentity ,
+	decorateElectronBuilderForChatAioIdentity ,
+	isChatAioReleaseBuild ,
+	WINDOWS_FILEVERSION_MAX_BUILD ,
+} from '../utils/git-build-identity';
+import { absolutelyPath_RepositoryRoot } from '../../engine/toolkit/repo-paths';
 import { getProjectPaths } from '../../engine/toolkit/project-paths';
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';

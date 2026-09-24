@@ -22,6 +22,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 ### 开发 / 打包 / 测试
 
 - [npm 脚本与参数](./scripts.md)（常用入口在 `package.json`；平台出包、E2E 观测、目录签名、性能分析的完整命令也在这里）
+- [两层版本身份](./docs/architecture/app-version-identity.md)（正式 1.0.x 给 updater；dev 包用 commit 计数 + 9 位 hash。`CHATAIO_RELEASE=1` 才用发行文件名）
 
 ### 中心 AI 页闪白、回前台
 
@@ -105,6 +106,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [appearance-theme-environment.md](./docs/architecture/appearance-theme-environment.md) | 外观 / 主题注入 AI 页 |
 | [build-pipeline-and-dev-refresh.md](./docs/architecture/build-pipeline-and-dev-refresh.md) | 构建与 dev 热更新 |
 | [worktree-dev-server.md](./docs/architecture/worktree-dev-server.md) | 多 worktree WDS 端口：从 4444 起顺延、listen 后写入 build-state、Electron 读 JSON |
+| [app-version-identity.md](./docs/architecture/app-version-identity.md) | 发行 SemVer 与 git build 身份；本地包文件名带 b{count}.{hash} |
 | [i18n.md](./docs/architecture/i18n.md) | 国际化 |
 | [main-view.md](./docs/architecture/main-view.md) | 主壳 / Main View |
 | [menubar-platform-paths.md](./docs/architecture/menubar-platform-paths.md) | 平台 menubar 路径 |

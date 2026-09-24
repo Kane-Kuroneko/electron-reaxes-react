@@ -5,6 +5,8 @@
 	directories: {
 		output : "__Bin"
 	},
+	# 正式发 GitHub 的文件名。本地 `yarn build:electron` 由 scripts/electron.build 用 -c.artifactName 改成带 b{count}.{hash}。
+	# 设计：docs/architecture/app-version-identity.md
 	artifactName: "${productName}-${version}-${os}-${arch}.${ext}",
 	electronUpdaterCompatibility: ">=2.16",
 	publish: {
