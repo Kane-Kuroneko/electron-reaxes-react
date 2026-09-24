@@ -7,7 +7,7 @@ Dev 阶段打出来的安装包不再共用同一个「看起来都是 1.0.5」�
 1. **`projects/ChatAIO/package.json` 的 `version` 只在发正式版时手改**（`1.0.x`）。禁止为区分 dev 包去改 git 里的 version。
 2. **`app.getVersion()` / `get-app-version` / changelog tag / `latest.yml` 只用营销号**。不要把 `+hash`、`-dev.N`、`git describe` 写进这把钥匙。
 3. **Build 身份** = `git rev-list --count HEAD` + `git rev-parse --short=9 HEAD` + dirty。复制/About 形如 `v1.0.5 (build 1234 · ddebc2c82)`，脏树再加 ` · dirty`。
-4. **Windows FileVersion / macOS CFBundleVersion** 走 electron-builder `BUILD_NUMBER`（第四段，≤ 65535）。真实 count 仍写进 `chataioBuild.count`。
+4. **Windows FileVersion / macOS CFBundleVersion** 走 `-c.buildNumber`（第四段，≤ 65535）。真实 count 仍写进 `chataioBuild.count`。**禁止**写 env `BUILD_NUMBER`：ci-info 会当成 Jenkins，electron-builder v26 随即隐式 GitHub publish，本地没有 `GH_TOKEN` 就失败。
 5. **本地包文件名**带 `b{count}.{hash}`；**`CHATAIO_RELEASE=1` 时文件名保持** `ChatAIO-${version}-${os}-${arch}.${ext}`，身份仍进 exe / About。
 6. 未打包（`yarn start:electron`）没有 extraMetadata：Main 对 webpack 注入的 `__REPO_ROOT__` 当场跑 git。Electron cwd 是 `projects/ChatAIO`，不要用 `process.cwd()` 当仓根。
 
@@ -18,7 +18,7 @@ flowchart TD
   git["仓根 git count + hash9 + dirty"]
   pack["electron.build 仅 ChatAIO"]
   extra["extraMetadata.chataioBuild"]
-  fileVer["BUILD_NUMBER → FileVersion"]
+  fileVer["-c.buildNumber → FileVersion"]
   name["本地 artifactName 带 b.count.hash"]
   about["About 主号 1.0.x / 副号 build"]
   updater["electron-updater 只用 1.0.x"]
@@ -43,7 +43,7 @@ flowchart TD
 | [`scripts/utils/git-build-identity.ts`](../../../scripts/utils/git-build-identity.ts) | 仓根 ESM：git 采集 + electron-builder 注入（不要从 ChatAIO CJS named import） |
 | [`src/Main/services/build-identity/collect-git.ts`](../../src/Main/services/build-identity/collect-git.ts) | unpackaged Main 再导出仓根采集 |
 | [`src/Main/services/build-identity/index.ts`](../../src/Main/services/build-identity/index.ts) | 打包读 package.json；未打包读 git |
-| [`scripts/electron.build/index.ts`](../../../scripts/electron.build/index.ts) | 注入 `BUILD_NUMBER` / extraMetadata / 本地 artifactName |
+| [`scripts/electron.build/index.ts`](../../../scripts/electron.build/index.ts) | 注入 `-c.buildNumber` / extraMetadata / 本地 artifactName；未显式 `--publish` 则补 `never` |
 | [`electron-builder.yml`](../../electron-builder.yml) | 默认发行文件名 |
 | [`src/Main/reaxels/electron-updater/index.ts`](../../src/Main/reaxels/electron-updater/index.ts) | `State.buildIdentity`；`currentVersion` 仍是 `app.getVersion()` |
 | [`src/Views/SettingsView/components/About/index.tsx`](../../src/Views/SettingsView/components/About/index.tsx) | 展示 / 复制完整串 |
@@ -57,7 +57,9 @@ flowchart TD
 - 不要只靠 hash：不能回答「哪包更新」；不同分支还可能撞 `rev-list --count`，所以 **count + hash 一起用**。
 - 不要改 `appId`、不要拆 insider 通道。
 - 不要把 identity 写回 git 里的 `package.json`。
+- 不要把 commit count 写进 env `BUILD_NUMBER`（会触发隐式 publish）。
 - 不要让仓根 ESM（`scripts/electron.build`）named import `projects/ChatAIO`（该包 `"type": "commonjs"`，tsx 会报 `does not provide an export named`）。采集/注入只放 `scripts/utils/git-build-identity.ts`。
+- 本地 `yarn build` 默认 `--publish never`。真要传到 GitHub 才显式 `--publish always` 并准备 `GH_TOKEN`。
 
 ## 与现有文档
 

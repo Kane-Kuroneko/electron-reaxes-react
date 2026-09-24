@@ -29,6 +29,8 @@ if( !process.exitCode ) {
 }
 
 if( !process.exitCode ) {
+	electronBuilderArgs = withElectronBuilderPublishNever( electronBuilderArgs );
+
 	console.log( `[ElectronBuild] project: ${ name_subproject }` );
 	console.log( `[ElectronBuild] cwd: ${ absolutelyPath_subproject }` );
 	console.log( `[ElectronBuild] electron-builder ${ electronBuilderArgs.join( ' ' ) }` );
@@ -260,6 +262,7 @@ import {
 	collectGitBuildIdentity ,
 	decorateElectronBuilderForChatAioIdentity ,
 	isChatAioReleaseBuild ,
+	withElectronBuilderPublishNever ,
 	WINDOWS_FILEVERSION_MAX_BUILD ,
 } from '../utils/git-build-identity';
 import { absolutelyPath_RepositoryRoot } from '../../engine/toolkit/repo-paths';

@@ -67,6 +67,27 @@ export const collectGitBuildIdentity = (
 	};
 };
 
+/**
+ * 本地 `yarn build` 默认不上传。electron-builder v26 在“检测到 CI”时会隐式 publish；
+ * 若再写 env BUILD_NUMBER，ci-info 会当成 Jenkins/TeamCity，没有 GH_TOKEN 就失败。
+ * FileVersion 用 `-c.buildNumber`，不要写 BUILD_NUMBER。
+ */
+export const hasElectronBuilderPublishFlag = ( args : string[] ) : boolean => {
+	return args.some( ( arg ) => {
+		return arg === '--publish'
+			|| arg === '-p'
+			|| arg.startsWith( '--publish=' )
+			|| arg.startsWith( '-p=' );
+	} );
+};
+
+export const withElectronBuilderPublishNever = ( args : string[] ) : string[] => {
+	if( hasElectronBuilderPublishFlag( args ) ) {
+		return args;
+	}
+	return [ ...args , '--publish' , 'never' ];
+};
+
 export const decorateElectronBuilderForChatAioIdentity = ( input : {
 	args : string[];
 	env : NodeJS.ProcessEnv;
@@ -75,11 +96,12 @@ export const decorateElectronBuilderForChatAioIdentity = ( input : {
 } ) : { args : string[]; env : NodeJS.ProcessEnv } => {
 	const env = {
 		...input.env ,
-		BUILD_NUMBER : toElectronBuilderBuildNumber( input.identity.count ) ,
 		CHATAIO_GIT_COMMIT : input.identity.commit ,
 	};
+	delete env.BUILD_NUMBER;
 	const args = [
 		...input.args ,
+		`-c.buildNumber=${ toElectronBuilderBuildNumber( input.identity.count ) }` ,
 		`-c.extraMetadata.chataioBuild.commit=${ input.identity.commit }` ,
 		`-c.extraMetadata.chataioBuild.count=${ input.identity.count }` ,
 		`-c.extraMetadata.chataioBuild.dirty=${ input.identity.dirty ? 'true' : 'false' }`,

@@ -73,15 +73,16 @@ describe( 'decorateElectronBuilderForChatAioIdentity' , () => {
 		dirty : false ,
 	};
 
-	it( '本地包改 artifactName 并写 BUILD_NUMBER / extraMetadata' , () => {
+	it( '本地包改 artifactName，用 -c.buildNumber 而不是 env BUILD_NUMBER' , () => {
 		const stamped = decorateElectronBuilderForChatAioIdentity( {
 			args : [ 'build' , '-w' ] ,
 			env : {} ,
 			identity ,
 			isRelease : false ,
 		} );
-		assert.equal( stamped.env.BUILD_NUMBER , '1234' );
+		assert.equal( stamped.env.BUILD_NUMBER , undefined );
 		assert.equal( stamped.env.CHATAIO_GIT_COMMIT , 'ddebc2c82' );
+		assert.ok( stamped.args.includes( '-c.buildNumber=1234' ) );
 		assert.ok( stamped.args.includes( '-c.extraMetadata.chataioBuild.commit=ddebc2c82' ) );
 		assert.ok( stamped.args.includes( '-c.extraMetadata.chataioBuild.count=1234' ) );
 		assert.ok(
@@ -101,12 +102,38 @@ describe( 'decorateElectronBuilderForChatAioIdentity' , () => {
 			} ,
 			isRelease : true ,
 		} );
-		assert.equal( stamped.env.BUILD_NUMBER , '1234' );
+		assert.equal( stamped.env.BUILD_NUMBER , undefined );
+		assert.ok( stamped.args.includes( '-c.buildNumber=1234' ) );
 		assert.ok( stamped.args.includes( '-c.extraMetadata.chataioBuild.dirty=true' ) );
 		assert.equal(
 			stamped.args.some( ( arg ) => arg.startsWith( '-c.artifactName=' ) ) ,
 			false ,
 		);
+	} );
+
+	it( '会清掉传入的 BUILD_NUMBER，避免被当成 CI' , () => {
+		const stamped = decorateElectronBuilderForChatAioIdentity( {
+			args : [ 'build' , '-w' ] ,
+			env : {
+				BUILD_NUMBER : '999' ,
+			} ,
+			identity ,
+			isRelease : false ,
+		} );
+		assert.equal( Object.prototype.hasOwnProperty.call( stamped.env , 'BUILD_NUMBER' ) , false );
+		assert.ok( stamped.args.includes( '-c.buildNumber=1234' ) );
+	} );
+
+	it( '未写 --publish 时补 never，已写则不改' , () => {
+		assert.deepEqual(
+			withElectronBuilderPublishNever( [ 'build' , '-w' ] ) ,
+			[ 'build' , '-w' , '--publish' , 'never' ] ,
+		);
+		assert.deepEqual(
+			withElectronBuilderPublishNever( [ 'build' , '--publish' , 'always' ] ) ,
+			[ 'build' , '--publish' , 'always' ] ,
+		);
+		assert.equal( hasElectronBuilderPublishFlag( [ '-p=never' ] ) , true );
 	} );
 
 	it( 'dirty 本地包文件名带 .dirty' , () => {
@@ -162,8 +189,10 @@ import {
 	collectGitBuildIdentity ,
 	decorateElectronBuilderForChatAioIdentity ,
 	gitCommitArtifactToken ,
+	hasElectronBuilderPublishFlag ,
 	isChatAioReleaseBuild ,
 	toElectronBuilderBuildNumber ,
+	withElectronBuilderPublishNever ,
 } from '#root/scripts/utils/git-build-identity';
 import assert from 'node:assert/strict';
 import { describe , it } from 'node:test';
