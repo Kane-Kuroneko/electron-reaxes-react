@@ -2,6 +2,8 @@
 
 ChatAIO 用 Playwright 的 `_electron.launch` 跑真实 unpackaged Electron。测主壳 BrowserWindow（Main / Guiding / Dropdown / Floating）以及 **已发现的 WebContentsView Page**（Settings、AI 页也会进 `windows()`）。不测远程 AI 站点 DOM。
 
+产品演示 / OBS 录屏是另一套入口：[`playwright-demo-record.md`](./playwright-demo-record.md)（`yarn demo:playwright`，目录 `demo/`）。不要把出镜场景写进 `e2e/tests/`。
+
 ## 调研结论（2026-09）
 
 对齐的成熟做法：

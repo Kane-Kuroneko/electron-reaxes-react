@@ -45,29 +45,36 @@ export const isFirstLaunchWithoutUserData = isChatAioE2E()
 function applyPreLaunchSettings() {
 	try {
 		const settingsPath = path.join( app.getPath( 'userData' ) , 'user-settings.json' );
-		if( !fs.existsSync( settingsPath ) ) return;
-		const content = fs.readFileSync( settingsPath , 'utf-8' );
-		const parsed = JSON.parse( content );
-		const settings = parsed?.settings;
-		if( !settings ) return;
+		if( fs.existsSync( settingsPath ) ) {
+			const content = fs.readFileSync( settingsPath , 'utf-8' );
+			const parsed = JSON.parse( content );
+			const settings = parsed?.settings;
+			if( settings ) {
+				const language = resolveLanguagePreference(
+					normalizeLanguagePreference( settings.appearance?.language ) ,
+					getPreLaunchSystemLanguage(),
+				);
+				app.commandLine.appendSwitch( 'lang' , language );
+				nativeTheme.themeSource = normalizeThemePreference(
+					settings.appearance?.theme ,
+					settings.appearance?.darkmode,
+				);
 
-		const language = resolveLanguagePreference(
-			normalizeLanguagePreference( settings.appearance?.language ) ,
-			getPreLaunchSystemLanguage(),
-		);
-		app.commandLine.appendSwitch( 'lang' , language );
-		nativeTheme.themeSource = normalizeThemePreference(
-			settings.appearance?.theme ,
-			settings.appearance?.darkmode,
-		);
-
-		// GPU acceleration 必须在 app.ready 之前设置
-		if( settings.system?.gpu_acceleration === false ) {
-			app.disableHardwareAcceleration();
-			console.log( '[Before-Launch] GPU hardware acceleration disabled by user settings.' );
+				// GPU acceleration 必须在 app.ready 之前设置
+				if( settings.system?.gpu_acceleration === false ) {
+					app.disableHardwareAcceleration();
+					console.log( '[Before-Launch] GPU hardware acceleration disabled by user settings.' );
+				}
+			}
 		}
 	} catch ( error ) {
 		console.warn( '[Before-Launch] Failed to read pre-launch settings:' , error );
+	}
+	/* 演示开录必须浅色。themeSource 只影响 prefers-color-scheme；
+	   Windows 系统色仍可能是深色，Guiding Follow System 另在 get-guiding-defaults 钉 light。
+	   设计：docs/features/playwright-demo-record.md */
+	if( isChatAioDemo() ) {
+		nativeTheme.themeSource = 'light';
 	}
 }
 
@@ -93,7 +100,7 @@ import process from 'node:process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { setAppProfilePath } from "#main/foundation/debug/app-data-path";
-import { isChatAioE2E } from '#main/foundation/e2e-mode';
+import { isChatAioDemo , isChatAioE2E } from '#main/foundation/e2e-mode';
 import { installE2EFaultCollector } from '#main/foundation/e2e-faults';
 import {
 	acquireChatAIOSingleInstanceLock,

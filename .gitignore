@@ -24,6 +24,9 @@ projects/ChatAIO/e2e/playwright-report/
 projects/ChatAIO/e2e/blob-report/
 projects/ChatAIO/e2e/playwright/.cache/
 
+# Playwright 产品演示画像（登录态，不要进版本库）
+projects/ChatAIO/demo/.profile/
+
 # macOS — based on github/gitignore Global/macOS.gitignore
 .DS_Store
 .localized

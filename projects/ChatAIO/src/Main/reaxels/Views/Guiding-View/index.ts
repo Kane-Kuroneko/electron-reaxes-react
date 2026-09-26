@@ -18,12 +18,15 @@ export const reaxel_GuidingView = reaxel( () => {
 			const settings = getSettingsConfigService().getDefaultSettings();
 			const resolvedAppearance = resolveAppearance( settings.appearance );
 			const environment = getAppearanceEnvironment();
+			/* 演示：默认 Follow System 赶上 Windows 深色会整页发黑。开录必须浅色。
+			   设计：docs/features/playwright-demo-record.md */
+			const demoLight = isChatAioDemo();
 			return {
 				appearance : {
 					language : settings.appearance.language ,
 					resolvedLanguage : resolvedAppearance.language ,
-					theme : settings.appearance.theme ,
-					resolvedTheme : resolvedAppearance.theme,
+					theme : demoLight ? 'light' : settings.appearance.theme ,
+					resolvedTheme : demoLight ? 'light' : resolvedAppearance.theme,
 				} ,
 				systemLanguageName : environment.systemLanguageName ,
 				defaultAIs : getAIConfigService().getDefaultAIs(),
@@ -229,6 +232,7 @@ import {
 	isMainRuntimeStarted ,
 	startMainRuntime,
 } from '#main/runtime';
+import { isChatAioDemo } from '#main/foundation/e2e-mode';
 import { useIpcRpc } from '#main/services/ipc';
 import { loadRendererEntry } from '#main/services/dev/renderer-entry';
 import {

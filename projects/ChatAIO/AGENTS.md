@@ -21,7 +21,9 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 
 ### 开发 / 打包 / 测试
 
-- [npm 脚本与参数](./scripts.md)（常用入口在 `package.json`；平台出包、E2E 观测、目录签名、性能分析的完整命令也在这里）
+- [npm 脚本与参数](./scripts.md)（常用入口在 `package.json`；平台出包、E2E 观测、目录签名、性能分析、演示录屏的完整命令也在这里）
+- [Playwright 产品演示（OBS 录屏）](./docs/features/playwright-demo-record.md)（`yarn demo:playwright`；与 `yarn test:e2e` 隔离）
+- [产品演示出镜脚本](./docs/features/playwright-demo-script.md)（六家预加载、badge / Prev-Next、Prompt 跨页粘贴、代理；不拍暗夜模式）
 
 ### 中心 AI 页闪白、回前台
 
@@ -85,6 +87,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 ### E2E
 
 - [Playwright E2E 框架](./docs/features/e2e-playwright.md)（`yarn test:e2e`；观测命令见 [`scripts.md`](./scripts.md)；返回用户 seed 固定 4 页 `about:blank`；写盘走探针；不测远程 AI DOM）
+- 产品演示 / OBS 录屏**不是** E2E：架构 [`playwright-demo-record.md`](./docs/features/playwright-demo-record.md)，出镜分镜 [`playwright-demo-script.md`](./docs/features/playwright-demo-script.md)
 - 关窗退进程 / 单实例：默认 fixture **测不到**（teardown 会 `app.exit` + `kill pid`）。套件：`e2e/tests/app-lifecycle.spec.ts`；见 [close-without-tray-process-lingers.md](./docs/issues/close-without-tray-process-lingers.md)「怎么测」
 
 ### 换图标
@@ -137,6 +140,8 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [settings-view-preload.md](./docs/features/settings-view-preload.md) | Settings WCV 晚于启动 AI 页再 preload |
 | [settings-menu-switch-perf.md](./docs/features/settings-menu-switch-perf.md) | Settings 侧栏切页 JSONL 埋点 |
 | [e2e-playwright.md](./docs/features/e2e-playwright.md) | Playwright Electron E2E；Settings WCV 可点；观测命令见 [scripts.md](./scripts.md) |
+| [playwright-demo-record.md](./docs/features/playwright-demo-record.md) | 产品演示导演层；OBS 录屏；与 test:e2e 隔离 |
+| [playwright-demo-script.md](./docs/features/playwright-demo-script.md) | 出镜分镜：六家预加载、badge、Prev/Next、Prompt 粘贴、代理；不拍 Dark |
 | [single-instance.md](./docs/features/single-instance.md) | 同一 userData 单实例；第二次启动唤起 Main |
 
 ### issues/

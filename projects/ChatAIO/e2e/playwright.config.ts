@@ -2,6 +2,7 @@
  * ChatAIO Playwright E2E 配置。
  * Electron 单实例 + 共享 GPU：默认 workers=1。
  * 不下载 Chromium：测的是仓库内 electron 二进制。
+ * 产品演示不走本文件：docs/features/playwright-demo-record.md （yarn demo:playwright）
  * 设计：docs/features/e2e-playwright.md
  */
 
