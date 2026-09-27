@@ -1,10 +1,10 @@
 /**
- * 壳层页画一颗跟随 CDP 鼠标的光标。Prompt 贴进站点那一拍也会打到当前 AI WCV
- * （仍不对远程 DOM 做 locator）。Playwright mouse 不带动系统指针，OBS 要靠这颗点。
- * 录制全程都要看得见这一颗：preroll 就停在 badge 上，等、打字、切页也不要藏。
- * 同一时刻只亮一颗：新注入的页默认隐藏，只有 setActive 的那页 opacity:1。
- * 禁止在 init 里默认 visible（每页会在 0,0 再长出一颗 = 双光标）。
- * Overlay 宿主必须是 0×0 且不可命中。点击高亮是贴在箭头尖上的小圆环 + pulse()。
+ * 演示指针是一颗始终可见的 56px 置顶小窗，尖端跟屏幕坐标走。
+ * 不要画进各页 overlay：MainView 只有 36px 会裁掉；切到 Dropdown 再藏主窗那颗，轨迹就断。
+ * 也不要做整客户区透明罩：Windows 忽略 alwaysOnTop level，Dropdown 会把罩子连同箭头一起盖住。
+ * 小窗每帧 setBounds + moveTop，开下拉后仍压在列表上面，滑行全程看得到。
+ * 穿透用 setIgnoreMouseEvents(true)，禁止 { forward: true }（会抖 menubar）。
+ * 点名列表时从当前位置滑到目标行，CDP 只在终点按下。
  * 设计：docs/features/playwright-demo-record.md
  */
 
@@ -17,11 +17,15 @@ const SHELL_URL_FRAGMENTS = [
 	'FloatingView',
 ];
 
-const cursorInitPages = new WeakSet<Page>();
+const CURSOR_LAYER_TITLE = 'chataio-demo-cursor-layer';
+const CURSOR_WIN_SIZE = 56;
+const CURSOR_HOTSPOT_X = 12;
+const CURSOR_HOTSPOT_Y = 12;
 
 let demoElectronApp : ElectronApplication | null = null;
-let lastActivePage : Page | null = null;
 let lastScreen : { x:number; y:number } | null = null;
+let layerReady : Promise<void> | null = null;
+let electronNameShimmed = false;
 
 export type DemoPageOrigin = {
 	x : number;
@@ -38,6 +42,14 @@ export const isDemoShellPage = ( page:Page ) => {
 export const isTransientDemoPage = ( page:Page ) => {
 	const url = page.url();
 	return url.includes( 'DropdownView' ) || url.includes( 'FloatingView' );
+};
+
+export const isDemoCursorLayerPage = ( page:Page ) => {
+	try {
+		return page.url().includes( CURSOR_LAYER_TITLE );
+	} catch {
+		return false;
+	}
 };
 
 export const sameDemoPageUrl = ( left:string , right:string ) => {
@@ -64,99 +76,24 @@ export const getDemoCursorScreen = () => {
 	return lastScreen;
 };
 
-export const rememberDemoCursorScreen = (
-	origin:{ x:number; y:number } | null ,
-	x:number ,
-	y:number,
-) => {
-	if( origin ) {
-		lastScreen = {
-			x : origin.x + x ,
-			y : origin.y + y,
-		};
-	}
-};
-
-const isPageOpen = ( page:Page | null ) : page is Page => {
-	if( !page ) {
-		return false;
-	}
-	try {
-		return page.isClosed() === false;
-	} catch {
-		return false;
-	}
-};
-
-const clamp = ( value:number , min:number , max:number ) => {
-	if( max < min ) {
-		return min;
-	}
-	return Math.min( max , Math.max( min , value ) );
-};
-
-export const installDemoCursor = async( page:Page ) => {
-	try {
-		await installTsxEvalShim( page );
-		if( cursorInitPages.has( page ) === false ) {
-			await page.addInitScript( {
-				content : TSX_EVAL_NAME_SHIM,
-			} );
-			await page.addInitScript( demoCursorInitScript );
-			cursorInitPages.add( page );
-		}
-		await page.evaluate( demoCursorInitScript );
-		const screen = lastScreen;
-		const keepVisible = isPageOpen( lastActivePage )
-			&& isSameDemoPage( page , lastActivePage )
-			&& !!screen;
-		if( keepVisible && screen ) {
-			const origin = await getDemoPageOrigin( page ) || await readPageScreenFallback( page );
-			if( origin ) {
-				const localX = clamp( screen.x - origin.x , 0 , origin.width - 1 );
-				const localY = clamp( screen.y - origin.y , 0 , origin.height - 1 );
-				await applyDemoCursor( page , {
-					show : true ,
-					x : localX ,
-					y : localY,
-				} );
-				return;
-			}
-		}
-		// 新页 / 非活动页必须藏，否则 Main + Dropdown / AI 会叠两颗
-		await applyDemoCursor( page , {
-			show : false ,
-			x : 0 ,
-			y : 0,
-		} );
-	} catch {
-		/* 导航中或已销毁 */
-	}
+export const installDemoCursor = async( _page:Page ) => {
+	await ensureDemoCursorLayer();
 };
 
 export const attachDemoCursor = ( electronApp:ElectronApplication ) => {
 	demoElectronApp = electronApp;
 	void hideNativeAppCursors( electronApp );
-	const attach = ( page:Page ) => {
-		void installDemoCursor( page );
-		page.on( 'framenavigated' , () => {
-			void installDemoCursor( page );
-		} );
-		page.on( 'close' , () => {
-			if( lastActivePage === page ) {
-				lastActivePage = null;
-				void ensureDemoCursorVisible();
-			}
-		} );
-	};
-	electronApp.windows().forEach( attach );
-	electronApp.on( 'window' , attach );
+	void ensureDemoCursorLayer();
 };
 
 /** OBS 若开了 Capture Cursor，系统指针会和演示光标叠在一起。所有 WebContents 都藏原生指针。 */
 const hideNativeAppCursors = async( electronApp:ElectronApplication ) => {
 	try {
+		await shimElectronName( electronApp );
 		await electronApp.evaluate( ( { app , webContents } ) => {
+			( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				= ( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				|| ( ( target ) => target );
 			const css = 'html, body, * { cursor: none !important; }';
 			const inject = ( wc:{
 				isDestroyed : () => boolean;
@@ -188,128 +125,363 @@ const hideNativeAppCursors = async( electronApp:ElectronApplication ) => {
 	}
 };
 
-const isSameDemoPage = ( candidate:Page , page:Page ) => {
-	if( candidate === page ) {
-		return true;
+const shimElectronName = async( app:ElectronApplication ) => {
+	if( electronNameShimmed ) {
+		return;
 	}
 	try {
-		return sameDemoPageUrl( candidate.url() , page.url() );
-	} catch {
-		return false;
-	}
-};
-
-/** 点击光点必须走 API，不要等 window mousedown：CDP 按下和下拉 hide 都可能吃掉 DOM 事件。 */
-export const pulseDemoCursor = async( page:Page ) => {
-	await installDemoCursor( page );
-	try {
-		await page.evaluate( () => {
-			const api = ( window as Window & {
-				__CHATAIO_DEMO_CURSOR__? : {
-					pulse?:() => void;
-					setVisible?:( show:boolean ) => void;
-				};
-			} ).__CHATAIO_DEMO_CURSOR__;
-			api?.setVisible?.( true );
-			api?.pulse?.();
+		await app.evaluate( () => {
+			( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				= ( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				|| ( ( target ) => target );
 		} );
+		electronNameShimmed = true;
 	} catch {
-		/* 已销毁 */
+		/* 主进程尚未可 evaluate */
 	}
 };
 
-export const setActiveDemoCursor = async( page:Page , localX:number , localY:number ) => {
+export const ensureDemoCursorLayer = async() => {
 	const app = demoElectronApp;
 	if( !app ) {
 		return;
 	}
-	lastActivePage = page;
-	const origin = await getDemoPageOrigin( page ) || await readPageScreenFallback( page );
-	rememberDemoCursorScreen( origin , localX , localY );
-	const others : Page[] = [];
-	let activePage : Page | null = null;
-	for( const candidate of app.windows() ) {
-		if( isPageOpen( candidate ) === false ) {
-			continue;
-		}
-		if( isSameDemoPage( candidate , page ) ) {
-			activePage = candidate;
-		} else {
-			others.push( candidate );
-		}
-	}
-	for( const candidate of others ) {
-		await applyDemoCursor( candidate , {
-			show : false ,
-			x : 0 ,
-			y : 0,
+	await shimElectronName( app );
+	if( !layerReady ) {
+		layerReady = createDemoCursorLayer( app ).catch( ( error ) => {
+			layerReady = null;
+			throw error;
 		} );
 	}
-	await applyDemoCursor( activePage || page , {
-		show : true ,
-		x : localX ,
-		y : localY,
+	await layerReady;
+	await raiseDemoCursorLayer();
+};
+
+const createDemoCursorLayer = async( app:ElectronApplication ) => {
+	const placed = await app.evaluate( async( { BrowserWindow } , payload:{
+		title : string;
+		html : string;
+		size : number;
+		hotspotX : number;
+		hotspotY : number;
+	} ) => {
+		( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+			= ( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+			|| ( ( target ) => target );
+		let layer = BrowserWindow.getAllWindows().find( ( win ) => {
+			return win.isDestroyed() === false && win.getTitle() === payload.title;
+		} );
+		const host = BrowserWindow.getAllWindows().find( ( win ) => {
+			if( win.isDestroyed() || win.getTitle() === payload.title ) {
+				return false;
+			}
+			const url = win.webContents.getURL();
+			return url.includes( 'MainView' ) || url.includes( 'GuidingView' );
+		} );
+		const hostBounds = host
+			? host.getContentBounds()
+			: {
+				x : 80 ,
+				y : 80 ,
+				width : 1600 ,
+				height : 900,
+			};
+		const screenX = hostBounds.x + Math.min( 220 , Math.max( 48 , hostBounds.width / 2 ) );
+		const screenY = hostBounds.y + 18;
+		if( !layer ) {
+			layer = new BrowserWindow( {
+				x : Math.round( screenX - payload.hotspotX ) ,
+				y : Math.round( screenY - payload.hotspotY ) ,
+				width : payload.size ,
+				height : payload.size ,
+				frame : false ,
+				transparent : true ,
+				backgroundColor : '#00000000' ,
+				hasShadow : false ,
+				skipTaskbar : true ,
+				focusable : false ,
+				show : false ,
+				resizable : false ,
+				movable : false ,
+				minimizable : false ,
+				maximizable : false ,
+				fullscreenable : false ,
+				alwaysOnTop : true ,
+				paintWhenInitiallyHidden : true ,
+				roundedCorners : false ,
+				webPreferences : {
+					nodeIntegration : false ,
+					contextIsolation : true ,
+					backgroundThrottling : false,
+				},
+			} );
+			layer.setTitle( payload.title );
+			layer.setMenu( null );
+			layer.setIgnoreMouseEvents( true );
+			await layer.loadURL( `data:text/html;charset=utf-8,${ encodeURIComponent( payload.html ) }` );
+		}
+		layer.setAlwaysOnTop( true );
+		layer.setBounds( {
+			x : Math.round( screenX - payload.hotspotX ) ,
+			y : Math.round( screenY - payload.hotspotY ) ,
+			width : payload.size ,
+			height : payload.size,
+		} );
+		layer.setOpacity( 1 );
+		layer.showInactive();
+		layer.moveTop();
+		return {
+			x : screenX ,
+			y : screenY,
+		};
+	} , {
+		title : CURSOR_LAYER_TITLE ,
+		html : demoCursorLayerHtml() ,
+		size : CURSOR_WIN_SIZE ,
+		hotspotX : CURSOR_HOTSPOT_X ,
+		hotspotY : CURSOR_HOTSPOT_Y,
 	} );
+	if( placed && !lastScreen ) {
+		lastScreen = placed;
+	}
+};
+
+export const syncDemoCursorLayerBounds = async() => {
+	const screen = lastScreen;
+	if( screen ) {
+		await moveDemoCursorScreen( screen.x , screen.y );
+		return;
+	}
+	await raiseDemoCursorLayer();
+};
+
+export const raiseDemoCursorLayer = async() => {
+	const app = demoElectronApp;
+	if( !app ) {
+		return;
+	}
+	try {
+		await shimElectronName( app );
+		await app.evaluate( ( { BrowserWindow } , title:string ) => {
+			( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				= ( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				|| ( ( target ) => target );
+			const layer = BrowserWindow.getAllWindows().find( ( win ) => {
+				return win.isDestroyed() === false && win.getTitle() === title;
+			} );
+			if( !layer ) {
+				return;
+			}
+			layer.setAlwaysOnTop( true );
+			layer.setOpacity( 1 );
+			if( layer.isVisible() === false ) {
+				layer.showInactive();
+			}
+			layer.moveTop();
+		} , CURSOR_LAYER_TITLE );
+	} catch {
+		/* 关窗过程 */
+	}
+};
+
+const placeCursorWindow = async( screenX:number , screenY:number ) => {
+	const app = demoElectronApp;
+	if( !app ) {
+		return;
+	}
+	lastScreen = {
+		x : screenX ,
+		y : screenY,
+	};
+	try {
+		await shimElectronName( app );
+		await app.evaluate( ( { BrowserWindow } , payload:{
+			title : string;
+			x : number;
+			y : number;
+			size : number;
+			hotspotX : number;
+			hotspotY : number;
+		} ) => {
+			( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				= ( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				|| ( ( target ) => target );
+			const layer = BrowserWindow.getAllWindows().find( ( win ) => {
+				return win.isDestroyed() === false && win.getTitle() === payload.title;
+			} );
+			if( !layer ) {
+				return;
+			}
+			layer.setBounds( {
+				x : Math.round( payload.x - payload.hotspotX ) ,
+				y : Math.round( payload.y - payload.hotspotY ) ,
+				width : payload.size ,
+				height : payload.size,
+			} );
+			layer.setAlwaysOnTop( true );
+			layer.setOpacity( 1 );
+			if( layer.isVisible() === false ) {
+				layer.showInactive();
+			}
+			layer.moveTop();
+		} , {
+			title : CURSOR_LAYER_TITLE ,
+			x : screenX ,
+			y : screenY ,
+			size : CURSOR_WIN_SIZE ,
+			hotspotX : CURSOR_HOTSPOT_X ,
+			hotspotY : CURSOR_HOTSPOT_Y,
+		} );
+	} catch {
+		/* 层尚未就绪 */
+	}
+};
+
+export const moveDemoCursorScreen = async( screenX:number , screenY:number ) => {
+	await ensureDemoCursorLayer();
+	await placeCursorWindow( screenX , screenY );
 };
 
 /**
- * 停顿 / 下拉关掉 / 导航重装 overlay 之后，把唯一那颗光标亮回 lastScreen。
- * 没有历史点就落到主壳 menubar 中段，不要在 0,0 冒出来。
+ * 整段滑行在 Electron 主进程里 setBounds，避免每帧 Playwright IPC 把轨迹打成瞬移。
  */
-export const ensureDemoCursorVisible = async() => {
+export const animateDemoCursorAlong = async( path:{
+	from : { x:number; y:number };
+	to : { x:number; y:number };
+	ctrl : { x:number; y:number };
+	duration : number;
+	steps : number;
+} ) => {
+	await ensureDemoCursorLayer();
+	const app = demoElectronApp;
+	if( !app ) {
+		lastScreen = path.to;
+		return;
+	}
+	lastScreen = path.to;
+	try {
+		await shimElectronName( app );
+		await app.evaluate( async( { BrowserWindow } , payload:{
+			title : string;
+			from : { x:number; y:number };
+			to : { x:number; y:number };
+			ctrl : { x:number; y:number };
+			duration : number;
+			steps : number;
+			size : number;
+			hotspotX : number;
+			hotspotY : number;
+		} ) => {
+			( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				= ( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				|| ( ( target ) => target );
+			const layer = BrowserWindow.getAllWindows().find( ( win ) => {
+				return win.isDestroyed() === false && win.getTitle() === payload.title;
+			} );
+			if( !layer ) {
+				return;
+			}
+			const started = Date.now();
+			for( let i = 1; i <= payload.steps; i++ ) {
+				const t = i / payload.steps;
+				const eased = t * t * ( 3 - 2 * t );
+				const rest = 1 - eased;
+				const nx = rest * rest * payload.from.x
+					+ 2 * rest * eased * payload.ctrl.x
+					+ eased * eased * payload.to.x;
+				const ny = rest * rest * payload.from.y
+					+ 2 * rest * eased * payload.ctrl.y
+					+ eased * eased * payload.to.y;
+				layer.setBounds( {
+					x : Math.round( nx - payload.hotspotX ) ,
+					y : Math.round( ny - payload.hotspotY ) ,
+					width : payload.size ,
+					height : payload.size,
+				} );
+				layer.setAlwaysOnTop( true );
+				layer.setOpacity( 1 );
+				if( layer.isVisible() === false ) {
+					layer.showInactive();
+				}
+				layer.moveTop();
+				const expected = Math.round( payload.duration * t );
+				const elapsed = Date.now() - started;
+				if( expected > elapsed ) {
+					await new Promise( ( resolve ) => {
+						setTimeout( resolve , expected - elapsed );
+					} );
+				}
+			}
+			layer.setBounds( {
+				x : Math.round( payload.to.x - payload.hotspotX ) ,
+				y : Math.round( payload.to.y - payload.hotspotY ) ,
+				width : payload.size ,
+				height : payload.size,
+			} );
+			layer.setAlwaysOnTop( true );
+			layer.showInactive();
+			layer.moveTop();
+		} , {
+			title : CURSOR_LAYER_TITLE ,
+			from : path.from ,
+			to : path.to ,
+			ctrl : path.ctrl ,
+			duration : path.duration ,
+			steps : path.steps ,
+			size : CURSOR_WIN_SIZE ,
+			hotspotX : CURSOR_HOTSPOT_X ,
+			hotspotY : CURSOR_HOTSPOT_Y,
+		} );
+	} catch {
+		await placeCursorWindow( path.to.x , path.to.y );
+	}
+};
+
+/** 点击光点打在屏幕指针上，不要打在会被裁掉的页内 overlay。 */
+export const pulseDemoCursor = async( _page?:Page ) => {
+	await ensureDemoCursorLayer();
 	const app = demoElectronApp;
 	if( !app ) {
 		return;
 	}
-	let page : Page | null = isPageOpen( lastActivePage ) ? lastActivePage : null;
-	if( !page || isTransientDemoPage( page ) ) {
-		page = findStableDemoShellPage() || page;
-	}
-	if( !page ) {
-		return;
-	}
-	const origin = await getDemoPageOrigin( page ) || await readPageScreenFallback( page );
-	const width = origin?.width || 1;
-	const height = origin?.height || 1;
-	let localX = Math.round( width / 2 );
-	let localY = Math.min( 18 , Math.max( 0 , height - 1 ) );
-	if( lastScreen && origin ) {
-		localX = clamp( lastScreen.x - origin.x , 0 , width - 1 );
-		localY = clamp( lastScreen.y - origin.y , 0 , height - 1 );
-	}
 	try {
-		await page.mouse.move( localX , localY , {
-			steps : 1,
-		} );
-	} catch {
-		/* 主壳尚未可点 */
-	}
-	await setActiveDemoCursor( page , localX , localY );
-};
-
-const applyDemoCursor = async( page:Page , payload:{ show:boolean; x:number; y:number } ) => {
-	try {
-		await page.evaluate( ( next:{ show:boolean; x:number; y:number } ) => {
-			const api = ( window as Window & {
-				__CHATAIO_DEMO_CURSOR__? : {
-					moveTo : ( x:number , y:number ) => void;
-					setVisible : ( show:boolean ) => void;
-					pulse?:() => void;
-				};
-			} ).__CHATAIO_DEMO_CURSOR__;
-			if( !api ) {
+		await shimElectronName( app );
+		await app.evaluate( async( { BrowserWindow } , title:string ) => {
+			( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				= ( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				|| ( ( target ) => target );
+			const layer = BrowserWindow.getAllWindows().find( ( win ) => {
+				return win.isDestroyed() === false && win.getTitle() === title;
+			} );
+			if( !layer ) {
 				return;
 			}
-			if( next.show ) {
-				api.moveTo( next.x , next.y );
-				api.setVisible( true );
-			} else {
-				api.setVisible( false );
+			layer.setAlwaysOnTop( true );
+			layer.setOpacity( 1 );
+			if( layer.isVisible() === false ) {
+				layer.showInactive();
 			}
-		} , payload );
+			layer.moveTop();
+			await layer.webContents.executeJavaScript(
+				'window.__CHATAIO_DEMO_CURSOR_LAYER__&&window.__CHATAIO_DEMO_CURSOR_LAYER__.pulse()',
+			);
+		} , CURSOR_LAYER_TITLE );
 	} catch {
 		/* 已销毁 */
 	}
+};
+
+/**
+ * 停顿 / 下拉关掉之后：指针留在屏幕原处（那就是轨迹），不要夹回 menubar 36px，也不要藏起来。
+ */
+export const ensureDemoCursorVisible = async() => {
+	await ensureDemoCursorLayer();
+	const screen = lastScreen;
+	if( screen ) {
+		await placeCursorWindow( screen.x , screen.y );
+		return;
+	}
+	await raiseDemoCursorLayer();
 };
 
 export const findStableDemoShellPage = () => {
@@ -317,7 +489,7 @@ export const findStableDemoShellPage = () => {
 	if( !app ) {
 		return null;
 	}
-	const pages = app.windows();
+	const pages = app.windows().filter( ( page ) => isDemoCursorLayerPage( page ) === false );
 	return pages.find( ( page ) => page.url().includes( 'MainView' ) )
 		|| pages.find( ( page ) => page.url().includes( 'GuidingView' ) )
 		|| null;
@@ -335,7 +507,14 @@ export const getDemoPageOrigin = async( page:Page ):Promise<DemoPageOrigin | nul
 	}
 	const url = page.url();
 	try {
-		return await app.evaluate( ( { BrowserWindow } , targetUrl:string ) => {
+		await shimElectronName( app );
+		return await app.evaluate( ( { BrowserWindow } , payload:{
+			targetUrl : string;
+			layerTitle : string;
+		} ) => {
+			( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				= ( globalThis as { __name? : ( target:unknown ) => unknown } ).__name
+				|| ( ( target ) => target );
 			const sameUrl = ( current:string , target:string ) => {
 				const normalize = ( value:string ) => {
 					try {
@@ -356,7 +535,7 @@ export const getDemoPageOrigin = async( page:Page ):Promise<DemoPageOrigin | nul
 					return false;
 				}
 				try {
-					return sameUrl( wc.getURL() , targetUrl );
+					return sameUrl( wc.getURL() , payload.targetUrl );
 				} catch {
 					return false;
 				}
@@ -406,7 +585,7 @@ export const getDemoPageOrigin = async( page:Page ):Promise<DemoPageOrigin | nul
 				return null;
 			};
 			for( const win of BrowserWindow.getAllWindows() ) {
-				if( win.isDestroyed() ) {
+				if( win.isDestroyed() || win.getTitle() === payload.layerTitle ) {
 					continue;
 				}
 				const content = win.getContentBounds();
@@ -433,155 +612,44 @@ export const getDemoPageOrigin = async( page:Page ):Promise<DemoPageOrigin | nul
 				}
 			}
 			return null;
-		} , url );
-	} catch {
-		return null;
-	}
-};
-
-const readPageScreenFallback = async( page:Page ):Promise<DemoPageOrigin | null> => {
-	try {
-		return await page.evaluate( () => {
-			const chrome = Math.max( 0 , window.outerHeight - window.innerHeight );
-			return {
-				x : window.screenX ,
-				y : window.screenY + chrome ,
-				width : Math.max( 1 , window.innerWidth ) ,
-				height : Math.max( 1 , window.innerHeight ),
-			};
+		} , {
+			targetUrl : url ,
+			layerTitle : CURSOR_LAYER_TITLE,
 		} );
 	} catch {
 		return null;
 	}
 };
 
-const demoCursorInitScript = () => {
-	const id = 'chataio-demo-cursor';
-	const glyphId = 'chataio-demo-cursor-glyph';
-	const styleId = 'chataio-demo-cursor-style';
-	type DemoCursorApi = {
-		moveTo : ( x:number , y:number ) => void;
-		setVisible : ( show:boolean ) => void;
-		pulse : () => void;
-	};
-	const host = window as Window & {
-		__CHATAIO_DEMO_CURSOR__? : DemoCursorApi;
-	};
-	if(
-		document.getElementById( id )
-		&& typeof host.__CHATAIO_DEMO_CURSOR__?.pulse === 'function'
-		&& ( document.getElementById( styleId ) as HTMLStyleElement | null )?.textContent?.includes( 'chataio-demo-cursor-hit' )
-	) {
-		return;
-	}
-	let style = document.getElementById( styleId ) as HTMLStyleElement | null;
-	if( !style ) {
-		style = document.createElement( 'style' );
-		style.id = styleId;
-		document.documentElement.appendChild( style );
-	}
-	style.textContent = [
-		'html.chataio-demo-cursor-root, html.chataio-demo-cursor-root * { cursor: none !important; }' ,
-		'#chataio-demo-cursor, #chataio-demo-cursor-glyph, #chataio-demo-cursor-ripple { pointer-events: none !important; }' ,
-		'#chataio-demo-cursor {' ,
-		'position:fixed; left:0; top:0; width:0; height:0; overflow:visible;' ,
-		'margin:0; padding:0; pointer-events:none !important; z-index:2147483647;' ,
-		'opacity:0;' ,
-		'}' ,
-		'#chataio-demo-cursor-glyph {' ,
-		'position:absolute; left:0; top:0; width:32px; height:32px; overflow:visible;' ,
-		'pointer-events:none !important; transform-origin:2px 2px;' ,
-		'background-repeat:no-repeat; background-position:0 0; background-size:28px 28px;' ,
-		'will-change:transform;' ,
-		'}' ,
-		'#chataio-demo-cursor-ripple.chataio-demo-cursor-hit {' ,
-		'position:absolute; left:2px; top:2px; width:18px; height:18px; margin:-9px 0 0 -9px;' ,
-		'border-radius:50%; pointer-events:none !important; opacity:0; transform:scale(.4);' ,
-		'box-sizing:border-box; border:2px solid rgba(255,255,255,.96);' ,
-		'background:rgba(37,99,235,.22);' ,
-		'box-shadow:0 0 0 1px rgba(15,23,42,.55);' ,
-		'}' ,
-		'#chataio-demo-cursor-ripple.chataio-demo-cursor-hit.is-on { animation:chataio-demo-cursor-flash 280ms ease-out forwards; }' ,
-		'@keyframes chataio-demo-cursor-flash { 0% { opacity:1; transform:scale(.4); } 38% { opacity:1; transform:scale(1); } 100% { opacity:0; transform:scale(1.12); } }',
-	].join( '' );
-	document.documentElement.classList.add( 'chataio-demo-cursor-root' );
-
-	let el = document.getElementById( id );
-	if( !el ) {
-		el = document.createElement( 'div' );
-		el.id = id;
-		el.setAttribute( 'aria-hidden' , 'true' );
-		document.documentElement.appendChild( el );
-	}
-	el.replaceChildren();
-	el.style.pointerEvents = 'none';
-	const glyph = document.createElement( 'div' );
-	glyph.id = glyphId;
-	glyph.setAttribute( 'aria-hidden' , 'true' );
-	glyph.style.pointerEvents = 'none';
+const demoCursorLayerHtml = () => {
 	const svg = encodeURIComponent( [
 		'<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none">' ,
 		'<path d="M3.8 2.1 3.8 23.4 9.6 17.8 13.7 26.8 17.3 25.2 13.1 16.2 21 16.2Z" fill="#0b1220"/>' ,
 		'<path d="M5.1 4.5 5.1 20.4 9.8 15.8 13.5 24 15.6 23.1 11.8 14.8 18.8 14.8Z" fill="#f8fafc" stroke="#0b1220" stroke-width="1.15" stroke-linejoin="round"/>' ,
 		'</svg>',
 	].join( '' ) );
-	glyph.style.backgroundImage = `url("data:image/svg+xml,${ svg }")`;
-	glyph.style.filter = 'drop-shadow(0 0 0.7px #fff) drop-shadow(0 0 1.2px #fff) drop-shadow(0 2px 4px rgba(0,0,0,.42))';
-	const ripple = document.createElement( 'div' );
-	ripple.id = 'chataio-demo-cursor-ripple';
-	ripple.className = 'chataio-demo-cursor-hit';
-	ripple.setAttribute( 'aria-hidden' , 'true' );
-	ripple.style.pointerEvents = 'none';
-	glyph.appendChild( ripple );
-	el.appendChild( glyph );
-
-	let px = 0;
-	let py = 0;
-	let visible = false;
-	let down = false;
-
-	const render = () => {
-		const scale = down ? 0.88 : 1;
-		el.style.opacity = visible ? '1' : '0';
-		glyph.style.transform = `translate3d(${ px }px, ${ py }px, 0) scale(${ scale })`;
-	};
-
-	const moveTo = ( x:number , y:number ) => {
-		px = x;
-		py = y;
-		render();
-	};
-
-	const pulse = () => {
-		visible = true;
-		render();
-		ripple.classList.remove( 'is-on' );
-		void ripple.offsetWidth;
-		ripple.classList.add( 'is-on' );
-	};
-
-	host.__CHATAIO_DEMO_CURSOR__ = {
-		moveTo ,
-		setVisible : ( show:boolean ) => {
-			visible = show === true;
-			render();
-		} ,
-		pulse,
-	};
-
-	window.addEventListener( 'mousemove' , ( event ) => {
-		moveTo( event.clientX , event.clientY );
-	} , true );
-	window.addEventListener( 'mousedown' , () => {
-		down = true;
-		render();
-	} , true );
-	window.addEventListener( 'mouseup' , () => {
-		down = false;
-		render();
-	} , true );
-	render();
+	return [
+		'<!doctype html><html><head><meta charset="utf-8"><title>' ,
+		CURSOR_LAYER_TITLE ,
+		'</title><style>' ,
+		'html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;cursor:none;}' ,
+		'#g{position:absolute;left:10px;top:10px;width:32px;height:32px;opacity:1;pointer-events:none;' ,
+		'background:url("data:image/svg+xml,' ,
+		svg ,
+		'") no-repeat 0 0 / 28px 28px;' ,
+		'filter:drop-shadow(0 0 0.7px #fff) drop-shadow(0 0 1.2px #fff) drop-shadow(0 2px 4px rgba(0,0,0,.42));}' ,
+		'#r{position:absolute;left:2px;top:2px;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;' ,
+		'box-sizing:border-box;border:2px solid rgba(255,255,255,.96);background:rgba(37,99,235,.22);' ,
+		'box-shadow:0 0 0 1px rgba(15,23,42,.55);opacity:0;transform:scale(.4);pointer-events:none;}' ,
+		'#r.on{animation:flash 280ms ease-out forwards;}' ,
+		'@keyframes flash{0%{opacity:1;transform:scale(.4)}38%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.12)}}' ,
+		'</style></head><body><div id="g"><div id="r"></div></div><script>' ,
+		'const r=document.getElementById("r");' ,
+		'window.__CHATAIO_DEMO_CURSOR_LAYER__={' ,
+		'pulse:function(){r.classList.remove("on");void r.offsetWidth;r.classList.add("on");}' ,
+		'};' ,
+		'</script></body></html>',
+	].join( '' );
 };
 
 import type { ElectronApplication , Page } from '@playwright/test';
-import { installTsxEvalShim , TSX_EVAL_NAME_SHIM } from './tsx-evaluate';

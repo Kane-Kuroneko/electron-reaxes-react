@@ -1,9 +1,8 @@
 /**
- * 出镜点击：先把光标移过去再点，不要 locator.click 瞬移。
+ * 出镜点击：屏幕指针先滑到目标再 CDP 按下。
  * 真正按下必须走 CDP mouse.down/up（isTrusted）。
- * 移动按时长∝距离（Screen Studio Rapid：慢滑会看起来「点比光标先到」）。
- * 已经在目标上就别再滑一遍；列表点名用 demoClickDirect。
- * 点击光点是 pulse()，按下前只留一帧，和 down 叠在一起。
+ * 指针画在独立透明层上，按屏幕坐标滑，轨迹不断；CDP 只在终点落到目标页
+ * （列表点名不会沿途 hover 每一行）。
  * 设计：docs/features/playwright-demo-record.md 、docs/features/playwright-demo-script.md
  */
 
@@ -19,7 +18,7 @@ export const demoClick = async( locator:Locator , pace:DemoPace , opts?:DemoClic
 };
 
 /**
- * 下拉 / 选择列表：光标出现在目标行上直接点，禁止从上滑过中间项。
+ * 下拉 / 选择列表：指针从当前位置滑到目标行再点，禁止沿列表逐项扫过 hover。
  * 点击仍走 CDP down/up。光点由 pulse() 在按下前打出。
  */
 export const demoClickDirect = async( locator:Locator , pace:DemoPace , opts?:DemoClickOpts ) => {
@@ -30,11 +29,11 @@ export const demoMoveTo = async( locator:Locator , pace:DemoPace ) => {
 	const page = locator.page();
 	await locator.scrollIntoViewIfNeeded();
 	const point = await centerOf( locator );
-	await movePageMouse( page , point.x , point.y , pace );
+	await glideToPagePoint( page , point.x , point.y , pace );
 	await beat( pace.hoverMs );
 };
 
-/** 不点，只把唯一那颗光标亮到目标上（preroll / 收尾）。 */
+/** 不点，只把屏幕指针亮到目标上（preroll / 收尾）。 */
 export const showDemoCursorAt = async( locator:Locator ) => {
 	const page = locator.page();
 	await locator.scrollIntoViewIfNeeded();
@@ -43,7 +42,7 @@ export const showDemoCursorAt = async( locator:Locator ) => {
 };
 
 export const demoClickAt = async( page:Page , x:number , y:number , pace:DemoPace , opts?:DemoClickOpts ) => {
-	await movePageMouse( page , x , y , pace );
+	await glideToPagePoint( page , x , y , pace );
 	await pressAtPage( page , pace , opts?.settleMs ?? pace.hoverMs );
 	if( isTransientDemoPage( page ) || page.isClosed() ) {
 		await parkDemoCursorOnStableShell();
@@ -60,11 +59,7 @@ const clickAtLocator = async(
 	const page = locator.page();
 	await locator.scrollIntoViewIfNeeded();
 	const point = await centerOf( locator );
-	if( travel === 'direct' ) {
-		await jumpPageMouse( page , point.x , point.y );
-	} else {
-		await movePageMouse( page , point.x , point.y , pace );
-	}
+	await glideToPagePoint( page , point.x , point.y , pace );
 	const settle = opts?.settleMs
 		?? ( travel === 'direct' ? pace.directSettleMs : pace.hoverMs );
 	await pressAtPage( page , pace , settle );
@@ -90,7 +85,7 @@ export const demoLongPress = async( locator:Locator , pace:DemoPace ) => {
 	const page = locator.page();
 	await locator.scrollIntoViewIfNeeded();
 	const point = await centerOf( locator );
-	await movePageMouse( page , point.x , point.y , pace );
+	await glideToPagePoint( page , point.x , point.y , pace );
 	await beat( pace.hoverMs );
 	await pulseDemoCursor( page );
 	await beat( pace.clickFlashMs );
@@ -163,45 +158,42 @@ const clamp = ( value:number , min:number , max:number ) => {
 	return Math.min( max , Math.max( min , value ) );
 };
 
-const movePageMouse = async( page:Page , x:number , y:number , pace:DemoPace ) => {
-	await installDemoCursor( page );
+const glideToPagePoint = async( page:Page , x:number , y:number , pace:DemoPace ) => {
 	const origin = await getDemoPageOrigin( page ) || await getRendererScreenFallback( page );
-	const viewport = await readPageViewport( page );
-	const to = {
-		x ,
-		y,
-	};
-	let from : { x:number; y:number };
-	const lastScreen = getDemoCursorScreen();
-	if( lastScreen && origin ) {
-		from = {
-			x : clamp( lastScreen.x - origin.x , 0 , viewport.width - 1 ) ,
-			y : clamp( lastScreen.y - origin.y , 0 , viewport.height - 1 ),
+	const toScreen = origin
+		? {
+			x : origin.x + x ,
+			y : origin.y + y,
+		}
+		: {
+			x ,
+			y,
 		};
-	} else {
-		// 第一次出场从目标旁边滑入，不要从客户区左上角飞过来
-		from = {
-			x : clamp( to.x - 28 , 0 , viewport.width - 1 ) ,
-			y : clamp( to.y - 6 , 0 , viewport.height - 1 ),
-		};
+	await glideDemoCursorScreen( toScreen , pace );
+	try {
+		await page.mouse.move( x , y , {
+			steps : 1,
+		} );
+	} catch {
+		/* 页正在卸 */
 	}
-	await page.mouse.move( from.x , from.y , {
-		steps : 1,
-	} );
-	await setActiveDemoCursor( page , from.x , from.y );
+};
 
+const glideDemoCursorScreen = async(
+	to:{ x:number; y:number } ,
+	pace:DemoPace,
+) => {
+	const from = getDemoCursorScreen() || {
+		x : to.x - 28 ,
+		y : to.y - 6,
+	};
 	const dx = to.x - from.x;
 	const dy = to.y - from.y;
 	const distance = Math.hypot( dx , dy );
 	if( distance < NEAR_PX ) {
-		await page.mouse.move( to.x , to.y , {
-			steps : 1,
-		} );
-		await setActiveDemoCursor( page , to.x , to.y );
-		rememberScreenPoint( origin , to.x , to.y );
+		await moveDemoCursorScreen( to.x , to.y );
 		return;
 	}
-
 	const duration = clamp(
 		Math.round( pace.moveMinMs + distance * pace.movePxMs ) ,
 		pace.moveMinMs ,
@@ -216,59 +208,26 @@ const movePageMouse = async( page:Page , x:number , y:number , pace:DemoPace ) =
 		x : ( from.x + to.x ) / 2 - ( dy / len ) * arc ,
 		y : ( from.y + to.y ) / 2 + ( dx / len ) * arc,
 	};
-
-	const started = Date.now();
-	for( let i = 1; i <= steps; i++ ) {
-		const t = i / steps;
-		const eased = t * t * ( 3 - 2 * t );
-		const rest = 1 - eased;
-		const nx = rest * rest * from.x + 2 * rest * eased * ctrl.x + eased * eased * to.x;
-		const ny = rest * rest * from.y + 2 * rest * eased * ctrl.y + eased * eased * to.y;
-		await page.mouse.move( nx , ny , {
-			steps : 1,
-		} );
-		await setActiveDemoCursor( page , nx , ny );
-		const expected = Math.round( duration * t );
-		const elapsed = Date.now() - started;
-		if( expected > elapsed ) {
-			await beat( expected - elapsed );
-		}
-	}
-	await setActiveDemoCursor( page , to.x , to.y );
-	rememberScreenPoint( origin , to.x , to.y );
+	await animateDemoCursorAlong( {
+		from ,
+		to ,
+		ctrl ,
+		duration ,
+		steps,
+	} );
 };
 
 const jumpPageMouse = async( page:Page , x:number , y:number ) => {
-	await installDemoCursor( page );
 	const origin = await getDemoPageOrigin( page ) || await getRendererScreenFallback( page );
-	await page.mouse.move( x , y , {
-		steps : 1,
-	} );
-	await setActiveDemoCursor( page , x , y );
-	rememberScreenPoint( origin , x , y );
-};
-
-const rememberScreenPoint = (
-	origin:{ x:number; y:number } | null ,
-	x:number ,
-	y:number,
-) => {
-	rememberDemoCursorScreen( origin , x , y );
-};
-
-const readPageViewport = async( page:Page ) => {
+	if( origin ) {
+		await moveDemoCursorScreen( origin.x + x , origin.y + y );
+	}
 	try {
-		return await page.evaluate( () => {
-			return {
-				width : Math.max( 1 , window.innerWidth ) ,
-				height : Math.max( 1 , window.innerHeight ),
-			};
+		await page.mouse.move( x , y , {
+			steps : 1,
 		} );
 	} catch {
-		return {
-			width : 2400 ,
-			height : 1400,
-		};
+		/* 主壳尚未可点 */
 	}
 };
 
@@ -290,17 +249,17 @@ const getRendererScreenFallback = async( page:Page ) => {
 
 const parkDemoCursorOnStableShell = async() => {
 	const shell = findStableDemoShellPage();
-	const lastScreen = getDemoCursorScreen();
-	if( !shell || !lastScreen ) {
+	const screen = getDemoCursorScreen();
+	await raiseDemoCursorLayer();
+	if( !shell || !screen ) {
 		return;
 	}
-	await installDemoCursor( shell );
 	const origin = await getDemoPageOrigin( shell ) || await getRendererScreenFallback( shell );
 	if( !origin ) {
 		return;
 	}
-	const localX = clamp( lastScreen.x - origin.x , 0 , origin.width - 1 );
-	const localY = clamp( lastScreen.y - origin.y , 0 , origin.height - 1 );
+	const localX = clamp( screen.x - origin.x , 0 , origin.width - 1 );
+	const localY = clamp( screen.y - origin.y , 0 , origin.height - 1 );
 	try {
 		await shell.mouse.move( localX , localY , {
 			steps : 1,
@@ -308,18 +267,17 @@ const parkDemoCursorOnStableShell = async() => {
 	} catch {
 		/* 主壳尚未可点 */
 	}
-	await setActiveDemoCursor( shell , localX , localY );
 };
 
 import type { Locator , Page } from '@playwright/test';
 import {
+	animateDemoCursorAlong ,
 	findStableDemoShellPage ,
 	getDemoCursorScreen ,
 	getDemoPageOrigin ,
-	installDemoCursor ,
 	isTransientDemoPage ,
+	moveDemoCursorScreen ,
 	pulseDemoCursor ,
-	rememberDemoCursorScreen ,
-	setActiveDemoCursor,
+	raiseDemoCursorLayer,
 } from './cursor';
 import { beat , type DemoPace } from './pace';

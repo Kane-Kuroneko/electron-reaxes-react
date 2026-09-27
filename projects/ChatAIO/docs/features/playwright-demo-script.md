@@ -15,8 +15,8 @@
 3. **不对远程站点写各家 CSS 选择器。** 站点只当背景。贴进输入框：Prompt 卡片 Copy → 通用探测当前页可见的 textarea / contenteditable / textbox（**排除** email/password/用户名），点中后用 CDP `insertText`。未登录时输入框常在中部英雄区，不要死点下三分之一（容易点到 Log in）。禁止 `Control+V`（Chromium 合成按键常常不会真粘贴）。
 4. **GuidingView 不出镜。** 画像事先 seed 成返回用户。需要重做向导时用 `--reset-profile`，那是备带，不是本片。
 5. **主路径用 badge 和 menubar Prev/Next**，不用 Switch AI 里的 Alt+]「新开一页」、也不用 Ctrl+] 浮层卡片（卡片会挡住站点，列表故事已经用 badge 讲完）。
-6. **下拉里点哪一项，光标就出现在哪一项上直接点，禁止从上到下滑过列表。** 点击当下要有光点（ripple），不要靠扫过条目来「找到」目标。
-7. OBS **不要** Capture Cursor（壳层已有演示光标）。Canvas 等于窗口客户区，禁止把 1600×900 强行放大成 1080p。
+6. **下拉里点哪一项，指针从当前位置滑到那一行再点，禁止沿列表逐项扫过。** 点击当下要有光点（ripple）。不要瞬移，否则观众跟丢轨迹。
+7. OBS **不要** Capture Cursor（壳层已有演示光标）。用**显示器或区域采集**，才能拍到下拉和始终跟着走的那颗指针；只 Window Capture Main 会把独立指针窗和下拉窗漏掉。Canvas 等于窗口客户区，禁止把 1600×900 强行放大成 1080p。
 
 ## 预先准备（开录前，可不出镜）
 
@@ -63,7 +63,7 @@
 
 menubar 固定 36px。Prompt 展开后中区变窄，1920/1600 仍能同时看见侧栏和站点 composer；720p 只在小屏兜底。
 
-**OBS：** Base Canvas = 窗口客户区；Output 同尺寸；Game/Window Capture 本窗；关闭 Capture Cursor。
+**OBS：** Base Canvas = 窗口客户区；Output 同尺寸；**显示器或区域采集**（不要只 Window Capture Main：下拉和演示指针都是独立置顶窗）；关闭 Capture Cursor。
 
 ## 出镜叙事（一条 take）
 
@@ -84,7 +84,7 @@ menubar 固定 36px。Prompt 展开后中区变窄，1920/1600 仍能同时看�
 
 ### 0. 建立镜头（preroll ~0.5s）
 
-主窗已是浅色英文，当前 AI = ChatGPT，六页预加载完成。**光标已经停在中区 badge 上**（不是等第一击才出现）。不要从向导或空白加载开始，也不要在 badge 上再干等。OBS 不要 Capture Cursor，避免和这颗 overlay 叠成双光标。
+主窗已是浅色英文，当前 AI = ChatGPT，六页预加载完成。**光标已经停在中区 badge 上**（不是等第一击才出现），之后全程跟着走，开列表时也不许消失。不要从向导或空白加载开始，也不要在 badge 上再干等。OBS 不要 Capture Cursor，避免和这颗演示指针叠成双光标。
 
 旁白（可选）：*One window. Every AI you already use.*
 
@@ -96,7 +96,7 @@ menubar 固定 36px。Prompt 展开后中区变窄，1920/1600 仍能同时看�
 
 ### 2. 从列表切两家
 
-仍在这张下拉里点 **Gemini**，preload 应很快，站点一出画就看一眼。再开 badge（列表已经认识，约 0.25s），点 **Claude**。两次都要从列表点名，不要用 Next 偷懒——观众需要看见「点谁就是谁」。光标**不要**从列表顶滑到目标行：下拉停稳后，光标出现在该行上直接点，点下去要有光点。
+仍在这张下拉里点 **Gemini**，preload 应很快，站点一出画就看一眼。再开 badge（列表已经认识，约 0.25s），点 **Claude**。两次都要从列表点名，不要用 Next 偷懒——观众需要看见「点谁就是谁」。指针从当前位置**滑到**该行再点（一条轨迹），不要沿列表从上扫到目标。点下去要有光点。
 
 不要连点超过两家：列表故事到此结束，后面交给 Prev/Next。
 
@@ -169,9 +169,10 @@ Application → **Settings**。Dev enhancer 若先停在 Networks，**不要**�
 - 不要 `setAlwaysOnTop`。
 - 不要把窗口设成非 16:9，也不要把小于 1080 的采集放大到 1080p。
 - 不要在片里 `--reset-profile`。
-- 不要让光标在下拉 / 选择列表里从上到下滑过再点；目标行上直接点，点击必须带光点。
+- 不要让光标在下拉 / 选择列表里沿条目扫过再点；从当前位置滑到目标行，点击必须带光点。
 - 不要对同一颗按钮「先滑过去停住再点」；不要连点 Next 时把光标挪走再滑回来。
 - 不要把 hover / 点击光点 / afterClick / 切页 wait 叠成一段空镜。
+- 不要把演示指针画在各页 overlay 里再互相隐藏；轨迹必须连续可见。
 
 ## 与现有文档的关系
 

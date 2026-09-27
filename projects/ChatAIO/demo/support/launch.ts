@@ -121,6 +121,9 @@ export const presentDemoWindow = async( electronApp:ElectronApplication ) => {
 				if( candidate.isDestroyed() ) {
 					return false;
 				}
+				if( candidate.getTitle() === 'chataio-demo-cursor-layer' ) {
+					return false;
+				}
 				const url = candidate.webContents.getURL();
 				return url.includes( 'MainView' ) || url.includes( 'GuidingView' );
 			} );
@@ -135,12 +138,14 @@ export const presentDemoWindow = async( electronApp:ElectronApplication ) => {
 			win.show();
 			win.focus();
 		} , size );
+		await syncDemoCursorLayerBounds();
+		await raiseDemoCursorLayer();
 	} catch {
 		/* 关窗过程忽略 */
 	}
 };
 
-import { attachDemoCursor } from './cursor';
+import { attachDemoCursor , raiseDemoCursorLayer , syncDemoCursorLayerBounds } from './cursor';
 import {
 	ensureReturningDemoProfile ,
 	forceDemoProfileLightTheme ,

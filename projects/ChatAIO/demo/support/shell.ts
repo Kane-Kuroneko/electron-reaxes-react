@@ -56,11 +56,15 @@ export const demoOpenTopMenuUntilItem = async(
 ) => {
 	await presentDemoWindow( ctx.electronApp );
 	if( await isDropdownItemVisible( ctx.electronApp , itemId ) ) {
-		return waitForVisibleDropdown( ctx.electronApp , timeoutMs );
+		const dropdown = await waitForVisibleDropdown( ctx.electronApp , timeoutMs );
+		await raiseDemoCursorLayer();
+		return dropdown;
 	}
 	await demoClick( topMenuButton( mainWindow , menuId ) , ctx.pace );
 	try {
-		return await waitForDropdownItem( ctx.electronApp , itemId , 2_500 );
+		const dropdown = await waitForDropdownItem( ctx.electronApp , itemId , 2_500 );
+		await raiseDemoCursorLayer();
+		return dropdown;
 	} catch {
 		/* 点到残留菜单或 toggle 关掉了 */
 	}
@@ -69,7 +73,9 @@ export const demoOpenTopMenuUntilItem = async(
 	await demoClick( topMenuButton( mainWindow , resetMenuId ) , ctx.pace );
 	await waitForDropdownItem( ctx.electronApp , resetItemId , timeoutMs );
 	await demoClick( topMenuButton( mainWindow , menuId ) , ctx.pace );
-	return waitForDropdownItem( ctx.electronApp , itemId , timeoutMs );
+	const dropdown = await waitForDropdownItem( ctx.electronApp , itemId , timeoutMs );
+	await raiseDemoCursorLayer();
+	return dropdown;
 };
 
 const isDropdownItemVisible = async( electronApp:ElectronApplication , itemId:string ) => {
@@ -149,7 +155,9 @@ export const demoOpenCurrentAi = async( ctx:DemoContext ) => {
 	const mainWindow = getMainWindow( ctx.electronApp );
 	await presentDemoWindow( ctx.electronApp );
 	await demoClick( mainWindow.getByTestId( TEST_IDS.currentAiBadge ) , ctx.pace );
-	return waitForVisibleDropdown( ctx.electronApp );
+	const dropdown = await waitForVisibleDropdown( ctx.electronApp );
+	await raiseDemoCursorLayer();
+	return dropdown;
 };
 
 export const waitForCurrentAi = async( ctx:DemoContext , aiId:string , holdMs = ctx.pace.afterSwitchMs ) => {
@@ -454,7 +462,7 @@ const readPageViewport = async( page:Page ) => {
 import { demoClick , demoClickAt } from './mouse';
 import { beat , holdRemaining , type DemoPace } from './pace';
 import { presentDemoWindow } from './launch';
-import { installDemoCursor , isDemoShellPage , ensureDemoCursorVisible } from './cursor';
+import { installDemoCursor , isDemoShellPage , ensureDemoCursorVisible , raiseDemoCursorLayer } from './cursor';
 import {
 	composerLooksLikeLogin ,
 	focusAiComposerAt ,
