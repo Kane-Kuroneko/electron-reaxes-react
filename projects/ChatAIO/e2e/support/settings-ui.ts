@@ -1,6 +1,6 @@
 /**
  * Settings WCV 上 Manage AIs / 页脚的稳定 locator。
- * seed 语言是 en-US。运行设置即时写盘，页脚只剩 Done。
+ * seed 语言是 en-US。运行设置即时写盘，页脚 Done，右上角关闭同一条 exitSettings。
  * 设计：docs/features/manage-ais-save-scopes.md 、 docs/features/settings-ui-shadcn.md
  */
 
@@ -18,6 +18,10 @@ export const openGeneral = async( settings:Page ) => {
 
 export const footerDone = ( settings:Page ) => {
 	return settings.getByTestId( TEST_IDS.settingsFooterDone );
+};
+
+export const settingsClose = ( settings:Page ) => {
+	return settings.getByTestId( TEST_IDS.settingsClose );
 };
 
 export const tableSave = ( settings:Page ) => {

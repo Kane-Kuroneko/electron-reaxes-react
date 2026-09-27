@@ -15,7 +15,7 @@ const SETTINGS_MENU_ICONS = {
 } as const;
 
 /**
- * Settings 壳：左侧导航 + 面板 keep-alive + 收缩页脚。
+ * Settings 壳：左侧导航 + 右上角关闭 + 面板 keep-alive + 收缩页脚。
  * 运行设置即时写盘；AI 表草稿只走 Manage AIs 表底。见 docs/features/settings-ui-shadcn.md
  */
 export const App = reaxper( () => {
@@ -100,7 +100,22 @@ export const App = reaxper( () => {
 					} ) }
 				</nav>
 			</aside>
-			<div className="flex min-w-0 flex-1 flex-col">
+			<div className="relative flex min-w-0 flex-1 flex-col">
+				{ /* 叠在内容区右上角，不另开标题栏。与页脚 Done 同一条 exitSettings。 */ }
+				<SimpleTooltip content={ <I18n>Close</I18n> }>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="absolute right-3 top-3 z-20 h-8 w-8 text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
+						data-testid="settings-close"
+						aria-label={ i18n( 'Close' ) }
+						disabled={ catalogChromeLocked }
+						onClick={ () => exitSettings() }
+					>
+						<X className="h-4 w-4" />
+					</Button>
+				</SimpleTooltip>
 				<div className="settings-content flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-6">
 					{ SETTINGS_MENU_ORDER.filter( key => visitedMenusRef.current.has( key ) ).map( key => {
 						const Panel = SETTINGS_MENU_PANELS[key];
@@ -193,12 +208,13 @@ import {
 } from '#Views/shared/ui/dialog';
 import { LongPressButton } from '#Views/shared/ui/long-press-button';
 import { AppToaster } from '#Views/shared/ui/toast';
-import { TooltipProvider } from '#Views/shared/ui/tooltip';
+import { SimpleTooltip , TooltipProvider } from '#Views/shared/ui/tooltip';
 import {
 	Globe ,
 	Info ,
 	LayoutGrid ,
-	SlidersHorizontal,
+	SlidersHorizontal ,
+	X,
 } from 'lucide-react';
 import { reaxper } from 'reaxes-react';
 import '#Views/shared/ui/globals.css';
