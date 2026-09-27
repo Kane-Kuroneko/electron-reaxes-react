@@ -135,6 +135,13 @@ export const SwitchAiBar = reaxper( () => {
 			nextTotal : total ,
 			visible ,
 		} );
+		if( getCurrentPerfCtxId() ) {
+			noteFloatingViewPerf( 'renderer' , getCurrentPerfCtxId() , FvPerfPhase.Remount , {
+				prevTotal ,
+				nextTotal : total ,
+				visible ,
+			} );
+		}
 		perf.flush();
 		/* 隐藏时列表变长（菜单从已打开页换成 configured）也是停靠，不播动画。 */
 		if( visible !== true && total > 0 ) {
@@ -302,6 +309,14 @@ export const SwitchAiBar = reaxper( () => {
 			isFinal ,
 			premature ,
 		} );
+		if( ctxId ) {
+			noteFloatingViewPerf( 'renderer' , ctxId , FvPerfPhase.SwiperEnd , {
+				realIndex ,
+				expectedActiveIndex ,
+				isFinal ,
+				premature ,
+			} );
+		}
 		perf.mark( PerfPhase.SwitchComplete , 'renderer' , ctxId , {
 			activeIndex : expectedActiveIndex ,
 			realIndex ,
@@ -309,6 +324,16 @@ export const SwitchAiBar = reaxper( () => {
 			premature ,
 			msFromVisible : monitorMeta?.msFromVisible ,
 		} );
+		if( isFinal && ctxId ) {
+			completeFloatingViewGesture( 'renderer' , ctxId , {
+				presentation : 'step' ,
+				reason : 'transition-end' ,
+				visible : true ,
+				realIndex ,
+				expectedActiveIndex ,
+				msFromVisible : monitorMeta?.msFromVisible ,
+			} );
+		}
 		perf.flush();
 		const motion = motionRef.current;
 		const latestItems = itemsRef.current;
@@ -393,6 +418,20 @@ export const SwitchAiBar = reaxper( () => {
 			steps : 1 ,
 			ringDistance : stepFrame.ringDistance ,
 		} );
+		const stepCtxId = getCurrentPerfCtxId();
+		if( stepCtxId ) {
+			noteFloatingViewPerf( 'renderer' , stepCtxId , FvPerfPhase.ActiveIndex , {
+				prevIndex ,
+				activeIndex ,
+				direction ,
+				isRapid ,
+				speed ,
+				elapsed : Math.round( elapsed ) ,
+				steps : 1 ,
+				ringDistance : stepFrame.ringDistance ,
+			} );
+			startGestureFrameSampler( stepCtxId );
+		}
 
 		const swiper = swiperRef.current;
 		const centerId = stepIds[activeIndex] || '';
@@ -500,6 +539,19 @@ export const SwitchAiBar = reaxper( () => {
 			kind : 'step' ,
 			isRapid ,
 		} );
+		const beginCtxId = getCurrentPerfCtxId();
+		if( beginCtxId ) {
+			noteFloatingViewPerf( 'renderer' , beginCtxId , FvPerfPhase.SwiperBegin , {
+				direction ,
+				speed ,
+				steps : 1 ,
+				isRapid ,
+			} );
+			noteFloatingViewPerf( 'renderer' , beginCtxId , FvPerfPhase.CssTransitionStart , {
+				direction ,
+				speed ,
+			} );
+		}
 	} , [ activeIndex , direction , visible , items , total ] );
 
 	/* 提交后记一帧 DOM：卡片顺序、data-position、中心卡是否为空。平时操作也落盘。 */
@@ -528,6 +580,14 @@ export const SwitchAiBar = reaxper( () => {
 				steps : frame.presentation === 'idle' ? 0 : motion.steps ,
 				ringDistance : frame.ringDistance ,
 			} );
+			if( visible !== true ) {
+				completeFloatingViewGesture( 'renderer' , getCurrentPerfCtxId() || '' , {
+					presentation : gesture ,
+					reason : 'park-commit' ,
+					visible : false ,
+					activeIndex ,
+				} );
+			}
 		} );
 		return () => {
 			cancelled = true;
@@ -553,12 +613,22 @@ export const SwitchAiBar = reaxper( () => {
 					documentVisibility : document.visibilityState ,
 					documentHidden : document.hidden ,
 				} );
+				if( ctxId ) {
+					noteFloatingViewPerf( 'renderer' , ctxId , FvPerfPhase.FirstPaint , {
+						activeIndex : activeIndexRef.current ,
+						documentVisibility : document.visibilityState ,
+						documentHidden : document.hidden ,
+					} );
+				}
 				perf.flush();
 			} );
 		} );
 		const loaf = startLoafObserver( ctxId );
 		const firstShow = startFirstShowMonitor( ctxId );
 		firstShowMonitorRef.current = firstShow;
+		if( ctxId ) {
+			startGestureFrameSampler( ctxId );
+		}
 		return () => {
 			cancelled = true;
 			cancelAnimationFrame( raf1 );
@@ -655,7 +725,13 @@ import { reaxel_FloatingView } from '#FloatingView/reaxels/floating-view';
 import { getCurrentPerfCtxId } from '#FloatingView/reaxels/floating-view';
 import { startLoafObserver } from '#FloatingView/utils/loaf-observer.utility';
 import { startFirstShowMonitor } from '#FloatingView/utils/first-show-monitor.utility';
+import { startGestureFrameSampler } from '#FloatingView/utils/gesture-frame-sampler.utility';
 import { traceCarouselDom , traceCarouselOp } from '#FloatingView/utils/carousel-trace.utility';
+import {
+	completeFloatingViewGesture ,
+	FvPerfPhase ,
+	noteFloatingViewPerf ,
+} from '#shared/utils/floating-view-perf.utility';
 import { AIVendorLogo } from '#shared/ai-vendor-logo';
 import { vendorFallbackText } from '#shared/ai-vendor-logo/vendor-logo.utility';
 import {

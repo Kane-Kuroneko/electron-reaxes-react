@@ -104,4 +104,5 @@ flowchart TD
 
 - [Swiper 迁移](../features/floating-view-swiper-migration.md)：相邻一格仍是一次 `slideNext` / `slidePrev`。
 - [快速切换](../features/floating-view-rapid-switch-optimization.md)：连续的相邻步仍是短动画、从当前过渡改目标。
+- [正式包轨迹 / 性能](../features/floating-view-perf-monitor.md)：menu-select / next / prev 的耗时写 `%APPDATA%/ChatAIO/logs/floating-view-perf.jsonl`。
 - [卡片错位复盘](../features/floating-view-card-ux-optimization.md)：pending 队列已不在。本次约束的是绝对选中不得驱动可见轮播。

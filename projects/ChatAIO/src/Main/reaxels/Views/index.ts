@@ -1053,6 +1053,7 @@ export const Reaxel_View = reaxel( () => {
 		direction:FloatingView.SwitchAiBarDirection ,
 		ctxId?: string ,
 		source:FloatingView.SwitchAiBarPayload['source'] = 'unknown',
+		perfMeta?: FloatingView.SwitchAiBarPayload['perfMeta'],
 	):FloatingView.SwitchAiBarPayload => {
 		return {
 			items : items.map( ( item ) => ( {
@@ -1066,6 +1067,7 @@ export const Reaxel_View = reaxel( () => {
 			direction ,
 			ctxId ,
 			source ,
+			perfMeta ,
 		};
 	};
 
@@ -1179,8 +1181,14 @@ export const Reaxel_View = reaxel( () => {
 	 * 停在已打开列表：中区 Next 也用这份列表，下一次切换不必拆掉 Swiper 重建。
 	 * 不 show：弹出轮播会把绝对选中画成一次滑动。
 	 * 设计：docs/issues/floating-view-carousel-absolute-select.md
+	 * 正式包轨迹：docs/features/floating-view-perf-monitor.md
 	 */
-	const parkCarouselAtAI = ( aiId:string , settings:Settings , fromIndex = -1 ) => {
+	const parkCarouselAtAI = (
+		aiId:string ,
+		settings:Settings ,
+		fromIndex = -1 ,
+		gesture?:ReturnType<typeof beginFloatingViewGesture> ,
+	) => {
 		const runtimeViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
 		const runtimeIndex = runtimeViews.findIndex( ( view ) => view.id === aiId );
 		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
@@ -1190,7 +1198,7 @@ export const Reaxel_View = reaxel( () => {
 		}
 		const useRuntime = runtimeIndex >= 0;
 		const index = useRuntime ? runtimeIndex : configuredIndex;
-		const ctxId = perf.newCtx();
+		const ctxId = gesture?.ctxId || perf.newCtx();
 		const payload = createSwitchAiBarPayload(
 			useRuntime
 				? runtimeViews.map( createPayloadItemFromRuntimeView )
@@ -1199,6 +1207,7 @@ export const Reaxel_View = reaxel( () => {
 			'next' ,
 			ctxId ,
 			useRuntime ? 'instantiated' : 'configured',
+			gesture ? toFvPerfMeta( gesture ) : undefined ,
 		);
 		const itemIds = payload.items.map( ( item ) => item.id );
 		const resolvedFrom = fromIndex >= 0 ? fromIndex : index;
@@ -1231,8 +1240,14 @@ export const Reaxel_View = reaxel( () => {
 				expectedCenterId : aiId ,
 			} ) ,
 		} );
+		noteFloatingViewPerf( 'main' , ctxId , FvPerfPhase.IpcSent , {
+			command : 'hide+prepare' ,
+			listSource : useRuntime ? 'instantiated' : 'configured' ,
+			activeIndex : index ,
+		} );
 		reaxel_FloatingView().api.hideSwitchAiBar();
 		reaxel_FloatingView().api.prepareSwitchAiBar( payload );
+		perf.flush();
 	};
 
 	const selectAIFromMenu = ( aiId:string ) => {
@@ -1241,8 +1256,41 @@ export const Reaxel_View = reaxel( () => {
 			const settings = getRuntimeSettings();
 			const activeAIs = settings.AIs.filter( ai => !ai.disabled );
 			const fromIndex = activeAIs.findIndex( ai => ai.id === store.currentAIViewKey );
+			const fromAi = fromIndex >= 0 ? activeAIs[fromIndex] : null;
+			const toAi = activeAIs.find( ai => ai.id === aiId );
+			const runtimeViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
+			const useRuntime = runtimeViews.some( view => view.id === aiId );
+			const { isFirstSwitchInSession , switchOrdinal } = perf.beginSwitchInSession();
+			const gesture = beginFloatingViewGesture( 'main' , {
+				trigger : 'menu-select' ,
+				fromAiId : store.currentAIViewKey || '' ,
+				toAiId : aiId ,
+				fromIndex ,
+				toIndex : useRuntime
+					? runtimeViews.findIndex( view => view.id === aiId )
+					: activeAIs.findIndex( ai => ai.id === aiId ) ,
+				itemCount : useRuntime ? runtimeViews.length : activeAIs.length ,
+				listSource : useRuntime ? 'instantiated' : 'configured' ,
+				fromLabel : fromAi?.label ,
+				toLabel : toAi?.label ,
+				overlayIntent : 'hide' ,
+			} );
+			perf.mark( PerfPhase.SwitchStart , 'main' , gesture.ctxId , {
+				action : 'menu-select' ,
+				trigger : 'menu-select' ,
+				viewCount : activeAIs.length ,
+				isFirstSwitchInSession ,
+				switchOrdinal ,
+				seq : gesture.seq ,
+			} );
+			noteFloatingViewPerf( 'main' , gesture.ctxId , FvPerfPhase.AiViewBegin , {
+				aiId ,
+			} );
 			reaxel_AIViews().showAIView( aiId , settings );
-			parkCarouselAtAI( aiId , settings , fromIndex );
+			noteFloatingViewPerf( 'main' , gesture.ctxId , FvPerfPhase.AiViewEnd , {
+				aiId ,
+			} );
+			parkCarouselAtAI( aiId , settings , fromIndex , gesture );
 		} finally {
 			suppressCarouselPrepare = false;
 		}
@@ -1253,11 +1301,20 @@ export const Reaxel_View = reaxel( () => {
 		direction:FloatingView.SwitchAiBarDirection,
 	) => {
 		if( shouldIgnoreDuplicateSwitch( direction ) ) {
+			skipFloatingViewGesture( 'main' , 'duplicate-40ms' , {
+				trigger : fvTriggerFromStep( direction , 'configured' ) ,
+				offset ,
+				direction ,
+				fromAiId : store.currentAIViewKey || '' ,
+			} );
 			return null;
 		}
 		const settings = getRuntimeSettings();
 		const activeAIs = settings.AIs.filter( ai => !ai.disabled );
 		if( activeAIs.length === 0 ) {
+			skipFloatingViewGesture( 'main' , 'empty-list' , {
+				trigger : fvTriggerFromStep( direction , 'configured' ) ,
+			} );
 			reaxel_FloatingView().api.hideSwitchAiBar();
 			return null;
 		}
@@ -1268,19 +1325,37 @@ export const Reaxel_View = reaxel( () => {
 			: currentIndex;
 		const nextIndex = getWrappedIndex( baseIndex + offset , activeAIs.length );
 		const nextAI = activeAIs[nextIndex];
-		/* 性能记录 */
-		const ctxId = perf.newCtx();
+		const fromAi = currentIndex >= 0 ? activeAIs[currentIndex] : null;
 		const { isFirstSwitchInSession , switchOrdinal } = perf.beginSwitchInSession();
-		perf.mark( PerfPhase.SwitchStart , 'main' , ctxId , {
+		const gesture = beginFloatingViewGesture( 'main' , {
+			trigger : fvTriggerFromStep( direction , 'configured' ) ,
+			fromAiId : store.currentAIViewKey || '' ,
+			toAiId : nextAI.id ,
+			fromIndex : currentIndex ,
+			toIndex : nextIndex ,
+			itemCount : activeAIs.length ,
+			listSource : 'configured' ,
+			fromLabel : fromAi?.label ,
+			toLabel : nextAI.label ,
+			overlayIntent : 'show' ,
+			extra : { offset , direction } ,
+		} );
+		perf.mark( PerfPhase.SwitchStart , 'main' , gesture.ctxId , {
 			action : 'switch-configured' ,
+			trigger : gesture.trigger ,
 			offset ,
 			direction ,
 			viewCount : activeAIs.length ,
 			isFirstSwitchInSession ,
 			switchOrdinal ,
+			seq : gesture.seq ,
 		} );
 
-		perf.mark( PerfPhase.SwitchAiViewBegin , 'main' , ctxId , {
+		noteFloatingViewPerf( 'main' , gesture.ctxId , FvPerfPhase.AiViewBegin , {
+			aiId : nextAI.id ,
+			isFirstSwitchInSession ,
+		} );
+		perf.mark( PerfPhase.SwitchAiViewBegin , 'main' , gesture.ctxId , {
 			aiId : nextAI.id ,
 			isFirstSwitchInSession ,
 		} );
@@ -1288,7 +1363,10 @@ export const Reaxel_View = reaxel( () => {
 		let view;
 		try {
 			view = reaxel_AIViews().showAIView( nextAI.id , settings );
-			perf.mark( PerfPhase.SwitchAiViewEnd , 'main' , ctxId , {
+			noteFloatingViewPerf( 'main' , gesture.ctxId , FvPerfPhase.AiViewEnd , {
+				aiId : nextAI.id ,
+			} );
+			perf.mark( PerfPhase.SwitchAiViewEnd , 'main' , gesture.ctxId , {
 				aiId : nextAI.id ,
 			} );
 
@@ -1297,8 +1375,9 @@ export const Reaxel_View = reaxel( () => {
 					activeAIs.map( createPayloadItemFromAI ) ,
 					nextIndex ,
 					direction ,
-					ctxId ,
+					gesture.ctxId ,
 					'configured',
+					toFvPerfMeta( gesture ) ,
 				) ,
 				{
 					fromIndex : currentIndex >= 0 ? currentIndex : nextIndex ,
@@ -1309,7 +1388,11 @@ export const Reaxel_View = reaxel( () => {
 			suppressCarouselPrepare = false;
 		}
 
-		perf.mark( PerfPhase.SwitchIpcSent , 'main' , ctxId , {
+		noteFloatingViewPerf( 'main' , gesture.ctxId , FvPerfPhase.IpcSent , {
+			action : 'switch-configured' ,
+			activeIndex : nextIndex ,
+		} );
+		perf.mark( PerfPhase.SwitchIpcSent , 'main' , gesture.ctxId , {
 			action : 'switch-configured' ,
 			activeIndex : nextIndex ,
 			isFirstSwitchInSession ,
@@ -1324,11 +1407,20 @@ export const Reaxel_View = reaxel( () => {
 		direction:FloatingView.SwitchAiBarDirection,
 	) => {
 		if( shouldIgnoreDuplicateSwitch( `instantiated:${ direction }` ) ) {
+			skipFloatingViewGesture( 'main' , 'duplicate-40ms' , {
+				trigger : fvTriggerFromStep( direction , 'instantiated' ) ,
+				offset ,
+				direction ,
+				fromAiId : store.currentAIViewKey || '' ,
+			} );
 			return null;
 		}
 		const settings = getRuntimeSettings();
 		const runtimeViews = reaxel_AIViews().getRuntimeAIViewsInSettingsOrder( settings );
 		if( runtimeViews.length === 0 ) {
+			skipFloatingViewGesture( 'main' , 'empty-list' , {
+				trigger : fvTriggerFromStep( direction , 'instantiated' ) ,
+			} );
 			reaxel_FloatingView().api.hideSwitchAiBar();
 			return null;
 		}
@@ -1339,19 +1431,36 @@ export const Reaxel_View = reaxel( () => {
 			: currentIndex;
 		const nextIndex = getWrappedIndex( baseIndex + offset , runtimeViews.length );
 		const nextRuntimeView = runtimeViews[nextIndex];
-
-		/* 性能记录 */
-		const ctxId = perf.newCtx();
+		const fromView = currentIndex >= 0 ? runtimeViews[currentIndex] : null;
 		const { isFirstSwitchInSession , switchOrdinal } = perf.beginSwitchInSession();
-		perf.mark( PerfPhase.SwitchStart , 'main' , ctxId , {
+		const gesture = beginFloatingViewGesture( 'main' , {
+			trigger : fvTriggerFromStep( direction , 'instantiated' ) ,
+			fromAiId : store.currentAIViewKey || '' ,
+			toAiId : nextRuntimeView.id ,
+			fromIndex : currentIndex ,
+			toIndex : nextIndex ,
+			itemCount : runtimeViews.length ,
+			listSource : 'instantiated' ,
+			fromLabel : fromView?.label ,
+			toLabel : nextRuntimeView.label ,
+			overlayIntent : 'show' ,
+			extra : { offset , direction } ,
+		} );
+		perf.mark( PerfPhase.SwitchStart , 'main' , gesture.ctxId , {
 			action : 'switch-instantiated' ,
+			trigger : gesture.trigger ,
 			direction ,
 			viewCount : runtimeViews.length ,
 			isFirstSwitchInSession ,
 			switchOrdinal ,
+			seq : gesture.seq ,
 		} );
 
-		perf.mark( PerfPhase.SwitchAiViewBegin , 'main' , ctxId , {
+		noteFloatingViewPerf( 'main' , gesture.ctxId , FvPerfPhase.AiViewBegin , {
+			aiId : nextRuntimeView.id ,
+			isFirstSwitchInSession ,
+		} );
+		perf.mark( PerfPhase.SwitchAiViewBegin , 'main' , gesture.ctxId , {
 			aiId : nextRuntimeView.id ,
 			isFirstSwitchInSession ,
 		} );
@@ -1361,7 +1470,10 @@ export const Reaxel_View = reaxel( () => {
 		} );
 		reaxel_AIViews().applyVisibility();
 		presentActiveCenterView( 'switch' );
-		perf.mark( PerfPhase.SwitchAiViewEnd , 'main' , ctxId , {
+		noteFloatingViewPerf( 'main' , gesture.ctxId , FvPerfPhase.AiViewEnd , {
+			aiId : nextRuntimeView.id ,
+		} );
+		perf.mark( PerfPhase.SwitchAiViewEnd , 'main' , gesture.ctxId , {
 			aiId : nextRuntimeView.id ,
 		} );
 
@@ -1370,8 +1482,9 @@ export const Reaxel_View = reaxel( () => {
 				runtimeViews.map( createPayloadItemFromRuntimeView ) ,
 				nextIndex ,
 				direction ,
-				ctxId ,
+				gesture.ctxId ,
 				'instantiated',
+				toFvPerfMeta( gesture ) ,
 			) ,
 			{
 				fromIndex : currentIndex >= 0 ? currentIndex : nextIndex ,
@@ -1379,7 +1492,11 @@ export const Reaxel_View = reaxel( () => {
 			} ,
 		);
 
-		perf.mark( PerfPhase.SwitchIpcSent , 'main' , ctxId , {
+		noteFloatingViewPerf( 'main' , gesture.ctxId , FvPerfPhase.IpcSent , {
+			action : 'switch-instantiated' ,
+			activeIndex : nextIndex ,
+		} );
+		perf.mark( PerfPhase.SwitchIpcSent , 'main' , gesture.ctxId , {
 			action : 'switch-instantiated' ,
 			activeIndex : nextIndex ,
 			isFirstSwitchInSession ,
@@ -1411,20 +1528,40 @@ export const Reaxel_View = reaxel( () => {
 		const currentRuntimeView = runtimeViews.find( runtimeView => runtimeView.id === store.currentAIViewKey );
 
 		/* 性能记录：关闭开始 */
-		const ctxId = perf.newCtx();
 		const { isFirstSwitchInSession , switchOrdinal } = perf.beginSwitchInSession();
+		const gesture = beginFloatingViewGesture( 'main' , {
+			trigger : 'close' ,
+			fromAiId : currentRuntimeView?.id || '' ,
+			toAiId : '' ,
+			fromIndex : runtimeViews.findIndex( view => view.id === currentRuntimeView?.id ) ,
+			toIndex : -1 ,
+			itemCount : runtimeViews.length ,
+			listSource : 'instantiated' ,
+			fromLabel : currentRuntimeView?.label ,
+			overlayIntent : 'show' ,
+		} );
+		const ctxId = gesture.ctxId;
 		perf.mark( PerfPhase.SwitchStart , 'main' , ctxId , {
 			action : 'close' ,
+			trigger : 'close' ,
 			currentId : currentRuntimeView?.id ,
 			viewCount : runtimeViews.length ,
 			isFirstSwitchInSession ,
 			switchOrdinal ,
+			seq : gesture.seq ,
 		} );
 
+		noteFloatingViewPerf( 'main' , ctxId , FvPerfPhase.AiViewBegin , {
+			action : 'close' ,
+		} );
 		perf.mark( PerfPhase.SwitchAiViewBegin , 'main' , ctxId , {
 			action : 'close' ,
 		} );
 		const result = reaxel_AIViews().closeCurrentAIViewAndShowNext( settings );
+		noteFloatingViewPerf( 'main' , ctxId , FvPerfPhase.AiViewEnd , {
+			action : 'close' ,
+			closed : Boolean( result ) ,
+		} );
 		perf.mark( PerfPhase.SwitchAiViewEnd , 'main' , ctxId , {
 			action : 'close' ,
 			closed : Boolean( result ),
@@ -1445,6 +1582,7 @@ export const Reaxel_View = reaxel( () => {
 					'next' ,
 					ctxId ,
 					'instantiated',
+					toFvPerfMeta( gesture ) ,
 				);
 				const closeIds = closePayload.items.map( ( item ) => item.id );
 				emitCarouselOp( 'main' , {
@@ -1876,6 +2014,14 @@ import type { AI } from "#src/Types/SettingsTypes/AI";
 import type { Settings } from "#src/Types/SettingsTypes";
 import type { RuntimeAIView } from "#main/reaxels/Views/AI-Views";
 import { perf , PerfPhase } from '#shared/utils/switch-perf-recorder.utility';
+import {
+	beginFloatingViewGesture ,
+	FvPerfPhase ,
+	fvTriggerFromStep ,
+	noteFloatingViewPerf ,
+	skipFloatingViewGesture ,
+	toFvPerfMeta ,
+} from '#shared/utils/floating-view-perf.utility';
 import {
 	detectCarouselOpFaults ,
 	emitCarouselOp ,

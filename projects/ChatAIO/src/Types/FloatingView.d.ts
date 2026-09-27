@@ -41,6 +41,16 @@ export namespace FloatingView {
 			| 'prepare-instantiated'
 			| 'prepare-configured'
 			| 'unknown';
+		/** 正式包 FloatingView 轨迹：把主进程手势绑到渲染进程同一 ctx。 */
+		perfMeta?: {
+			trigger: 'menu-select' | 'next' | 'prev' | 'next-opened' | 'prev-opened' | 'close';
+			triggerTs: number;
+			seq: number;
+			fromAiId: string;
+			fromIndex: number;
+			toAiId: string;
+			toIndex: number;
+		};
 	};
 
 	export type GlobalMessagePayload = {

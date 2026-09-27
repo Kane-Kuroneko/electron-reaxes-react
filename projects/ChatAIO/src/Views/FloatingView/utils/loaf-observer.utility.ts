@@ -4,9 +4,8 @@
  *
  * 参考：https://developer.chrome.com/docs/web-platform/long-animation-frames
  * Electron 自定义协议下脚本归因可能需 --enable-features=AlwaysLogLOAFURL。
+ * 正式包轨迹：docs/features/floating-view-perf-monitor.md
  */
-
-import { perf , PerfPhase } from '#shared/utils/switch-perf-recorder.utility';
 
 type LoafEntryLike = {
 	duration: number;
@@ -65,6 +64,16 @@ export function startLoafObserver( ctxId: string ): LoafObserverHandle {
 					scriptCount : loaf.scripts?.length ?? 0 ,
 					scripts ,
 				} );
+				if( ctxId ) {
+					noteFloatingViewPerf( 'renderer' , ctxId , FvPerfPhase.Loaf , {
+						duration : Math.round( loaf.duration ) ,
+						blockingDuration : loaf.blockingDuration != null
+							? Math.round( loaf.blockingDuration )
+							: undefined ,
+						scriptCount : loaf.scripts?.length ?? 0 ,
+						scripts ,
+					} );
+				}
 			}
 		} );
 		observer.observe( { type : 'long-animation-frame' , buffered : false } );
@@ -81,3 +90,6 @@ export function startLoafObserver( ctxId: string ): LoafObserverHandle {
 		},
 	};
 }
+
+import { FvPerfPhase , noteFloatingViewPerf } from '#shared/utils/floating-view-perf.utility';
+import { perf , PerfPhase } from '#shared/utils/switch-perf-recorder.utility';

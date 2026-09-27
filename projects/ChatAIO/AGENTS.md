@@ -46,6 +46,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 - [中区 Current AI 下拉切换](./docs/features/menubar-current-ai-dropdown.md)
 - [卡片 UX](./docs/features/floating-view-card-ux-optimization.md)、[Swiper 迁移](./docs/features/floating-view-swiper-migration.md)
 - [菜单点远距 AI 后轮播从旧卡片连滑](./docs/issues/floating-view-carousel-absolute-select.md)
+- [FloatingView 正式包轨迹 / 性能埋点](./docs/features/floating-view-perf-monitor.md)
 - [切换热路径](./docs/features/ai-page-switch-performance-optimization.md)
 - [AI 页通知闪任务栏 / dock](./docs/features/ai-notification-taskbar-flash.md)
 - [供应商 logo 辨识重构（label 去厂商名）](./docs/features/ai-vendor-logo-identity.md)（分支 `refactor/ai-vendor-logo-identity`；含进度清单，接续工作先读它）
@@ -130,6 +131,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [floating-view-rapid-switch-optimization.md](./docs/features/floating-view-rapid-switch-optimization.md) | SwitchAiBar 连点 Interrupt & Redirect |
 | [floating-view-card-ux-optimization.md](./docs/features/floating-view-card-ux-optimization.md) | 切换卡片 UX |
 | [floating-view-swiper-migration.md](./docs/features/floating-view-swiper-migration.md) | Swiper 迁移 |
+| [floating-view-perf-monitor.md](./docs/features/floating-view-perf-monitor.md) | 正式包 FloatingView 轨迹 / 性能 JSONL（menu-select / next / prev） |
 | [focus-stealing-analysis.md](./docs/features/focus-stealing-analysis.md) | AI 页抢焦点 |
 | [prompt-view.md](./docs/features/prompt-view.md) | Prompt View |
 | [prompt-view-bugfix-and-ux.md](./docs/features/prompt-view-bugfix-and-ux.md) | Prompt 修复与 UX |
