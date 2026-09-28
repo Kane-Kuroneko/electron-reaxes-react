@@ -9,7 +9,10 @@
  *
  * 滚动层 clip 边是 padding box（CSS Overflow）。focus ring 是 ink overflow
  *（box-shadow），必须靠滚动层自己的 padding 留在 clip 里边。不要用负 margin
- * 把 clip 区撑出布局盒。见 docs/features/settings-ui-shadcn.md
+ * 把 clip 区撑出布局盒。
+ *
+ * 打开时焦点落到面板（focusOverlaySurface），不要第一颗 input / 按钮。
+ * 见 docs/features/settings-ui-shadcn.md
  */
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
@@ -61,11 +64,7 @@ export const DialogContent = React.forwardRef<
 				{ ...props }
 				onOpenAutoFocus={ ( event ) => {
 					onOpenAutoFocus?.( event );
-					if( event.defaultPrevented ) return;
-					// 默认会聚焦并选中第一颗 input。Windows 原生 appearance 叠在 overlay-pop
-					// 的 transform 上，看起来像系统文本框。焦点落到面板；键盘仍可 Tab。
-					event.preventDefault();
-					( event.currentTarget as HTMLElement | null )?.focus( { preventScroll : true } );
+					focusOverlaySurface( event );
 				} }
 			>
 				{ headers }
@@ -125,5 +124,6 @@ export const DialogDescription = React.forwardRef<
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 import { cn } from '#Views/shared/ui/cn.utility';
+import { focusOverlaySurface } from '#Views/shared/ui/focus-overlay-surface.utility';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
