@@ -12,6 +12,7 @@ export const TEST_IDS = {
 	startupAiPageLastUsed : 'startup-ai-page-last-used' ,
 	startupAiPageFirst : 'startup-ai-page-first' ,
 	settingsFooterDone : 'settings-footer-done' ,
+	settingsClose : 'settings-close' ,
 	settingsFooterApply : 'settings-footer-apply',
 } as const;
 
