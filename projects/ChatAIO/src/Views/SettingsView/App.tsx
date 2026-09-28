@@ -107,13 +107,13 @@ export const App = reaxper( () => {
 						type="button"
 						variant="ghost"
 						size="icon"
-						className="absolute right-3 top-3 z-20 h-8 w-8 text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
+						className="absolute right-3 top-3 z-20 h-11 w-11 rounded-full bg-white/80 text-muted-foreground shadow-sm ring-1 ring-black/[0.05] hover:bg-white hover:text-foreground dark:bg-white/12 dark:ring-white/10 dark:hover:bg-white/20 [&_svg]:size-5"
 						data-testid="settings-close"
 						aria-label={ i18n( 'Close' ) }
 						disabled={ catalogChromeLocked }
 						onClick={ () => exitSettings() }
 					>
-						<X className="h-4 w-4" />
+						<X className="h-5 w-5" />
 					</Button>
 				</SimpleTooltip>
 				<div className="settings-content flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-6">
