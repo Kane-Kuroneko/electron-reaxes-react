@@ -1707,6 +1707,8 @@ export const Reaxel_View = reaxel( () => {
 		if( runtimeViewsInitialized ) return;
 		runtimeViewsInitialized = true;
 		/* menubar 宿主（IPC/attach）由 runtime Phase 0–2 负责，此处只初始化内容区 views。 */
+		/* 快捷键只在 focused WebContents 的 before-input-event 里触发，见 window-keyboard。
+		   禁止再 register globalShortcut。docs/issues/shortcuts-must-be-in-app.md */
 		setAISwitchShortcutHandlers( {
 			nextConfigured : () => {
 				turnToNextAiPage();
@@ -1730,7 +1732,6 @@ export const Reaxel_View = reaxel( () => {
 				turnToPreviousInstantiatedAiPage();
 			},
 		} );
-		registerAISwitchGlobalShortcuts();
 		reaxel_PromptViews().registerIpc();
 		/* 先挂当前 AI 页，再预热 overlay：避免 FloatingView webpack 插在 menubar 已绘、内容未出之间 */
 		await onReadyLoadAIView();
@@ -1763,7 +1764,6 @@ export const Reaxel_View = reaxel( () => {
 		mainWindow.on( 'focus' , () => {
 			try {
 				probeWindowLifecycle( 'focus' );
-				registerAISwitchGlobalShortcuts();
 				recoverActiveCenterViewAfterFocus();
 			} catch ( error ) {
 				console.error( '[Views] focus recover failed:' , error );
@@ -1772,7 +1772,6 @@ export const Reaxel_View = reaxel( () => {
 		mainWindow.on( 'show' , () => {
 			try {
 				probeWindowLifecycle( 'show' );
-				registerAISwitchGlobalShortcuts();
 				softRecoverActiveCenterView( 'show' );
 			} catch ( error ) {
 				console.error( '[Views] show recover failed:' , error );
@@ -1782,7 +1781,6 @@ export const Reaxel_View = reaxel( () => {
 			try {
 				markOccludedResume();
 				probeWindowLifecycle( 'restore' );
-				registerAISwitchGlobalShortcuts();
 				softRecoverActiveCenterView( 'restore' );
 			} catch ( error ) {
 				console.error( '[Views] restore recover failed:' , error );
@@ -1796,21 +1794,17 @@ export const Reaxel_View = reaxel( () => {
 			} catch { /* 只更新回前台策略 */ }
 			probeWindowLifecycle( 'blur' );
 			centerScheduleMonitor.markBackground( 'blur' );
-			unregisterAISwitchGlobalShortcuts();
 		} );
 		mainWindow.on( 'hide' , () => {
 			markOccludedResume();
 			probeWindowLifecycle( 'hide' );
 			centerScheduleMonitor.markBackground( 'hide' );
-			unregisterAISwitchGlobalShortcuts();
 		} );
 		mainWindow.on( 'minimize' , () => {
 			markOccludedResume();
 			probeWindowLifecycle( 'minimize' );
 			centerScheduleMonitor.markBackground( 'minimize' );
-			unregisterAISwitchGlobalShortcuts();
 		} );
-		mainWindow.on( 'closed' , unregisterAISwitchGlobalShortcuts );
 
 		useIpcRendererToMain( 'update-preload-ai-config' ).on( async() => {
 			await reaxel_AIViews().syncAIViewsWithConfig( getRuntimeSettings() );
@@ -2000,11 +1994,7 @@ import {
 } from "#main/reaxels/Views/FloatingView";
 import { reaxel_I18n } from "#main/reaxels/I18n";
 import { useIpcRendererToMain } from "#main/services/ipc";
-import {
-	registerAISwitchGlobalShortcuts ,
-	setAISwitchShortcutHandlers ,
-	unregisterAISwitchGlobalShortcuts,
-} from '#main/services/shortcuts/ai-switch';
+import { setAISwitchShortcutHandlers } from '#main/services/shortcuts/ai-switch';
 import { getAIConfigService } from "#main/services/settings/ai-config-service";
 import { getSettingsConfigService } from "#main/services/settings/settings-config-service";
 import { getAIFaviconDataUrl } from '#main/services/ai-favicon';

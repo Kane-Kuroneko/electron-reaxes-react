@@ -1,3 +1,9 @@
+/**
+ * 应用内快捷键：挂在每个 BrowserWindow / WebContents 的 `before-input-event`。
+ * AI 切换 / Ctrl+W 也走这里，不要再用 `globalShortcut`。
+ * 设计：docs/issues/shortcuts-must-be-in-app.md
+ */
+
 const guardedWebContents = new WeakSet<WebContents>();
 
 let browserWindowKeyboardGuardsRegistered = false;
@@ -34,6 +40,9 @@ export const installWebContentsKeyboardGuard = (webContents:WebContents) => {
 
 export const handleWindowKeyboardInput = (event:any , input:any) => {
 	if( preventSingleAltMenuFocus( event , input ) ) {
+		return true;
+	}
+	if( handleAISwitchShortcutInput( event , input ) ) {
 		return true;
 	}
 	return handleMenuShortcutInput( event , input );
@@ -106,6 +115,7 @@ const isSingleAltInput = (input:any) => {
 	return isAltKey && !input.control && !input.meta && !input.shift;
 };
 
+import { handleAISwitchShortcutInput } from '#main/services/shortcuts/ai-switch';
 import {
 	app ,
 	BrowserWindow ,

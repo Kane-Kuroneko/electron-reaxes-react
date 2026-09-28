@@ -451,6 +451,8 @@ export const reaxel_Menu = reaxel( () => {
 					{
 						label : createPlainMenuLabel( t('Close This AI') ) ,
 						accelerator : 'CmdOrCtrl+W' ,
+						/* 显示用。真正绑定在 before-input-event；打开会和 in-app 处理双击关两页。
+						   禁止改回 globalShortcut。见 docs/issues/shortcuts-must-be-in-app.md */
 						registerAccelerator : false ,
 						enabled : !!reaxel_AIViews().currentAIView ,
 						click : () => {

@@ -62,7 +62,6 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 		options.refreshBounds?.( view );
 	} );
 	
-	//当用户ctrl+r时reload当前view;f12 devtools
 	/* before-input-event 只覆盖键盘。dropdown 以 showInactive 打开时失焦不会自动关，
 	   应用内点空白需靠 before-mouse-event 主动 dismiss。 */
 	view.webContents.on( 'before-mouse-event' , ( _event , mouse ) => {
@@ -70,20 +69,8 @@ export const initWebContentsView = (options:WebContentsViewConstructorOptions&Ex
 			dismissMenubarDropdownIfOpen();
 		}
 	} );
-	view.webContents.on('before-input-event', (event, input) => {
-		if( handleAISwitchShortcutInput( event , input ) ) {
-			return;
-		}
-		// if (input.control && input.key.toLowerCase() === 'r') {
-		// 	if (input.shift) {
-		// 		// Ctrl+Shift+R 强制重置域名
-		// 		view.webContents.loadURL(options.domain || "https://chatgpt.com");
-		// 	} else {
-		// 		// Ctrl+R 重新加载当前页面
-		// 		view.webContents.reload();
-		// 	}
-		// }
-	});
+	/* Ctrl+R / F12 / Ctrl+W / Ctrl+[ 等走 installWebContentsKeyboardGuard 的 before-input-event，
+	   不要在这里再挂一份，更不要用 globalShortcut。见 docs/issues/shortcuts-must-be-in-app.md */
 	
 	return view;
 }
@@ -283,7 +270,6 @@ import { getMenubarColdStartMonitor } from '#main/reaxels/Views/Main-View/menuba
 import { ViewCrashReporter } from "#main/reaxels/Views/AI-Views/crash-reporter";
 import { applyAIProxyToView } from "#main/services/settings/proxy-service";
 import { trackAIViewFavicon } from '#main/services/ai-favicon';
-import { handleAISwitchShortcutInput } from '#main/services/shortcuts/ai-switch';
 import { installWebContentsKeyboardGuard } from '#main/services/shortcuts/window-keyboard';
 import { dismissMenubarDropdownIfOpen } from '#main/services/menubar-dropdown-dismiss.utility';
 import {

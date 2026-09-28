@@ -38,6 +38,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 ### Switch AI / 浮层卡片
 
 - [连点 Ctrl+[/] 动画不跟手](./docs/features/floating-view-rapid-switch-optimization.md)
+- [后台 Ctrl+W 仍关 AI 页](./docs/issues/shortcuts-must-be-in-app.md)（禁止 `globalShortcut`）
 - [切后台后再切 AI，SwitchAiBar 不见](./docs/issues/floating-view-missing-after-background.md)
 - [拖拽排序、顺序写盘](./docs/features/ai-list-reorder.md)
 - [Manage AIs 表格展示序 / 筛选](./docs/features/manage-ais-table-ux.md)
@@ -153,6 +154,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [ai-view-preload-first-switch-flash.md](./docs/issues/ai-view-preload-first-switch-flash.md) | 预加载 v1–v8 与 park |
 | [floating-view-missing-after-background.md](./docs/issues/floating-view-missing-after-background.md) | overlay 冷 reveal |
 | [floating-view-carousel-absolute-select.md](./docs/issues/floating-view-carousel-absolute-select.md) | 菜单绝对选择与轮播视觉游标脱节 |
+| [shortcuts-must-be-in-app.md](./docs/issues/shortcuts-must-be-in-app.md) | Ctrl+W 等不得走 `globalShortcut` |
 | [menubar-drag-investigation.md](./docs/issues/menubar-drag-investigation.md) | Windows `forward: true` |
 | [menubar-drag-region-leak-below-content.md](./docs/issues/menubar-drag-region-leak-below-content.md) | 拖拽区漏到内容下方 |
 | [close-without-tray-process-lingers.md](./docs/issues/close-without-tray-process-lingers.md) | 禁用托盘后点 X 进程不退 |
