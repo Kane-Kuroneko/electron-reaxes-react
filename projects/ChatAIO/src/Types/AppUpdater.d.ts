@@ -13,6 +13,8 @@ export namespace AppUpdater {
 	export type State = {
 		status : Status;
 		currentVersion : string;
+		/** git count + hash；updater / changelog 仍只用 currentVersion。docs/architecture/app-version-identity.md */
+		buildIdentity : import('#shared/build-identity.utility').ChatAioBuildIdentity | null;
 		availableVersion : string | null;
 		downloadProgress : number | null;
 		error : string | null;

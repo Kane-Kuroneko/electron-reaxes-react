@@ -1,6 +1,7 @@
 /**
  * About — 面向 C 端产品介绍；版本/更新收进右侧 Sheet
  * Hero 上的 v* 按钮打开 Sheet；菜单栏「有更新」导航也会打开同一 Sheet
+ * 主号是发行 SemVer；副号是 git build 身份。docs/architecture/app-version-identity.md
  */
 export const RCAboutPanel = reaxper( () => {
 	const { store , setState } = reaxel_SettingsView;
@@ -13,6 +14,11 @@ export const RCAboutPanel = reaxper( () => {
 	const [ checking , setChecking ] = useState( false );
 
 	const version = updateState?.currentVersion || '—';
+	const buildIdentity = updateState?.buildIdentity ?? null;
+	const versionLabel = version === '—'
+		? '—'
+		: formatChatAioVersionLabel( version , buildIdentity );
+	const buildSubtitle = buildIdentity ? formatChatAioBuildSubtitle( buildIdentity ) : null;
 	const activeTab = store.VersionUI.activeTab;
 	const drawerOpen = store.VersionUI.drawerOpen;
 	const updateAvailable = updateState?.updateAvailable === true;
@@ -73,9 +79,9 @@ export const RCAboutPanel = reaxper( () => {
 	} , [ updateAvailable , activeTab ] );
 
 	const onCopyVersion = async() => {
-		if( !version || version === '—' ) return;
+		if( !versionLabel || versionLabel === '—' ) return;
 		try {
-			await navigator.clipboard.writeText( `v${ version }` );
+			await navigator.clipboard.writeText( versionLabel );
 			toast.success( i18n( 'Version copied' ) );
 		} catch ( error ) {
 			toast.error( error instanceof Error ? error.message : i18n( 'Copy failed' ) );
@@ -125,7 +131,7 @@ export const RCAboutPanel = reaxper( () => {
 
 	const versionButtonTitle = updateAvailable
 		? `${ i18n( 'New version available' ) }${ updateState?.availableVersion ? `: ${ updateState.availableVersion }` : '' }`
-		: i18n( 'Version & Updates' );
+		: versionLabel !== '—' ? versionLabel : i18n( 'Version & Updates' );
 
 	const tabValue = updateAvailable ? activeTab : 'current';
 
@@ -175,6 +181,9 @@ export const RCAboutPanel = reaxper( () => {
 						<History className="about-hero__action-btn-icon h-4 w-4" />
 						<span className="about-hero__version-btn-caption"><I18n>Version</I18n></span>
 						<span className="about-hero__version-btn-ver">v{ version }</span>
+						{ buildSubtitle ? (
+							<span className="about-hero__version-btn-build">{ buildSubtitle }</span>
+						) : null }
 						{ updateAvailable ? (
 							<span className="about-hero__version-tag">NEW</span>
 						) : null }
@@ -271,7 +280,7 @@ export const RCAboutPanel = reaxper( () => {
 				<div className="about-version-drawer__body">
 					<div className="about-version-drawer__summary">
 						<span className="about-version-drawer__summary-label"><I18n>Current</I18n></span>
-						<span className="about-version-drawer__summary-value">v{ version }</span>
+						<span className="about-version-drawer__summary-value">{ versionLabel }</span>
 						{ updateAvailable ? (
 							<>
 								<span className="about-version-drawer__summary-label"><I18n>Latest</I18n></span>
@@ -507,6 +516,7 @@ const FEATURES = [
 const CHATAIO_RELEASES_URL = 'https://github.com/Kane-Kuroneko/ChatAIO-Releases';
 
 
+import { formatChatAioBuildSubtitle , formatChatAioVersionLabel } from '#shared/build-identity.utility';
 import { reaxel_SettingsView } from '#SettingsView/reaxels/settings-view';
 import { reaxel_I18n } from '#SettingsView/reaxels/i18n';
 import { I18n , i18n } from '#SettingsView/reaxels/exports';

@@ -574,7 +574,7 @@ obsReaction((first) => {
 
 由此确定的实现原则：
 
-- Windows/Linux 不再设置 Electron 原生窗口菜单；快捷键由现有 `before-input-event` / 全局快捷键体系接管。
+- Windows/Linux 不再设置 Electron 原生窗口菜单；快捷键只走 `before-input-event`（`window-keyboard.ts`），**禁止** `globalShortcut`。见 [`shortcuts-must-be-in-app.md`](../issues/shortcuts-must-be-in-app.md)。
 - macOS 仍可保留应用级原生菜单作为系统菜单栏 fallback，但窗口内菜单以 MenuView 为主路径。
 - MenuView 创建必须接入现有 `initWebContentsView()`，统一 crash reporter、keyboard guard、dev renderer URL 和生产 HTML 路径。
 - MenuView 展开时置顶并扩展高度，关闭、blur、resize、执行 action 后恢复高度。

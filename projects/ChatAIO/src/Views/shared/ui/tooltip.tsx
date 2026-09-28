@@ -1,6 +1,30 @@
+/**
+ * Tooltip。Radix 默认 focus 即开；程序化 focus（进页 / Dialog autofocus / 关菜单还焦点）
+ * 没有 :focus-visible，这里拦住。键盘 Tab 仍开。radix-ui/primitives#2248
+ * 见 docs/features/settings-ui-shadcn.md
+ */
 export const TooltipProvider = TooltipPrimitive.Provider;
 export const Tooltip = TooltipPrimitive.Root;
-export const TooltipTrigger = TooltipPrimitive.Trigger;
+
+export const TooltipTrigger = React.forwardRef<
+	React.ElementRef<typeof TooltipPrimitive.Trigger>,
+	React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Trigger>
+>( ( { onFocus , ...props } , ref ) => (
+	<TooltipPrimitive.Trigger
+		ref={ ref }
+		{ ...props }
+		onFocus={ ( event ) => {
+			onFocus?.( event );
+			if( event.defaultPrevented ) return;
+			/* 程序化 focus 没有 :focus-visible（Dialog/页面切入/关下拉还焦点），不要弹出。
+			 * Tab 仍有 :focus-visible。radix-ui/primitives#2248 */
+			if( event.currentTarget.matches( ':focus-visible' ) === false ) {
+				event.preventDefault();
+			}
+		} }
+	/>
+) );
+TooltipTrigger.displayName = TooltipPrimitive.Trigger.displayName;
 
 export const TooltipContent = React.forwardRef<
 	React.ElementRef<typeof TooltipPrimitive.Content>,

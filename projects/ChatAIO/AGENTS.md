@@ -22,6 +22,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 ### 开发 / 打包 / 测试
 
 - [npm 脚本与参数](./scripts.md)（常用入口在 `package.json`；平台出包、E2E 观测、目录签名、性能分析、演示录屏的完整命令也在这里）
+- [两层版本身份](./docs/architecture/app-version-identity.md)（正式 1.0.x 给 updater；dev 包用 commit 计数 + 9 位 hash。`CHATAIO_RELEASE=1` 才用发行文件名）
 - [Playwright 产品演示（OBS 录屏）](./docs/features/playwright-demo-record.md)（`yarn demo:playwright`；与 `yarn test:e2e` 隔离）
 - [产品演示出镜脚本](./docs/features/playwright-demo-script.md)（六家预加载、badge / Prev-Next、Prompt 跨页粘贴、代理；不拍暗夜模式）
 
@@ -39,6 +40,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 ### Switch AI / 浮层卡片
 
 - [连点 Ctrl+[/] 动画不跟手](./docs/features/floating-view-rapid-switch-optimization.md)
+- [后台 Ctrl+W 仍关 AI 页](./docs/issues/shortcuts-must-be-in-app.md)（禁止 `globalShortcut`）
 - [切后台后再切 AI，SwitchAiBar 不见](./docs/issues/floating-view-missing-after-background.md)
 - [拖拽排序、顺序写盘](./docs/features/ai-list-reorder.md)
 - [Manage AIs 表格展示序 / 筛选](./docs/features/manage-ais-table-ux.md)
@@ -47,6 +49,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 - [中区 Current AI 下拉切换](./docs/features/menubar-current-ai-dropdown.md)
 - [卡片 UX](./docs/features/floating-view-card-ux-optimization.md)、[Swiper 迁移](./docs/features/floating-view-swiper-migration.md)
 - [菜单点远距 AI 后轮播从旧卡片连滑](./docs/issues/floating-view-carousel-absolute-select.md)
+- [FloatingView 正式包轨迹 / 性能埋点](./docs/features/floating-view-perf-monitor.md)
 - [切换热路径](./docs/features/ai-page-switch-performance-optimization.md)
 - [AI 页通知闪任务栏 / dock](./docs/features/ai-notification-taskbar-flash.md)
 - [供应商 logo 辨识重构（label 去厂商名）](./docs/features/ai-vendor-logo-identity.md)（分支 `refactor/ai-vendor-logo-identity`；含进度清单，接续工作先读它）
@@ -108,6 +111,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [appearance-theme-environment.md](./docs/architecture/appearance-theme-environment.md) | 外观 / 主题注入 AI 页 |
 | [build-pipeline-and-dev-refresh.md](./docs/architecture/build-pipeline-and-dev-refresh.md) | 构建与 dev 热更新 |
 | [worktree-dev-server.md](./docs/architecture/worktree-dev-server.md) | 多 worktree WDS 端口：从 4444 起顺延、listen 后写入 build-state、Electron 读 JSON |
+| [app-version-identity.md](./docs/architecture/app-version-identity.md) | 发行 SemVer 与 git build 身份；本地包文件名带 b{count}.{hash} |
 | [i18n.md](./docs/architecture/i18n.md) | 国际化 |
 | [main-view.md](./docs/architecture/main-view.md) | 主壳 / Main View |
 | [menubar-platform-paths.md](./docs/architecture/menubar-platform-paths.md) | 平台 menubar 路径 |
@@ -131,6 +135,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [floating-view-rapid-switch-optimization.md](./docs/features/floating-view-rapid-switch-optimization.md) | SwitchAiBar 连点 Interrupt & Redirect |
 | [floating-view-card-ux-optimization.md](./docs/features/floating-view-card-ux-optimization.md) | 切换卡片 UX |
 | [floating-view-swiper-migration.md](./docs/features/floating-view-swiper-migration.md) | Swiper 迁移 |
+| [floating-view-perf-monitor.md](./docs/features/floating-view-perf-monitor.md) | 正式包 FloatingView 轨迹 / 性能 JSONL（menu-select / next / prev） |
 | [focus-stealing-analysis.md](./docs/features/focus-stealing-analysis.md) | AI 页抢焦点 |
 | [prompt-view.md](./docs/features/prompt-view.md) | Prompt View |
 | [prompt-view-bugfix-and-ux.md](./docs/features/prompt-view-bugfix-and-ux.md) | Prompt 修复与 UX |
@@ -154,6 +159,7 @@ npm 脚本只保留常用入口；完整命令与参数见 [`scripts.md`](./scri
 | [ai-view-preload-first-switch-flash.md](./docs/issues/ai-view-preload-first-switch-flash.md) | 预加载 v1–v8 与 park |
 | [floating-view-missing-after-background.md](./docs/issues/floating-view-missing-after-background.md) | overlay 冷 reveal |
 | [floating-view-carousel-absolute-select.md](./docs/issues/floating-view-carousel-absolute-select.md) | 菜单绝对选择与轮播视觉游标脱节 |
+| [shortcuts-must-be-in-app.md](./docs/issues/shortcuts-must-be-in-app.md) | Ctrl+W 等不得走 `globalShortcut` |
 | [menubar-drag-investigation.md](./docs/issues/menubar-drag-investigation.md) | Windows `forward: true` |
 | [menubar-drag-region-leak-below-content.md](./docs/issues/menubar-drag-region-leak-below-content.md) | 拖拽区漏到内容下方 |
 | [close-without-tray-process-lingers.md](./docs/issues/close-without-tray-process-lingers.md) | 禁用托盘后点 X 进程不退 |

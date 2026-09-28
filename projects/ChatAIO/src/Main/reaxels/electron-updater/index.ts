@@ -9,6 +9,7 @@ export const reaxel_AppUpdater = reaxel( () => {
 	} = createReaxable( {
 		status : checkAs<AppUpdater.Status>( 'idle' ) ,
 		currentVersion : app.getVersion() ,
+		buildIdentity : resolveChatAioBuildIdentity() ,
 		availableVersion : null as string | null ,
 		downloadProgress : null as number | null ,
 		error : null as string | null ,
@@ -26,6 +27,7 @@ export const reaxel_AppUpdater = reaxel( () => {
 	const getPublicState = (): AppUpdater.State => ( {
 		status : store.status ,
 		currentVersion : store.currentVersion ,
+		buildIdentity : store.buildIdentity ,
 		availableVersion : store.availableVersion ,
 		downloadProgress : store.downloadProgress ,
 		error : store.error ,
@@ -348,6 +350,7 @@ export const reaxel_AppUpdater = reaxel( () => {
 	} );
 
 	useIpcRpc( 'get-app-version' ).handle( async() => app.getVersion() );
+	/* currentVersion 只给 updater / changelog tag；build 身份在 State.buildIdentity。docs/architecture/app-version-identity.md */
 	useIpcRpc( 'get-update-state' ).handle( async() => getPublicState() );
 	useIpcRpc( 'check-for-updates' ).handle( async() => checkForUpdates() );
 	useIpcRpc( 'fetch-version-changelogs' ).handle( async( _ , language ) => fetchVersionChangelogs( language ) );
@@ -379,6 +382,7 @@ export const reaxel_AppUpdater = reaxel( () => {
 } );
 
 
+import { resolveChatAioBuildIdentity } from '#main/services/build-identity';
 import { reaxel_SettingsView } from '#main/reaxels/Views/Settings-View';
 import { Reaxel_View } from '#main/reaxels/Views';
 import { reaxel_Menu } from '#main/reaxels/Menu';

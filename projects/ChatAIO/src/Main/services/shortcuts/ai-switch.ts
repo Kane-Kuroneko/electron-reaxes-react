@@ -1,3 +1,9 @@
+/**
+ * AI 页切换 / 关闭当前页：只走 in-app `before-input-event`。
+ * 禁止 `globalShortcut`：那会在其它应用前台时仍抢走 Ctrl+W / Ctrl+[ 等。
+ * 设计：docs/issues/shortcuts-must-be-in-app.md
+ */
+
 type AISwitchShortcutHandlers = {
 	nextConfigured?: () => void;
 	previousConfigured?: () => void;
@@ -8,69 +14,12 @@ type AISwitchShortcutHandlers = {
 	previousInstantiatedTab?: () => void;
 };
 
-type AISwitchShortcutAction = keyof AISwitchShortcutHandlers;
+export type AISwitchShortcutAction = keyof AISwitchShortcutHandlers;
 
 let handlers:AISwitchShortcutHandlers = {};
-let globalShortcutsRegistered = false;
-
-const globalShortcutAccelerators:Record<AISwitchShortcutAction , string> = {
-	/* Ctrl+[] now switches instantiated AI views */
-	previousInstantiated : 'CommandOrControl+[' ,
-	nextInstantiated : 'CommandOrControl+]' ,
-	/* Alt+[] now switches all enabled (configured) AI views */
-	previousConfigured : 'Alt+[' ,
-	nextConfigured : 'Alt+]' ,
-	closeCurrent : 'CommandOrControl+W',
-	nextInstantiatedTab : 'CommandOrControl+Tab',
-	previousInstantiatedTab : 'CommandOrControl+Shift+Tab',
-};
-
-const shortcutActions:AISwitchShortcutAction[] = [
-	'previousConfigured' ,
-	'nextConfigured' ,
-	'previousInstantiated' ,
-	'nextInstantiated' ,
-	'closeCurrent',
-	'nextInstantiatedTab' ,
-	'previousInstantiatedTab',
-];
 
 export const setAISwitchShortcutHandlers = (nextHandlers:AISwitchShortcutHandlers) => {
 	handlers = nextHandlers;
-};
-
-export const registerAISwitchGlobalShortcuts = () => {
-	if( globalShortcutsRegistered ) {
-		return;
-	}
-	const failedAccelerators:string[] = [];
-	shortcutActions.forEach( action => {
-		const accelerator = globalShortcutAccelerators[action];
-		if( globalShortcut.isRegistered( accelerator ) ) {
-			return;
-		}
-		const registered = globalShortcut.register( accelerator , () => {
-			invokeAISwitchShortcut( action );
-		} );
-		if( !registered ) {
-			failedAccelerators.push( accelerator );
-		}
-	} );
-	globalShortcutsRegistered = shortcutActions.every( action => {
-		return globalShortcut.isRegistered( globalShortcutAccelerators[action] );
-	} );
-	if( failedAccelerators.length ) {
-		console.warn( '[Shortcuts] Failed to register AI switch shortcuts:' , failedAccelerators );
-	}
-};
-
-export const unregisterAISwitchGlobalShortcuts = () => {
-	Object.values( globalShortcutAccelerators ).forEach( accelerator => {
-		if( globalShortcut.isRegistered( accelerator ) ) {
-			globalShortcut.unregister( accelerator );
-		}
-	} );
-	globalShortcutsRegistered = false;
 };
 
 export const handleAISwitchShortcutInput = (event:any , input:any) => {
@@ -79,7 +28,7 @@ export const handleAISwitchShortcutInput = (event:any , input:any) => {
 	}
 	const key = String( input.key || '' ).toLowerCase();
 	const code = String( input.code || '' );
-	const action = resolveShortcutAction( input , key , code );
+	const action = resolveAISwitchShortcutAction( input , key , code );
 	if( !action ) {
 		return false;
 	}
@@ -88,16 +37,20 @@ export const handleAISwitchShortcutInput = (event:any , input:any) => {
 	return true;
 };
 
-const resolveShortcutAction = (
-	input:any ,
+export const resolveAISwitchShortcutAction = (
+	input:{
+		control?:boolean;
+		meta?:boolean;
+		alt?:boolean;
+		shift?:boolean;
+	} ,
 	key:string ,
 	code:string,
 ):AISwitchShortcutAction | null => {
-	// 处理 Tab 键切换（基于已实例化的 AI Views）
 	if( ( input.control || input.meta ) && !input.alt && ( key === 'tab' || code === 'Tab' ) ) {
 		return input.shift ? 'previousInstantiatedTab' : 'nextInstantiatedTab';
 	}
-	
+
 	const bracketDirection = key === '[' || code === 'BracketLeft'
 		? 'previous'
 		: key === ']' || code === 'BracketRight'
@@ -118,10 +71,3 @@ const resolveShortcutAction = (
 const invokeAISwitchShortcut = (action:AISwitchShortcutAction) => {
 	handlers[action]?.();
 };
-
-app.on( 'will-quit' , unregisterAISwitchGlobalShortcuts );
-
-import {
-	app ,
-	globalShortcut,
-} from 'electron';

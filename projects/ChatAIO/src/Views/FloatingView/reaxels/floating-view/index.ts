@@ -51,10 +51,19 @@ export const reaxel_FloatingView = reaxel( () => {
 			itemIds : store.switchAiBar.items.map( ( item ) => item.id ) ,
 			itemLabels : store.switchAiBar.items.map( ( item ) => item.label ) ,
 		} );
+		if( currentPerfCtxId ) {
+			noteFloatingViewPerf( 'renderer' , currentPerfCtxId , FvPerfPhase.OverlayHide , {
+				activeIndex : store.switchAiBar.activeIndex ,
+			} );
+		}
 	};
 
 	/** 仅写入卡片数据以挂载 Swiper，保持 hidden——用于启动预热。菜单停靠也走这里，不弹出。 */
 	const prepareSwitchAiBar = (payload:FloatingView.SwitchAiBarPayload) => {
+		if( payload.ctxId ) {
+			currentPerfCtxId = payload.ctxId;
+		}
+		bindRendererFvPerfFromPayload( payload.ctxId , payload.perfMeta );
 		const fingerprint = switchAiBarItemsFingerprint(
 			payload.items ,
 			payload.source ?? 'unknown',
@@ -81,12 +90,23 @@ export const reaxel_FloatingView = reaxel( () => {
 			itemIds : payload.items.map( ( item ) => item.id ) ,
 			itemLabels : payload.items.map( ( item ) => item.label ) ,
 		} );
+		if( currentPerfCtxId ) {
+			noteFloatingViewPerf( 'renderer' , currentPerfCtxId , FvPerfPhase.Prepare , {
+				...fingerprint ,
+				activeIndex : payload.activeIndex ,
+				prevItemCount : store.switchAiBar.items.length ,
+			} );
+			noteFloatingViewPerf( 'renderer' , currentPerfCtxId , FvPerfPhase.IpcReceived , {
+				command : 'prepare' ,
+			} );
+		}
 		perf.flush();
 	};
 
 	const showSwitchAiBar = (payload:FloatingView.SwitchAiBarPayload) => {
 		clearHideTimer();
 		currentPerfCtxId = payload.ctxId || '';
+		bindRendererFvPerfFromPayload( payload.ctxId , payload.perfMeta );
 		const prevItems = store.switchAiBar.items;
 		const prevItemCount = prevItems.length;
 		const fromIndex = store.switchAiBar.activeIndex;
@@ -129,6 +149,11 @@ export const reaxel_FloatingView = reaxel( () => {
 				direction : payload.direction,
 			} );
 		};
+		const revealPath = holdFromCard && sameList
+			? 'hold-same-list'
+			: holdFromCard
+				? 'hold-rebuild-list'
+				: 'direct';
 		if( holdFromCard && sameList ) {
 			const generation = ++revealThenSlideGeneration;
 			applyShow( holdIndex , false );
@@ -179,12 +204,32 @@ export const reaxel_FloatingView = reaxel( () => {
 			itemIds : payload.items.map( ( item ) => item.id ) ,
 			itemLabels : payload.items.map( ( item ) => item.label ) ,
 		} );
+		if( currentPerfCtxId ) {
+			noteFloatingViewPerf( 'renderer' , currentPerfCtxId , FvPerfPhase.IpcReceived , {
+				command : 'show' ,
+			} );
+			noteFloatingViewPerf( 'renderer' , currentPerfCtxId , FvPerfPhase.UiUpdated , {
+				...fingerprint ,
+				activeIndex : payload.activeIndex ,
+				itemsChanged ,
+				prevItemCount ,
+				holdFromCard ,
+				holdIndex ,
+				sameList ,
+				revealPath ,
+				holdDelayMs : holdFromCard ? 50 : 0 ,
+			} );
+			noteFloatingViewPerf( 'renderer' , currentPerfCtxId , FvPerfPhase.OverlayShow , {
+				revealPath ,
+			} );
+		}
 		perf.mark( PerfPhase.SwitchUiUpdated , 'renderer' , currentPerfCtxId , {
 			...fingerprint ,
 			activeIndex : payload.activeIndex ,
 			itemsChanged ,
 			prevItemCount ,
 			holdFromCard ,
+			revealPath ,
 		} );
 		hideTimer = setTimeout( hideSwitchAiBar , AUTO_HIDE_MS );
 	};
@@ -249,6 +294,11 @@ export const reaxel_FloatingView = reaxel( () => {
 
 import type { FloatingView } from '#src/Types/FloatingView';
 import { traceCarouselOp } from '#FloatingView/utils/carousel-trace.utility';
+import {
+	bindRendererFvPerfFromPayload ,
+	FvPerfPhase ,
+	noteFloatingViewPerf ,
+} from '#shared/utils/floating-view-perf.utility';
 import {
 	perf ,
 	PerfPhase ,

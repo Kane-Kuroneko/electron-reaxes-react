@@ -43,7 +43,7 @@ flowchart LR
   DragReorder --> reorder
 ```
 
-用户关 Settings（页脚 **Done** 或关窗）不再 Discard runtime：那些字段已经落盘。AI 表草稿仍不随关窗丢弃（与旧「页脚不碰 AIs」一致）。
+用户关 Settings（页脚 **Done**、右上角 **X**、或关窗）不再 Discard runtime：那些字段已经落盘。AI 表草稿仍不随关窗丢弃（与旧「页脚不碰 AIs」一致）。
 
 ## 关键文件
 
@@ -53,7 +53,8 @@ flowchart LR
 | [`tailwind.config.cjs`](../../tailwind.config.cjs) / [`postcss.config.cjs`](../../postcss.config.cjs) | `content` 只扫本工程 View；路径相对本文件（`content.relative` + `__dirname`），不要相对仓库根 cwd |
 | [`src/Views/shared/ui/globals.css`](../../src/Views/shared/ui/globals.css) | **唯一主题色盘**（`--primary` 等）+ overlay 进出场 token / keyframes；Tailwind `theme.extend.colors` 映射到这些变量 |
 | [`src/Views/shared/ui/`](../../src/Views/shared/ui) | shadcn 原语、`cn`；颜色只引用上面的 token。Dialog/Sheet/Popover/Select/Dropdown/Tooltip 只挂 `overlay-*` class，不要在业务页再写一套动画 |
-| [`src/Views/SettingsView/App.tsx`](../../src/Views/SettingsView/App.tsx) | 侧栏 / Done 页脚 / 重启 Dialog / sonner |
+| [`src/Views/shared/ui/focus-overlay-surface.utility.ts`](../../src/Views/shared/ui/focus-overlay-surface.utility.ts) | Dialog / Sheet / Popover 打开时把焦点落到容器，不要第一颗控件 |
+| [`src/Views/SettingsView/App.tsx`](../../src/Views/SettingsView/App.tsx) | 侧栏 / 右上角关闭 / Done 页脚 / 重启 Dialog / sonner |
 | [`src/Views/SettingsView/reaxels/settings-view/index.ts`](../../src/Views/SettingsView/reaxels/settings-view/index.ts) | `persistRuntimeSettings` 队列 |
 | [`src/Views/SettingsView/components/ManageAIs/index.tsx`](../../src/Views/SettingsView/components/ManageAIs/index.tsx) | 表 + 弹窗换皮，save scope 不拆 |
 | [`src/Views/FloatingView/components/OverlayToast.tsx`](../../src/Views/FloatingView/components/OverlayToast.tsx) | overlay 自绘 toast |
@@ -76,7 +77,11 @@ flowchart LR
 - 不要给 `overlay-pop` 再加 Tailwind `-translate-x/y-1/2`：会和 pop 的 `transform` keyframes 抢居中。
 - 不要给 `overlay-float` 写 `transform` keyframes，也不要给 SelectContent 加 `data-[side=bottom]:translate-y-1`：动画会盖掉位移，结束后菜单往下弹。间距用 `sideOffset`。
 - Select Viewport 不要 `h-[var(--radix-select-trigger-height)]`（那是 trigger 高度，列表会被压成一行）。
-- Sheet 打开不要让带 Tooltip 的按钮吃到 Radix autofocus。默认会聚焦第一颗可聚焦控件，「复制版本号」会一直挂着。SheetContent 已把 autofocus 收到面板上。
+- Sheet / Dialog / Popover 打开不要让带 Tooltip 的按钮吃到 Radix FocusScope 的默认 autofocus。默认会聚焦第一颗可聚焦控件，浮层会跟着开（About「复制版本号」、进页第一个 icon 按钮）。`onOpenAutoFocus` 里 `focusOverlaySurface`：preventDefault 后焦点落到 Content（已有 `tabIndex=-1`）。[radix #935](https://github.com/radix-ui/primitives/discussions/935)、[shadcn #2307](https://github.com/shadcn-ui/ui/discussions/2307)。**不要**动 Select / DropdownMenu 的 autofocus（要亮当前项）。
+- Tooltip 不要在程序化 focus 时打开。Radix Tooltip 把 focus 当键盘意图。[radix #2248](https://github.com/radix-ui/primitives/issues/2248) 的做法：Trigger 上若没有 `:focus-visible` 就 `preventDefault`。Tab 仍开；鼠标点、进页、关下拉还焦点不开。不要在业务按钮上逐个关。
+- 不要把 Dialog 的 `overflow-y-auto` 和 `rounded-*` 写在同一节点（含 `DialogContent` 的 `className`）。圆角 + `overflow-hidden` 在外壳，Header/Footer 钉在外壳，只有中间是滚动层。Windows 经典滚动条贴在带 radius 的同一盒子上会把圆角画成直角；`overlay-pop` 的 transform 还会让贴边滚动条更难被裁住。
+- 滚动层的 clip 边是 padding box（CSS Overflow）。`ring-2` 是画在控件外边的 ink overflow，必须靠滚动层自己的 padding 留空。不要 `overflow-x-hidden`（一边 `auto` 另一边会算成 `auto`，照样裁）。不要用 `p-1 -m-1` 把 clip 区撑出布局盒。
+- Input / Textarea / SelectTrigger 必须 `appearance-none`。`overlay-pop` 有 transform 时 Windows 原生 `appearance: auto` 会把 1px 边框收成 ~0.5px、圆角看起来像系统文本框。
 
 ## 与现有文档的关系
 

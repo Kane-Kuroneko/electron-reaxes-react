@@ -6,7 +6,7 @@
 
 ### 现行行为
 
-页脚是 **Done**（或关窗），调用 `exitSettings()`：
+页脚 **Done**、右上角 **X**、或关窗，都调用 `exitSettings()`：
 
 1. **Runtime（主题、语言、代理、GPU、Startup AI Page）已经在控件变更时 `persistRuntimeSettings`。** Done 不再 Discard，再次进入应看到刚改的值。
 2. **Manage AIs 表内未保存的 Enabled / 删除草稿会保留**（页脚不碰表 dirty）。要丢掉表草稿用表底 **Undo Changes**。见 [`manage-ais-save-scopes.md`](./manage-ais-save-scopes.md)。

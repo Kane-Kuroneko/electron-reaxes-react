@@ -1,6 +1,7 @@
 /**
  * 右侧/边缘抽屉。位移幅度只 12–16px + fade，不从屏外滑入。
- * 动画 class 见 globals.css `overlay-sheet-*`。docs/features/settings-ui-shadcn.md
+ * 动画 class 见 globals.css `overlay-sheet-*`。打开时焦点落到面板，不要第一颗按钮
+ *（复制版本号包了 Tooltip 会常驻）。docs/features/settings-ui-shadcn.md
  */
 export const Sheet = SheetPrimitive.Root;
 export const SheetTrigger = SheetPrimitive.Trigger;
@@ -52,11 +53,7 @@ export const SheetContent = React.forwardRef<
 			{ ...props }
 			onOpenAutoFocus={ ( event ) => {
 				onOpenAutoFocus?.( event );
-				if( event.defaultPrevented ) return;
-				// 默认会聚焦第一颗按钮。复制版本号包了 Tooltip，一打开侧栏提示就常驻。
-				// 焦点落到面板本身；键盘仍可 Tab 到控件。见 docs/features/settings-ui-shadcn.md
-				event.preventDefault();
-				( event.currentTarget as HTMLElement | null )?.focus( { preventScroll : true } );
+				focusOverlaySurface( event );
 			} }
 		>
 			{ children }
@@ -96,6 +93,7 @@ export const SheetTitle = React.forwardRef<
 SheetTitle.displayName = SheetPrimitive.Title.displayName;
 
 import { cn } from '#Views/shared/ui/cn.utility';
+import { focusOverlaySurface } from '#Views/shared/ui/focus-overlay-surface.utility';
 import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { cva , type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
